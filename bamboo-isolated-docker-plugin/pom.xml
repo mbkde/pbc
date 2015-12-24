@@ -14,6 +14,19 @@
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>maven-bamboo-plugin</artifactId>
                 <extensions>true</extensions>
+                <configuration>
+                    <extractDependencies>false</extractDependencies>
+                    <instructions>
+                        <Export-Package>com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}"</Export-Package>
+                    </instructions>
+                    <pluginArtifacts>
+                        <pluginArtifact>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>bamboo-isolated-ecs-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </pluginArtifact>
+                    </pluginArtifacts>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -22,6 +35,18 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>isolated-docker-spi</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-api</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-core</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

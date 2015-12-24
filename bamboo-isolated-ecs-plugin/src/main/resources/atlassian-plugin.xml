@@ -4,4 +4,9 @@
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
+
+    <component key="isolatedAgentService" class="com.atlassian.buildeng.ecs.ECSIsolatedAgentServiceImpl" public="true">
+        <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
+    </component>
+
 </atlassian-plugin>

@@ -4,4 +4,14 @@
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
+    <preBuildQueuedAction key="startContainerAgent" name="Start Container Agent"
+                          class="com.atlassian.buildeng.isolated.docker.CustomPreBuildQueuedActionImpl">
+        <description>
+            Starts a docker container that the build can run on.
+        </description>
+    </preBuildQueuedAction>
+
+    <component-import key="isolatedAgentService" interface="com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService"/>
+    <component-import key="buildLoggerManager" interface="com.atlassian.bamboo.build.BuildLoggerManager" />
+
 </atlassian-plugin>
