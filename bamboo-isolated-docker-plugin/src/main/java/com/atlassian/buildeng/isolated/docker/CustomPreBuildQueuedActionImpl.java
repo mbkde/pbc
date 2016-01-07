@@ -42,18 +42,10 @@ public class CustomPreBuildQueuedActionImpl implements CustomPreBuildQueuedActio
     @Override
     public BuildContext call() throws InterruptedException, Exception {
         LOG.info("XXX" + buildContext.getResultKey());
-        String dockerConfig = findDockerConfig(buildContext.getParentBuildContext());
-        if (dockerConfig != null) {
-            isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(dockerConfig));
+        Configuration config = Configuration.forBuildContext(buildContext);
+        if (config.isEnabled()) {
+            isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getImage()));
         }
         return buildContext;
     }
-
-    private String findDockerConfig(BuildContext parentBuildContext) {
-        //TODO
-//        Map<String, String> cc = parentBuildContext.getBuildDefinition().getCustomConfiguration().get("xxx");
-
-        return "dockerX-one";
-    }
-
 }
