@@ -63,9 +63,9 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
     @Override
     public void customizeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
-        if (buildConfiguration.getBoolean(Constants.ENABLED_FOR_JOB)) {
-            String image = buildConfiguration.getString(Constants.DOCKER_IMAGE);
-            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, image, true));
+        Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
+        if (config.isEnabled()) {
+            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getImage(), true));
         }
     }
 
@@ -77,8 +77,9 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
     @Override
     protected void populateContextForEdit(Map<String, Object> context, BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
-        context.put(Constants.ENABLED_FOR_JOB, buildConfiguration.getBoolean(Constants.ENABLED_FOR_JOB));
-        context.put(Constants.DOCKER_IMAGE, buildConfiguration.getString(Constants.DOCKER_IMAGE));
+        Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
+        context.put(Constants.ENABLED_FOR_JOB, config.isEnabled());
+        context.put(Constants.DOCKER_IMAGE, config.getImage());
     }
 
     @Override
