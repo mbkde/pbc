@@ -32,7 +32,11 @@ public final class Configuration {
         this.image = image;
     }
 
-    public static Configuration forBuildConfiguration(BuildConfiguration config) {
+    @Nonnull
+    public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
+        if (config == null) {
+            return null;
+        }
         boolean enable = config.getBoolean(Constants.ENABLED_FOR_JOB);
         String image = config.getString(Constants.DOCKER_IMAGE);
         return new Configuration(enable, image);
