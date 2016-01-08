@@ -16,7 +16,11 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.v2.build.agent.capability.Capability;
+
 public interface Constants {
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
+    public static final String DOCKER_IMAGE = "custom.isolated.docker.image";
+    public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
 }

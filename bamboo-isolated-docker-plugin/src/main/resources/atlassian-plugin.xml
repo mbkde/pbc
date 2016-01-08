@@ -13,13 +13,9 @@
         <description>
             Starts a docker container that the build can run on.
         </description>
-    </preBuildQueuedAction>
-
-    <additionalBuildConfigurationPlugin key="jobConfig" name="Isolated Docker Job Configuration"
-                                        class="com.atlassian.buildeng.isolated.docker.config.JobMiscConfigurationImpl">
-        <description>Configure if isolated docker is enabled for a plan</description>
+        <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
         <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
-    </additionalBuildConfigurationPlugin>
+    </preBuildQueuedAction>
 
     <buildProcessor key="stopContainerAgent" name="Stop Container Agent" class="com.atlassian.buildeng.isolated.docker.StopDockerAgentBuildProcessor">
         <skipIfFailed>false</skipIfFailed>

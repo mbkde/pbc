@@ -17,20 +17,31 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.buildqueue.manager.CustomPreBuildQueuedAction;
+import com.atlassian.bamboo.plan.Plan;
+import com.atlassian.bamboo.plan.PlanKey;
+import com.atlassian.bamboo.template.TemplateRenderer;
+import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
+import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CustomPreBuildQueuedActionImpl implements CustomPreBuildQueuedAction {
+public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin implements CustomPreBuildQueuedAction {
 
     private final IsolatedAgentService isolatedAgentService;
     private BuildContext buildContext;
     private final Logger LOG = LoggerFactory.getLogger(CustomPreBuildQueuedActionImpl.class);
 
-    public CustomPreBuildQueuedActionImpl(IsolatedAgentService isolatedAgentService) {
+    public CustomPreBuildQueuedActionImpl(IsolatedAgentService isolatedAgentService, TemplateRenderer renderer) {
         this.isolatedAgentService = isolatedAgentService;
+        setTemplateRenderer(renderer);
     }
 
 
@@ -48,4 +59,34 @@ public class CustomPreBuildQueuedActionImpl implements CustomPreBuildQueuedActio
         }
         return buildContext;
     }
+
+    @Override
+    public void customizeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
+        removeBuildRequirements(planKey, buildConfiguration, requirementSet);
+        if (buildConfiguration.getBoolean(Constants.ENABLED_FOR_JOB)) {
+            String image = buildConfiguration.getString(Constants.DOCKER_IMAGE);
+            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, image, true));
+        }
+    }
+
+    @Override
+    public void removeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
+        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(Constants.CAPABILITY));
+    }
+
+    @Override
+    protected void populateContextForEdit(Map<String, Object> context, BuildConfiguration buildConfiguration, Plan plan) {
+        super.populateContextForEdit(context, buildConfiguration, plan);
+        context.put(Constants.ENABLED_FOR_JOB, buildConfiguration.getBoolean(Constants.ENABLED_FOR_JOB));
+        context.put(Constants.DOCKER_IMAGE, buildConfiguration.getString(Constants.DOCKER_IMAGE));
+    }
+
+    @Override
+    public void addDefaultValues(@NotNull final BuildConfiguration buildConfiguration)
+    {
+        super.addDefaultValues(buildConfiguration);
+        buildConfiguration.addProperty(Constants.ENABLED_FOR_JOB, false);
+        buildConfiguration.addProperty(Constants.DOCKER_IMAGE, "docker:xxx");
+    }
+
 }
