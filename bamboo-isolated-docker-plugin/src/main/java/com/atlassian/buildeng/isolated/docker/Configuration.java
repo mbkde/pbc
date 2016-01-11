@@ -24,12 +24,12 @@ import javax.annotation.Nonnull;
 public final class Configuration {
 
     private final boolean enabled;
-    private final String image;
+    private final String dockerImage;
 
     private Configuration(boolean enabled, String image)
     {
         this.enabled = enabled;
-        this.image = image;
+        this.dockerImage = image;
     }
 
     @Nonnull
@@ -46,7 +46,7 @@ public final class Configuration {
     public static Configuration forBuildContext(@Nonnull BuildContext context) {
         Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
         String value = cc.getOrDefault(Constants.ENABLED_FOR_JOB, "false");
-        String image = cc.getOrDefault(Constants.DOCKER_IMAGE, "docker:xxx");
+        String image = cc.get(Constants.DOCKER_IMAGE);
         return new Configuration(Boolean.parseBoolean(value), image);
     }
 
@@ -54,8 +54,8 @@ public final class Configuration {
         return enabled;
     }
 
-    public String getImage() {
-        return image;
+    public String getDockerImage() {
+        return dockerImage;
     }
 
     

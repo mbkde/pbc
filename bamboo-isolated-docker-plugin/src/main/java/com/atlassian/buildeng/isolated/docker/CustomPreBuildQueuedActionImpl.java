@@ -20,6 +20,8 @@ import com.atlassian.bamboo.buildqueue.manager.CustomPreBuildQueuedAction;
 import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.template.TemplateRenderer;
+import com.atlassian.bamboo.utils.error.ErrorCollection;
+import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
@@ -53,10 +55,9 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
 
     @Override
     public BuildContext call() throws InterruptedException, Exception {
-        LOG.info("XXX" + buildContext.getResultKey());
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
-            isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getImage()));
+            isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getDockerImage()));
         }
         return buildContext;
     }
@@ -66,13 +67,21 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
         if (config.isEnabled()) {
-            if (StringUtils.isNotBlank(config.getImage())) {
-                requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getImage(), true));
-            } else {
-                throw new RuntimeException("Configuration error, plugin enabled but no image set.");
-            }
+            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getDockerImage(), true));
         }
     }
+
+    @Override
+    public ErrorCollection validate(BuildConfiguration bc) {
+        Configuration config = Configuration.forBuildConfiguration(bc);
+        if (config.isEnabled() && StringUtils.isBlank(config.getDockerImage())) {
+            return new SimpleErrorCollection("Docker image cannot be blank.");
+        }
+        //TODO more checks on format.
+        return super.validate(bc);
+    }
+
+
 
     @Override
     public void removeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
@@ -84,7 +93,7 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
         super.populateContextForEdit(context, buildConfiguration, plan);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
         context.put(Constants.ENABLED_FOR_JOB, config.isEnabled());
-        context.put(Constants.DOCKER_IMAGE, config.getImage());
+        context.put(Constants.DOCKER_IMAGE, config.getDockerImage());
     }
 
     @Override
