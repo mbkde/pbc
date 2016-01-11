@@ -29,6 +29,7 @@ import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,11 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
         if (config.isEnabled()) {
-            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getImage(), true));
+            if (StringUtils.isNotBlank(config.getImage())) {
+                requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getImage(), true));
+            } else {
+                throw new RuntimeException("Configuration error, plugin enabled but no image set.");
+            }
         }
     }
 
