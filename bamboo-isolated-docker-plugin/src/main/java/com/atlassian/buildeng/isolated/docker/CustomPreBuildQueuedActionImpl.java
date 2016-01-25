@@ -58,7 +58,6 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
     public BuildContext call() throws InterruptedException, Exception {
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
-            LOG.info("XXX");
             buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
             isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getDockerImage()));
         }
