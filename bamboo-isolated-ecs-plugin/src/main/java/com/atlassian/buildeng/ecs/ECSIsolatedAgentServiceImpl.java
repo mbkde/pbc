@@ -24,25 +24,24 @@ import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
 import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
-import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
-    private final AgentManager agentManager;
     private final ElasticAccountBean elasticAccountBean;
 
-    public ECSIsolatedAgentServiceImpl(AgentManager agentManager, ElasticAccountBean elasticAccountBean) {
-        this.agentManager = agentManager;
+    @Autowired
+    public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean) {
         this.elasticAccountBean = elasticAccountBean;
     }
 
     @Override
     public void startInstance(IsolatedDockerAgentRequest req) {
-        logger.info("XXX:" + req.getDockerImage());
         final ElasticConfiguration elasticConfig = elasticAccountBean.getElasticConfig();
 
         if (elasticConfig != null) {
@@ -52,10 +51,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             logger.info("Spinning up new docker agent");
             RunTaskRequest runTaskRequest = new RunTaskRequest();
             runTaskRequest.setCluster("shipit-300-ttsang");
-            runTaskRequest.setTaskDefinition("ubuntu-builder:11");
+            runTaskRequest.setTaskDefinition(req.getDockerImage());
             runTaskRequest.setCount(1);
             RunTaskResult runTaskResult = amazonECS.runTask(runTaskRequest);
-            logger.info(runTaskRequest.toString());
+            logger.info(runTaskResult.toString());
         } else {
             logger.error("No AWS credentials, aborting.");
         }

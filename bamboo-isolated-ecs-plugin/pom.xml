@@ -15,10 +15,16 @@
                 <artifactId>maven-bamboo-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <extractDependencies>false</extractDependencies>
                     <pluginArtifacts>
                         <pluginArtifact>
                             <groupId>${project.groupId}</groupId>
                             <artifactId>bamboo-isolated-docker-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </pluginArtifact>
+                        <pluginArtifact>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>isolated-docker-spi</artifactId>
                             <version>${project.version}</version>
                         </pluginArtifact>
                     </pluginArtifacts>

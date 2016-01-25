@@ -39,6 +39,7 @@
         <amps.version>6.1.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>3.0.4</platform.version>
+        <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
     </properties>
     
     <dependencyManagement>
