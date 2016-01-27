@@ -21,7 +21,6 @@ import com.atlassian.bamboo.build.CustomPreBuildAction;
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.plan.PlanKey;
-import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
@@ -40,11 +39,17 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
 
     private BuildContext buildContext;
     private final Logger LOG = LoggerFactory.getLogger(CustomPreBuildActionImpl.class);
-    private final BuildLoggerManager buildLoggerManager;
+    private BuildLoggerManager buildLoggerManager;
 
-    public CustomPreBuildActionImpl(BuildLoggerManager buildLoggerManager, TemplateRenderer renderer) {
+    public CustomPreBuildActionImpl() {
+    }
+
+    public BuildLoggerManager getBuildLoggerManager() {
+        return buildLoggerManager;
+    }
+
+    public void setBuildLoggerManager(BuildLoggerManager buildLoggerManager) {
         this.buildLoggerManager = buildLoggerManager;
-        setTemplateRenderer(renderer);
     }
 
     @Override
