@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -41,13 +42,14 @@ public class PreBuildQueuedEventListener  {
 
     @EventListener
     public void call(BuildQueuedEvent event) throws InterruptedException, Exception {
-        Configuration config = Configuration.forBuildContext(event.getContext());
+        BuildContext buildContext = event.getContext();
+        Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
             try {
-                event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
-                isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getDockerImage()));
+                buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
+                isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
             } catch (Exception ex) {
-                errorUpdateHandler.recordError(event.getContext().getResultKey(), "Build was not queued due to error", ex);
+                errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error", ex);
                 //TODO terminate the build? how?
             }
         }
