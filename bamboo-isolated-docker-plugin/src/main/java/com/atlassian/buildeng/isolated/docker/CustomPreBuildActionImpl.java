@@ -19,26 +19,37 @@ package com.atlassian.buildeng.isolated.docker;
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomPreBuildAction;
 import com.atlassian.bamboo.build.logger.BuildLogger;
+import com.atlassian.bamboo.plan.Plan;
+import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
+import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CustomPreBuildActionImpl implements CustomPreBuildAction {
+public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
 
     private BuildContext buildContext;
     private final Logger LOG = LoggerFactory.getLogger(CustomPreBuildActionImpl.class);
-    private final BuildLoggerManager buildLoggerManager;
+    private BuildLoggerManager buildLoggerManager;
 
-    public CustomPreBuildActionImpl(BuildLoggerManager buildLoggerManager) {
-        this.buildLoggerManager = buildLoggerManager;
+    public CustomPreBuildActionImpl() {
     }
 
-    @Override
-    public ErrorCollection validate(BuildConfiguration config) {
-        return new SimpleErrorCollection();
+    public BuildLoggerManager getBuildLoggerManager() {
+        return buildLoggerManager;
+    }
+
+    public void setBuildLoggerManager(BuildLoggerManager buildLoggerManager) {
+        this.buildLoggerManager = buildLoggerManager;
     }
 
     @Override
@@ -56,6 +67,48 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
             buildLogger.addBuildLogEntry("Docker image "  + config.getDockerImage() + " took:" + (System.currentTimeMillis() - start) + " ms to start building.");
         }
         return buildContext;
+    }
+
+    @Override
+    public void customizeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
+        removeBuildRequirements(planKey, buildConfiguration, requirementSet);
+        Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
+        if (config.isEnabled()) {
+            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getDockerImage(), true));
+        }
+    }
+
+    @Override
+    public ErrorCollection validate(BuildConfiguration bc) {
+        Configuration config = Configuration.forBuildConfiguration(bc);
+        if (config.isEnabled() && StringUtils.isBlank(config.getDockerImage())) {
+            return new SimpleErrorCollection("Docker image cannot be blank.");
+        }
+        //TODO more checks on format.
+        return super.validate(bc);
+    }
+
+
+
+    @Override
+    public void removeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
+        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(Constants.CAPABILITY));
+    }
+
+    @Override
+    protected void populateContextForEdit(Map<String, Object> context, BuildConfiguration buildConfiguration, Plan plan) {
+        super.populateContextForEdit(context, buildConfiguration, plan);
+        Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
+        context.put(Constants.ENABLED_FOR_JOB, config.isEnabled());
+        context.put(Constants.DOCKER_IMAGE, config.getDockerImage());
+    }
+
+    @Override
+    public void addDefaultValues(@NotNull final BuildConfiguration buildConfiguration)
+    {
+        super.addDefaultValues(buildConfiguration);
+        buildConfiguration.addProperty(Constants.ENABLED_FOR_JOB, false);
+        buildConfiguration.addProperty(Constants.DOCKER_IMAGE, "docker:xxx");
     }
 
 }
