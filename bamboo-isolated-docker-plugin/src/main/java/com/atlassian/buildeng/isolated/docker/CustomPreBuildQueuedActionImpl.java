@@ -42,6 +42,7 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
     private BuildContext buildContext;
     private final Logger LOG = LoggerFactory.getLogger(CustomPreBuildQueuedActionImpl.class);
 
+
     public CustomPreBuildQueuedActionImpl(IsolatedAgentService isolatedAgentService, TemplateRenderer renderer) {
         this.isolatedAgentService = isolatedAgentService;
         setTemplateRenderer(renderer);
@@ -57,6 +58,7 @@ public class CustomPreBuildQueuedActionImpl extends BaseConfigurablePlugin imple
     public BuildContext call() throws InterruptedException, Exception {
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
+            buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
             isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getDockerImage()));
         }
         return buildContext;

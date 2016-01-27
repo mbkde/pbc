@@ -21,7 +21,6 @@ import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.agent.ExecutableBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.AgentContext;
-import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,16 +34,12 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor
 
     private final AgentContext agentContext;
     private final BuildLoggerManager buildLoggerManager;
-    private final CapabilityContext capabilityContext;
     private BuildContext buildContext;
 
-    public StopDockerAgentBuildProcessor(AgentContext agentContext, BuildLoggerManager buildLoggerManager, CapabilityContext capabilityContext) {
+    public StopDockerAgentBuildProcessor(AgentContext agentContext, BuildLoggerManager buildLoggerManager) {
         this.agentContext = agentContext;
         this.buildLoggerManager = buildLoggerManager;
-        this.capabilityContext = capabilityContext;
     }
-
-
 
     @Override
     public void init(final @NotNull BuildContext buildContext)
