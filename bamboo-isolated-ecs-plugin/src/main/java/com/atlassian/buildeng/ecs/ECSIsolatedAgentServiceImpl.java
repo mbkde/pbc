@@ -20,12 +20,14 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
 import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,22 +43,34 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     }
 
     @Override
-    public void startInstance(IsolatedDockerAgentRequest req) {
+    public IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest req) throws Exception {
         final ElasticConfiguration elasticConfig = elasticAccountBean.getElasticConfig();
-
+        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         if (elasticConfig != null) {
             AWSCredentials awsCredentials = new BasicAWSCredentials(elasticConfig.getAwsAccessKeyId(),
                                                                     elasticConfig.getAwsSecretKey());
             AmazonECS amazonECS = new AmazonECSClient(awsCredentials);
-            logger.info("Spinning up new docker agent");
-            RunTaskRequest runTaskRequest = new RunTaskRequest();
-            runTaskRequest.setCluster("shipit-300-ttsang");
-            runTaskRequest.setTaskDefinition(req.getDockerImage());
-            runTaskRequest.setCount(1);
-            RunTaskResult runTaskResult = amazonECS.runTask(runTaskRequest);
-            logger.info(runTaskResult.toString());
+            try {
+                logger.info("Spinning up new docker agent from task definition " + req.getTaskDefinition() + " " + req.getBuildResultKey());
+                RunTaskRequest runTaskRequest = new RunTaskRequest()
+                    .withCluster(req.getCluster())
+                    .withTaskDefinition(req.getTaskDefinition())
+                    .withCount(1);
+                RunTaskResult runTaskResult = amazonECS.runTask(runTaskRequest);
+                logger.info("ECS Returned: " + runTaskResult.toString());
+                if (!runTaskResult.getFailures().isEmpty()) {
+                    for (Failure err : runTaskResult.getFailures()) {
+                        toRet = toRet.withError(err.getReason());
+                    }
+                }
+            } catch (Exception exc) {
+//                logger.error("Exception thrown", exc);
+//TODO any exception wrapping necessary?
+                throw exc;
+            }
         } else {
-            logger.error("No AWS credentials, aborting.");
+            toRet = toRet.withError("No AWS credentials, aborting.");
         }
+        return toRet;
     }
 }
