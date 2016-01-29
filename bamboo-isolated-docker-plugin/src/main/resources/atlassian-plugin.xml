@@ -20,8 +20,14 @@
     </buildProcessor>
     <component-import key="isolatedAgentService" interface="com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService"/>
 
+
     <bambooEventListener key="bambooEventListener" name="Bamboo Event Listener" class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
-
+    <!-- REST resources -->
+    <rest key="docker" path="/docker" version="1.0">
+        <description>Provides the REST resource</description>
+    </rest>
+    <component-import key="xxxx" interface="com.atlassian.bandana.BandanaManager"/>
+    
 </atlassian-plugin>
