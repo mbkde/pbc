@@ -23,5 +23,7 @@
     <bambooEventListener key="bambooEventListener" name="Bamboo Event Listener" class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
-
+    
+    <postJobAction key="postJobActionImpl" name="PostJobActionImpl" class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
+    </postJobAction>
 </atlassian-plugin>
