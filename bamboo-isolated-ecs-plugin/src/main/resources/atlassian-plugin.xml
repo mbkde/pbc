@@ -9,4 +9,9 @@
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
     </component>
 
+    <component key="ecsHandler" class="com.atlassian.buildeng.ecs.ECSHandler" public="true">
+        <description>Handles AWS ECS interaction</description>
+        <interface>com.atlassian.buildeng.ecs.ECSHandler</interface>
+    </component>
+
 </atlassian-plugin>

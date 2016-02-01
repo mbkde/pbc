@@ -160,10 +160,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ecs</artifactId>
-            <version>1.10.40</version>
+            <groupId>com.atlassian.buildeng</groupId>
+            <artifactId>bamboo-isolated-ecs-plugin</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
-
     </dependencies>
 </project>

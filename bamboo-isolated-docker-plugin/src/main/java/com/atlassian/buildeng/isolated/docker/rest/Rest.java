@@ -16,13 +16,10 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.ecs.AmazonECSClient;
-import com.amazonaws.services.ecs.model.*;
-import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
-import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.fugue.Maybe;
+import com.atlassian.buildeng.ecs.ECSHandler;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -35,54 +32,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Path("/")
 public class Rest {
-    private final ElasticAccountBean elasticAccountBean;
     private final BandanaManager bandanaManager;
     private static AtomicBoolean cacheValid = new AtomicBoolean(false);
+    private final ECSHandler ecsHandler;
     private ConcurrentMap<String, Integer> values = new ConcurrentHashMap<>();
-    private final AmazonECSClient ecsClient;
-    final ElasticConfiguration elasticConfig;
 
     @Autowired
-    public Rest(BandanaManager bandanaManager, ElasticAccountBean elasticAccountBean) {
+    public Rest(BandanaManager bandanaManager, ECSHandler ecsHandler) {
         this.bandanaManager = bandanaManager;
-        this.elasticAccountBean = elasticAccountBean;
-        this.elasticConfig = this.elasticAccountBean.getElasticConfig();
-        if (this.elasticConfig == null) throw new AssertionError("failed to load elastic configuration");
-        this.ecsClient = new AmazonECSClient(new BasicAWSCredentials(this.elasticConfig.getAwsAccessKeyId(), this.elasticConfig.getAwsSecretKey()));
+        this.ecsHandler = ecsHandler;
         this.updateCache();
-    }
-
-    private static final String sidekickName       = "bamboo-agent-sidekick";
-    private static final String agentName          = "bamboo-agent";
-    private static final String taskDefinitionName = "staging-bamboo-generated";
-    private static final String atlassianRegistry  = "docker.atlassian.io";
-
-    private static final ContainerDefinition sidekickDefinition =
-        new ContainerDefinition()
-                .withName(sidekickName)
-                .withImage(atlassianRegistry + "/" + sidekickName)
-                .withCpu(10)
-                .withMemory(512);
-
-    private static final ContainerDefinition agentBaseDefinition =
-        new ContainerDefinition()
-                .withName(agentName)
-                .withCpu(900)
-                .withMemory(3072)
-                .withVolumesFrom(new VolumeFrom().withSourceContainer(sidekickName));
-
-    private static ContainerDefinition agentDefinition(String dockerImage) {
-        return agentBaseDefinition.withImage(dockerImage);
-    }
-
-    private static RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage) {
-        return new RegisterTaskDefinitionRequest()
-                .withContainerDefinitions(agentDefinition(dockerImage), sidekickDefinition)
-                .withFamily(taskDefinitionName);
-    }
-
-    private static DeregisterTaskDefinitionRequest deregisterTaskDefinitionRequest(Integer revision) {
-        return new DeregisterTaskDefinitionRequest().withTaskDefinition(taskDefinitionName + ":" + revision);
     }
 
     // Caching/bandana
@@ -120,18 +79,15 @@ public class Rest {
         if (values.containsKey(dockerImage)) {
             return Response.status(Response.Status.BAD_REQUEST).entity(dockerImage + " already exists").build();
         }
-        final int revision;
         //call aws to get number.
-        try {
-            RegisterTaskDefinitionResult result = ecsClient.registerTaskDefinition(taskDefinitionRequest(dockerImage));
-            revision = result.getTaskDefinition().getRevision();
-        } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + e).build();
-        }
-        values.put(dockerImage, revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
-        invalidateCache();
-        return Response.ok("" + revision).build();
+        return ecsHandler.registerTaskDefinition(dockerImage).fold(
+                (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Something in ECS blew up " + ecsError).build(),
+                (Integer revision) -> {
+                    values.put(dockerImage, revision);
+                    bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
+                    invalidateCache();
+                    return Response.ok("" + revision).build();
+                });
     }
 
     @DELETE
@@ -140,14 +96,14 @@ public class Rest {
     public Response delete(@PathParam("revision") Integer revision) {
         updateCache();
         if (values != null && values.containsValue(revision)) {
-            try {
-                ecsClient.deregisterTaskDefinition(deregisterTaskDefinitionRequest(revision));
+            Maybe<String> result = ecsHandler.deregisterTaskDefinition(revision);
+            if (result.isDefined()) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + result.get()).build();
+            } else {
                 values.values().remove(revision);
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
                 invalidateCache();
-                return Response.ok().build();
-            } catch (Exception e) {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + e).build();
+                return Response.ok().entity("OK").build();
             }
         } else {
             return Response.status(Response.Status.BAD_REQUEST).entity("revision " + revision + " does not exist").build();
