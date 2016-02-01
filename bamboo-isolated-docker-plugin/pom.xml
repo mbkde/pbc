@@ -159,6 +159,11 @@
             <artifactId>atlassian-rest-common</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ecs</artifactId>
+            <version>1.10.40</version>
+        </dependency>
 
     </dependencies>
 </project>

@@ -16,41 +16,102 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.*;
+import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
+import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
-import com.atlassian.bandana.BandanaContext;
 import com.atlassian.bandana.BandanaManager;
-import com.atlassian.plugin.webresource.Tuple;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
-import java.util.TreeMap;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
-@Path("/xxx")
+@Path("/")
 public class Rest {
-
+    private final ElasticAccountBean elasticAccountBean;
     private final BandanaManager bandanaManager;
+    private static boolean cacheValid = false;
+    private Map<String, Integer> values;
+    private final AmazonECSClient ecsClient;
+    final ElasticConfiguration elasticConfig;
 
-    public Rest(BandanaManager bandanaManager) {
+    @Autowired
+    public Rest(BandanaManager bandanaManager, ElasticAccountBean elasticAccountBean) {
         this.bandanaManager = bandanaManager;
+        this.elasticAccountBean = elasticAccountBean;
+        this.elasticConfig = this.elasticAccountBean.getElasticConfig();
+        assert this.elasticConfig != null;
+        this.ecsClient = new AmazonECSClient(new BasicAWSCredentials(this.elasticConfig.getAwsAccessKeyId(), this.elasticConfig.getAwsSecretKey()));
+        this.updateCache();
     }
 
+    private static final String sidekickName       = "bamboo-agent-sidekick";
+    private static final String agentName          = "bamboo-agent";
+    private static final String taskDefinitionName = "staging-bamboo-generated";
+    private static final String atlassianRegistry  = "docker.atlassian.io";
+
+    private static final ContainerDefinition sidekickDefinition =
+        new ContainerDefinition()
+                .withName(sidekickName)
+                .withImage(atlassianRegistry + "/" + sidekickName)
+                .withCpu(10)
+                .withMemory(512);
+
+    private static final ContainerDefinition agentBaseDefinition =
+        new ContainerDefinition()
+                .withName(agentName)
+                .withCpu(900)
+                .withMemory(3072)
+                .withVolumesFrom(new VolumeFrom().withSourceContainer(sidekickName));
+
+    private static ContainerDefinition agentDefinition(String dockerImage) {
+        return agentBaseDefinition.withImage(dockerImage);
+    }
+
+    private static RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage) {
+        return new RegisterTaskDefinitionRequest()
+                .withContainerDefinitions(agentDefinition(dockerImage), sidekickDefinition)
+                .withFamily(taskDefinitionName);
+    }
+
+    private static DeregisterTaskDefinitionRequest deregisterTaskDefinitionRequest(Integer revision) {
+        return new DeregisterTaskDefinitionRequest().withTaskDefinition(taskDefinitionName + ":" + revision);
+    }
+
+    // Caching/bandana
+
+    private static final String KEY = "com.atlassian.buildeng.isolated.docker";
+
+    private void updateCache() {
+        if (!cacheValid) {
+            Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
+            if (values != null) {
+                this.values = values;
+            } else {
+                this.values = new TreeMap<>();
+            }
+            cacheValid = true;
+        }
+    }
+
+    private void invalidateCache() {
+        cacheValid = false;
+    }
+
+    // REST endpoints
 
     @GET
     @Produces({MediaType.TEXT_PLAIN})
     public Response getAll() {
-        Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
-       return Response.ok("" + values).build();
+        updateCache();
+        return Response.ok("" + this.values).build();
     }
 
     @WebSudoRequired
@@ -58,38 +119,49 @@ public class Rest {
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
     public Response create(String dockerImage) {
-        Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
-        if (values == null) {
-            values = new TreeMap<>();
-        }
+        updateCache();
         if (values.containsKey(dockerImage)) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Already exists XXX").build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(dockerImage + " already exists").build();
         }
-        final int revision = new Random().nextInt();
+        final int revision;
         //call aws to get number.
+        try {
+            RegisterTaskDefinitionResult result = ecsClient.registerTaskDefinition(taskDefinitionRequest(dockerImage));
+            revision = result.getTaskDefinition().getRevision();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + e).build();
+        }
         values.put(dockerImage, revision);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
+        invalidateCache();
         return Response.ok("" + revision).build();
     }
-    private static final String KEY = "com.atlassian.buildeng.isolated.docker";
+
 
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{revision}")
     public Response delete(@PathParam("revision") Integer revision) {
-        Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
-        if (values != null) {
-            Iterator<Map.Entry<String, Integer>> it = values.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, Integer> ent = it.next();
-                if (revision.equals(ent.getValue())) {
-                   it.remove();
-                   break;
+        updateCache();
+        if (values != null && values.containsValue(revision)) {
+            try {
+                ecsClient.deregisterTaskDefinition(deregisterTaskDefinitionRequest(revision));
+                Iterator<Map.Entry<String, Integer>> it = values.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, Integer> ent = it.next();
+                    if (revision.equals(ent.getValue())) {
+                        it.remove();
+                        break;
+                    }
                 }
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
+                invalidateCache();
+                return Response.ok().build();
+            } catch (Exception e) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + e).build();
             }
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST).entity("revision " + revision + " does not exist").build();
         }
-       return Response.ok().build();
     }
-
 }
