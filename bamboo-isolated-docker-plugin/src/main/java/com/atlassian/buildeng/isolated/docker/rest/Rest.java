@@ -29,16 +29,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Path("/")
 public class Rest {
     private final ElasticAccountBean elasticAccountBean;
     private final BandanaManager bandanaManager;
-    private static boolean cacheValid = false;
-    private Map<String, Integer> values;
+    private static AtomicBoolean cacheValid = new AtomicBoolean(false);
+    private ConcurrentMap<String, Integer> values = new ConcurrentHashMap<>();
     private final AmazonECSClient ecsClient;
     final ElasticConfiguration elasticConfig;
 
@@ -47,7 +47,7 @@ public class Rest {
         this.bandanaManager = bandanaManager;
         this.elasticAccountBean = elasticAccountBean;
         this.elasticConfig = this.elasticAccountBean.getElasticConfig();
-        assert this.elasticConfig != null;
+        if (this.elasticConfig == null) throw new AssertionError("failed to load elastic configuration");
         this.ecsClient = new AmazonECSClient(new BasicAWSCredentials(this.elasticConfig.getAwsAccessKeyId(), this.elasticConfig.getAwsSecretKey()));
         this.updateCache();
     }
@@ -90,28 +90,25 @@ public class Rest {
     private static final String KEY = "com.atlassian.buildeng.isolated.docker";
 
     private void updateCache() {
-        if (!cacheValid) {
-            Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
+        if (cacheValid.compareAndSet(false, true)) {
+            ConcurrentHashMap<String, Integer> values = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
             if (values != null) {
                 this.values = values;
-            } else {
-                this.values = new TreeMap<>();
             }
-            cacheValid = true;
         }
     }
 
     private void invalidateCache() {
-        cacheValid = false;
+        cacheValid.set(false);
     }
 
     // REST endpoints
 
     @GET
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getAll() {
         updateCache();
-        return Response.ok("" + this.values).build();
+        return Response.ok(this.values).build();
     }
 
     @WebSudoRequired
@@ -137,7 +134,6 @@ public class Rest {
         return Response.ok("" + revision).build();
     }
 
-
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{revision}")
@@ -146,14 +142,7 @@ public class Rest {
         if (values != null && values.containsValue(revision)) {
             try {
                 ecsClient.deregisterTaskDefinition(deregisterTaskDefinitionRequest(revision));
-                Iterator<Map.Entry<String, Integer>> it = values.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<String, Integer> ent = it.next();
-                    if (revision.equals(ent.getValue())) {
-                        it.remove();
-                        break;
-                    }
-                }
+                values.values().remove(revision);
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
                 invalidateCache();
                 return Response.ok().build();
