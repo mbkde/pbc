@@ -15,7 +15,6 @@
                 <artifactId>maven-bamboo-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <extractDependencies>false</extractDependencies>
                     <pluginArtifacts>
                         <pluginArtifact>
                             <groupId>${project.groupId}</groupId>

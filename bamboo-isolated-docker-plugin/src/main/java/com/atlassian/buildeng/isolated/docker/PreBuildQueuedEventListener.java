@@ -16,12 +16,16 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
+import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.event.api.EventListener;
+import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -33,11 +37,15 @@ public class PreBuildQueuedEventListener  {
     private final IsolatedAgentService isolatedAgentService;
     private final Logger LOG = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
     private final ErrorUpdateHandler errorUpdateHandler;
+    private final BuildQueueManager buildQueueManager;
 
 
-    public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService, ErrorUpdateHandler errorUpdateHandler) {
+    public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService, 
+            ErrorUpdateHandler errorUpdateHandler,
+            BuildQueueManager buildQueueManager) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
+        this.buildQueueManager = buildQueueManager;
     }
 
     @EventListener
@@ -45,13 +53,26 @@ public class PreBuildQueuedEventListener  {
         BuildContext buildContext = event.getContext();
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
+            boolean terminate = false;
             try {
                 buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
-                isolatedAgentService.startInstance(new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
+
+                IsolatedDockerAgentResult result = isolatedAgentService.startInstance(
+                        new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey(),
+                                "staging-bamboo")); //TODO don't hardcode.
+                if (result.hasErrors()) {
+                    terminate = true;
+                    errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error:" +  Joiner.on("\n").join(result.getErrors()));
+                }
             } catch (Exception ex) {
+                terminate = true;
                 errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error", ex);
-                //TODO terminate the build? how?
+            }
+            if (terminate) {
+                buildContext.getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
+                buildQueueManager.removeBuildFromQueue(buildContext.getPlanResultKey());
             }
         }
     }
+
 }
