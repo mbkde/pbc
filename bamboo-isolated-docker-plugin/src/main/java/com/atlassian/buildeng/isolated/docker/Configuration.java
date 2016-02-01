@@ -16,12 +16,14 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
+
 
     private final boolean enabled;
     private final String dockerImage;
@@ -45,10 +47,21 @@ public final class Configuration {
     @Nonnull
     public static Configuration forBuildContext(@Nonnull BuildContext context) {
         Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
+        return forMap(cc);
+    }
+
+    public static Configuration forJob(Job job) {
+        Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
+        return forMap(cc);
+    }
+
+    @Nonnull
+    private static Configuration forMap(@Nonnull Map<String, String> cc) {
         String value = cc.getOrDefault(Constants.ENABLED_FOR_JOB, "false");
         String image = cc.get(Constants.DOCKER_IMAGE);
         return new Configuration(Boolean.parseBoolean(value), image);
     }
+
 
     public boolean isEnabled() {
         return enabled;
