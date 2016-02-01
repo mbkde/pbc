@@ -51,13 +51,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                                                                     elasticConfig.getAwsSecretKey());
             AmazonECS amazonECS = new AmazonECSClient(awsCredentials);
             try {
-                logger.info("Spinning up new docker agent from task definition " + req.getTaskDefinition() + " " + req.getBuildResultKey());
+                logger.info("Spinning up new docker agent from task definition {} {}", req.getTaskDefinition(), req.getBuildResultKey());
                 RunTaskRequest runTaskRequest = new RunTaskRequest()
                     .withCluster(req.getCluster())
                     .withTaskDefinition(req.getTaskDefinition())
                     .withCount(1);
                 RunTaskResult runTaskResult = amazonECS.runTask(runTaskRequest);
-                logger.info("ECS Returned: " + runTaskResult.toString());
+                logger.info("ECS Returned: {}", runTaskResult.toString());
                 if (!runTaskResult.getFailures().isEmpty()) {
                     for (Failure err : runTaskResult.getFailures()) {
                         toRet = toRet.withError(err.getReason());
