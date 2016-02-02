@@ -21,11 +21,13 @@ import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.fugue.Maybe;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import com.google.common.base.Joiner;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,7 +70,13 @@ public class Rest {
     @Produces({MediaType.APPLICATION_JSON})
     public Response getAll() {
         updateCache();
-        return Response.ok(this.values).build();
+        String ret = "[";
+        ret += (Joiner.on(",").join(
+            values.entrySet().stream().map((Map.Entry<String, Integer> entry) ->
+                    ("{\"dockerImage\": \"" + entry.getKey() + "\",\"revision\": " + entry.getValue() + "}")).iterator()
+        ));
+        ret += "]";
+        return Response.ok(ret).build();
     }
 
     @WebSudoRequired

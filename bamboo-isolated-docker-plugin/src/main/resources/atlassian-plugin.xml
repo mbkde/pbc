@@ -28,4 +28,18 @@
         <description>Provides the REST resource</description>
     </rest>
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+
+    <web-item key="docker-config" name="Configure Docker Images" section="system.admin/plugins" weight="10">
+        <description>Configure Docker Images</description>
+        <label key="Configure Docker Images"/>
+        <link linkId="docker-config-link">/admin/viewDockerConfiguration.action</link>
+    </web-item>
+
+    <xwork key="docker-configuration" name="Configure Docker Images">
+        <package name="dockerConfiguration" extends="admin">
+            <action name="viewDockerConfiguration" class="com.atlassian.buildeng.isolated.docker.DockerConfigurationAction">
+                <result name="success" type="freemarker">/config/dockerConfig.ftl</result>
+            </action>
+        </package>
+    </xwork>
 </atlassian-plugin>
