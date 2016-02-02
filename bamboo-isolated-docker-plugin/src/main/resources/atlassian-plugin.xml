@@ -23,6 +23,9 @@
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
 
+    <postJobAction key="postJobActionImpl" name="PostJobActionImpl" class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
+    </postJobAction>
+
     <!-- REST resources -->
     <rest key="docker" path="/docker" version="1.0">
         <description>Provides the REST resource</description>

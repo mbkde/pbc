@@ -111,7 +111,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 .withTaskDefinition(req.getTaskDefinition())
                 .withCount(1);
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            logger.info("ECS Returned: " + runTaskResult.toString());
+            logger.info("ECS Returned: {}", runTaskResult.toString());
             if (!runTaskResult.getFailures().isEmpty()) {
                 for (Failure err : runTaskResult.getFailures()) {
                     toRet = toRet.withError(err.getReason());
