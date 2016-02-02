@@ -23,5 +23,5 @@ public interface Constants {
     public static final String DOCKER_IMAGE = "custom.isolated.docker.image";
     public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
-    public static final String RESULT_TIME_QUEUED = "isolated.docker.time.queued";
+    public static final String RESULT_DOCKER_IMAGE = "isolated.docker.image";
 }

@@ -61,10 +61,8 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     public BuildContext call() throws InterruptedException, Exception {
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
-            String longr = buildContext.getBuildResult().getCustomBuildData().get(Constants.RESULT_TIME_QUEUED);
-            long start = Long.parseLong(longr != null ? longr : "0");
             final BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
-            buildLogger.addBuildLogEntry("Docker image "  + config.getDockerImage() + " took:" + (System.currentTimeMillis() - start) + " ms to start building.");
+            buildLogger.addBuildLogEntry("Docker image "  + config.getDockerImage() + " used to build this job");
         }
         return buildContext;
     }
