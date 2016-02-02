@@ -18,8 +18,8 @@ package com.atlassian.buildeng.isolated.docker.rest;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.fugue.Maybe;
-import com.atlassian.buildeng.ecs.ECSHandler;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -34,13 +34,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Rest {
     private final BandanaManager bandanaManager;
     private static AtomicBoolean cacheValid = new AtomicBoolean(false);
-    private final ECSHandler ecsHandler;
+    private final IsolatedAgentService dockerAgent;
+
     private ConcurrentMap<String, Integer> values = new ConcurrentHashMap<>();
 
     @Autowired
-    public Rest(BandanaManager bandanaManager, ECSHandler ecsHandler) {
+    public Rest(BandanaManager bandanaManager, IsolatedAgentService dockerAgent) {
         this.bandanaManager = bandanaManager;
-        this.ecsHandler = ecsHandler;
+        this.dockerAgent = dockerAgent;
         this.updateCache();
     }
 
@@ -80,7 +81,7 @@ public class Rest {
             return Response.status(Response.Status.BAD_REQUEST).entity(dockerImage + " already exists").build();
         }
         //call aws to get number.
-        return ecsHandler.registerTaskDefinition(dockerImage).fold(
+        return dockerAgent.registerDockerImage(dockerImage).fold(
                 (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Something in ECS blew up " + ecsError).build(),
                 (Integer revision) -> {
                     values.put(dockerImage, revision);
@@ -96,7 +97,7 @@ public class Rest {
     public Response delete(@PathParam("revision") Integer revision) {
         updateCache();
         if (values != null && values.containsValue(revision)) {
-            Maybe<String> result = ecsHandler.deregisterTaskDefinition(revision);
+            Maybe<String> result = dockerAgent.deregisterDockerImage(revision);
             if (result.isDefined()) {
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + result.get()).build();
             } else {

@@ -159,10 +159,5 @@
             <artifactId>atlassian-rest-common</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.atlassian.buildeng</groupId>
-            <artifactId>bamboo-isolated-ecs-plugin</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 </project>
