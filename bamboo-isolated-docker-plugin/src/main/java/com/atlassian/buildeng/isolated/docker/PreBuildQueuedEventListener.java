@@ -58,8 +58,7 @@ public class PreBuildQueuedEventListener  {
                 buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
 
                 IsolatedDockerAgentResult result = isolatedAgentService.startInstance(
-                        new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey(),
-                                "staging-bamboo")); //TODO don't hardcode.
+                        new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
                 if (result.hasErrors()) {
                     terminate = true;
                     errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error:" +  Joiner.on("\n").join(result.getErrors()));

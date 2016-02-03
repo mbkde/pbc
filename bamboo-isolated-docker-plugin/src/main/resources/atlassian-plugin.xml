@@ -32,13 +32,17 @@
     </rest>
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
-    <web-item key="docker-config" name="Configure Docker Images" section="system.admin/plugins" weight="10">
-        <description>Configure Docker Images</description>
-        <label key="Configure Docker Images"/>
+    <web-resource key="aui-stuff">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+    </web-resource>
+
+    <web-item key="docker-config" name="Configure Isolated Docker" section="system.admin/plugins" weight="10">
+        <description>Configure Isolated Docker</description>
+        <label key="Configure Isolated Docker"/>
         <link linkId="docker-config-link">/admin/viewDockerConfiguration.action</link>
     </web-item>
 
-    <xwork key="docker-configuration" name="Configure Docker Images">
+    <xwork key="docker-configuration" name="Configure Isolated Docker">
         <package name="dockerConfiguration" extends="admin">
             <action name="viewDockerConfiguration" class="com.atlassian.buildeng.isolated.docker.DockerConfigurationAction">
                 <result name="success" type="freemarker">/config/dockerConfig.ftl</result>

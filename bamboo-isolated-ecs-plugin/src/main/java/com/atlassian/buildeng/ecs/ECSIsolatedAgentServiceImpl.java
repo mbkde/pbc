@@ -22,6 +22,8 @@ import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.*;
 import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
 import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
+import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
+import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -32,10 +34,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     private final ElasticAccountBean elasticAccountBean;
+    private BandanaManager bandanaManager;
+
+    private static final String CLUSTER_KEY  = "com.atlassian.buildeng.ecs.cluster";
 
     // The name of the sidekick docker image and sidekick container
     private static final String sidekickName = "bamboo-agent-sidekick";
@@ -48,6 +56,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     // The name of the atlassian docker registry
     private static final String atlassianRegistry = "docker.atlassian.io";
+
+    // The default cluster to use
+    private static final String defaultCluster = "staging_bamboo";
 
     // The container definition of the sidekick
     private static final ContainerDefinition sidekickDefinition =
@@ -83,8 +94,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     }
 
     @Autowired
-    public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean) {
+    public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean, BandanaManager bandanaManager) {
         this.elasticAccountBean = elasticAccountBean;
+        this.bandanaManager = bandanaManager;
     }
 
     private AmazonECSClient createClient () throws Exception {
@@ -98,6 +110,33 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
     }
 
+
+    @Override
+    public String getCurrentCluster() {
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, CLUSTER_KEY);
+        if (name == null) {
+            return defaultCluster;
+        } else {
+            return name;
+        }
+    }
+
+    @Override
+    public void setCluster(String name) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, CLUSTER_KEY, name);
+    }
+
+    @Override
+    public Either<String, Collection<String>> getValidClusters() {
+        try {
+            AmazonECSClient ecsClient = createClient();
+            ListClustersResult result = ecsClient.listClusters();
+            return Either.right(result.getClusterArns().stream().map((String x) -> x.split("/")[1]).collect(Collectors.toList()));
+        } catch (Exception e) {
+            return Either.left(e.toString());
+        }
+    }
+
     @Override
     public IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest req) throws Exception {
 
@@ -107,7 +146,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             AmazonECSClient ecsClient = createClient();
             logger.info("Spinning up new docker agent from task definition " + req.getTaskDefinition() + " " + req.getBuildResultKey());
             RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(req.getCluster())
+                .withCluster(getCurrentCluster())
                 .withTaskDefinition(req.getTaskDefinition())
                 .withCount(1);
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);

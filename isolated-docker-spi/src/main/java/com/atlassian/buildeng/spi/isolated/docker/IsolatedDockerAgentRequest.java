@@ -20,18 +20,15 @@ public final class IsolatedDockerAgentRequest {
 
     private final String taskDefinitionName;
     private final String buildResultKey;
-    private final String cluster;
 
     /**
      *
      * @param identifier - identifier of what to execute, in ecs this translates to Task Definition name
      * @param buildResultKey
-     * @param cluster
      */
-    public IsolatedDockerAgentRequest(String identifier, String buildResultKey, String cluster) {
+    public IsolatedDockerAgentRequest(String identifier, String buildResultKey) {
         this.taskDefinitionName = identifier;
         this.buildResultKey = buildResultKey;
-        this.cluster = cluster;
     }
 
     public String getTaskDefinition() {
@@ -41,10 +38,6 @@ public final class IsolatedDockerAgentRequest {
 
     public String getBuildResultKey() {
         return buildResultKey;
-    }
-
-    public String getCluster() {
-        return cluster;
     }
 
 }

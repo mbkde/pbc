@@ -8,4 +8,6 @@
     <component key="isolatedAgentService" class="com.atlassian.buildeng.ecs.ECSIsolatedAgentServiceImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
     </component>
+
+    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 </atlassian-plugin>

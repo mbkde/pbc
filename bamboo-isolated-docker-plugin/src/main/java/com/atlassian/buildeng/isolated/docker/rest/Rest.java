@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,11 +50,11 @@ public class Rest {
 
     // Caching/bandana
 
-    private static final String KEY = "com.atlassian.buildeng.isolated.docker";
+    private static final String MAPPINGS_KEY = "com.atlassian.buildeng.isolated.docker";
 
     private void updateCache() {
         if (cacheValid.compareAndSet(false, true)) {
-            ConcurrentHashMap<String, Integer> values = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY);
+            ConcurrentHashMap<String, Integer> values =(ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, MAPPINGS_KEY);
             if (values != null) {
                 this.values = values;
             }
@@ -71,10 +72,10 @@ public class Rest {
     public Response getAll() {
         updateCache();
         String ret = "[";
-        ret += (Joiner.on(",").join(
+        ret += Joiner.on(",").join(
             values.entrySet().stream().map((Map.Entry<String, Integer> entry) ->
-                    ("{\"dockerImage\": \"" + entry.getKey() + "\",\"revision\": " + entry.getValue() + "}")).iterator()
-        ));
+                    (String.format("{\"dockerImage\": \"%s\",\"revision\": %d}", entry.getKey(), entry.getValue()))).iterator()
+        );
         ret += "]";
         return Response.ok(ret).build();
     }
@@ -86,19 +87,20 @@ public class Rest {
     public Response create(String dockerImage) {
         updateCache();
         if (values.containsKey(dockerImage)) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(dockerImage + " already exists").build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Docker image '%s' is already registered.", dockerImage)).build();
         }
         //call aws to get number.
         return dockerAgent.registerDockerImage(dockerImage).fold(
-                (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Something in ECS blew up " + ecsError).build(),
+                (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ecsError).build(),
                 (Integer revision) -> {
                     values.put(dockerImage, revision);
-                    bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
+                    bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, MAPPINGS_KEY, values);
                     invalidateCache();
                     return Response.ok("" + revision).build();
                 });
     }
 
+    @WebSudoRequired
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{revision}")
@@ -107,15 +109,47 @@ public class Rest {
         if (values != null && values.containsValue(revision)) {
             Maybe<String> result = dockerAgent.deregisterDockerImage(revision);
             if (result.isDefined()) {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("something blew up" + result.get()).build();
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(result.get()).build();
             } else {
                 values.values().remove(revision);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, KEY, values);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, MAPPINGS_KEY, values);
                 invalidateCache();
                 return Response.ok().entity("OK").build();
             }
         } else {
-            return Response.status(Response.Status.BAD_REQUEST).entity("revision " + revision + " does not exist").build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Revision %d is not available", revision)).build();
         }
     }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/cluster")
+    public Response getCluster() {
+        String name = dockerAgent.getCurrentCluster();
+        return Response.ok().entity(name).build();
+    }
+
+    @WebSudoRequired
+    @POST
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/cluster")
+    public Response setCluster(String name) {
+        dockerAgent.setCluster(name);
+        return Response.ok().entity(name).build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/cluster/valid")
+    public Response getValidClusters() {
+        return dockerAgent.getValidClusters().fold(
+                (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ecsError).build(),
+                (Collection<String> clusters) -> {
+                    bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, MAPPINGS_KEY, values);
+                    invalidateCache();
+                    return Response.ok(clusters.toArray()).build();
+                });
+    }
 }
+
