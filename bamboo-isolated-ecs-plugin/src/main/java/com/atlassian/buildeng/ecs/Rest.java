@@ -16,9 +16,7 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bandana.BandanaManager;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.fugue.Maybe;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +33,6 @@ import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Path("/")
 public class Rest {
