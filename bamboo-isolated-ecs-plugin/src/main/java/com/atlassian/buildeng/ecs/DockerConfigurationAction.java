@@ -16,8 +16,6 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.atlassian.bamboo.ww2.BambooActionSupport;
+import com.opensymphony.xwork2.ActionSupport;
 
-public class DockerConfigurationAction extends BambooActionSupport {
-
-}
+public class DockerConfigurationAction extends ActionSupport {}
