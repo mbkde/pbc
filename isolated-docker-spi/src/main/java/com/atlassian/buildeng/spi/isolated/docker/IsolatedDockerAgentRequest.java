@@ -18,23 +18,22 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 public final class IsolatedDockerAgentRequest {
 
-    private final String taskDefinitionName;
+    private final String dockerImage;
     private final String buildResultKey;
 
     /**
      *
-     * @param identifier - identifier of what to execute, in ecs this translates to Task Definition name
+     * @param dockerImage - image for isolated docker agent to use
      * @param buildResultKey
      */
-    public IsolatedDockerAgentRequest(String identifier, String buildResultKey) {
-        this.taskDefinitionName = identifier;
+    public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey) {
+        this.dockerImage = dockerImage;
         this.buildResultKey = buildResultKey;
     }
 
-    public String getTaskDefinition() {
-        return taskDefinitionName;
+    public String getDockerImage() {
+        return dockerImage;
     }
-
 
     public String getBuildResultKey() {
         return buildResultKey;

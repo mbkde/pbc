@@ -5,14 +5,13 @@ import com.atlassian.fugue.Either;
 import com.atlassian.fugue.Maybe;
 
 import java.util.Collection;
+import java.util.Map;
 
 public interface IsolatedAgentService {
-
-    IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest request) throws Exception;
-    Either<String, Integer> registerDockerImage(String dockerImage);
-    Maybe<String> deregisterDockerImage(Integer revision);
-    void setCluster (String name);
-    String getCurrentCluster();
-    Either<String, Collection<String>> getValidClusters();
-
+    /**
+     * Execute the build request on an isolated docker agent
+     * @param request - request object
+     * @return Any errors from the build
+     */
+    IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest request);
 }

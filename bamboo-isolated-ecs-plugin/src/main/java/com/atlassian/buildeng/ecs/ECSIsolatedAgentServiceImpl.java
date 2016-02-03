@@ -23,6 +23,7 @@ import com.amazonaws.services.ecs.model.*;
 import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
 import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
+import com.atlassian.bamboo.utils.SystemProperty;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -35,6 +36,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 
@@ -42,39 +47,43 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     private final ElasticAccountBean elasticAccountBean;
     private BandanaManager bandanaManager;
+    private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
+    private static AtomicBoolean cacheValid = new AtomicBoolean(false);
 
-    private static final String CLUSTER_KEY  = "com.atlassian.buildeng.ecs.cluster";
+    // Bandana access keys
+    private static final String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
+    private static final String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker";
 
     // The name of the sidekick docker image and sidekick container
-    private static final String sidekickName = "bamboo-agent-sidekick";
+    private static final String SIDEKICK_NAME = "bamboo-agent-sidekick";
 
     // The name of the agent container
-    private static final String agentName = "bamboo-agent";
+    private static final String AGENT_NAME = "bamboo-agent";
 
     // The name used for the generated task definition (a.k.a. family)
-    private static final String taskDefinitionName = "staging-bamboo-generated";
+    private static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
     // The name of the atlassian docker registry
-    private static final String atlassianRegistry = "docker.atlassian.io";
+    private static final String ATLASSIAN_REGISTRY = "docker.atlassian.io";
 
     // The default cluster to use
-    private static final String defaultCluster = "staging_bamboo";
+    private static final String DEFAULT_CLUSTER = "staging_bamboo";
 
     // The container definition of the sidekick
     private static final ContainerDefinition sidekickDefinition =
             new ContainerDefinition()
-                    .withName(sidekickName)
-                    .withImage(atlassianRegistry + "/" + sidekickName)
+                    .withName(SIDEKICK_NAME)
+                    .withImage(ATLASSIAN_REGISTRY + "/" + SIDEKICK_NAME)
                     .withCpu(10)
                     .withMemory(512);
 
     // The container definition of the standard spec build agent, sans docker image name
     private static final ContainerDefinition agentBaseDefinition =
             new ContainerDefinition()
-                    .withName(agentName)
+                    .withName(AGENT_NAME)
                     .withCpu(900)
                     .withMemory(3072)
-                    .withVolumesFrom(new VolumeFrom().withSourceContainer(sidekickName));
+                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME));
 
     // Constructs a standard build agent container definition with the given docker image name
     private static ContainerDefinition agentDefinition(String dockerImage) {
@@ -85,18 +94,34 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private static RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage) {
         return new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(agentDefinition(dockerImage), sidekickDefinition)
-                .withFamily(taskDefinitionName);
+                .withFamily(TASK_DEFINITION_NAME);
     }
 
     // Constructs a standard de-register request for a standard generated task definition
     private static DeregisterTaskDefinitionRequest deregisterTaskDefinitionRequest(Integer revision) {
-        return new DeregisterTaskDefinitionRequest().withTaskDefinition(taskDefinitionName + ":" + revision);
+        return new DeregisterTaskDefinitionRequest().withTaskDefinition(TASK_DEFINITION_NAME + ":" + revision);
     }
 
     @Autowired
     public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean, BandanaManager bandanaManager) {
         this.elasticAccountBean = elasticAccountBean;
         this.bandanaManager = bandanaManager;
+        this.updateCache();
+    }
+
+    // Bandana + Caching
+
+    private void updateCache() {
+        if (cacheValid.compareAndSet(false, true)) {
+            ConcurrentHashMap<String, Integer> values =(ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
+            if (values != null) {
+                this.dockerMappings = values;
+            }
+        }
+    }
+
+    private void invalidateCache() {
+        cacheValid.set(false);
     }
 
     private AmazonECSClient createClient () throws Exception {
@@ -110,24 +135,30 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
     }
 
+    // ECS Cluster management
 
-    @Override
-    public String getCurrentCluster() {
-        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, CLUSTER_KEY);
-        if (name == null) {
-            return defaultCluster;
-        } else {
-            return name;
-        }
+    /**
+     * Get the ECS cluster currently that is currently configured to be used
+     * @return The current cluster name
+     */
+    String getCurrentCluster() {
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY);
+        return name == null ? DEFAULT_CLUSTER : name;
     }
 
-    @Override
-    public void setCluster(String name) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, CLUSTER_KEY, name);
+    /**
+     * Set the ECS cluster to run isolated docker agents on
+     * @param name The cluster name
+     */
+    void setCluster (String name) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, name);
     }
 
-    @Override
-    public Either<String, Collection<String>> getValidClusters() {
+    /**
+     * Get a collection of potential ECS clusters to use
+     * @return The collection of cluster names
+     */
+    Either<String, Collection<String>> getValidClusters() {
         try {
             AmazonECSClient ecsClient = createClient();
             ListClustersResult result = ecsClient.listClusters();
@@ -137,53 +168,88 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
     }
 
-    @Override
-    public IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest req) throws Exception {
+    // Isolated Agent Service methods
 
+    @Override
+    public IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest req) {
+        Integer revision = dockerMappings.get(req.getDockerImage());
         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
 
-        try {
-            AmazonECSClient ecsClient = createClient();
-            logger.info("Spinning up new docker agent from task definition " + req.getTaskDefinition() + " " + req.getBuildResultKey());
-            RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(getCurrentCluster())
-                .withTaskDefinition(req.getTaskDefinition())
-                .withCount(1);
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            logger.info("ECS Returned: {}", runTaskResult.toString());
-            if (!runTaskResult.getFailures().isEmpty()) {
+        if (revision == null) {
+            toRet.getErrors().add(String.format("Docker image: '%s' is not registered", req.getDockerImage()));
+        } else {
+            try {
+                AmazonECSClient ecsClient = createClient();
+                logger.info("Spinning up new docker agent from task definition %s:%d %s", TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
+                RunTaskRequest runTaskRequest = new RunTaskRequest()
+                        .withCluster(getCurrentCluster())
+                        .withTaskDefinition(TASK_DEFINITION_NAME + ":" + revision)
+                        .withCount(1);
+                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
+                logger.info("ECS Returned: {}", runTaskResult.toString());
                 for (Failure err : runTaskResult.getFailures()) {
                     toRet = toRet.withError(err.getReason());
                 }
+            } catch (Exception e) {
+                toRet.getErrors().add(e.toString());
             }
-        } catch (Exception exc) {
-//                logger.error("Exception thrown", exc);
-//TODO any exception wrapping necessary?
-            throw exc;
         }
-
         return toRet;
     }
 
-    @Override
+    // Docker - ECS mapping management
+
+    /**
+     * Synchronously register a docker image to be used with isolated docker builds
+     * @param dockerImage The image to register
+     * @return The internal identifier for the registered image.
+     */
     public Either<String, Integer> registerDockerImage(String dockerImage) {
-        try {
-            AmazonECSClient ecsClient = createClient();
-            RegisterTaskDefinitionResult result = ecsClient.registerTaskDefinition(taskDefinitionRequest(dockerImage));
-            return Either.right(result.getTaskDefinition().getRevision());
-        } catch (Exception e) {
-            return Either.left(e.toString());
+        updateCache();
+        if (dockerMappings.containsKey(dockerImage)) {
+            return Either.left(String.format("Docker image '%s' is already registered.", dockerImage));
+        } else {
+            try {
+                AmazonECSClient ecsClient = createClient();
+                RegisterTaskDefinitionResult result = ecsClient.registerTaskDefinition(taskDefinitionRequest(dockerImage));
+                Integer revision = result.getTaskDefinition().getRevision();
+                dockerMappings.put(dockerImage, revision);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+                invalidateCache();
+                return Either.right(revision);
+            } catch (Exception e) {
+                return Either.left(e.toString());
+            }
         }
     }
 
-    @Override
+    /**
+     * Synchronously deregister the docker image with given task revision
+     * @param revision The internal ECS task definition to deregister
+     */
     public Maybe<String> deregisterDockerImage(Integer revision) {
-        try {
-            AmazonECSClient ecsClient = createClient();
-            ecsClient.deregisterTaskDefinition(deregisterTaskDefinitionRequest(revision));
-            return Option.none();
-        } catch (Exception e) {
-            return Option.option(e.toString());
+        updateCache();
+        if (dockerMappings.containsValue(revision)) {
+            try {
+                AmazonECSClient ecsClient = createClient();
+                ecsClient.deregisterTaskDefinition(deregisterTaskDefinitionRequest(revision));
+                dockerMappings.values().remove(revision);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+                invalidateCache();
+                return Option.none();
+            } catch (Exception e) {
+                return Option.option(e.toString());
+            }
+        } else {
+            return Option.option(String.format("Revision %d is not available", revision));
         }
+    }
+
+    /**
+     * @return All the docker image:identifier pairs this service has registered
+     */
+    public Map<String, Integer> getAllRegistrations() {
+        updateCache();
+        return dockerMappings;
     }
 }

@@ -9,5 +9,28 @@
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
     </component>
 
+    <!-- REST resources -->
+    <rest key="docker" path="/docker" version="1.0">
+        <description>Provides the REST resource</description>
+    </rest>
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+
+    <web-resource key="aui-stuff">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+    </web-resource>
+
+    <web-item key="docker-config" name="Configure Isolated Docker" section="system.admin/plugins" weight="10">
+        <description>Configure Isolated Docker</description>
+        <label key="Configure Isolated Docker"/>
+        <link linkId="docker-config-link">/admin/viewDockerConfiguration.action</link>
+    </web-item>
+
+    <xwork key="docker-configuration" name="Configure Isolated Docker">
+        <package name="dockerConfiguration" extends="admin">
+            <action name="viewDockerConfiguration" class="com.atlassian.buildeng.ecs.DockerConfigurationAction">
+                <result name="success" type="freemarker">/config/dockerConfig.ftl</result>
+            </action>
+        </package>
+    </xwork>
+
 </atlassian-plugin>
