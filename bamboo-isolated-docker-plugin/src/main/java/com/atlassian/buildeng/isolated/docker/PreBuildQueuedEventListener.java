@@ -55,7 +55,7 @@ public class PreBuildQueuedEventListener  {
         if (config.isEnabled()) {
             boolean terminate = false;
             try {
-                buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_TIME_QUEUED, "" + System.currentTimeMillis());
+                buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_DOCKER_IMAGE, config.getDockerImage());
 
                 IsolatedDockerAgentResult result = isolatedAgentService.startInstance(
                         new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
