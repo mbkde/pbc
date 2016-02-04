@@ -26,4 +26,20 @@
     
     <postJobAction key="postJobActionImpl" name="PostJobActionImpl" class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
     </postJobAction>
+
+  <web-resource key="dcoker-ui-js" name="JavaScript to modify task panels.">
+    <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+    <dependency>com.atlassian.auiplugin:ajs</dependency>
+
+    <!-- We probably actually want to break this into several resources. -->
+    <resource type="download" name="selectToField.js" location="/selectToField.js"/>
+    <resource type="download" name="insQ.min.js" location="/insQ.min.js" />
+
+    <context>bamboo.configuration</context>
+  </web-resource>
+
+    <!-- REST resources -->
+    <rest key="docker" path="/docker-ui" version="1.0">
+        <description>Provides the REST resource for javascript code</description>
+    </rest>
 </atlassian-plugin>
