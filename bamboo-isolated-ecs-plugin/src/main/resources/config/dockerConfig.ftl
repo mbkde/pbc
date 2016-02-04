@@ -5,9 +5,10 @@
 
 <body>
 <h1>Configure Isolated Docker</h1><br>
+
 <h2>Registered Docker Images</h2><br>
 
-<table id="dockerImageTable" class = "aui">
+<table id="dockerImageTable" class="aui">
     <tr>
         <th>Docker Image</th>
         <th></th>
@@ -17,13 +18,16 @@
 <br>
 
 <h2>Register Docker Images</h2>
+
 <form id="registerDockerImage" class="aui">
     <fieldset>
         <legend><span>Register New Image</span></legend>
         <div class="field-group">
             <label for="textarea-id">Docker Repository</label>
-            <textarea class="textarea" id="dockerImageToRegister" placeholder="e.g. docker.atlassian.io/bamboo-arch-base-agent:latest"></textarea><br>
-            <button type="button" class="aui-button" onclick="registerImage()">Register</button><br>
+            <textarea class="textarea" id="dockerImageToRegister"
+                      placeholder="e.g. docker.atlassian.io/bamboo-arch-base-agent:latest"></textarea><br>
+            <button type="button" class="aui-button" onclick="registerImage()">Register</button>
+            <br>
         </div>
     </fieldset>
 </form>
@@ -33,7 +37,8 @@
 <h2>Set ECS Cluster</h2><br>
 
 <!-- Trigger -->
-<a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="currentCluster" class="aui-button aui-style-default aui-dropdown2-trigger"></a>
+<a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="currentCluster"
+   class="aui-button aui-style-default aui-dropdown2-trigger"></a>
 
 <!-- Dropdown -->
 <div id="clusters" class="aui-style-default aui-dropdown2">
@@ -53,7 +58,7 @@
     function processResource(callback, relativeEndpoint) {
         var xmlHttp = new XMLHttpRequest();
         xmlHttp.open("GET", restEndpoint + relativeEndpoint, true);
-        xmlHttp.onload = function() {
+        xmlHttp.onload = function () {
             if (xmlHttp.readyState === 4) {
                 if (xmlHttp.status === 200) {
                     callback(xmlHttp.responseText);
@@ -62,7 +67,7 @@
                 }
             }
         };
-        xmlHttp.onerror = function() {
+        xmlHttp.onerror = function () {
             console.error(xmlHttp.statusText);
         };
         xmlHttp.send(null);
@@ -102,15 +107,15 @@
     function deleteImage(revision) {
         $.ajax({
             type: "DELETE",
-            url: restEndpoint+revision,
-            success: function(msg) {
+            url: restEndpoint + revision,
+            success: function (msg) {
                 if (msg === "OK") {
                     location.reload(true);
                 } else {
                     alert(msg);
                 }
             },
-            error: function(err) {
+            error: function (err) {
                 alert(err.responseText);
             }
         });
@@ -123,10 +128,10 @@
             url: restEndpoint,
             contentType: 'text/plain',
             data: dockerImage,
-            success: function(msg) {
+            success: function (msg) {
                 location.reload(true);
             },
-            error: function(err) {
+            error: function (err) {
                 alert(err.responseText);
             }
         });
@@ -135,13 +140,13 @@
     function setCluster(clusterName) {
         $.ajax({
             type: "POST",
-            url: restEndpoint +"cluster",
+            url: restEndpoint + "cluster",
             contentType: 'text/plain',
             data: clusterName,
-            success: function(msg) {
+            success: function (msg) {
                 location.reload(true);
             },
-            error: function(err) {
+            error: function (err) {
                 alert(err.responseText);
             }
         });

@@ -18,4 +18,5 @@ package com.atlassian.buildeng.ecs;
 
 import com.opensymphony.xwork2.ActionSupport;
 
-public class DockerConfigurationAction extends ActionSupport {}
+public class DockerConfigurationAction extends ActionSupport {
+}

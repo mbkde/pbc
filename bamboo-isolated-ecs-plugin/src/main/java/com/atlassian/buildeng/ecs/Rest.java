@@ -49,12 +49,12 @@ public class Rest {
     @Produces({MediaType.APPLICATION_JSON})
     public Response getAllDockerMappings() {
         return Response.ok(
-            dockerAgent.getAllRegistrations().entrySet().stream().map((Map.Entry<String, Integer> entry) -> {
-                HashMap<String, Object> obj = new HashMap<>();
-                obj.put("dockerImage", entry.getKey());
-                obj.put("revision", entry.getValue());
-                return obj;
-        }).toArray()).build();
+                dockerAgent.getAllRegistrations().entrySet().stream().map((Map.Entry<String, Integer> entry) -> {
+                    HashMap<String, Object> obj = new HashMap<>();
+                    obj.put("dockerImage", entry.getKey());
+                    obj.put("revision", entry.getValue());
+                    return obj;
+                }).toArray()).build();
     }
 
     @WebSudoRequired

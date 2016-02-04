@@ -22,8 +22,7 @@ public final class IsolatedDockerAgentRequest {
     private final String buildResultKey;
 
     /**
-     *
-     * @param dockerImage - image for isolated docker agent to use
+     * @param dockerImage    - image for isolated docker agent to use
      * @param buildResultKey
      */
     public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey) {

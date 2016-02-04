@@ -19,11 +19,18 @@ package com.atlassian.buildeng.ecs;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ecs.AmazonECSClient;
-import com.amazonaws.services.ecs.model.*;
+import com.amazonaws.services.ecs.model.ContainerDefinition;
+import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
+import com.amazonaws.services.ecs.model.Failure;
+import com.amazonaws.services.ecs.model.ListClustersResult;
+import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
+import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
+import com.amazonaws.services.ecs.model.RunTaskRequest;
+import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
 import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
-import com.atlassian.bamboo.utils.SystemProperty;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -113,7 +120,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     private void updateCache() {
         if (cacheValid.compareAndSet(false, true)) {
-            ConcurrentHashMap<String, Integer> values =(ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
+            ConcurrentHashMap<String, Integer> values = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
             if (values != null) {
                 this.dockerMappings = values;
             }
@@ -124,7 +131,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         cacheValid.set(false);
     }
 
-    private AmazonECSClient createClient () throws Exception {
+    private AmazonECSClient createClient() throws Exception {
         final ElasticConfiguration elasticConfig = elasticAccountBean.getElasticConfig();
         if (elasticConfig != null) {
             AWSCredentials awsCredentials = new BasicAWSCredentials(elasticConfig.getAwsAccessKeyId(),
@@ -138,7 +145,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     // ECS Cluster management
 
     /**
-     * Get the ECS cluster currently that is currently configured to be used
+     * Get the ECS cluster that is currently configured to be used
+     *
      * @return The current cluster name
      */
     String getCurrentCluster() {
@@ -148,14 +156,16 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     /**
      * Set the ECS cluster to run isolated docker agents on
+     *
      * @param name The cluster name
      */
-    void setCluster (String name) {
+    void setCluster(String name) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, name);
     }
 
     /**
      * Get a collection of potential ECS clusters to use
+     *
      * @return The collection of cluster names
      */
     Either<String, Collection<String>> getValidClusters() {
@@ -201,6 +211,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     /**
      * Synchronously register a docker image to be used with isolated docker builds
+     *
      * @param dockerImage The image to register
      * @return The internal identifier for the registered image.
      */
@@ -225,6 +236,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     /**
      * Synchronously deregister the docker image with given task revision
+     *
      * @param revision The internal ECS task definition to deregister
      */
     public Maybe<String> deregisterDockerImage(Integer revision) {
