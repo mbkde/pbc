@@ -1,8 +1,11 @@
-
 package com.atlassian.buildeng.spi.isolated.docker;
 
 public interface IsolatedAgentService {
-
-    public IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest request) throws Exception;
-
+    /**
+     * Start an isolated docker agent to handle the build request
+     *
+     * @param request - request object
+     * @return Any errors from the agent startup
+     */
+    IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest request);
 }

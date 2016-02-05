@@ -29,11 +29,12 @@ import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
 
@@ -62,7 +63,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
             final BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
-            buildLogger.addBuildLogEntry("Docker image "  + config.getDockerImage() + " used to build this job");
+            buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
         }
         return buildContext;
     }
@@ -87,7 +88,6 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     }
 
 
-
     @Override
     public void removeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
         requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(Constants.CAPABILITY));
@@ -102,8 +102,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     }
 
     @Override
-    public void addDefaultValues(@NotNull final BuildConfiguration buildConfiguration)
-    {
+    public void addDefaultValues(@NotNull final BuildConfiguration buildConfiguration) {
         super.addDefaultValues(buildConfiguration);
         buildConfiguration.addProperty(Constants.ENABLED_FOR_JOB, false);
         buildConfiguration.addProperty(Constants.DOCKER_IMAGE, "docker:xxx");

@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.isolated.docker;
+package com.atlassian.buildeng.ecs;
 
-import com.atlassian.bamboo.v2.build.agent.capability.Capability;
+import com.opensymphony.xwork2.ActionSupport;
 
-public interface Constants {
-    public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
-    public static final String DOCKER_IMAGE = "custom.isolated.docker.image";
-    public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
-    public static final String RESULT_DOCKER_IMAGE = "isolated.docker.image";
+public class DockerConfigurationAction extends ActionSupport {
 }
