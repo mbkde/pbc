@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -168,7 +168,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      *
      * @return The collection of cluster names
      */
-    Either<String, Collection<String>> getValidClusters() {
+    Either<String, List<String>> getValidClusters() {
         try {
             AmazonECSClient ecsClient = createClient();
             ListClustersResult result = ecsClient.listClusters();
@@ -181,7 +181,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     // Isolated Agent Service methods
 
     @Override
-    public IsolatedDockerAgentResult startInstance(IsolatedDockerAgentRequest req) {
+    public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) {
         Integer revision = dockerMappings.get(req.getDockerImage());
         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
 
@@ -215,7 +215,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      * @param dockerImage The image to register
      * @return The internal identifier for the registered image.
      */
-    public Either<String, Integer> registerDockerImage(String dockerImage) {
+    Either<String, Integer> registerDockerImage(String dockerImage) {
         updateCache();
         if (dockerMappings.containsKey(dockerImage)) {
             return Either.left(String.format("Docker image '%s' is already registered.", dockerImage));
@@ -239,7 +239,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      *
      * @param revision The internal ECS task definition to deregister
      */
-    public Maybe<String> deregisterDockerImage(Integer revision) {
+    Maybe<String> deregisterDockerImage(Integer revision) {
         updateCache();
         if (dockerMappings.containsValue(revision)) {
             try {
@@ -260,7 +260,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     /**
      * @return All the docker image:identifier pairs this service has registered
      */
-    public Map<String, Integer> getAllRegistrations() {
+    Map<String, Integer> getAllRegistrations() {
         updateCache();
         return dockerMappings;
     }

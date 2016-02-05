@@ -58,7 +58,7 @@ public class PreBuildQueuedEventListener {
             try {
                 buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_DOCKER_IMAGE, config.getDockerImage());
 
-                IsolatedDockerAgentResult result = isolatedAgentService.startInstance(
+                IsolatedDockerAgentResult result = isolatedAgentService.startAgent(
                         new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
                 if (result.hasErrors()) {
                     terminate = true;

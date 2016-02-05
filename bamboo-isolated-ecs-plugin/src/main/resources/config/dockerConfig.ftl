@@ -74,12 +74,11 @@
     }
 
     function processMappings(blob) {
-        var mappings = JSON.parse(blob);
-        drawTable(mappings);
+        drawTable(JSON.parse(blob));
     }
 
     function processValidClusters(blob) {
-        var clusters = JSON.parse(blob);
+        var clusters = JSON.parse(blob)["clusters"];
         var l = clusters.length;
         for (var i = 0; i < l; i++) {
             clusterList.innerHTML += '<li><a href="javascript:setCluster(\'' + clusters[i] + '\')">' + clusters[i] + '</a></li>';
@@ -88,19 +87,21 @@
     }
 
     function processCurrentCluster(cluster) {
-
-        currentCluster.innerHTML += cluster;
+        currentCluster.innerHTML += JSON.parse(cluster)["currentCluster"];
     }
 
     function drawTable(data) {
-        var l = data.length;
+        var mappings = data["mappings"];
+        var l = mappings.length;
         var table = document.getElementById("dockerImageTable");
         for (var i = 0; i < l; i++) {
+            var dockerImage = mappings[i]["dockerImage"];
+            var revision = mappings[i]["revision"];
             var row = table.insertRow();
             var cell1 = row.insertCell(0);
             var cell2 = row.insertCell(1);
-            cell1.innerHTML = data[i]["dockerImage"];
-            cell2.innerHTML = '<button type="button" class="aui-button" onclick="deleteImage(' + data[i]["revision"] + ')">Deregister</button>';
+            cell1.innerHTML = dockerImage;
+            cell2.innerHTML = '<button type="button" class="aui-button" onclick="deleteImage(' + revision + ')">Deregister</button>';
         }
     }
 
@@ -108,12 +109,8 @@
         $.ajax({
             type: "DELETE",
             url: restEndpoint + revision,
-            success: function (msg) {
-                if (msg === "OK") {
-                    location.reload(true);
-                } else {
-                    alert(msg);
-                }
+            success: function () {
+                location.reload(true);
             },
             error: function (err) {
                 alert(err.responseText);
@@ -126,9 +123,9 @@
         $.ajax({
             type: "POST",
             url: restEndpoint,
-            contentType: 'text/plain',
-            data: dockerImage,
-            success: function (msg) {
+            contentType: 'application/json',
+            data: '{"dockerImage": "' + dockerImage.trim() + '" }',
+            success: function () {
                 location.reload(true);
             },
             error: function (err) {
@@ -137,13 +134,13 @@
         });
     }
 
-    function setCluster(clusterName) {
+    function setCluster(cluster) {
         $.ajax({
             type: "POST",
             url: restEndpoint + "cluster",
-            contentType: 'text/plain',
-            data: clusterName,
-            success: function (msg) {
+            contentType: 'application/json',
+            data: '{"cluster": "' + cluster.trim() + '" }',
+            success: function () {
                 location.reload(true);
             },
             error: function (err) {

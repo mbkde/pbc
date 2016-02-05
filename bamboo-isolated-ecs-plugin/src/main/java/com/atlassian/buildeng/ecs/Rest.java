@@ -16,7 +16,14 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.atlassian.bandana.BandanaManager;
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+import com.atlassian.buildeng.ecs.rest.DockerMapping;
+import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
+import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
+import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
+import com.atlassian.buildeng.ecs.rest.RegisterImageResponse;
+import com.atlassian.buildeng.ecs.rest.SetClusterResponse;
 import com.atlassian.fugue.Maybe;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,72 +37,89 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Path("/")
 public class Rest {
     private final ECSIsolatedAgentServiceImpl dockerAgent;
 
     @Autowired
-    public Rest(BandanaManager bandanaManager, ECSIsolatedAgentServiceImpl dockerAgent) {
+    public Rest(ECSIsolatedAgentServiceImpl dockerAgent) {
         this.dockerAgent = dockerAgent;
     }
 
     // REST endpoints
 
     @GET
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
         return Response.ok(
-                dockerAgent.getAllRegistrations().entrySet().stream().map((Map.Entry<String, Integer> entry) -> {
-                    HashMap<String, Object> obj = new HashMap<>();
-                    obj.put("dockerImage", entry.getKey());
-                    obj.put("revision", entry.getValue());
-                    return obj;
-                }).toArray()).build();
+                new GetAllImagesResponse(dockerAgent.getAllRegistrations().entrySet().stream().map(
+                        (Map.Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
+                ).collect(Collectors.toList())
+                )
+        ).build();
     }
 
     @WebSudoRequired
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response create(String dockerImage) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response create(String requestString) {
+        String dockerImage = null;
+        try {
+            JSONObject o = new JSONObject(requestString);
+            dockerImage = o.getString("dockerImage");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (dockerImage == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
+        }
         return dockerAgent.registerDockerImage(dockerImage).fold(
                 (String err) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(err).build(),
-                (Integer revision) -> Response.ok("" + revision).build());
+                (Integer revision) -> Response.ok(new RegisterImageResponse(revision)).build());
     }
 
     @WebSudoRequired
     @DELETE
-    @Produces(MediaType.TEXT_PLAIN)
     @Path("/{revision}")
     public Response delete(@PathParam("revision") Integer revision) {
         Maybe<String> result = dockerAgent.deregisterDockerImage(revision);
         if (result.isDefined()) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(result.get()).build();
         } else {
-            return Response.ok().entity("OK").build();
+            return Response.noContent().build();
         }
     }
 
-
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster")
-    public Response getCluster() {
-        return Response.ok().entity(dockerAgent.getCurrentCluster()).build();
+    public Response getCurrentCluster() {
+        return Response.ok(new GetCurrentClusterResponse(dockerAgent.getCurrentCluster())).build();
     }
 
     @WebSudoRequired
     @POST
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/cluster")
-    public Response setCluster(String name) {
-        dockerAgent.setCluster(name);
-        return Response.ok().entity(name).build();
+    public Response setCluster(String requestString) {
+        String cluster = null;
+        try {
+            JSONObject o = new JSONObject(requestString);
+            cluster = o.getString("cluster");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (cluster == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
+        }
+        dockerAgent.setCluster(cluster);
+        return Response.ok(new SetClusterResponse(dockerAgent.getCurrentCluster())).build();
     }
 
     @WebSudoRequired
@@ -105,7 +129,8 @@ public class Rest {
     public Response getValidClusters() {
         return dockerAgent.getValidClusters().fold(
                 (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ecsError).build(),
-                (Collection<String> clusters) -> Response.ok(clusters.toArray()).build());
+                (List<String> clusters) -> Response.ok(new GetValidClustersResponse(clusters)).build()
+        );
     }
 }
 
