@@ -21,8 +21,9 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
-import java.util.concurrent.TimeoutException;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeoutException;
 
 public class PostJobActionImpl implements PostJobAction {
     private final org.slf4j.Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);

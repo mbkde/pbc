@@ -28,11 +28,12 @@ import com.atlassian.event.api.EventListener;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * this class is an event listener because preBuildQueuedAction requires restart
  * of bamboo when re-deployed.
  */
-public class PreBuildQueuedEventListener  {
+public class PreBuildQueuedEventListener {
 
     private final IsolatedAgentService isolatedAgentService;
     private final Logger LOG = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
@@ -40,9 +41,9 @@ public class PreBuildQueuedEventListener  {
     private final BuildQueueManager buildQueueManager;
 
 
-    public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService, 
-            ErrorUpdateHandler errorUpdateHandler,
-            BuildQueueManager buildQueueManager) {
+    public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
+                                       ErrorUpdateHandler errorUpdateHandler,
+                                       BuildQueueManager buildQueueManager) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -57,12 +58,11 @@ public class PreBuildQueuedEventListener  {
             try {
                 buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_DOCKER_IMAGE, config.getDockerImage());
 
-                IsolatedDockerAgentResult result = isolatedAgentService.startInstance(
-                        new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey(),
-                                "staging-bamboo")); //TODO don't hardcode.
+                IsolatedDockerAgentResult result = isolatedAgentService.startAgent(
+                        new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
                 if (result.hasErrors()) {
                     terminate = true;
-                    errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error:" +  Joiner.on("\n").join(result.getErrors()));
+                    errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
                 }
             } catch (Exception ex) {
                 terminate = true;

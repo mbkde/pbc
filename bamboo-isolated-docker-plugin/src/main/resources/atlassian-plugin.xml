@@ -9,22 +9,25 @@
     <resource type="i18n" name="i18n" location="isolated-docker-plugin"/>
 
     <preBuildAction key="measureContainerStartup" name="Measure time to start Container Agent"
-                  class="com.atlassian.buildeng.isolated.docker.CustomPreBuildActionImpl">
+                    class="com.atlassian.buildeng.isolated.docker.CustomPreBuildActionImpl">
         <description>Measure the time between queue time and start time.</description>
         <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
         <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </preBuildAction>
 
-    <buildProcessor key="stopContainerAgent" name="Stop Container Agent" class="com.atlassian.buildeng.isolated.docker.StopDockerAgentBuildProcessor">
+    <buildProcessor key="stopContainerAgent" name="Stop Container Agent"
+                    class="com.atlassian.buildeng.isolated.docker.StopDockerAgentBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
-    <component-import key="isolatedAgentService" interface="com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService"/>
-
-    <bambooEventListener key="bambooEventListener" name="Bamboo Event Listener" class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
+    <component-import key="isolatedAgentService"
+                      interface="com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService"/>
+    <bambooEventListener key="bambooEventListener" name="Bamboo Event Listener"
+                         class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
-    
-    <postJobAction key="postJobActionImpl" name="PostJobActionImpl" class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
+
+    <postJobAction key="postJobActionImpl" name="PostJobActionImpl"
+                   class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
     </postJobAction>
 
   <web-resource key="dcoker-ui-js" name="JavaScript to modify task panels.">

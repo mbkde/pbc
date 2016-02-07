@@ -20,8 +20,9 @@ import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import java.util.Map;
+
 import javax.annotation.Nonnull;
+import java.util.Map;
 
 public final class Configuration {
 
@@ -29,8 +30,7 @@ public final class Configuration {
     private final boolean enabled;
     private final String dockerImage;
 
-    private Configuration(boolean enabled, String image)
-    {
+    private Configuration(boolean enabled, String image) {
         this.enabled = enabled;
         this.dockerImage = image;
     }
@@ -72,5 +72,5 @@ public final class Configuration {
         return dockerImage;
     }
 
-    
+
 }
