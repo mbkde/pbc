@@ -30,7 +30,7 @@
                    class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
     </postJobAction>
 
-  <web-resource key="dcoker-ui-js" name="JavaScript to modify task panels.">
+  <web-resource key="docker-ui-js" name="JavaScript to modify task panels.">
     <dependency>com.atlassian.plugins.jquery:jquery</dependency>
     <dependency>com.atlassian.auiplugin:ajs</dependency>
 
