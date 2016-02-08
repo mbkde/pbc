@@ -23,7 +23,7 @@ public final class IsolatedDockerAgentRequest {
 
     /**
      * @param dockerImage    - image for isolated docker agent to use
-     * @param buildResultKey
+     * @param buildResultKey - bamboo build result key
      */
     public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey) {
         this.dockerImage = dockerImage;
