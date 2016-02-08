@@ -1,6 +1,5 @@
 package com.atlassian.buildeng.ecs.exceptions;
 
-import com.atlassian.bamboo.utils.map.StringArrayMap;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 
 /**
@@ -9,12 +8,12 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 public class ImageNotRegisteredException extends IsolatedDockerAgentException {
     private String dockerImage;
 
-    public String getDockerImage() {
-        return dockerImage;
-    }
-
     public ImageNotRegisteredException(String dockerImage) {
         this.dockerImage = dockerImage;
+    }
+
+    public String getDockerImage() {
+        return dockerImage;
     }
 
     @Override

@@ -16,13 +16,13 @@
 
 /* global insertionQ, BAMBOO */
 
-AJS.$(document).ready(function() {
+AJS.$(document).ready(function () {
     var path = window.location.pathname;
     var isJobTaskEdit = path.indexOf("/build/admin/edit/editBuildTasks.action") !== -1;
     if (isJobTaskEdit) {
         var indexedData = {};
-        var update = function(cache) {
-            if( $('.task-config').length) {
+        var update = function (cache) {
+            if ($('.task-config').length) {
                 var data = {};
                 if (cache.enabled) { //0 is newly added task.. if docker is enabled, put it here to modify that ui as well.
                     data[0] = {};
@@ -35,9 +35,9 @@ AJS.$(document).ready(function() {
                 indexedData = data;
             }
         };
-        var findTaskIndex = function() {
+        var findTaskIndex = function () {
             var index = $("form#updateTask input#updateTask_taskId").attr("value");
-            if (! index ) {
+            if (!index) {
                 index = $("form#createTask input#createTask_taskId").attr("value");
             }
             return index;
