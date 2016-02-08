@@ -1,9 +1,5 @@
 package com.atlassian.buildeng.ecs.exceptions;
 
-import com.amazonaws.services.ecs.model.ClientException;
-import com.amazonaws.services.ecs.model.ClusterNotFoundException;
-import com.amazonaws.services.ecs.model.InvalidParameterException;
-import com.amazonaws.services.ecs.model.ServerException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 
 /**

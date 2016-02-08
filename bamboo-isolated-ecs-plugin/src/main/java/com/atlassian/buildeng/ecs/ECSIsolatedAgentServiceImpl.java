@@ -39,9 +39,6 @@ import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
-import com.atlassian.fugue.Either;
-import com.atlassian.fugue.Maybe;
-import com.atlassian.fugue.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,12 +53,18 @@ import java.util.stream.Collectors;
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
+    private static AtomicBoolean cacheValid = new AtomicBoolean(false);
     private final ElasticAccountBean elasticAccountBean;
     private BandanaManager bandanaManager;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
-    private static AtomicBoolean cacheValid = new AtomicBoolean(false);
 
 
+    @Autowired
+    public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean, BandanaManager bandanaManager) {
+        this.elasticAccountBean = elasticAccountBean;
+        this.bandanaManager = bandanaManager;
+        this.updateCache();
+    }
 
     // Constructs a standard build agent container definition with the given docker image name
     private static ContainerDefinition agentDefinition(String dockerImage) {
@@ -80,19 +83,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         return new DeregisterTaskDefinitionRequest().withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision);
     }
 
-    @Autowired
-    public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean, BandanaManager bandanaManager) {
-        this.elasticAccountBean = elasticAccountBean;
-        this.bandanaManager = bandanaManager;
-        this.updateCache();
-    }
-
     // Bandana + Caching
 
     private void updateCache() {
         if (cacheValid.compareAndSet(false, true)) {
             ConcurrentHashMap<String, Integer> values = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
-             if (values != null) {
+            if (values != null) {
                 this.dockerMappings = values;
             }
         }
