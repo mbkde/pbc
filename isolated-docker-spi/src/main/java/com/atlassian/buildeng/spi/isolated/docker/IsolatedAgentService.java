@@ -6,7 +6,7 @@ public interface IsolatedAgentService {
      *
      * @param request - request object
      * @return Any implementation specific errors that prevent agent startup
-     * @throws Exception Any bamboo related errors that prevent agent startup
+     * @throws IsolatedDockerAgentException Any bamboo related errors that prevent agent startup
      */
     IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest request) throws IsolatedDockerAgentException;
 }
