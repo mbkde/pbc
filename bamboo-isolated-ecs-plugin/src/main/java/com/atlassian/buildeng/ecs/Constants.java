@@ -1,0 +1,46 @@
+package com.atlassian.buildeng.ecs;
+
+import com.amazonaws.services.ecs.model.ContainerDefinition;
+import com.amazonaws.services.ecs.model.VolumeFrom;
+
+/**
+ * Created by obrent on 8/02/2016.
+ */
+public interface Constants {
+    // Bandana access keys
+    static final String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
+    static final String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker";
+
+    // ECS
+
+    // The name of the sidekick docker image and sidekick container
+    static final String SIDEKICK_NAME = "bamboo-agent-sidekick";
+
+    // The name of the agent container
+    static final String AGENT_NAME = "bamboo-agent";
+
+    // The name used for the generated task definition (a.k.a. family)
+    static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
+
+    // The name of the atlassian docker registry
+    static final String ATLASSIAN_REGISTRY = "docker.atlassian.io";
+
+    // The default cluster to use
+    static final String DEFAULT_CLUSTER = "staging_bamboo";
+
+    // The container definition of the sidekick
+    static final ContainerDefinition SIDEKICK_DEFINITION =
+            new ContainerDefinition()
+                    .withName(SIDEKICK_NAME)
+                    .withImage(ATLASSIAN_REGISTRY + "/" + SIDEKICK_NAME)
+                    .withCpu(10)
+                    .withMemory(512);
+
+    // The container definition of the standard spec build agent, sans docker image name
+    static final ContainerDefinition AGENT_BASE_DEFINITION =
+            new ContainerDefinition()
+                    .withName(AGENT_NAME)
+                    .withCpu(900)
+                    .withMemory(3072)
+                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME));
+}

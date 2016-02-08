@@ -18,13 +18,16 @@ package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
+import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
+import com.atlassian.buildeng.ecs.exceptions.MissingElasticConfigException;
+import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.ecs.rest.RegisterImageResponse;
 import com.atlassian.buildeng.ecs.rest.SetClusterResponse;
-import com.atlassian.fugue.Maybe;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -55,12 +58,10 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
-        return Response.ok(
-                new GetAllImagesResponse(dockerAgent.getAllRegistrations().entrySet().stream().map(
-                        (Map.Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
-                ).collect(Collectors.toList())
-                )
-        ).build();
+        Map<String, Integer> mappings = dockerAgent.getAllRegistrations();
+        return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
+                (Map.Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
+        ).collect(Collectors.toList()))).build();
     }
 
     @WebSudoRequired
@@ -78,20 +79,27 @@ public class Rest {
         if (dockerImage == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
         }
-        return dockerAgent.registerDockerImage(dockerImage).fold(
-                (String err) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(err).build(),
-                (Integer revision) -> Response.ok(new RegisterImageResponse(revision)).build());
+        try {
+            Integer revision = dockerAgent.registerDockerImage(dockerImage);
+            return Response.ok(new RegisterImageResponse(revision)).build();
+        } catch (ImageAlreadyRegisteredException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+        } catch (MissingElasticConfigException | ECSException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }
     }
 
     @WebSudoRequired
     @DELETE
     @Path("/{revision}")
     public Response delete(@PathParam("revision") Integer revision) {
-        Maybe<String> result = dockerAgent.deregisterDockerImage(revision);
-        if (result.isDefined()) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(result.get()).build();
-        } else {
+        try {
+            dockerAgent.deregisterDockerImage(revision);
             return Response.noContent().build();
+        } catch (RevisionNotActiveException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+        } catch (MissingElasticConfigException | ECSException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }
     }
 
@@ -108,12 +116,12 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/cluster")
     public Response setCluster(String requestString) {
-        String cluster = null;
+        String cluster;
         try {
             JSONObject o = new JSONObject(requestString);
             cluster = o.getString("cluster");
         } catch (JSONException e) {
-            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (cluster == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
@@ -127,10 +135,12 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")
     public Response getValidClusters() {
-        return dockerAgent.getValidClusters().fold(
-                (String ecsError) -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ecsError).build(),
-                (List<String> clusters) -> Response.ok(new GetValidClustersResponse(clusters)).build()
-        );
+        try {
+            List<String> clusters = dockerAgent.getValidClusters();
+            return Response.ok(new GetValidClustersResponse(clusters)).build();
+        } catch (MissingElasticConfigException | ECSException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }
+
     }
 }
-
