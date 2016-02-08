@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
