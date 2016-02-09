@@ -1,5 +1,7 @@
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import java.util.List;
+
 public interface IsolatedAgentService {
     /**
      * Start an isolated docker agent to handle the build request
@@ -9,4 +11,6 @@ public interface IsolatedAgentService {
      * @throws IsolatedDockerAgentException Any bamboo related errors that prevent agent startup
      */
     IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest request) throws IsolatedDockerAgentException;
+
+    List<String> getKnownDockerImages();
 }
