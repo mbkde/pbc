@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
+import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 
 /**
@@ -23,18 +24,36 @@ public interface Constants {
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
     // The name of the atlassian docker registry
-    static final String ATLASSIAN_REGISTRY = "docker.atlassian.io";
+    // TODO: This currently uses the ECR registry, once vault/secrets are done revert to docker.atlassian.io
+    static final String SIDEKICK_REPOSITORY = "960714566901.dkr.ecr.us-east-1.amazonaws.com/bamboo-agent-sidekick";
 
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";
+
+    // The environment variable to override on the agent per image
+    static final String IMAGE_ENV_VAR = "IMAGE_ID";
+
+    // The environment variable to overide on the agent per server
+    static final String SERVER_ENV_VAR = "BAMBOO_SERVER";
+
+    // The working directory of isolated agents
+    static final String WORK_DIR = "/buildeng";
+
+    // The script which runs the bamboo agent jar appropriately
+    static final String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
+
+    // The running server url
+    // TODO: Remove from Constants, and have configurable per serve
+    static final String THIS_SERVER_URL = "https://staging-bamboo.internal.atlassian.com";
 
     // The container definition of the sidekick
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
                     .withName(SIDEKICK_NAME)
-                    .withImage(ATLASSIAN_REGISTRY + "/" + SIDEKICK_NAME)
+                    .withImage(SIDEKICK_REPOSITORY)
                     .withCpu(10)
-                    .withMemory(512);
+                    .withMemory(512)
+                    .withEssential(false);
 
     // The container definition of the standard spec build agent, sans docker image name
     static final ContainerDefinition AGENT_BASE_DEFINITION =
@@ -42,5 +61,8 @@ public interface Constants {
                     .withName(AGENT_NAME)
                     .withCpu(900)
                     .withMemory(3072)
-                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME));
+                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME))
+                    .withCommand(RUN_SCRIPT)
+                    .withWorkingDirectory(WORK_DIR)
+                    .withEnvironment(new KeyValuePair().withName(SERVER_ENV_VAR).withValue(THIS_SERVER_URL));
 }
