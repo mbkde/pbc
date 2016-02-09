@@ -26,7 +26,8 @@ import com.atlassian.bamboo.util.Narrow;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
+import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -40,11 +41,12 @@ import java.util.logging.Logger;
 public class UIRest {
 
     private final CachedPlanManager cpm;
+    private final IsolatedAgentService isolatedAgentService;
 
-    public UIRest(CachedPlanManager cpm) {
+    public UIRest(CachedPlanManager cpm, IsolatedAgentService isolatedAgentService) {
         this.cpm = cpm;
+        this.isolatedAgentService = isolatedAgentService;
     }
-
 
     @GET
     @Path("/enabled")
@@ -79,4 +81,12 @@ public class UIRest {
         }
         return Response.ok().entity(toRet.toString()).build();
     }
+
+    @GET
+    @Path("/knownImages")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> getKnownImages() {
+        return isolatedAgentService.getKnownDockerImages();
+    }
+
 }

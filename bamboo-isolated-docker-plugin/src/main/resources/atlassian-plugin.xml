@@ -40,6 +40,17 @@
         <context>bamboo.configuration</context>
     </web-resource>
 
+
+    <web-resource key="docker-job-ui-js" name="JavaScript for misc panel.">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+        <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
+        <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
+
+        <resource type="download" name="jobConfiguration.js" location="/templates/plugin/jobConfiguration.js"/>
+        <context>docker.jobConfiguration</context>
+    </web-resource>
+
     <rest key="docker" path="/docker-ui" version="1.0">
         <description>Provides the REST resource for javascript code</description>
     </rest>

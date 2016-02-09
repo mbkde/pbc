@@ -40,6 +40,8 @@ import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,9 +56,9 @@ import java.util.stream.Collectors;
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
-    private static AtomicBoolean cacheValid = new AtomicBoolean(false);
+    private static final AtomicBoolean cacheValid = new AtomicBoolean(false);
     private final ElasticAccountBean elasticAccountBean;
-    private BandanaManager bandanaManager;
+    private final BandanaManager bandanaManager;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
 
 
@@ -231,5 +233,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     Map<String, Integer> getAllRegistrations() {
         updateCache();
         return dockerMappings;
+    }
+
+    @Override
+    public List<String> getKnownDockerImages() {
+        List<String> toRet = new ArrayList<>(getAllRegistrations().keySet());
+        // sort for sake of UI/consistency?
+        Collections.sort(toRet);
+        return toRet;
     }
 }
