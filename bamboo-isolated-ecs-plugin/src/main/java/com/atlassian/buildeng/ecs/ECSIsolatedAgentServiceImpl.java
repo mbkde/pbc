@@ -173,7 +173,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                     if (err.startsWith("RESOURCE")) {
                         logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
                         finished = false; // Retry
-                        wait(5000); // 5 Seconds is a good amount of time.
+                        Thread.sleep(5000); // 5 Seconds is a good amount of time.
                     } else {
                         toRet = toRet.withError(err);
                         finished = true; // Not a resource error, we don't handle
