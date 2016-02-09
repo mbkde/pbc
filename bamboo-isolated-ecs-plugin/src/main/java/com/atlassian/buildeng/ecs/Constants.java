@@ -37,7 +37,7 @@ public interface Constants {
     static final String SERVER_ENV_VAR = "BAMBOO_SERVER";
 
     // The working directory of isolated agents
-    static final String WORK_DIR = "/root/buildeng";
+    static final String WORK_DIR = "/buildeng";
 
     // The script which runs the bamboo agent jar appropriately
     static final String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
