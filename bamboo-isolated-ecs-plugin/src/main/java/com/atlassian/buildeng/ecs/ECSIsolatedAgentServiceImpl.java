@@ -161,15 +161,32 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 .withCluster(getCurrentCluster())
                 .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
                 .withCount(1);
-        try {
-            logger.info("Spinning up new docker agent from task definition %s:%d %s", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            logger.info("ECS Returned: {}", runTaskResult.toString());
-            for (Failure err : runTaskResult.getFailures()) {
-                toRet = toRet.withError(err.getReason());
+        boolean finished = false;
+        while (!finished) {
+            try {
+                logger.info("Spinning up new docker agent from task definition %s:%d %s", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
+                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
+                logger.info("ECS Returned: {}", runTaskResult.toString());
+                List<Failure> failures = runTaskResult.getFailures();
+                if (failures.size() == 1) {
+                    String err = failures.get(0).getReason();
+                    if (err.startsWith("RESOURCE")) {
+                        logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+                        finished = false; // Retry
+                        wait(5000); // 5 Seconds is a good amount of time.
+                    } else {
+                        toRet = toRet.withError(err);
+                        finished = true; // Not a resource error, we don't handle
+                    }
+                } else {
+                    for (Failure err : runTaskResult.getFailures()) {
+                        toRet = toRet.withError(err.getReason());
+                    }
+                    finished = true; // Either 0 or many errors, either way we're done
+                 }
+            } catch (Exception e) {
+                throw new ECSException(e);
             }
-        } catch (Exception e) {
-            throw new ECSException(e);
         }
         return toRet;
     }
