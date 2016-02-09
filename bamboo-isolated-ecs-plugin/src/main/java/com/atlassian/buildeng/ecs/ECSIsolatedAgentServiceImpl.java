@@ -22,6 +22,7 @@ import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.Failure;
+import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
@@ -68,7 +69,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     // Constructs a standard build agent container definition with the given docker image name
     private static ContainerDefinition agentDefinition(String dockerImage) {
-        return Constants.AGENT_BASE_DEFINITION.withImage(dockerImage);
+        return Constants.AGENT_BASE_DEFINITION
+                .withImage(dockerImage)
+                .withEnvironment(new KeyValuePair().withName(Constants.IMAGE_ENV_VAR).withValue(dockerImage));
     }
 
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
