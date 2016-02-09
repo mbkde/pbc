@@ -24,8 +24,8 @@ public interface Constants {
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
     // The name of the atlassian docker registry
-    // TODO: This is currently the ECR registry, once vault/secrets are done revert to docker.atlassian.io
-    static final String ATLASSIAN_REGISTRY = "960714566901.dkr.ecr.us-east-1.amazonaws.com";
+    // TODO: This currently uses the ECR registry, once vault/secrets are done revert to docker.atlassian.io
+    static final String SIDEKICK_REPOSITORY = "960714566901.dkr.ecr.us-east-1.amazonaws.com/bamboo-agent-sidekick";
 
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";
@@ -50,7 +50,7 @@ public interface Constants {
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
                     .withName(SIDEKICK_NAME)
-                    .withImage(ATLASSIAN_REGISTRY + "/" + SIDEKICK_NAME)
+                    .withImage(SIDEKICK_REPOSITORY)
                     .withCpu(10)
                     .withMemory(512)
                     .withEssential(false);
