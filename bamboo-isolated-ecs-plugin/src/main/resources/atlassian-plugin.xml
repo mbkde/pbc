@@ -18,6 +18,9 @@
 
     <web-resource key="aui-stuff">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+        <resource type="download" name="viewDockerConfiguration.js" location="/viewDockerConfiguration.js"/>
+        <context>viewDockerConfiguration</context>
     </web-resource>
 
     <web-item key="docker-config" name="Configure Isolated Docker" section="system.admin/plugins" weight="10">
