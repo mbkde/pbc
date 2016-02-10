@@ -16,8 +16,6 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
@@ -28,24 +26,21 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.atlassian.bamboo.agent.elastic.server.ElasticAccountBean;
-import com.atlassian.bamboo.agent.elastic.server.ElasticConfiguration;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
-import com.atlassian.buildeng.ecs.exceptions.MissingElasticConfigException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
-import java.util.ArrayList;
-import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,14 +52,12 @@ import java.util.stream.Collectors;
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     private static final AtomicBoolean cacheValid = new AtomicBoolean(false);
-    private final ElasticAccountBean elasticAccountBean;
     private final BandanaManager bandanaManager;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
 
 
     @Autowired
-    public ECSIsolatedAgentServiceImpl(ElasticAccountBean elasticAccountBean, BandanaManager bandanaManager) {
-        this.elasticAccountBean = elasticAccountBean;
+    public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager) {
         this.bandanaManager = bandanaManager;
         this.updateCache();
     }
@@ -103,17 +96,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         cacheValid.set(false);
     }
 
-    private AmazonECSClient createClient() throws MissingElasticConfigException {
-        final ElasticConfiguration elasticConfig = elasticAccountBean.getElasticConfig();
-        if (elasticConfig != null) {
-            AWSCredentials awsCredentials = new BasicAWSCredentials(elasticConfig.getAwsAccessKeyId(),
-                    elasticConfig.getAwsSecretKey());
-            return new AmazonECSClient(awsCredentials);
-        } else {
-            MissingElasticConfigException e = new MissingElasticConfigException();
-            logger.error(e.toString());
-            throw e;
-        }
+    private AmazonECSClient createClient() {
+        return new AmazonECSClient();
     }
 
     // ECS Cluster management
@@ -142,7 +126,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      *
      * @return The collection of cluster names
      */
-    List<String> getValidClusters() throws ECSException, MissingElasticConfigException {
+    List<String> getValidClusters() throws ECSException {
         AmazonECSClient ecsClient = createClient();
         try {
             ListClustersResult result = ecsClient.listClusters();
@@ -155,7 +139,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     // Isolated Agent Service methods
 
     @Override
-    public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) throws MissingElasticConfigException, ImageNotRegisteredException, ECSException {
+    public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) throws ImageNotRegisteredException, ECSException {
         Integer revision = dockerMappings.get(req.getDockerImage());
         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         AmazonECSClient ecsClient = createClient();
@@ -188,7 +172,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         toRet = toRet.withError(err.getReason());
                     }
                     finished = true; // Either 0 or many errors, either way we're done
-                 }
+                }
             } catch (Exception e) {
                 throw new ECSException(e);
             }
@@ -204,7 +188,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      * @param dockerImage The image to register
      * @return The internal identifier for the registered image.
      */
-    Integer registerDockerImage(String dockerImage) throws ImageAlreadyRegisteredException, MissingElasticConfigException, ECSException {
+    Integer registerDockerImage(String dockerImage) throws ImageAlreadyRegisteredException, ECSException {
         updateCache();
         if (dockerMappings.containsKey(dockerImage)) {
             throw new ImageAlreadyRegisteredException(dockerImage);
@@ -227,7 +211,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      *
      * @param revision The internal ECS task definition to deregister
      */
-    void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, MissingElasticConfigException, ECSException {
+    void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, ECSException {
         updateCache();
         if (!dockerMappings.containsValue(revision)) {
             throw new RevisionNotActiveException(revision);

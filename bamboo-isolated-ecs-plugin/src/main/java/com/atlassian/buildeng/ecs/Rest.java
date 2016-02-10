@@ -20,7 +20,6 @@ import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
-import com.atlassian.buildeng.ecs.exceptions.MissingElasticConfigException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
@@ -84,7 +83,7 @@ public class Rest {
             return Response.ok(new RegisterImageResponse(revision)).build();
         } catch (ImageAlreadyRegisteredException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
-        } catch (MissingElasticConfigException | ECSException e) {
+        } catch (ECSException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }
     }
@@ -98,7 +97,7 @@ public class Rest {
             return Response.noContent().build();
         } catch (RevisionNotActiveException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
-        } catch (MissingElasticConfigException | ECSException e) {
+        } catch (ECSException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }
     }
@@ -138,7 +137,7 @@ public class Rest {
         try {
             List<String> clusters = dockerAgent.getValidClusters();
             return Response.ok(new GetValidClustersResponse(clusters)).build();
-        } catch (MissingElasticConfigException | ECSException e) {
+        } catch (ECSException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }
 
