@@ -27,6 +27,7 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
+import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
@@ -53,26 +54,26 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     private static final AtomicBoolean cacheValid = new AtomicBoolean(false);
     private final BandanaManager bandanaManager;
+    private final AdministrationConfigurationAccessor admConfAccessor;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
 
 
     @Autowired
-    public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager) {
+    public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
         this.bandanaManager = bandanaManager;
+        this.admConfAccessor = admConfAccessor;
         this.updateCache();
     }
 
-    // Constructs a standard build agent container definition with the given docker image name
-    private static ContainerDefinition agentDefinition(String dockerImage) {
-        return Constants.AGENT_BASE_DEFINITION
-                .withImage(dockerImage)
-                .withEnvironment(new KeyValuePair().withName(Constants.IMAGE_ENV_VAR).withValue(dockerImage));
-    }
-
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    private static RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage) {
+    private static RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage, String baseUrl) {
         return new RegisterTaskDefinitionRequest()
-                .withContainerDefinitions(agentDefinition(dockerImage), Constants.SIDEKICK_DEFINITION)
+                .withContainerDefinitions(
+                        Constants.AGENT_BASE_DEFINITION
+                            .withImage(dockerImage)
+                            .withEnvironment(new KeyValuePair().withName(Constants.SERVER_ENV_VAR).withValue(baseUrl))
+                            .withEnvironment(new KeyValuePair().withName(Constants.IMAGE_ENV_VAR).withValue(dockerImage)),
+                        Constants.SIDEKICK_DEFINITION)
                 .withFamily(Constants.TASK_DEFINITION_NAME);
     }
 
@@ -195,7 +196,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
         AmazonECSClient ecsClient = createClient();
         try {
-            RegisterTaskDefinitionResult result = ecsClient.registerTaskDefinition(taskDefinitionRequest(dockerImage));
+            RegisterTaskDefinitionResult result = ecsClient.registerTaskDefinition(
+                    taskDefinitionRequest(dockerImage, admConfAccessor.getAdministrationConfiguration().getBaseUrl()));
             Integer revision = result.getTaskDefinition().getRevision();
             dockerMappings.put(dockerImage, revision);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);

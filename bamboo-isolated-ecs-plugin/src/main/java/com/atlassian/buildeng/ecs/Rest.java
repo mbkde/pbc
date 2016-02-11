@@ -18,9 +18,7 @@ package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
-import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
-import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
+import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
@@ -67,39 +65,27 @@ public class Rest {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response create(String requestString) {
-        String dockerImage = null;
+    public Response create(String requestString) throws RestableIsolatedDockerException {
+        String dockerImage;
         try {
             JSONObject o = new JSONObject(requestString);
             dockerImage = o.getString("dockerImage");
         } catch (JSONException e) {
-            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).type("text/plain").build();
         }
         if (dockerImage == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
         }
-        try {
-            Integer revision = dockerAgent.registerDockerImage(dockerImage);
-            return Response.ok(new RegisterImageResponse(revision)).build();
-        } catch (ImageAlreadyRegisteredException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
-        } catch (ECSException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }
+        Integer revision = dockerAgent.registerDockerImage(dockerImage);
+        return Response.ok(new RegisterImageResponse(revision)).build();
     }
 
     @WebSudoRequired
     @DELETE
     @Path("/{revision}")
-    public Response delete(@PathParam("revision") Integer revision) {
-        try {
-            dockerAgent.deregisterDockerImage(revision);
-            return Response.noContent().build();
-        } catch (RevisionNotActiveException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
-        } catch (ECSException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }
+    public Response delete(@PathParam("revision") Integer revision) throws RestableIsolatedDockerException {
+        dockerAgent.deregisterDockerImage(revision);
+        return Response.noContent().build();
     }
 
     @GET
@@ -133,13 +119,8 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")
-    public Response getValidClusters() {
-        try {
-            List<String> clusters = dockerAgent.getValidClusters();
-            return Response.ok(new GetValidClustersResponse(clusters)).build();
-        } catch (ECSException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }
-
+    public Response getValidClusters() throws RestableIsolatedDockerException {
+        List<String> clusters = dockerAgent.getValidClusters();
+        return Response.ok(new GetValidClustersResponse(clusters)).build();
     }
 }
