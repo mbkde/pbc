@@ -1,19 +1,14 @@
 package com.atlassian.buildeng.ecs.exceptions;
 
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
+import javax.ws.rs.core.Response;
 
 /**
  * Created by obrent on 8/02/2016.
  */
-public class ECSException extends IsolatedDockerAgentException {
-    private Exception ecsException;
+public class ECSException extends RestableIsolatedDockerException {
 
     public ECSException(Exception ecsException) {
-        this.ecsException = ecsException;
+        super(Response.Status.INTERNAL_SERVER_ERROR, ecsException);
     }
 
-    @Override
-    public String toString() {
-        return ecsException.toString();
-    }
 }

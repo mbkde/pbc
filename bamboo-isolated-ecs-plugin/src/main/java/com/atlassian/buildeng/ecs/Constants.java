@@ -42,10 +42,6 @@ public interface Constants {
     // The script which runs the bamboo agent jar appropriately
     static final String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
-    // The running server url
-    // TODO: Remove from Constants, and have configurable per serve
-    static final String THIS_SERVER_URL = "https://staging-bamboo.internal.atlassian.com";
-
     // The container definition of the sidekick
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
@@ -63,6 +59,5 @@ public interface Constants {
                     .withMemory(3072)
                     .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME))
                     .withCommand(RUN_SCRIPT)
-                    .withWorkingDirectory(WORK_DIR)
-                    .withEnvironment(new KeyValuePair().withName(SERVER_ENV_VAR).withValue(THIS_SERVER_URL));
+                    .withWorkingDirectory(WORK_DIR);
 }

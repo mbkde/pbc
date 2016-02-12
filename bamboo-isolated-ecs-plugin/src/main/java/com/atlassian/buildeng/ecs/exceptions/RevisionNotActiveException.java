@@ -1,19 +1,14 @@
 package com.atlassian.buildeng.ecs.exceptions;
 
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
+import javax.ws.rs.core.Response;
 
 /**
  * Created by obrent on 8/02/2016.
  */
-public class RevisionNotActiveException extends IsolatedDockerAgentException {
-    private Integer revision;
+public class RevisionNotActiveException extends RestableIsolatedDockerException {
 
     public RevisionNotActiveException(Integer revision) {
-        this.revision = revision;
+        super(Response.Status.BAD_REQUEST, String.format("Revision %d is not active", revision));
     }
 
-    @Override
-    public String toString() {
-        return String.format("Revision %d is not active", revision);
-    }
 }
