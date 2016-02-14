@@ -24,8 +24,7 @@ public interface Constants {
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
     // The name of the atlassian docker registry
-    // TODO: This currently uses the ECR registry, once vault/secrets are done revert to docker.atlassian.io
-    static final String SIDEKICK_REPOSITORY = "960714566901.dkr.ecr.us-east-1.amazonaws.com/bamboo-agent-sidekick";
+    static final String SIDEKICK_REPOSITORY = "docker.atlassian.io/bamboo-agent-sidekick";
 
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";
