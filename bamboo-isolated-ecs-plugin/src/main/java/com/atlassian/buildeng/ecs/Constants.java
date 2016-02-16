@@ -57,6 +57,6 @@ public interface Constants {
                     .withCpu(900)
                     .withMemory(3072)
                     .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME))
-                    .withCommand(RUN_SCRIPT)
+                    .withEntryPoint(RUN_SCRIPT)
                     .withWorkingDirectory(WORK_DIR);
 }
