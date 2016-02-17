@@ -21,6 +21,7 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
@@ -36,10 +37,12 @@ public class PostJobActionImpl implements PostJobAction {
 
 
     @Override
-    public void execute(StageExecution stageExecution, Job job, BuildResultsSummary buildResultsSummary) {
+    public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
         Configuration config = Configuration.forJob(job);
         if (config.isEnabled()) {
-            try {
+            if (buildResultsSummary.getBuildAgentId() == null) {
+                LOG.info("Build agent already removed for job " + job.getId());
+            } else try {
                 agentManager.removeAgent(buildResultsSummary.getBuildAgentId());
             } catch (TimeoutException ex) {
                 LOG.error("timeout on removing agent " + buildResultsSummary.getBuildAgentId(), ex);
