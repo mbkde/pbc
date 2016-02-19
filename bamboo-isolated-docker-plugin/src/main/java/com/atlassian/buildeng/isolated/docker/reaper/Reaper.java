@@ -19,6 +19,7 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
+import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 
@@ -44,7 +45,7 @@ public class Reaper implements LifecycleAware {
         Map<String, Object> data = new HashMap<>();
         data.put(Constants.REAPER_AGENT_MANAGER_KEY, agentManager);
         data.put(Constants.REAPER_AGENTS_HELPER_KEY, executableAgentsHelper);
-        data.put(com.atlassian.buildeng.isolated.docker.reaper.Constants.REAPER_COMMAND_SENDER_KEY, agentCommandSender);
+        data.put(Constants.REAPER_COMMAND_SENDER_KEY, agentCommandSender);
         pluginScheduler.scheduleJob(Constants.REAPER_KEY,ReaperJob.class, data, new Date(), Constants.REAPER_INTERVAL_MILLIS);
     }
 

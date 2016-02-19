@@ -8,6 +8,7 @@ import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
+import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
