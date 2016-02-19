@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.ecs.exceptions;
 
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
+
 import javax.ws.rs.core.Response;
 
 public abstract class RestableIsolatedDockerException extends IsolatedDockerAgentException {

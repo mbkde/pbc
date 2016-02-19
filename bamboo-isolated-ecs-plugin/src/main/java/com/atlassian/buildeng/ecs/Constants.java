@@ -1,7 +1,6 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
-import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 
 /**

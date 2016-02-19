@@ -17,7 +17,6 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.AmazonECSClient;
-import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.KeyValuePair;
