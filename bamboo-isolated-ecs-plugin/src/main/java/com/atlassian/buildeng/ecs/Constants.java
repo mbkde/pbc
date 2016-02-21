@@ -1,7 +1,6 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
-import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 
 /**
@@ -23,8 +22,9 @@ public interface Constants {
     // The name used for the generated task definition (a.k.a. family)
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
-    // The name of the atlassian docker registry
-    static final String SIDEKICK_REPOSITORY = "docker.atlassian.io/bamboo-agent-sidekick";
+    // The name of the atlassian docker registry sidekick
+    //TODO make configurable in ui
+    static final String SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";
