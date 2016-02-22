@@ -66,14 +66,15 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     }
 
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    private static RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage, String baseUrl) {
+    private RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage, String baseUrl) {
         return new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
                         Constants.AGENT_BASE_DEFINITION
                             .withImage(dockerImage)
                             .withEnvironment(new KeyValuePair().withName(Constants.SERVER_ENV_VAR).withValue(baseUrl))
                             .withEnvironment(new KeyValuePair().withName(Constants.IMAGE_ENV_VAR).withValue(dockerImage)),
-                        Constants.SIDEKICK_DEFINITION)
+                        Constants.SIDEKICK_DEFINITION
+                            .withImage(getCurrentSidekick()))
                 .withFamily(Constants.TASK_DEFINITION_NAME);
     }
 
@@ -99,6 +100,27 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     private AmazonECSClient createClient() {
         return new AmazonECSClient();
+    }
+
+    // Sidekick management
+
+    /**
+     * Get the repository that is currently configured to be used for the agent sidekick
+     *
+     * @return The current sidekick repository
+     */
+    String getCurrentSidekick() {
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY);
+        return name == null ? Constants.DEFAULT_SIDEKICK_REPOSITORY : name;
+    }
+
+    /**
+     *  Set the agent sidekick to be used with isolated docker
+     *
+     * @param name The sidekick repository
+     */
+    void setSidekick(String name) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, name);
     }
 
     // ECS Cluster management

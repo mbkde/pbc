@@ -47,6 +47,12 @@
         currentCluster.innerHTML += cluster.currentCluster;
     }
 
+    function processCurrentSidekick(sidekick) {
+        var currentSidekick = document.getElementById("sidekickToUse");//TODO jquery
+        currentSidekick.placeholder += "Current: "
+        currentSidekick.placeholder += sidekick.currentSidekick;
+    }
+
     function drawTable(data) {
         var mappings = data.mappings;
         var l = mappings.length;
@@ -105,11 +111,28 @@
             }
         });
     }
+
+    function setSidekick() {
+        var sidekick = document.getElementById("sidekickToUse").value;
+        AJS.$.ajax({
+            type: "POST",
+            url: restEndpoint + "sidekick",
+            contentType: 'application/json',
+            data: '{"sidekick": "' + sidekick.trim() + '" }',
+            success: function () {
+                location.reload(true); //TODO smarter reload
+            },
+            error: function (err) {
+                alert(err.responseText);
+            }
+        });
+    }
     
 AJS.$(document).ready(function() {
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
     processResource(processCurrentCluster, "cluster");
+    processResource(processCurrentSidekick, "sidekick");
 });
 
 

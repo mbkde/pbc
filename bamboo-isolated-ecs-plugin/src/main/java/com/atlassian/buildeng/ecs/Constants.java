@@ -10,6 +10,7 @@ public interface Constants {
     // Bandana access keys
     static final String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
     static final String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker";
+    static final String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
 
     // ECS
 
@@ -22,9 +23,9 @@ public interface Constants {
     // The name used for the generated task definition (a.k.a. family)
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
+
     // The name of the atlassian docker registry sidekick
-    //TODO make configurable in ui
-    static final String SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
+    static final String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/bamboo-agent-sidekick";
 
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";
@@ -45,7 +46,6 @@ public interface Constants {
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
                     .withName(SIDEKICK_NAME)
-                    .withImage(SIDEKICK_REPOSITORY)
                     .withCpu(10)
                     .withMemory(512)
                     .withEssential(false);
