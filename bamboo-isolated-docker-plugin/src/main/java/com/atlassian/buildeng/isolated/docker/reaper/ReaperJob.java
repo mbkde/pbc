@@ -10,15 +10,11 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.sal.api.scheduling.PluginJob;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 public class ReaperJob implements PluginJob {
 
@@ -36,9 +32,11 @@ public class ReaperJob implements PluginJob {
         // Only care about agents which are remote, idle and 'old'
         for (BuildAgent agent: agents) {
             PipelineDefinition definition = agent.getDefinition();
+            Date creationTime = definition.getCreationDate();
             if (agent.getType() == AgentType.REMOTE &&
                     agent.getAgentStatus().isIdle() &&
-                    new Date().getTime() - definition.getCreationDate().getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
+                    creationTime != null &&
+                    new Date().getTime() - creationTime.getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
                 relevantAgents.add(agent);
             }
         }
@@ -46,10 +44,10 @@ public class ReaperJob implements PluginJob {
         for (BuildAgent agent: relevantAgents) {
             // Disable enabled agents
             if (agent.isEnabled()) {
-                agent.accept(Graveling.sleeper(agentManager));
+                agent.accept(new SleeperGraveling(agentManager));
             // Stop and remove disabled agents
             } else {
-                agent.accept(Graveling.deleter(agentCommandSender, agentManager));
+                agent.accept(new DeleterGraveling(agentCommandSender, agentManager));
             }
         }
     }
