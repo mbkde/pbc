@@ -127,7 +127,22 @@
             }
         });
     }
-    
+
+    function resetSidekick() {
+        AJS.$.ajax({
+            type: "POST",
+            url: restEndpoint + "sidekick/reset",
+            contentType: 'application/json',
+            data: '{}',
+            success: function () {
+                location.reload(true); //TODO smarter reload
+            },
+            error: function (err) {
+                alert(err.responseText);
+            }
+        });
+    }
+
 AJS.$(document).ready(function() {
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");

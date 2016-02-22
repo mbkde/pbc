@@ -123,6 +123,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, name);
     }
 
+    /**
+     * Reset the agent sidekick to be used to the default
+     */
+    void resetSidekick() {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, Constants.DEFAULT_SIDEKICK_REPOSITORY);
+    }
+
     // ECS Cluster management
 
     /**

@@ -45,6 +45,7 @@
             <input type="text" class="text long-field" id="sidekickToUse"
                     placeholder=""></input>
             <button type="button" class="aui-button" onclick="setSidekick()">Set</button>
+            <button type="button" class="aui-button" onclick="resetSidekick()">Reset</button>
         </div>
     </fieldset>
 </form>
@@ -54,7 +55,7 @@
 <h2>Set ECS Cluster</h2><br>
 
 <!-- Trigger -->
-<a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="cluster"
+<a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="currentCluster"
    class="aui-button aui-style-default aui-dropdown2-trigger"></a>
 
 <!-- Dropdown -->

@@ -25,8 +25,6 @@ import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.ecs.rest.RegisterImageResponse;
-import com.atlassian.buildeng.ecs.rest.SetClusterResponse;
-import com.atlassian.buildeng.ecs.rest.SetSidekickResponse;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -39,6 +37,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -112,7 +111,7 @@ public class Rest {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
         }
         dockerAgent.setCluster(cluster);
-        return Response.ok(new SetClusterResponse(dockerAgent.getCurrentCluster())).build();
+        return Response.created(URI.create("/cluster")).build();
     }
 
     @GET
@@ -138,8 +137,18 @@ public class Rest {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
         }
         dockerAgent.setSidekick(sidekick);
-        return Response.ok(new SetSidekickResponse(dockerAgent.getCurrentSidekick())).build();
+        return Response.created(URI.create("/sidekick")).build();
     }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/sidekick/reset")
+    public Response resetSidekick() {
+        dockerAgent.resetSidekick();
+        return Response.created(URI.create("/sidekick")).build();
+    }
+
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
