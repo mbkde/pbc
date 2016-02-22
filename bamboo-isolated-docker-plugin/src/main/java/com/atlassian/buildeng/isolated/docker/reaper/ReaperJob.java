@@ -13,13 +13,14 @@ import com.atlassian.sal.api.scheduling.PluginJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 public class ReaperJob implements PluginJob {
-    private final Logger LOG = LoggerFactory.getLogger(ReaperJob.class);
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
@@ -30,22 +31,25 @@ public class ReaperJob implements PluginJob {
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(com.atlassian.buildeng.isolated.docker.Constants.CAPABILITY, true, ".*"));
         Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutableAgentsHelper.ExecutorQuery.newQuery(reqs));
+        Collection<BuildAgent> relevantAgents = new ArrayList<>();
+
+        // Only care about agents which are remote, idle and 'old'
         for (BuildAgent agent: agents) {
-            if (agent.getType() == AgentType.REMOTE) {
-                PipelineDefinition definition = agent.getDefinition();
-                if (agent.getAgentStatus().isIdle() && new Date().getTime() - definition.getCreationDate().getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
-                    long agentId = agent.getId();
-                    String agentName = agent.getName();
-                    LOG.info(String.format("Reaping dangling agent %s (id: %s)", agentName, agentId));
-                    try {
-                        agent.accept(new Graveling(agentCommandSender, agentId)); // Kill the agent on its side
-                        agent.setRequestedToBeStopped(true);                      // Set status correctly
-                        agentManager.removeAgent(agentId);                        // Remove agent from the UI/server side
-                        LOG.info(String.format("Successfully reaped agent %s (id: %s)", agentName, agentId));
-                    } catch (TimeoutException e) {
-                        LOG.error(String.format("timeout on removing agent %s (id: %s)", agentName, agentId), e);
-                    }
-                }
+            PipelineDefinition definition = agent.getDefinition();
+            if (agent.getType() == AgentType.REMOTE &&
+                    agent.getAgentStatus().isIdle() &&
+                    new Date().getTime() - definition.getCreationDate().getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
+                relevantAgents.add(agent);
+            }
+        }
+
+        for (BuildAgent agent: relevantAgents) {
+            // Disable enabled agents
+            if (agent.isEnabled()) {
+                agent.accept(Graveling.sleeper(agentManager));
+            // Stop and remove disabled agents
+            } else {
+                agent.accept(Graveling.deleter(agentCommandSender, agentManager));
             }
         }
     }
