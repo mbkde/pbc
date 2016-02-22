@@ -44,13 +44,13 @@
 
     function processCurrentCluster(cluster) {
         var currentCluster = document.getElementById("currentCluster");//TODO jquery
-        currentCluster.innerHTML += cluster.currentCluster;
+        currentCluster.innerHTML += cluster.cluster;
     }
 
     function processCurrentSidekick(sidekick) {
         var currentSidekick = document.getElementById("sidekickToUse");//TODO jquery
         currentSidekick.placeholder += "Current: "
-        currentSidekick.placeholder += sidekick.currentSidekick;
+        currentSidekick.placeholder += sidekick.sidekick;
     }
 
     function drawTable(data) {

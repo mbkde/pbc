@@ -54,7 +54,7 @@
 <h2>Set ECS Cluster</h2><br>
 
 <!-- Trigger -->
-<a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="currentCluster"
+<a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="cluster"
    class="aui-button aui-style-default aui-dropdown2-trigger"></a>
 
 <!-- Dropdown -->
