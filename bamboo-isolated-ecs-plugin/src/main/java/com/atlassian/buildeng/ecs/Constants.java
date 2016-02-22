@@ -25,7 +25,7 @@ public interface Constants {
 
 
     // The name of the atlassian docker registry sidekick
-    static final String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/bamboo-agent-sidekick";
+    static final String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";

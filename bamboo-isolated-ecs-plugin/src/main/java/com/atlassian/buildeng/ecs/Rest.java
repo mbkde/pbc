@@ -137,7 +137,7 @@ public class Rest {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
         }
         dockerAgent.setSidekick(sidekick);
-        return Response.created(URI.create("/sidekick")).build();
+        return Response.noContent().build();
     }
 
     @POST
@@ -146,7 +146,7 @@ public class Rest {
     @Path("/sidekick/reset")
     public Response resetSidekick() {
         dockerAgent.resetSidekick();
-        return Response.created(URI.create("/sidekick")).build();
+        return Response.noContent().build();
     }
 
 
