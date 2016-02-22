@@ -36,7 +36,7 @@ public class ReaperJob implements PluginJob {
             if (agent.getType() == AgentType.REMOTE &&
                     agent.getAgentStatus().isIdle() &&
                     creationTime != null &&
-                    new Date().getTime() - creationTime.getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
+                    System.currentTimeMillis() - creationTime.getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
                 relevantAgents.add(agent);
             }
         }
