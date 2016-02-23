@@ -26,9 +26,20 @@
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
 
+    <component-import key="pluginScheduler">
+        <description>SAL Scheduler</description>
+        <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
+    </component-import>
+
     <postJobAction key="postJobActionImpl" name="PostJobActionImpl"
                    class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
     </postJobAction>
+
+    <component key="isolated-docker-reaper" class="com.atlassian.buildeng.isolated.docker.reaper.Reaper"
+               system="true" public="true">
+        <description>Reaps dangling isolated docker agents</description>
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
+    </component>
 
     <web-resource key="docker-ui-js" name="JavaScript to modify task panels.">
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
