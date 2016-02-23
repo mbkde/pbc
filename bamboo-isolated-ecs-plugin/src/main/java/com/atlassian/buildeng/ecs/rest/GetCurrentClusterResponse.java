@@ -4,9 +4,9 @@ package com.atlassian.buildeng.ecs.rest;
  * Created by obrent on 4/02/2016.
  */
 public class GetCurrentClusterResponse {
-    public String currentCluster;
+    public String cluster;
 
-    public GetCurrentClusterResponse(String currentCluster) {
-        this.currentCluster = currentCluster;
+    public GetCurrentClusterResponse(String cluster) {
+        this.cluster = cluster;
     }
 }

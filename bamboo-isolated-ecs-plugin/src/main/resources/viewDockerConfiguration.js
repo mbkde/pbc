@@ -44,7 +44,13 @@
 
     function processCurrentCluster(cluster) {
         var currentCluster = document.getElementById("currentCluster");//TODO jquery
-        currentCluster.innerHTML += cluster.currentCluster;
+        currentCluster.innerHTML += cluster.cluster;
+    }
+
+    function processCurrentSidekick(sidekick) {
+        var currentSidekick = document.getElementById("sidekickToUse");//TODO jquery
+        currentSidekick.placeholder += "Current: "
+        currentSidekick.placeholder += sidekick.sidekick;
     }
 
     function drawTable(data) {
@@ -105,11 +111,43 @@
             }
         });
     }
-    
+
+    function setSidekick() {
+        var sidekick = document.getElementById("sidekickToUse").value;
+        AJS.$.ajax({
+            type: "POST",
+            url: restEndpoint + "sidekick",
+            contentType: 'application/json',
+            data: '{"sidekick": "' + sidekick.trim() + '" }',
+            success: function () {
+                location.reload(true); //TODO smarter reload
+            },
+            error: function (err) {
+                alert(err.responseText);
+            }
+        });
+    }
+
+    function resetSidekick() {
+        AJS.$.ajax({
+            type: "POST",
+            url: restEndpoint + "sidekick/reset",
+            contentType: 'application/json',
+            data: '{}',
+            success: function () {
+                location.reload(true); //TODO smarter reload
+            },
+            error: function (err) {
+                alert(err.responseText);
+            }
+        });
+    }
+
 AJS.$(document).ready(function() {
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
     processResource(processCurrentCluster, "cluster");
+    processResource(processCurrentSidekick, "sidekick");
 });
 
 

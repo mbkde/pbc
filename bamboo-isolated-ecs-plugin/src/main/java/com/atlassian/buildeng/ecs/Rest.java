@@ -22,9 +22,9 @@ import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
+import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.ecs.rest.RegisterImageResponse;
-import com.atlassian.buildeng.ecs.rest.SetClusterResponse;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -37,10 +37,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@WebSudoRequired
 @Path("/")
 public class Rest {
     private final ECSIsolatedAgentServiceImpl dockerAgent;
@@ -61,7 +63,6 @@ public class Rest {
         ).collect(Collectors.toList()))).build();
     }
 
-    @WebSudoRequired
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -80,7 +81,6 @@ public class Rest {
         return Response.ok(new RegisterImageResponse(revision)).build();
     }
 
-    @WebSudoRequired
     @DELETE
     @Path("/{revision}")
     public Response delete(@PathParam("revision") Integer revision) throws RestableIsolatedDockerException {
@@ -95,7 +95,6 @@ public class Rest {
         return Response.ok(new GetCurrentClusterResponse(dockerAgent.getCurrentCluster())).build();
     }
 
-    @WebSudoRequired
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -112,10 +111,45 @@ public class Rest {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
         }
         dockerAgent.setCluster(cluster);
-        return Response.ok(new SetClusterResponse(dockerAgent.getCurrentCluster())).build();
+        return Response.created(URI.create("/cluster")).build();
     }
 
-    @WebSudoRequired
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/sidekick")
+    public Response getCurrentSidekick() {
+        return Response.ok(new GetCurrentSidekickResponse(dockerAgent.getCurrentSidekick())).build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/sidekick")
+    public Response setSidekick(String requestString) {
+        String sidekick;
+        try {
+            JSONObject o = new JSONObject(requestString);
+            sidekick = o.getString("sidekick");
+        } catch (JSONException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+        }
+        if (sidekick == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
+        }
+        dockerAgent.setSidekick(sidekick);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/sidekick/reset")
+    public Response resetSidekick() {
+        dockerAgent.resetSidekick();
+        return Response.noContent().build();
+    }
+
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")

@@ -1,4 +1,4 @@
-<head>
+<head xmlns="http://www.w3.org/1999/html">
     <meta name="decorator" content="atl.admin">
     <title>Configure Isolated Docker</title>
     ${webResourceManager.requireResourcesForContext("viewDockerConfiguration")}
@@ -26,8 +26,26 @@
         <div class="field-group">
             <label for="dockerImageToRegister">Docker Repository</label>
             <input type="text" class="text long-field" id="dockerImageToRegister"
-                      placeholder="e.g. docker.atlassian.io/bamboo-arch-base-agent:latest"></input>
+                      placeholder="e.g. docker.atlassian.io/buildeng-agent:baseagent:latest"></input>
             <button type="button" class="aui-button" onclick="registerImage()">Register</button>
+        </div>
+    </fieldset>
+</form>
+
+<br>
+
+<h2>Set Bamboo Sidekick</h2>
+
+<form id="setBambooSidekick" class="aui">
+    <fieldset>
+
+        <legend><span>Set Sidekick</span></legend>
+        <div class="field-group">
+            <label for="sidekickToUse">Sidekick Repository</label>
+            <input type="text" class="text long-field" id="sidekickToUse"
+                    placeholder=""></input>
+            <button type="button" class="aui-button" onclick="setSidekick()">Set</button>
+            <button type="button" class="aui-button" onclick="resetSidekick()">Reset</button>
         </div>
     </fieldset>
 </form>
