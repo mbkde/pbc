@@ -23,7 +23,6 @@ public interface Constants {
     // The name used for the generated task definition (a.k.a. family)
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
-
     // The name of the atlassian docker registry sidekick
     static final String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 
@@ -32,6 +31,9 @@ public interface Constants {
 
     // The environment variable to override on the agent per image
     static final String IMAGE_ENV_VAR = "IMAGE_ID";
+
+    // The environment variable to override on the agent per job
+    static final String JOB_ENV_VAR = "RESULT_ID";
 
     // The environment variable to overide on the agent per server
     static final String SERVER_ENV_VAR = "BAMBOO_SERVER";

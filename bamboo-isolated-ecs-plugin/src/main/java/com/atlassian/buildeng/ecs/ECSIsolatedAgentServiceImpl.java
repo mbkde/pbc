@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.KeyValuePair;
@@ -25,6 +26,7 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
@@ -175,9 +177,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         if (revision == null) {
             throw new ImageNotRegisteredException(req.getDockerImage());
         }
+        ContainerOverride buildResultOverride = new ContainerOverride()
+                .withEnvironment(new KeyValuePair().withName(Constants.JOB_ENV_VAR).withValue(req.getBuildResultKey()))
+                .withName(Constants.AGENT_NAME);
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(getCurrentCluster())
                 .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
+                .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
                 .withCount(1);
         boolean finished = false;
         while (!finished) {
