@@ -73,8 +73,10 @@ public class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     }
 
     private static boolean hasIsolatedDockerRequirement(MinimalRequirementSet requirements) {
-        return requirements.getRequirements().stream().filter((Requirement t) -> Constants.CAPABILITY.equals(t.getKey())
-        ).findAny().isPresent();
+        return requirements.getRequirements().stream()
+                .filter((Requirement t) -> Constants.CAPABILITY.equals(t.getKey()))
+                .findAny()
+                .isPresent();
     }
     
 }
