@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.agent.AgentType;
 import com.atlassian.bamboo.capability.CapabilitySetProvider;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
@@ -23,6 +24,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -36,6 +38,9 @@ public class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
         if (hasIsolatedDockerRequirement(requirements)) {
             for (BuildAgent agent : agents) {
+                if (!AgentType.REMOTE.equals(agent.getType())) {
+                    continue;
+                }
                 final CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
                 if (capabilitySet != null) {
                     Capability cap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
@@ -48,8 +53,23 @@ public class TheMightyAgentFilter implements BuildAgentRequirementFilter {
                 }
             }
             return Collections.emptyList();
+        } else {
+            //make sure the isolated docker agent never picks up non-dockerized job
+            ArrayList<BuildAgent> toRet = new ArrayList<>(agents.size());
+            for (BuildAgent agent : agents) {
+                if (AgentType.REMOTE.equals(agent.getType())) {
+                    //only check remote agents
+                    final CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
+                    if (capabilitySet != null) {
+                        if (capabilitySet.getCapability(Constants.CAPABILITY) != null) {
+                            continue;
+                        }
+                    }
+                } 
+                toRet.add(agent);
+            } 
+            return toRet;
         }
-        return agents;
     }
 
     private static boolean hasIsolatedDockerRequirement(MinimalRequirementSet requirements) {
