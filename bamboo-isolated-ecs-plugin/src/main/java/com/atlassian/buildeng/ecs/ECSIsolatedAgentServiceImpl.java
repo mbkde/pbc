@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.KeyValuePair;
@@ -25,6 +26,7 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
@@ -70,8 +72,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 .withContainerDefinitions(
                         Constants.AGENT_BASE_DEFINITION
                             .withImage(dockerImage)
-                            .withEnvironment(new KeyValuePair().withName(Constants.SERVER_ENV_VAR).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.IMAGE_ENV_VAR).withValue(dockerImage)),
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(dockerImage)),
                         Constants.SIDEKICK_DEFINITION
                             .withImage(getCurrentSidekick()))
                 .withFamily(Constants.TASK_DEFINITION_NAME);
@@ -178,11 +180,15 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(getCurrentCluster())
                 .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
+                .withOverrides(
+                        new TaskOverride().withContainerOverrides(
+                                new ContainerOverride().withName(Constants.AGENT_CONTAINER_NAME).withEnvironment(
+                                        new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(req.getBuildResultKey()))))
                 .withCount(1);
         boolean finished = false;
         while (!finished) {
             try {
-                logger.info("Spinning up new docker agent from task definition %s:%d %s", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
+                logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
                 logger.info("ECS Returned: {}", runTaskResult.toString());
                 List<Failure> failures = runTaskResult.getFailures();

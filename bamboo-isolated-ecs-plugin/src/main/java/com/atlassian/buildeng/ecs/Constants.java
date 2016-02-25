@@ -15,10 +15,10 @@ public interface Constants {
     // ECS
 
     // The name of the sidekick docker image and sidekick container
-    static final String SIDEKICK_NAME = "bamboo-agent-sidekick";
+    static final String SIDEKICK_CONTAINER_NAME = "bamboo-agent-sidekick";
 
     // The name of the agent container
-    static final String AGENT_NAME = "bamboo-agent";
+    static final String AGENT_CONTAINER_NAME = "bamboo-agent";
 
     // The name used for the generated task definition (a.k.a. family)
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
@@ -30,11 +30,20 @@ public interface Constants {
     // The default cluster to use
     static final String DEFAULT_CLUSTER = "staging_bamboo";
 
-    // The environment variable to override on the agent per image
-    static final String IMAGE_ENV_VAR = "IMAGE_ID";
+    /**
+     * The environment variable to override on the agent per image
+     */ 
+    static final String ENV_VAR_IMAGE = "IMAGE_ID";
 
-    // The environment variable to overide on the agent per server
-    static final String SERVER_ENV_VAR = "BAMBOO_SERVER";
+    /**
+     * The environment variable to override on the agent per server
+     */
+    static final String ENV_VAR_SERVER = "BAMBOO_SERVER";
+    
+    /**
+     * The environment variable to set the result spawning up the agent
+     */ 
+    static final String ENV_VAR_RESULT_ID = "RESULT_ID";
 
     // The working directory of isolated agents
     static final String WORK_DIR = "/buildeng";
@@ -45,7 +54,7 @@ public interface Constants {
     // The container definition of the sidekick
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
-                    .withName(SIDEKICK_NAME)
+                    .withName(SIDEKICK_CONTAINER_NAME)
                     .withCpu(10)
                     .withMemory(512)
                     .withEssential(false);
@@ -53,10 +62,10 @@ public interface Constants {
     // The container definition of the standard spec build agent, sans docker image name
     static final ContainerDefinition AGENT_BASE_DEFINITION =
             new ContainerDefinition()
-                    .withName(AGENT_NAME)
+                    .withName(AGENT_CONTAINER_NAME)
                     .withCpu(900)
                     .withMemory(3072)
-                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_NAME))
+                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
                     .withEntryPoint(RUN_SCRIPT)
                     .withWorkingDirectory(WORK_DIR);
 }

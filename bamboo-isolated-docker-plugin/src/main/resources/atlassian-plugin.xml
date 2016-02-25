@@ -31,6 +31,9 @@
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
     </component-import>
 
+    <buildAgentRequirementFilter key="TheMightyAgentFilter" name="TheMightyAgentFilter" class="com.atlassian.buildeng.isolated.docker.TheMightyAgentFilter">
+        <description/>
+    </buildAgentRequirementFilter>
     <postJobAction key="postJobActionImpl" name="PostJobActionImpl"
                    class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
     </postJobAction>
