@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -120,15 +121,30 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      *
      * @param name The sidekick repository
      */
-    void setSidekick(String name) {
+    Collection<Exception> setSidekick(String name) {
+        Collection<Exception> exceptions = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry: dockerMappings.entrySet()) {
+            String dockerImage = entry.getKey();
+            Integer revision = entry.getValue();
+            try {
+                deregisterDockerImage(revision);
+                Integer newRevision = registerDockerImage(dockerImage);
+                dockerMappings.replace(dockerImage, revision, newRevision);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+                invalidateCache();
+            } catch (ImageAlreadyRegisteredException | RevisionNotActiveException | ECSException e) {
+                exceptions.add(e);
+            }
+        }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, name);
+        return exceptions;
     }
 
     /**
      * Reset the agent sidekick to be used to the default
      */
-    void resetSidekick() {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, Constants.DEFAULT_SIDEKICK_REPOSITORY);
+    Collection<Exception> resetSidekick() {
+        return setSidekick(Constants.DEFAULT_SIDEKICK_REPOSITORY);
     }
 
     // ECS Cluster management
