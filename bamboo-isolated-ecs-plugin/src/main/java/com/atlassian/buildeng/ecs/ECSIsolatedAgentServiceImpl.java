@@ -188,7 +188,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         boolean finished = false;
         while (!finished) {
             try {
-                logger.info("Spinning up new docker agent from task definition %s:%d %s", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
+                logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
                 logger.info("ECS Returned: {}", runTaskResult.toString());
                 List<Failure> failures = runTaskResult.getFailures();
@@ -199,12 +199,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         finished = false; // Retry
                         Thread.sleep(5000); // 5 Seconds is a good amount of time.
                     } else {
-                        toRet = toRet.withError(err);
+                        toRet = toRet.withError(mapRunTaskErrorToDescription(err));
                         finished = true; // Not a resource error, we don't handle
                     }
                 } else {
                     for (Failure err : runTaskResult.getFailures()) {
-                        toRet = toRet.withError(err.getReason());
+                        toRet = toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
                     }
                     finished = true; // Either 0 or many errors, either way we're done
                 }
@@ -278,5 +278,18 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         // sort for sake of UI/consistency?
         Collections.sort(toRet);
         return toRet;
+    }
+
+    private String mapRunTaskErrorToDescription(String reason) {
+        //http://docs.aws.amazon.com/AmazonECS/latest/developerguide/troubleshooting.html#api_failures_messages
+        if ("AGENT".equals(reason)) {
+            return "AGENT - The container instance that you attempted to launch a task onto has an agent which is currently disconnected. In order to prevent extended wait times for task placement, the request was rejected.";
+        } else if ("ATTRIBUTE".equals(reason)) {
+            return "ATTRIBUTE - Your task definition contains a parameter that requires a specific container instance attribute that is not available on your container instances.";
+        } else if (reason.startsWith("RESOURCE")) {
+            return reason + " - The resource or resources requested by the task are unavailable on the given container instance. If the resource is CPU or memory, you may need to add container instances to your cluster.";
+        } else {
+            return "Unknown RunTask reason:" + reason;
+        }
     }
 }
