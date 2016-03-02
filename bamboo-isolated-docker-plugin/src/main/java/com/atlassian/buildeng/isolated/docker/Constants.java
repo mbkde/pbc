@@ -24,9 +24,10 @@ public interface Constants {
     public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
     public static final String RESULT_DOCKER_IMAGE = "isolated.docker.image";
     public static final long   REAPER_THRESHOLD_MILLIS = 300000L; //Reap agents if they're older than 5 minutes
-    public static final long   REAPER_INTERVAL_MILLIS  =  60000L; //Reap once a minute
+    public static final long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
     public static final String REAPER_KEY = "isolated-docker-reaper";
     public static final String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
     public static final String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     public static final String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
+    public static final String REAPER_DEATH_LIST = "reaper-death-list";
 }
