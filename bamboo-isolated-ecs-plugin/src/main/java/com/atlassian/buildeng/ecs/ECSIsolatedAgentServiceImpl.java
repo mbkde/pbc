@@ -128,10 +128,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             Integer revision = entry.getValue();
             try {
                 deregisterDockerImage(revision);
-                Integer newRevision = registerDockerImage(dockerImage);
-                dockerMappings.replace(dockerImage, revision, newRevision);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
-                invalidateCache();
+                registerDockerImage(dockerImage);
             } catch (ImageAlreadyRegisteredException | RevisionNotActiveException | ECSException e) {
                 exceptions.add(e);
             }
