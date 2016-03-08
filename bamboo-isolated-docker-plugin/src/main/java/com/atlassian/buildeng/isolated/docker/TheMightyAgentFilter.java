@@ -32,7 +32,7 @@ import java.util.Collections;
  * this beast requires restart on each deployment.
  * @author mkleint
  */
-public class TheMightyAgentFilter implements BuildAgentRequirementFilter {
+public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
 
     @Override
     public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
