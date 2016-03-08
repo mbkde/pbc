@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
@@ -23,7 +24,9 @@ import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.util.Narrow;
+import com.atlassian.buildeng.isolated.docker.rest.JobsUsingImageReponse;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
+import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,6 +40,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.ws.rs.PathParam;
 
 @Path("/ui")
 public class UIRest {
@@ -53,6 +57,9 @@ public class UIRest {
     @Path("/enabled")
     @Produces(MediaType.APPLICATION_JSON)
     public Response isDockerEnabled(@QueryParam("jobKey") String jobKey) {
+        if (jobKey == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("JobKey query parameter not defined").build();
+        }
         final PlanKey key = PlanKeys.getPlanKey(jobKey);
         ImmutablePlan job = cpm.getPlanByKey(key);
         if (job == null) {
@@ -90,4 +97,22 @@ public class UIRest {
         return isolatedAgentService.getKnownDockerImages();
     }
 
+    @GET
+    @Path("/usages")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUsages(@QueryParam("image") String dockerImage) {
+        if (dockerImage == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("No 'image' query parameter defined").build();
+        }
+        //TODO environments
+        List<JobsUsingImageReponse.JobInfo> toRet = new ArrayList<>();
+                
+        cpm.getPlans(ImmutableJob.class).stream().filter((job) -> !(job.hasMaster())).forEach((job) -> {
+            Configuration config = Configuration.forJob(job);
+            if (config.isEnabled() && dockerImage.equals(config.getDockerImage())) {
+                toRet.add(new JobsUsingImageReponse.JobInfo(job.getName(), job.getKey()));
+            }
+        });
+        return Response.ok(new JobsUsingImageReponse(dockerImage, toRet)).build();
+    }
 }

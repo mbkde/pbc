@@ -63,8 +63,10 @@
             var row = table.insertRow();
             var cell1 = row.insertCell(0);
             var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
             cell1.innerHTML = dockerImage;
             cell2.innerHTML = '<button type="button" class="aui-button" onclick="deleteImage(' + revision + ')">Deregister</button>';
+            cell3.innerHTML = '<a href="/admin/viewDockerUsages.action?image=' + dockerImage + '">Usages</a>';
         }
     }
 
