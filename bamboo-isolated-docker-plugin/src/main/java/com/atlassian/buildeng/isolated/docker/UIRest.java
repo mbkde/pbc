@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
@@ -40,7 +39,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.ws.rs.PathParam;
+import org.apache.commons.lang.StringUtils;
 
 @Path("/ui")
 public class UIRest {
@@ -101,7 +100,7 @@ public class UIRest {
     @Path("/usages")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUsages(@QueryParam("image") String dockerImage) {
-        if (dockerImage == null) {
+        if (StringUtils.isBlank(dockerImage)) {
             return Response.status(Response.Status.BAD_REQUEST).entity("No 'image' query parameter defined").build();
         }
         //TODO environments
