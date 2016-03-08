@@ -23,7 +23,6 @@ public interface Constants {
     // The name used for the generated task definition (a.k.a. family)
     static final String TASK_DEFINITION_NAME = "staging-bamboo-generated";
 
-
     // The name of the atlassian docker registry sidekick
     static final String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 

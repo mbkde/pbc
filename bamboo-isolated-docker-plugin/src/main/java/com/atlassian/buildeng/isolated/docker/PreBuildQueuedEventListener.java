@@ -62,11 +62,11 @@ public class PreBuildQueuedEventListener {
                         new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
                 if (result.hasErrors()) {
                     terminate = true;
-                    errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
+                    errorUpdateHandler.recordError(buildContext.getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
                 }
             } catch (Exception ex) {
                 terminate = true;
-                errorUpdateHandler.recordError(buildContext.getResultKey(), "Build was not queued due to error", ex);
+                errorUpdateHandler.recordError(buildContext.getEntityKey(), "Build was not queued due to error", ex);
             }
             if (terminate) {
                 buildContext.getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);

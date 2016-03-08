@@ -14,6 +14,7 @@ import com.atlassian.sal.api.scheduling.PluginJob;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ReaperJob implements PluginJob {
@@ -23,6 +24,14 @@ public class ReaperJob implements PluginJob {
         AgentManager agentManager = (AgentManager) jobDataMap.get(Constants.REAPER_AGENT_MANAGER_KEY);
         ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(Constants.REAPER_AGENTS_HELPER_KEY);
         AgentCommandSender agentCommandSender = (AgentCommandSender) jobDataMap.get(Constants.REAPER_COMMAND_SENDER_KEY);
+        List<BuildAgent> deathList = (List<BuildAgent>) jobDataMap.get(Constants.REAPER_DEATH_LIST);
+
+        // Stop and remove disabled agents
+        for (BuildAgent agent : deathList) {
+            agent.accept(new DeleterGraveling(agentCommandSender, agentManager));
+        }
+
+        deathList.clear();
 
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(com.atlassian.buildeng.isolated.docker.Constants.CAPABILITY, true, ".*"));
@@ -33,10 +42,11 @@ public class ReaperJob implements PluginJob {
         for (BuildAgent agent: agents) {
             PipelineDefinition definition = agent.getDefinition();
             Date creationTime = definition.getCreationDate();
+            long currentTime = System.currentTimeMillis();
             if (agent.getType() == AgentType.REMOTE &&
                     agent.getAgentStatus().isIdle() &&
                     creationTime != null &&
-                    System.currentTimeMillis() - creationTime.getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
+                    currentTime - creationTime.getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
                 relevantAgents.add(agent);
             }
         }
@@ -45,10 +55,9 @@ public class ReaperJob implements PluginJob {
             // Disable enabled agents
             if (agent.isEnabled()) {
                 agent.accept(new SleeperGraveling(agentManager));
-            // Stop and remove disabled agents
-            } else {
-                agent.accept(new DeleterGraveling(agentCommandSender, agentManager));
+                deathList.add(agent);
             }
         }
+        jobDataMap.put(Constants.REAPER_DEATH_LIST, deathList);
     }
 }

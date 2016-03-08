@@ -18,6 +18,7 @@ package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
+import com.atlassian.buildeng.ecs.exceptions.ExceptionMapper;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
@@ -38,6 +39,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -136,8 +138,12 @@ public class Rest {
         if (sidekick == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
         }
-        dockerAgent.setSidekick(sidekick);
-        return Response.noContent().build();
+        Collection<Exception> exceptions = dockerAgent.setSidekick(sidekick);
+        if (exceptions.isEmpty()) {
+            return Response.noContent().build();
+        } else {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
+        }
     }
 
     @POST
@@ -145,8 +151,12 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sidekick/reset")
     public Response resetSidekick() {
-        dockerAgent.resetSidekick();
-        return Response.noContent().build();
+        Collection<Exception> exceptions = dockerAgent.resetSidekick();
+        if (exceptions.isEmpty()) {
+            return Response.noContent().build();
+        } else {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
+        }
     }
 
 

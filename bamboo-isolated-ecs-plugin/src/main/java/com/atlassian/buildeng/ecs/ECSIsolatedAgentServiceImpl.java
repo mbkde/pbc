@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -120,15 +121,27 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
      *
      * @param name The sidekick repository
      */
-    void setSidekick(String name) {
+    Collection<Exception> setSidekick(String name) {
+        Collection<Exception> exceptions = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry: dockerMappings.entrySet()) {
+            String dockerImage = entry.getKey();
+            Integer revision = entry.getValue();
+            try {
+                deregisterDockerImage(revision);
+                registerDockerImage(dockerImage);
+            } catch (ImageAlreadyRegisteredException | RevisionNotActiveException | ECSException e) {
+                exceptions.add(e);
+            }
+        }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, name);
+        return exceptions;
     }
 
     /**
      * Reset the agent sidekick to be used to the default
      */
-    void resetSidekick() {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, Constants.DEFAULT_SIDEKICK_REPOSITORY);
+    Collection<Exception> resetSidekick() {
+        return setSidekick(Constants.DEFAULT_SIDEKICK_REPOSITORY);
     }
 
     // ECS Cluster management
@@ -177,13 +190,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         if (revision == null) {
             throw new ImageNotRegisteredException(req.getDockerImage());
         }
+        ContainerOverride buildResultOverride = new ContainerOverride()
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(req.getBuildResultKey()))
+                .withName(Constants.AGENT_CONTAINER_NAME);
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(getCurrentCluster())
                 .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
-                .withOverrides(
-                        new TaskOverride().withContainerOverrides(
-                                new ContainerOverride().withName(Constants.AGENT_CONTAINER_NAME).withEnvironment(
-                                        new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(req.getBuildResultKey()))))
+                .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
                 .withCount(1);
         boolean finished = false;
         while (!finished) {
@@ -199,12 +212,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         finished = false; // Retry
                         Thread.sleep(5000); // 5 Seconds is a good amount of time.
                     } else {
-                        toRet = toRet.withError(err);
+                        toRet = toRet.withError(mapRunTaskErrorToDescription(err));
                         finished = true; // Not a resource error, we don't handle
                     }
                 } else {
                     for (Failure err : runTaskResult.getFailures()) {
-                        toRet = toRet.withError(err.getReason());
+                        toRet = toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
                     }
                     finished = true; // Either 0 or many errors, either way we're done
                 }
@@ -278,5 +291,18 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         // sort for sake of UI/consistency?
         Collections.sort(toRet);
         return toRet;
+    }
+
+    private String mapRunTaskErrorToDescription(String reason) {
+        //http://docs.aws.amazon.com/AmazonECS/latest/developerguide/troubleshooting.html#api_failures_messages
+        if ("AGENT".equals(reason)) {
+            return "AGENT - The container instance that you attempted to launch a task onto has an agent which is currently disconnected. In order to prevent extended wait times for task placement, the request was rejected.";
+        } else if ("ATTRIBUTE".equals(reason)) {
+            return "ATTRIBUTE - Your task definition contains a parameter that requires a specific container instance attribute that is not available on your container instances.";
+        } else if (reason.startsWith("RESOURCE")) {
+            return reason + " - The resource or resources requested by the task are unavailable on the given container instance. If the resource is CPU or memory, you may need to add container instances to your cluster.";
+        } else {
+            return "Unknown RunTask reason:" + reason;
+        }
     }
 }
