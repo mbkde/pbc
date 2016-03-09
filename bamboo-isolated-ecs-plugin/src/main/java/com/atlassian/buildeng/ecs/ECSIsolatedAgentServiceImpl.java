@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.ecs;
 
+import com.amazonaws.services.ecs.AmazonECSAsyncClient;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
@@ -57,6 +58,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -225,7 +227,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             return null;
         }
     }
-
     private StartTaskRequest createStartTaskRequest(String resultId, Integer revision, @NotNull String containerInstanceArn) throws ECSException {
         ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(resultId))
@@ -236,6 +237,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
                 .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride));
     }
+
 
     // Isolated Agent Service methods
     @Override
@@ -252,7 +254,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         boolean finished = false;
         while (!finished) {
             try {
-
                 String containerInstanceArn = selectContainerInstance();
                 if (containerInstanceArn == null) {
                     logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
