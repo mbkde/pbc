@@ -2,3 +2,5 @@
 /bamboo-isolated-docker-plugin/target/
 /bamboo-isolated-ecs-plugin/target/
 /isolated-docker-spi/target/
+*.iml
+.idea/

@@ -54,6 +54,7 @@ public interface Constants {
     Integer SIDEKICK_MEMORY = 256;
     Integer AGENT_CPU = 2000;
     Integer AGENT_MEMORY = 7800;
+
     Integer TASK_CPU = SIDEKICK_CPU + AGENT_CPU;
     Integer TASK_MEMORY = SIDEKICK_MEMORY + AGENT_MEMORY;
 
