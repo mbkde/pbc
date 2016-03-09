@@ -16,7 +16,6 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.agent.AgentType;
-import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.v2.build.CommonContext;
@@ -28,17 +27,15 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

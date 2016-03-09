@@ -23,7 +23,7 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgentRequirementFilter;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,10 +73,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     }
 
     private static boolean hasIsolatedDockerRequirement(MinimalRequirementSet requirements) {
-        return requirements.getRequirements().stream()
-                .filter((Requirement t) -> Constants.CAPABILITY.equals(t.getKey()))
-                .findAny()
-                .isPresent();
+        return requirements.getRequirements().stream().anyMatch(t -> Constants.CAPABILITY.equals(t.getKey()));
     }
     
 }
