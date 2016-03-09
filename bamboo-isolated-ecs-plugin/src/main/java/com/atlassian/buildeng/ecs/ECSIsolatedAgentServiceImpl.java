@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.services.ecs.AmazonECSAsyncClient;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
@@ -31,9 +30,9 @@ import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.Resource;
-import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
@@ -58,7 +57,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 

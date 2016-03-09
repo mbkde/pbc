@@ -23,7 +23,7 @@ public class ContainerInstanceInfo implements Comparable<ContainerInstanceInfo> 
 
     @Override
     public int compareTo(ContainerInstanceInfo x) {
-        if (remainingMemory == x.remainingMemory) {
+        if (remainingMemory.equals(x.remainingMemory)) {
             return arn.compareTo(x.arn);
         } else {
             return remainingMemory.compareTo(x.remainingMemory);
