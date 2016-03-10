@@ -73,8 +73,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 .withContainerDefinitions(
                         Constants.AGENT_BASE_DEFINITION
                             .withImage(dockerImage)
-                            .withEnvironment(new KeyValuePair().withName(Constants.SERVER_ENV_VAR).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.IMAGE_ENV_VAR).withValue(dockerImage)),
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(dockerImage)),
                         Constants.SIDEKICK_DEFINITION
                             .withImage(getCurrentSidekick()))
                 .withFamily(Constants.TASK_DEFINITION_NAME);
@@ -191,8 +191,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             throw new ImageNotRegisteredException(req.getDockerImage());
         }
         ContainerOverride buildResultOverride = new ContainerOverride()
-                .withEnvironment(new KeyValuePair().withName(Constants.JOB_ENV_VAR).withValue(req.getBuildResultKey()))
-                .withName(Constants.AGENT_NAME);
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(req.getBuildResultKey()))
+                .withName(Constants.AGENT_CONTAINER_NAME);
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(getCurrentCluster())
                 .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
