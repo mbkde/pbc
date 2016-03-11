@@ -66,7 +66,12 @@
         <context>docker.jobConfiguration</context>
     </web-resource>
 
-    <web-panel key="docker-build-summary" name="Isolated Docker info for job results panel." location="jobresult.summary.right" class="com.atlassian.buildeng.isolated.docker.SummaryPanel"></web-panel>
+    <web-panel key="docker-build-summary-job" name="Isolated Docker info for job results panel."
+               location="jobresult.summary.right" class="com.atlassian.buildeng.isolated.docker.SummaryPanel">
+    </web-panel>
+    <web-panel key="docker-build-summary-plan" name="Isolated Docker info for plan results panel."
+               location="chainresult.summary.right" class="com.atlassian.buildeng.isolated.docker.PlanSummaryPanel">
+    </web-panel>
 
     <rest key="docker" path="/docker-ui" version="1.0">
         <description>Provides the REST resource for javascript code</description>

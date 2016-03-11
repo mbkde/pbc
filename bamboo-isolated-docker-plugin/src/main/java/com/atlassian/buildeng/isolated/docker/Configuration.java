@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
+import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 
@@ -52,6 +53,11 @@ public final class Configuration {
 
     public static Configuration forJob(ImmutableJob job) {
         Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
+        return forMap(cc);
+    }
+    
+    public static Configuration forBuildResultSummary(BuildResultsSummary summary) {
+        Map<String, String> cc = summary.getCustomBuildData();
         return forMap(cc);
     }
 

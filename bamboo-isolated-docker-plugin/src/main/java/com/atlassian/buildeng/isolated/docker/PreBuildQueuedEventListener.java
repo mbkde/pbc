@@ -53,20 +53,24 @@ public class PreBuildQueuedEventListener {
     public void call(BuildQueuedEvent event) throws InterruptedException, Exception {
         BuildContext buildContext = event.getContext();
         Configuration config = Configuration.forBuildContext(buildContext);
+        buildContext.getBuildResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
         if (config.isEnabled()) {
             boolean terminate = false;
             try {
-                buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_DOCKER_IMAGE, config.getDockerImage());
+                buildContext.getBuildResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "true");
+                buildContext.getBuildResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
 
                 IsolatedDockerAgentResult result = isolatedAgentService.startAgent(
                         new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
                 if (result.hasErrors()) {
                     terminate = true;
                     errorUpdateHandler.recordError(buildContext.getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
+                    buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
                 }
             } catch (Exception ex) {
                 terminate = true;
                 errorUpdateHandler.recordError(buildContext.getEntityKey(), "Build was not queued due to error", ex);
+                buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
             }
             if (terminate) {
                 buildContext.getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
