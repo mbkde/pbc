@@ -50,20 +50,27 @@ public interface Constants {
     // The script which runs the bamboo agent jar appropriately
     static final String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
+    Integer SIDEKICK_CPU = 10;
+    Integer SIDEKICK_MEMORY = 256;
+    Integer AGENT_CPU = 2000;
+    Integer AGENT_MEMORY = 7800;
+    Integer TASK_CPU = SIDEKICK_CPU + AGENT_CPU;
+    Integer TASK_MEMORY = SIDEKICK_MEMORY + AGENT_MEMORY;
+
     // The container definition of the sidekick
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
                     .withName(SIDEKICK_CONTAINER_NAME)
-                    .withCpu(10)
-                    .withMemory(512)
+                    .withCpu(SIDEKICK_CPU)
+                    .withMemory(SIDEKICK_MEMORY)
                     .withEssential(false);
 
     // The container definition of the standard spec build agent, sans docker image name
     static final ContainerDefinition AGENT_BASE_DEFINITION =
             new ContainerDefinition()
                     .withName(AGENT_CONTAINER_NAME)
-                    .withCpu(900)
-                    .withMemory(3072)
+                    .withCpu(AGENT_CPU)
+                    .withMemory(AGENT_MEMORY)
                     .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
                     .withEntryPoint(RUN_SCRIPT)
                     .withWorkingDirectory(WORK_DIR);
