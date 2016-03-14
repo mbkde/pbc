@@ -35,39 +35,34 @@
     function processValidClusters(blob) {
         var clusters = blob.clusters;
         var l = clusters.length;
-        var clusterList = document.getElementById("clusterList");
+        var clusterList = AJS.$("#clusterList");
         for (var i = 0; i < l; i++) {
-            clusterList.innerHTML += '<li><a href="javascript:setCluster(\'' + clusters[i] + '\')">' + clusters[i] + '</a></li>';
+            clusterList.append('<li><a href="javascript:setCluster(\'' + clusters[i] + '\')">' + clusters[i] + '</a></li>');
         }
         return clusters;
     }
 
-    function processCurrentCluster(cluster) {
-        var currentCluster = document.getElementById("currentCluster");//TODO jquery
-        currentCluster.innerHTML += cluster.cluster;
+    function processCurrentCluster(response) {
+        AJS.$("#currentCluster").append(response.cluster);
     }
 
-    function processCurrentSidekick(sidekick) {
-        var currentSidekick = document.getElementById("sidekickToUse");//TODO jquery
-        currentSidekick.placeholder += "Current: "
-        currentSidekick.placeholder += sidekick.sidekick;
+    function processCurrentSidekick(response) {
+        AJS.$("#sidekickToUse").attr("placeholder", "Current: " + response.sidekick).val("").focus().blur();
     }
 
     function drawTable(data) {
-        var mappings = data.mappings;
-        var l = mappings.length;
-        var table = document.getElementById("dockerImageTable"); //TODO jquery
-        for (var i = 0; i < l; i++) {
-            var dockerImage = mappings[i]["dockerImage"];
-            var revision = mappings[i]["revision"];
-            var row = table.insertRow();
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            var cell3 = row.insertCell(2);
-            cell1.innerHTML = dockerImage;
-            cell2.innerHTML = '<button type="button" class="aui-button" onclick="deleteImage(' + revision + ')">Deregister</button>';
-            cell3.innerHTML = '<a href="/admin/viewDockerUsages.action?image=' + dockerImage + '">Usages</a>';
-        }
+        var table = AJS.$("#dockerImageTable tbody");
+        AJS.$.each(data.mappings, function(i, mapping) {
+            appendTableRow(table, mapping);
+        });
+    }
+    
+    function appendTableRow(parent, mapping) {
+            parent.append('<tr id="row-revision-' + mapping.revision + '">' + 
+                         "<td>" + mapping.dockerImage + "</td>" + 
+                         '<td><button type="button" class="aui-button" onclick="deleteImage(' + mapping.revision + ')">Deregister</button></td>' +
+                         '<td><a href="/admin/viewDockerUsages.action?image=' + mapping.dockerImage + '">Usages</a></td>' +
+                         "</tr>");
     }
 
     function deleteImage(revision) {
@@ -75,7 +70,7 @@
             type: "DELETE",
             url: restEndpoint + revision,
             success: function () {
-                location.reload(true);
+                AJS.$("#dockerImageTable #row-revision-" + revision).remove();
             },
             error: function (err) {
                 alert(err.responseText);
@@ -84,14 +79,20 @@
     }
 
     function registerImage() {
-        var dockerImage = document.getElementById("dockerImageToRegister").value; //TODO jquery
+        var dockerImage = AJS.$("#dockerImageToRegister");
         AJS.$.ajax({
             type: "POST",
             url: restEndpoint,
             contentType: 'application/json',
-            data: '{"dockerImage": "' + dockerImage.trim() + '" }',
-            success: function () {
-                location.reload(true); //TODO smarter reload
+            data: '{"dockerImage": "' + dockerImage.val().trim() + '" }',
+            success: function (response) {
+                var mapping = {};
+                mapping.revision = response.revision;
+                mapping.dockerImage = dockerImage.val().trim();
+                var table = AJS.$("#dockerImageTable tbody");
+                appendTableRow(table, mapping);
+                dockerImage.val("");
+                
             },
             error: function (err) {
                 alert(err.responseText);
@@ -106,23 +107,25 @@
             contentType: 'application/json',
             data: '{"cluster": "' + cluster.trim() + '" }',
             success: function () {
-                location.reload(true); //TODO smarter reload
+                //no reload necessary
+//                location.reload(true);
             },
             error: function (err) {
                 alert(err.responseText);
+                processResource(processCurrentCluster, "cluster");
             }
         });
     }
 
     function setSidekick() {
-        var sidekick = document.getElementById("sidekickToUse").value;
+        var sidekick = AJS.$("#sidekickToUse").val();
         AJS.$.ajax({
             type: "POST",
             url: restEndpoint + "sidekick",
             contentType: 'application/json',
             data: '{"sidekick": "' + sidekick.trim() + '" }',
             success: function () {
-                location.reload(true); //TODO smarter reload
+                processResource(processCurrentSidekick, "sidekick");
             },
             error: function (err) {
                 alert(err.responseText);
@@ -137,7 +140,7 @@
             contentType: 'application/json',
             data: '{}',
             success: function () {
-                location.reload(true); //TODO smarter reload
+                processResource(processCurrentSidekick, "sidekick");
             },
             error: function (err) {
                 alert(err.responseText);
