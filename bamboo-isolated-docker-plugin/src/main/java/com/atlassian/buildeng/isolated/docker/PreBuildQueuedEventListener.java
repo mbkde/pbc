@@ -62,6 +62,10 @@ public class PreBuildQueuedEventListener {
 
                 IsolatedDockerAgentResult result = isolatedAgentService.startAgent(
                         new IsolatedDockerAgentRequest(config.getDockerImage(), buildContext.getBuildResultKey()));
+                //custom items pushed by the implementation, we give it a unique prefix
+                result.getCustomResultData().entrySet().stream().forEach((ent) -> {
+                    buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
+                });
                 if (result.hasErrors()) {
                     terminate = true;
                     errorUpdateHandler.recordError(buildContext.getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));

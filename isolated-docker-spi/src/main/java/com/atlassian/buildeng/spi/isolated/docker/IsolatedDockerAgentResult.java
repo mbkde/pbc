@@ -17,17 +17,25 @@
 package com.atlassian.buildeng.spi.isolated.docker;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class IsolatedDockerAgentResult {
 
     private final List<String> errors = new ArrayList<>();
+    private final Map<String, String> customData = new HashMap<>();
 
     public IsolatedDockerAgentResult() {
     }
 
     public IsolatedDockerAgentResult withError(String error) {
         errors.add(error);
+        return this;
+    }
+    
+    public IsolatedDockerAgentResult withCustomResultData(String key, String value) {
+        customData.put(key, value);
         return this;
     }
 
@@ -39,4 +47,7 @@ public class IsolatedDockerAgentResult {
         return errors;
     }
 
+    public Map<String, String> getCustomResultData() {
+        return customData;
+    }
 }

@@ -23,6 +23,13 @@ public class SummaryPanel implements WebPanel {
                    .append(error)
                    .append("</dd>");
             }
+            summary.getCustomBuildData().entrySet().stream()
+                    .filter((Map.Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
+                    .forEach((Map.Entry<String, String> entry) -> {
+                        ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
+                        ret.append("<dd>").append(entry.getValue()).append("</dd>");
+                    }
+            );
             ret.append("</dl>");
 //TODO more information
 //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
