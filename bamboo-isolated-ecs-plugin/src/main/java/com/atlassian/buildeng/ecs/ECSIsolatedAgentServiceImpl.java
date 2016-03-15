@@ -26,6 +26,7 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
@@ -185,7 +186,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     @Override
     public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) throws ImageNotRegisteredException, ECSException {
         Integer revision = dockerMappings.get(req.getDockerImage());
-        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+        final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         AmazonECSClient ecsClient = createClient();
         if (revision == null) {
             throw new ImageNotRegisteredException(req.getDockerImage());
@@ -203,6 +204,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             try {
                 logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
+                runTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
+                    toRet.withCustomResultData("TaskARN", t.getTaskArn());
+                });
+
                 logger.info("ECS Returned: {}", runTaskResult.toString());
                 List<Failure> failures = runTaskResult.getFailures();
                 if (failures.size() == 1) {
@@ -212,12 +217,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         finished = false; // Retry
                         Thread.sleep(5000); // 5 Seconds is a good amount of time.
                     } else {
-                        toRet = toRet.withError(mapRunTaskErrorToDescription(err));
+                        toRet.withError(mapRunTaskErrorToDescription(err));
                         finished = true; // Not a resource error, we don't handle
                     }
                 } else {
                     for (Failure err : runTaskResult.getFailures()) {
-                        toRet = toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
+                        toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
                     }
                     finished = true; // Either 0 or many errors, either way we're done
                 }

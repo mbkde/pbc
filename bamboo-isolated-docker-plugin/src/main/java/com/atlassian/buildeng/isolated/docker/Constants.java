@@ -31,4 +31,6 @@ public interface Constants {
     public static final String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     public static final String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
     public static final String REAPER_DEATH_LIST = "reaper-death-list";
+    //previx for custom data passed from the api implementation
+    public static final String RESULT_PREFIX = "result.isolated.docker.";
 }
