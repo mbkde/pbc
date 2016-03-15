@@ -5,7 +5,7 @@
 </head>
 
 <body>
-<h1>Configure Isolated Docker</h1><br>
+<h1>ECS Isolated Docker Agents</h1><br>
 
 <h2>Registered Docker Images</h2><br>
 

@@ -5,6 +5,9 @@
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
 
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="bamboo-isolated-docker-ecs"/>
+
     <component key="isolatedAgentService" class="com.atlassian.buildeng.ecs.ECSIsolatedAgentServiceImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
     </component>
@@ -24,8 +27,8 @@
     </web-resource>
 
     <web-item key="docker-config" name="Configure Isolated Docker" section="system.admin/plugins" weight="10">
-        <description>Configure Isolated Docker</description>
-        <label key="Configure Isolated Docker"/>
+        <description key="admin.web-iterm.docker-config.desc"/>
+        <label key="admin.web-iterm.docker-config.label"/>
         <link linkId="docker-config-link">/admin/viewDockerConfiguration.action</link>
     </web-item>
 
