@@ -5,7 +5,7 @@
 </head>
 
 <body>
-<h1>Configure Isolated Docker</h1><br>
+<h1>ECS Isolated Docker Agents</h1><br>
 
 <h2>Registered Docker Images</h2><br>
 
@@ -27,7 +27,7 @@
         <div class="field-group">
             <label for="dockerImageToRegister">Docker Repository</label>
             <input type="text" class="text long-field" id="dockerImageToRegister"
-                      placeholder="e.g. docker.atlassian.io/buildeng-agent/baseagent:latest"></input>
+                      placeholder="e.g. docker.atlassian.io/buildeng/agent-baseagent"></input>
             <button type="button" class="aui-button" onclick="registerImage()">Register</button>
         </div>
     </fieldset>
