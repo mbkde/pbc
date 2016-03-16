@@ -41,6 +41,9 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
+import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.DockerHost;
+import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -67,7 +70,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
-
+    private ECSScheduler ecsScheduler = new CyclingECSScheduler();
 
     @Autowired
     public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
@@ -188,43 +191,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             throw new ECSException(e);
         }
     }
-
-    private String selectContainerInstance() {
-        String currentCluster = getCurrentCluster();
-        AmazonECSClient ecsClient = createClient();
-        ListContainerInstancesRequest listContainerInstancesRequest =
-                new ListContainerInstancesRequest()
-                        .withCluster(currentCluster);
-        boolean finished = false;
-        List<String> containerInstanceArns = new ArrayList<>();
-        while (!finished) {
-            ListContainerInstancesResult listContainerInstancesResult = ecsClient.listContainerInstances(listContainerInstancesRequest);
-            containerInstanceArns.addAll(listContainerInstancesResult.getContainerInstanceArns());
-            String nextToken = listContainerInstancesResult.getNextToken();
-            if (nextToken == null) {
-                finished = true;
-            } else {
-                listContainerInstancesRequest.setNextToken(nextToken);
-            }
-        }
-        DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()
-                .withCluster(currentCluster)
-                .withContainerInstances(containerInstanceArns);
-        DescribeContainerInstancesResult result = ecsClient.describeContainerInstances(req);
-        List<ContainerInstance> containerInstances = result.getContainerInstances();
-        Optional<ContainerInstanceInfo> maybeCandidate = containerInstances.stream().map(ci -> {
-            String arn = ci.getContainerInstanceArn();
-            Integer remainingMemory = ci.getRemainingResources().stream().filter(resource -> resource.getName().equals("MEMORY")).map(Resource::getIntegerValue).collect(Collectors.toList()).get(0);
-            return new ContainerInstanceInfo(remainingMemory, arn);
-        }).sorted().filter(containerInstanceInfo -> containerInstanceInfo.canRun(Constants.TASK_MEMORY)).findFirst();
-        if (maybeCandidate.isPresent()) {
-            ContainerInstanceInfo candidate = maybeCandidate.get();
-            logger.info("Selecting container instance {} with {} MB of remaining memory", candidate.getArn(), candidate.getRemainingMemory());
-            return candidate.getArn();
-        } else {
-            return null;
-        }
-    }
+    
     private StartTaskRequest createStartTaskRequest(String resultId, Integer revision, @NotNull String containerInstanceArn) throws ECSException {
         ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(resultId))
@@ -252,7 +219,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         boolean finished = false;
         while (!finished) {
             try {
-                String containerInstanceArn = selectContainerInstance();
+                String containerInstanceArn = ecsScheduler.schedule(getCurrentCluster(), Constants.TASK_MEMORY, Constants.TASK_CPU);
                 if (containerInstanceArn == null) {
                     logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
                     finished = false; // Retry
