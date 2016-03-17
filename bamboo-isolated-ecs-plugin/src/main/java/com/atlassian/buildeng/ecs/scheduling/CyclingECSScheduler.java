@@ -1,9 +1,12 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
@@ -22,13 +25,19 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CyclingECSScheduler implements ECSScheduler {
-    static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One week
+    static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
+    static final Double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
+    static final String DEFAULT_ASG_NAME = "Staging Bamboo ECS";
 
     private final Duration stalePeriod;
-    private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
+    private final Double highWatermark;
+    private final String asgName;
+    final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
 
     public CyclingECSScheduler() {
         stalePeriod = DEFAULT_STALE_PERIOD;
+        highWatermark = DEFAULT_HIGH_WATERMARK;
+        asgName = DEFAULT_ASG_NAME;
     }
 
     // Get the arns of all owned container instances on a cluster
@@ -92,18 +101,50 @@ public class CyclingECSScheduler implements ECSScheduler {
         return dockerHosts;
     }
 
-    private Optional<DockerHost> selectHost(List<DockerHost> dockerHosts, Integer requiredMemory, Integer requiredCpu) {
+    // Select the best host to run a task with the given required resources out of a list of candidates
+    // Is Nothing if there are no feasible hosts
+    private Optional<DockerHost> selectHost(List<DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
+        return candidates.stream()
+            .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
+            .sorted(DockerHost.compareByResources())
+            .findFirst();
+    }
+
+    private Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts) {
         // Java pls
-        Map<Boolean, List<DockerHost>> partitionedHosts = dockerHosts.stream()
-                .filter(DockerHost::getAgentConnected)
-                .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
-        List<DockerHost> fresh = partitionedHosts.get(true);
-        // TODO: Add rotation for stale hosts
-        List<DockerHost> stale = partitionedHosts.get(false);
-        return fresh.stream()
-                .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
-                .sorted(DockerHost.compareByResources())
-                .findFirst();
+        return dockerHosts.stream()
+            .filter(DockerHost::getAgentConnected)
+            .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
+    }
+
+    // Terminate any stale hosts not running any tasks
+    private void rotateStale(List<DockerHost> staleHosts) {
+        AmazonEC2Client ec2Client = new AmazonEC2Client();
+        List<String> toTerminate = staleHosts.stream()
+                .filter(DockerHost::runningNothing)
+                .map(DockerHost::getInstanceId)
+                .collect(Collectors.toList());
+        if (!toTerminate.isEmpty()) {
+            ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
+        }
+    }
+
+    // Scale up if capacity is near full
+    private double percentageUtilized(List<DockerHost> freshHosts) {
+        double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
+        double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
+        if (clusterRegisteredCPU == 0) {
+            return 1;
+        } else {
+            return 1 - (clusterRemainingCPU / clusterRegisteredCPU);
+        }
+    }
+
+    private void scaleTo(int desiredCapacity) {
+        AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
+        asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
+            .withDesiredCapacity(desiredCapacity)
+            .withAutoScalingGroupName(asgName));
     }
 
     @Override
@@ -114,10 +155,22 @@ public class CyclingECSScheduler implements ECSScheduler {
                 .withCluster(cluster)
                 .withContainerInstances(containerInstanceArns);
         List<DockerHost> dockerHosts = getDockerHosts(ecsClient.describeContainerInstances(req).getContainerInstances());
-        Optional<DockerHost> candidate = selectHost(dockerHosts, requiredMemory, requiredCpu);
+        Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(dockerHosts);
+        List<DockerHost> freshHosts = partitionedHosts.get(true);
+        List<DockerHost> staleHosts = partitionedHosts.get(false);
+        Optional<DockerHost> candidate = selectHost(freshHosts, requiredMemory, requiredCpu);
         String arn = null;
+        rotateStale(staleHosts);
+        boolean scaled = false;
+        if (percentageUtilized(freshHosts) >= highWatermark) {
+            scaleTo(freshHosts.size() + 1);
+            scaled = true;
+        }
+        // If we have no candidate we are out of capacity, we need to scale if we haven't already
         if (candidate.isPresent()) {
             arn = candidate.get().getContainerInstanceArn();
+        } else if (!scaled) {
+            scaleTo(freshHosts.size() + 1);
         }
         return arn;
     }

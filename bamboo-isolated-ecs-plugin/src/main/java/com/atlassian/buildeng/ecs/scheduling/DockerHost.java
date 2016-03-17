@@ -7,55 +7,46 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 public class DockerHost {
     private Integer remainingMemory;
     private Integer remainingCpu;
+    private Integer registeredMemory;
+    private Integer registeredCpu;
     private String containerInstanceArn;
     private String instanceId;
     private Date launchTime;
     private Boolean agentConnected;
 
-    public DockerHost(Integer remainingMemory, Integer remainingCpu, String containerInstanceArn, String instanceId, Date launchTime, Boolean agentConnected) {
-        this.remainingMemory = remainingMemory;
-        this.remainingCpu = remainingCpu;
-        this.containerInstanceArn = containerInstanceArn;
-        this.instanceId = instanceId;
-        this.launchTime = launchTime;
-        this.agentConnected = agentConnected;
-    }
-
     public DockerHost(ContainerInstance containerInstance, Instance instance) throws ECSException {
-
-        remainingMemory = containerInstance.getRemainingResources().stream()
-                .filter(resource -> resource.getName().equals("MEMORY"))
-                .map(Resource::getIntegerValue)
-                .findFirst()
-                .orElseThrow(() -> new ECSException(new Exception(String.format(
-                        "Container Instance %s missing 'MEMORY' resource", containerInstance.getContainerInstanceArn()
-                ))));
-
-        remainingCpu = containerInstance.getRemainingResources().stream()
-                .filter(resource -> resource.getName().equals("CPU"))
-                .map(Resource::getIntegerValue)
-                .findFirst()
-                .orElseThrow(() -> new ECSException(new Exception(String.format(
-                        "Container Instance %s missing 'CPU' resource", containerInstance.getContainerInstanceArn()
-                ))));
-
+        remainingMemory  = getIntegralResource(containerInstance, true,  "MEMORY");
+        remainingCpu     = getIntegralResource(containerInstance, true,  "CPU");
+        registeredMemory = getIntegralResource(containerInstance, false, "MEMORY");
+        registeredCpu    = getIntegralResource(containerInstance, false, "CPU");
         containerInstanceArn = containerInstance.getContainerInstanceArn();
         instanceId = containerInstance.getEc2InstanceId();
         launchTime = instance.getLaunchTime();
         agentConnected = containerInstance.isAgentConnected();
     }
 
-    public String getContainerInstanceArn() {
-        return containerInstanceArn;
+    private static Integer getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
+        List<Resource> resources = isRemaining ? containerInstance.getRemainingResources() : containerInstance.getRegisteredResources();
+        return resources.stream()
+                .filter(resource -> resource.getName().equals(name))
+                .map(Resource::getIntegerValue)
+                .findFirst()
+                .orElseThrow(() -> new ECSException(new Exception(String.format(
+                        "Container Instance %s missing '%s' resource", containerInstance.getContainerInstanceArn(), name
+                ))));
     }
 
     public boolean canRun(Integer requiredMemory, Integer requiredCpu) {
-        return (requiredMemory <= remainingMemory) &&
-                requiredCpu <= remainingCpu;
+        return (requiredMemory <= remainingMemory && requiredCpu <= remainingCpu);
+    }
+
+    public boolean runningNothing() {
+        return (registeredMemory == remainingMemory && registeredCpu == remainingCpu);
     }
 
     public long ageMillis() {
@@ -72,7 +63,23 @@ public class DockerHost {
         };
     }
 
+    public Integer getRemainingCpu() {
+        return remainingCpu;
+    }
+
+    public Integer getRegisteredCpu() {
+        return registeredCpu;
+    }
+
+    public String getContainerInstanceArn() {
+        return containerInstanceArn;
+    }
+
     public Boolean getAgentConnected() {
         return agentConnected;
+    }
+
+    public String getInstanceId() {
+        return instanceId;
     }
 }
