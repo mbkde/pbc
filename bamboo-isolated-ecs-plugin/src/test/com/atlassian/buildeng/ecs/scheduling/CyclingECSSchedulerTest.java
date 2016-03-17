@@ -8,8 +8,10 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerTest {
@@ -19,6 +21,21 @@ public class CyclingECSSchedulerTest {
         // empty lists -> the cluster is fully utilized
         if (testHosts.size() == 0) {
             assertTrue(result == 1);
+        }
+    }
+
+    @Property public void selectHostTest(@ForAll LinkedList<@From(DockerHostGenerator.class)DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
+        Optional<DockerHost> result = CyclingECSScheduler.selectHost(candidates, requiredMemory, requiredCpu);
+        if (result.isPresent()) {
+            DockerHost candidate = result.get();
+            assertTrue(candidate.canRun(requiredMemory, requiredCpu));
+            for (DockerHost dockerHost: candidates) {
+                assertTrue(candidate.getRemainingMemory() <= dockerHost.getRemainingMemory());
+            }
+        } else {
+            for (DockerHost dockerHost: candidates) {
+                assertFalse(dockerHost.canRun(requiredMemory, requiredCpu));
+            }
         }
     }
 }

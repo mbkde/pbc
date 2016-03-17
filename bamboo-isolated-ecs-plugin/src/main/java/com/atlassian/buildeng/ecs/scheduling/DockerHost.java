@@ -74,6 +74,10 @@ public class DockerHost {
         };
     }
 
+    public Integer getRemainingMemory() {
+        return remainingMemory;
+    }
+
     public Integer getRemainingCpu() {
         return remainingCpu;
     }
