@@ -6,12 +6,14 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.StartInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
+import com.atlassian.buildeng.ecs.DockerConfigurationAction;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +44,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     // Get the arns of all owned container instances on a cluster
-    private Collection<String> getClusterContainerInstanceArns(String cluster) {
+    static private Collection<String> getClusterContainerInstanceArns(String cluster) {
         AmazonECSClient ecsClient = new AmazonECSClient();
         ListContainerInstancesRequest req = new ListContainerInstancesRequest().withCluster(cluster);
         boolean finished = false;
@@ -59,7 +62,7 @@ public class CyclingECSScheduler implements ECSScheduler {
         return containerInstanceArns;
     }
 
-    private List<Instance> getInstances(List<ContainerInstance> containerInstances) {
+    static private List<Instance> getInstances(List<ContainerInstance> containerInstances) {
         AmazonEC2Client ec2Client = new AmazonEC2Client();
         DescribeInstancesRequest req = new DescribeInstancesRequest().withInstanceIds(
                 containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList())
@@ -80,7 +83,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     // Get the instance models of the given instance ARNs
-    private List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
+    static public List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
         List<Instance> instances = getInstances(containerInstances);
         // Match up container instances and EC2 instances by instance id
         instances.sort((o1, o2) -> o1.getInstanceId().compareTo(o2.getInstanceId()));
@@ -103,22 +106,26 @@ public class CyclingECSScheduler implements ECSScheduler {
 
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    private Optional<DockerHost> selectHost(List<DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
+    static public Optional<DockerHost> selectHost(List<DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
         return candidates.stream()
             .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
             .sorted(DockerHost.compareByResources())
             .findFirst();
     }
 
-    private Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts) {
+    static public Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
         return dockerHosts.stream()
-            .filter(DockerHost::getAgentConnected)
-            .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
+                .filter(DockerHost::getAgentConnected)
+                .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
+    }
+
+    private Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts) {
+        return partitionFreshness(dockerHosts, stalePeriod);
     }
 
     // Terminate any stale hosts not running any tasks
-    private void rotateStale(List<DockerHost> staleHosts) {
+    static private void rotateStale(List<DockerHost> staleHosts) {
         AmazonEC2Client ec2Client = new AmazonEC2Client();
         List<String> toTerminate = staleHosts.stream()
                 .filter(DockerHost::runningNothing)
@@ -130,7 +137,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     // Scale up if capacity is near full
-    private double percentageUtilized(List<DockerHost> freshHosts) {
+    static public double percentageUtilized(List<DockerHost> freshHosts) {
         double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
         double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
         if (clusterRegisteredCPU == 0) {

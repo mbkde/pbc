@@ -19,6 +19,17 @@ public class DockerHost {
     private Date launchTime;
     private Boolean agentConnected;
 
+    public DockerHost(Integer remainingMemory, Integer remainingCpu, Integer registeredMemory, Integer registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, Boolean agentConnected) {
+        this.remainingMemory = remainingMemory;
+        this.remainingCpu = remainingCpu;
+        this.registeredMemory = registeredMemory;
+        this.registeredCpu = registeredCpu;
+        this.containerInstanceArn = containerInstanceArn;
+        this.instanceId = instanceId;
+        this.launchTime = launchTime;
+        this.agentConnected = agentConnected;
+    }
+
     public DockerHost(ContainerInstance containerInstance, Instance instance) throws ECSException {
         remainingMemory  = getIntegralResource(containerInstance, true,  "MEMORY");
         remainingCpu     = getIntegralResource(containerInstance, true,  "CPU");
@@ -81,5 +92,19 @@ public class DockerHost {
 
     public String getInstanceId() {
         return instanceId;
+    }
+
+    @Override
+    public String toString() {
+        return "DockerHost{" +
+                "remainingMemory=" + remainingMemory +
+                ", remainingCpu=" + remainingCpu +
+                ", registeredMemory=" + registeredMemory +
+                ", registeredCpu=" + registeredCpu +
+                ", containerInstanceArn='" + containerInstanceArn + '\'' +
+                ", instanceId='" + instanceId + '\'' +
+                ", launchTime=" + launchTime +
+                ", agentConnected=" + agentConnected +
+                '}';
     }
 }
