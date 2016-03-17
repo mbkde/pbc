@@ -94,8 +94,9 @@ public class CyclingECSScheduler implements ECSScheduler {
 
     private Optional<DockerHost> selectHost(List<DockerHost> dockerHosts, Integer requiredMemory, Integer requiredCpu) {
         // Java pls
-        Map<Boolean, List<DockerHost>> partitionedHosts = dockerHosts.stream().collect(
-                Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
+        Map<Boolean, List<DockerHost>> partitionedHosts = dockerHosts.stream()
+                .filter(DockerHost::getAgentConnected)
+                .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
         List<DockerHost> fresh = partitionedHosts.get(true);
         // TODO: Add rotation for stale hosts
         List<DockerHost> stale = partitionedHosts.get(false);

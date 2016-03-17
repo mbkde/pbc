@@ -4,7 +4,6 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.sun.research.ws.wadl.Doc;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -15,13 +14,15 @@ public class DockerHost {
     private String containerInstanceArn;
     private String instanceId;
     private Date launchTime;
+    private Boolean agentConnected;
 
-    public DockerHost(Integer remainingMemory, Integer remainingCpu, String containerInstanceArn, String instanceId, Date launchTime) {
+    public DockerHost(Integer remainingMemory, Integer remainingCpu, String containerInstanceArn, String instanceId, Date launchTime, Boolean agentConnected) {
         this.remainingMemory = remainingMemory;
         this.remainingCpu = remainingCpu;
         this.containerInstanceArn = containerInstanceArn;
         this.instanceId = instanceId;
         this.launchTime = launchTime;
+        this.agentConnected = agentConnected;
     }
 
     public DockerHost(ContainerInstance containerInstance, Instance instance) throws ECSException {
@@ -41,9 +42,11 @@ public class DockerHost {
                 .orElseThrow(() -> new ECSException(new Exception(String.format(
                         "Container Instance %s missing 'CPU' resource", containerInstance.getContainerInstanceArn()
                 ))));
+
         containerInstanceArn = containerInstance.getContainerInstanceArn();
         instanceId = containerInstance.getEc2InstanceId();
         launchTime = instance.getLaunchTime();
+        agentConnected = containerInstance.isAgentConnected();
     }
 
     public String getContainerInstanceArn() {
@@ -67,5 +70,9 @@ public class DockerHost {
                 return o1.remainingMemory.compareTo(o2.remainingMemory);
             }
         };
+    }
+
+    public Boolean getAgentConnected() {
+        return agentConnected;
     }
 }
