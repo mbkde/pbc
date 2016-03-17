@@ -9,7 +9,7 @@ import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
-import com.sun.research.ws.wadl.Doc;
+import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class CyclingECSScheduler implements ECSScheduler {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One week
 
-    private Duration stalePeriod;
+    private final Duration stalePeriod;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
 
     public CyclingECSScheduler() {
@@ -71,7 +71,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     // Get the instance models of the given instance ARNs
-    private List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) {
+    private List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
         List<Instance> instances = getInstances(containerInstances);
         // Match up container instances and EC2 instances by instance id
         instances.sort((o1, o2) -> o1.getInstanceId().compareTo(o2.getInstanceId()));
@@ -99,11 +99,14 @@ public class CyclingECSScheduler implements ECSScheduler {
         List<DockerHost> fresh = partitionedHosts.get(true);
         // TODO: Add rotation for stale hosts
         List<DockerHost> stale = partitionedHosts.get(false);
-        return fresh.stream().filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu)).sorted().findFirst();
+        return fresh.stream()
+                .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
+                .sorted(DockerHost.compareByResources())
+                .findFirst();
     }
 
     @Override
-    public String schedule(String cluster, Integer requiredMemory, Integer requiredCpu) {
+    public String schedule(String cluster, Integer requiredMemory, Integer requiredCpu) throws ECSException {
         AmazonECSClient ecsClient = new AmazonECSClient();
         Collection<String> containerInstanceArns = getClusterContainerInstanceArns(cluster);
         DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()

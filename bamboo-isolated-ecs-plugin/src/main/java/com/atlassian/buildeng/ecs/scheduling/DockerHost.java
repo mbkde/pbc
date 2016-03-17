@@ -3,11 +3,13 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
+import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.sun.research.ws.wadl.Doc;
 
+import java.util.Comparator;
 import java.util.Date;
-import java.util.stream.Collectors;
 
-public class DockerHost implements Comparable<DockerHost> {
+public class DockerHost {
     private Integer remainingMemory;
     private Integer remainingCpu;
     private String containerInstanceArn;
@@ -22,9 +24,23 @@ public class DockerHost implements Comparable<DockerHost> {
         this.launchTime = launchTime;
     }
 
-    public DockerHost(ContainerInstance containerInstance, Instance instance) {
-        remainingMemory = containerInstance.getRemainingResources().stream().filter(resource -> resource.getName().equals("MEMORY")).map(Resource::getIntegerValue).collect(Collectors.toList()).get(0);
-        remainingCpu = containerInstance.getRemainingResources().stream().filter(resource -> resource.getName().equals("CPU")).map(Resource::getIntegerValue).collect(Collectors.toList()).get(0);
+    public DockerHost(ContainerInstance containerInstance, Instance instance) throws ECSException {
+
+        remainingMemory = containerInstance.getRemainingResources().stream()
+                .filter(resource -> resource.getName().equals("MEMORY"))
+                .map(Resource::getIntegerValue)
+                .findFirst()
+                .orElseThrow(() -> new ECSException(new Exception(String.format(
+                        "Container Instance %s missing 'MEMORY' resource", containerInstance.getContainerInstanceArn()
+                ))));
+
+        remainingCpu = containerInstance.getRemainingResources().stream()
+                .filter(resource -> resource.getName().equals("CPU"))
+                .map(Resource::getIntegerValue)
+                .findFirst()
+                .orElseThrow(() -> new ECSException(new Exception(String.format(
+                        "Container Instance %s missing 'CPU' resource", containerInstance.getContainerInstanceArn()
+                ))));
         containerInstanceArn = containerInstance.getContainerInstanceArn();
         instanceId = containerInstance.getEc2InstanceId();
         launchTime = instance.getLaunchTime();
@@ -40,15 +56,16 @@ public class DockerHost implements Comparable<DockerHost> {
     }
 
     public long ageMillis() {
-        return new Date().getTime() - launchTime.getTime();
+        return System.currentTimeMillis() - launchTime.getTime();
     }
 
-    @Override
-    public int compareTo(DockerHost x) {
-        if (remainingMemory.equals(x.remainingMemory)) {
-            return containerInstanceArn.compareTo(x.containerInstanceArn);
-        } else {
-            return remainingMemory.compareTo(x.remainingMemory);
-        }
+    static Comparator<DockerHost> compareByResources() {
+        return (o1, o2) -> {
+            if (o1.remainingMemory.equals(o2.remainingMemory)) {
+                return o1.remainingCpu.compareTo(o2.remainingCpu);
+            } else {
+                return o1.remainingMemory.compareTo(o2.remainingMemory);
+            }
+        };
     }
 }
