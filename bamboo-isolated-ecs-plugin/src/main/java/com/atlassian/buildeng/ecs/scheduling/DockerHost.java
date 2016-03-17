@@ -1,6 +1,11 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.Resource;
+
 import java.util.Date;
+import java.util.stream.Collectors;
 
 public class DockerHost implements Comparable<DockerHost> {
     private Integer remainingMemory;
@@ -17,29 +22,25 @@ public class DockerHost implements Comparable<DockerHost> {
         this.launchTime = launchTime;
     }
 
-    public Integer getRemainingMemory() {
-        return remainingMemory;
-    }
-
-    public Integer getRemainingCpu() {
-        return remainingCpu;
+    public DockerHost(ContainerInstance containerInstance, Instance instance) {
+        remainingMemory = containerInstance.getRemainingResources().stream().filter(resource -> resource.getName().equals("MEMORY")).map(Resource::getIntegerValue).collect(Collectors.toList()).get(0);
+        remainingCpu = containerInstance.getRemainingResources().stream().filter(resource -> resource.getName().equals("CPU")).map(Resource::getIntegerValue).collect(Collectors.toList()).get(0);
+        containerInstanceArn = containerInstance.getContainerInstanceArn();
+        instanceId = containerInstance.getEc2InstanceId();
+        launchTime = instance.getLaunchTime();
     }
 
     public String getContainerInstanceArn() {
         return containerInstanceArn;
     }
 
-    public String getInstanceId() {
-        return instanceId;
-    }
-
-    public Date getLaunchTime() {
-        return launchTime;
-    }
-
     public boolean canRun(Integer requiredMemory, Integer requiredCpu) {
         return (requiredMemory <= remainingMemory) &&
                 requiredCpu <= remainingCpu;
+    }
+
+    public long ageMillis() {
+        return new Date().getTime() - launchTime.getTime();
     }
 
     @Override
