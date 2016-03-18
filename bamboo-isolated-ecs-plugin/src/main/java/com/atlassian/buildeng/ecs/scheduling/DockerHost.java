@@ -57,7 +57,7 @@ public class DockerHost {
     }
 
     public boolean runningNothing() {
-        return (registeredMemory == remainingMemory && registeredCpu == remainingCpu);
+        return (registeredMemory.equals(remainingMemory) && registeredCpu.equals(remainingCpu));
     }
 
     public long ageMillis() {
