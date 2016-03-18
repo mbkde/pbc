@@ -24,8 +24,8 @@ import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
-import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.amazonaws.services.ecs.model.StartTaskRequest;
+import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -35,9 +35,12 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
+import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +62,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
-
+    private ECSScheduler ecsScheduler = new CyclingECSScheduler();
 
     @Autowired
     public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
@@ -181,35 +184,46 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
     }
 
-    // Isolated Agent Service methods
+    private StartTaskRequest createStartTaskRequest(String resultId, Integer revision, @NotNull String containerInstanceArn) throws ECSException {
+        ContainerOverride buildResultOverride = new ContainerOverride()
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(resultId))
+                .withName(Constants.AGENT_CONTAINER_NAME);
+        return new StartTaskRequest()
+                .withCluster(getCurrentCluster())
+                .withContainerInstances(containerInstanceArn)
+                .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
+                .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride));
+    }
 
+
+    // Isolated Agent Service methods
     @Override
     public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) throws ImageNotRegisteredException, ECSException {
         Integer revision = dockerMappings.get(req.getDockerImage());
         final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+        String resultId = req.getBuildResultKey();
         AmazonECSClient ecsClient = createClient();
         if (revision == null) {
             throw new ImageNotRegisteredException(req.getDockerImage());
         }
-        ContainerOverride buildResultOverride = new ContainerOverride()
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(req.getBuildResultKey()))
-                .withName(Constants.AGENT_CONTAINER_NAME);
-        RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(getCurrentCluster())
-                .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
-                .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
-                .withCount(1);
+
+        logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
         boolean finished = false;
         while (!finished) {
             try {
-                logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
-                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                runTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
+                String containerInstanceArn = ecsScheduler.schedule(getCurrentCluster(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+                if (containerInstanceArn == null) {
+                    logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+                    finished = false; // Retry
+                    Thread.sleep(5000); // 5 Seconds is a good amount of time.
+                    continue;
+                }
+                StartTaskResult startTaskResult = ecsClient.startTask(createStartTaskRequest(resultId, revision, containerInstanceArn));
+                startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
                     toRet.withCustomResultData("TaskARN", t.getTaskArn());
                 });
-
-                logger.info("ECS Returned: {}", runTaskResult.toString());
-                List<Failure> failures = runTaskResult.getFailures();
+                logger.info("ECS Returned: {}", startTaskResult);
+                List<Failure> failures = startTaskResult.getFailures();
                 if (failures.size() == 1) {
                     String err = failures.get(0).getReason();
                     if (err.startsWith("RESOURCE")) {
@@ -221,7 +235,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         finished = true; // Not a resource error, we don't handle
                     }
                 } else {
-                    for (Failure err : runTaskResult.getFailures()) {
+                    for (Failure err : startTaskResult.getFailures()) {
                         toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
                     }
                     finished = true; // Either 0 or many errors, either way we're done
