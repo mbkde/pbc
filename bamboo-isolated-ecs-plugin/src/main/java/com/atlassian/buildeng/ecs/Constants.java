@@ -50,8 +50,8 @@ public interface Constants {
     // The script which runs the bamboo agent jar appropriately
     static final String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
-    Integer SIDEKICK_CPU = 10;
-    Integer SIDEKICK_MEMORY = 256;
+    Integer SIDEKICK_CPU = 40;
+    Integer SIDEKICK_MEMORY = 240;
     Integer AGENT_CPU = 2000;
     Integer AGENT_MEMORY = 7800;
 
