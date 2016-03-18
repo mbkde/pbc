@@ -1,5 +1,6 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -168,11 +169,15 @@ public class CyclingECSScheduler implements ECSScheduler {
         }
     }
 
-    private void scaleTo(int desiredCapacity) {
+    private void scaleTo(int desiredCapacity) throws ECSException {
         AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
-        asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
-            .withDesiredCapacity(desiredCapacity)
-            .withAutoScalingGroupName(asgName));
+        try {
+            asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
+                    .withDesiredCapacity(desiredCapacity)
+                    .withAutoScalingGroupName(asgName));
+        } catch (AmazonClientException e) {
+            throw new ECSException(e);
+        }
     }
 
     @Override
