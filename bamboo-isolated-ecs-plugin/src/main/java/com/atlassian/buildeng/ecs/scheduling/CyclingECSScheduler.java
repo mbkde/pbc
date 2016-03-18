@@ -141,7 +141,8 @@ public class CyclingECSScheduler implements ECSScheduler {
         }
     }
 
-    private void terminateUnused(List<DockerHost> freshHosts, Optional<DockerHost> candidate) {
+    private void terminateUnused(List<DockerHost> freshHosts, Optional<DockerHost> candidate) throws ECSException {
+        int numRemaining = freshHosts.size();
         if (candidate.isPresent()) {
             freshHosts = freshHosts.stream()
                     .filter(dockerHost -> !dockerHost.equals(candidate.get()))
@@ -156,6 +157,8 @@ public class CyclingECSScheduler implements ECSScheduler {
         if (!toTerminate.isEmpty()) {
             ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
         }
+        numRemaining -= toTerminate.size();
+        scaleTo(numRemaining);
     }
 
     // Scale up if capacity is near full
