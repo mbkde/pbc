@@ -99,6 +99,41 @@ public class DockerHost {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DockerHost that = (DockerHost) o;
+
+        if (remainingMemory != null ? !remainingMemory.equals(that.remainingMemory) : that.remainingMemory != null)
+            return false;
+        if (remainingCpu != null ? !remainingCpu.equals(that.remainingCpu) : that.remainingCpu != null) return false;
+        if (registeredMemory != null ? !registeredMemory.equals(that.registeredMemory) : that.registeredMemory != null)
+            return false;
+        if (registeredCpu != null ? !registeredCpu.equals(that.registeredCpu) : that.registeredCpu != null)
+            return false;
+        if (containerInstanceArn != null ? !containerInstanceArn.equals(that.containerInstanceArn) : that.containerInstanceArn != null)
+            return false;
+        if (instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) return false;
+        if (launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null) return false;
+        return !(agentConnected != null ? !agentConnected.equals(that.agentConnected) : that.agentConnected != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = remainingMemory != null ? remainingMemory.hashCode() : 0;
+        result = 31 * result + (remainingCpu != null ? remainingCpu.hashCode() : 0);
+        result = 31 * result + (registeredMemory != null ? registeredMemory.hashCode() : 0);
+        result = 31 * result + (registeredCpu != null ? registeredCpu.hashCode() : 0);
+        result = 31 * result + (containerInstanceArn != null ? containerInstanceArn.hashCode() : 0);
+        result = 31 * result + (instanceId != null ? instanceId.hashCode() : 0);
+        result = 31 * result + (launchTime != null ? launchTime.hashCode() : 0);
+        result = 31 * result + (agentConnected != null ? agentConnected.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "DockerHost{" +
                 "remainingMemory=" + remainingMemory +

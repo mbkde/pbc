@@ -25,20 +25,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CyclingECSScheduler implements ECSScheduler {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
+    static final Duration DEFAULT_GRACE_PERIOD = Duration.ofMinutes(5); // Give instances 5 minutes to pick up a task
     static final Double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
     static final String DEFAULT_ASG_NAME = "Staging Bamboo ECS";
 
     private final Duration stalePeriod;
+    private final Duration gracePeriod;
     private final Double highWatermark;
     private final String asgName;
     final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
 
     public CyclingECSScheduler() {
         stalePeriod = DEFAULT_STALE_PERIOD;
+        gracePeriod = DEFAULT_GRACE_PERIOD;
         highWatermark = DEFAULT_HIGH_WATERMARK;
         asgName = DEFAULT_ASG_NAME;
     }
@@ -136,6 +140,23 @@ public class CyclingECSScheduler implements ECSScheduler {
         }
     }
 
+    private void terminateUnused(List<DockerHost> freshHosts, Optional<DockerHost> candidate) {
+        if (candidate.isPresent()) {
+            freshHosts = freshHosts.stream()
+                    .filter(dockerHost -> !dockerHost.equals(candidate.get()))
+                    .collect(Collectors.toList());
+        }
+        AmazonEC2Client ec2Client = new AmazonEC2Client();
+        List<String> toTerminate = freshHosts.stream()
+                .filter(DockerHost::runningNothing)
+                .filter(dockerHost -> dockerHost.ageMillis() > gracePeriod.toMillis())
+                .map(DockerHost::getInstanceId)
+                .collect(Collectors.toList());
+        if (!toTerminate.isEmpty()) {
+            ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
+        }
+    }
+
     // Scale up if capacity is near full
     static public double percentageUtilized(List<DockerHost> freshHosts) {
         double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
@@ -168,6 +189,7 @@ public class CyclingECSScheduler implements ECSScheduler {
         Optional<DockerHost> candidate = selectHost(freshHosts, requiredMemory, requiredCpu);
         String arn = null;
         rotateStale(staleHosts);
+        terminateUnused(freshHosts, candidate);
         boolean scaled = false;
         if (percentageUtilized(freshHosts) >= highWatermark) {
             scaleTo(freshHosts.size() + 1);
