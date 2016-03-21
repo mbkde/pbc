@@ -91,5 +91,8 @@
         <resource type="download" name="usages.js" location="/templates/plugin/dockerUsages.js"/>
         <context>viewDockerUsages</context>
     </web-resource>
-        
+    <buildProcessorServer key="agentSafeguard" name="Safeguarding agents get properly discarded after build." class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
+        <skipIfFailed/>
+        <description/>
+    </buildProcessorServer>
 </atlassian-plugin>

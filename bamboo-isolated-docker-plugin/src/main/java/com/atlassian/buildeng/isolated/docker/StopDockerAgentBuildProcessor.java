@@ -63,6 +63,11 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     private void stopAgent(final BuildLogger buildLogger, final ExecutableBuildAgent buildAgent) {
         try {
             buildAgent.stopNicely();
+            // in some cases, eg. when artifact subscription has failed the execution
+            // we don't get here to stop the agent. 
+            // the marker result custom data is here to notify the server processing 
+            // that we already called stopNicely();
+            buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_AGENT_DEATH_KISS, "true");
         } catch (RuntimeException e) {
             buildLogger.addErrorLogEntry(String.format("Failed to stop agent %s (id: %s) due to: %s. Please notify Build Engineering about this. More information can be found in the agent's log file.", buildAgent.getName(), buildAgent.getId(), e.getMessage()));
             logger.warn("Failed to stop agent {} (id: {}) due to: {}", new Object[]{buildAgent.getName(), buildAgent.getId(), e.getMessage(), e});
