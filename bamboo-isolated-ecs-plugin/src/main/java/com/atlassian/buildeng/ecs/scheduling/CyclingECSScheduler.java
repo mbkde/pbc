@@ -7,14 +7,12 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.StartInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
-import com.atlassian.buildeng.ecs.DockerConfigurationAction;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +20,9 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CyclingECSScheduler implements ECSScheduler {
@@ -39,7 +35,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     private final Duration gracePeriod;
     private final Double highWatermark;
     private final String asgName;
-    final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
+    private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
 
     public CyclingECSScheduler() {
         stalePeriod = DEFAULT_STALE_PERIOD;

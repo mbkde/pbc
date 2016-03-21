@@ -7,11 +7,11 @@ import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerTest {
@@ -19,8 +19,8 @@ public class CyclingECSSchedulerTest {
         double result = CyclingECSScheduler.percentageUtilized(testHosts);
         assertTrue(result <= 1.0 && result >= 0.0);
         // empty lists -> the cluster is fully utilized
-        if (testHosts.size() == 0) {
-            assertTrue(result == 1);
+        if (testHosts.isEmpty()) {
+            assertEquals(1, result, 0.01d);
         }
     }
 

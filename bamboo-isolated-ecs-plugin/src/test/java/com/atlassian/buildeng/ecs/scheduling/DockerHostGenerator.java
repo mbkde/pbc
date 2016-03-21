@@ -21,14 +21,14 @@ public class DockerHostGenerator extends Generator<DockerHost> {
     @Override
     public DockerHost generate(SourceOfRandomness r, GenerationStatus status) {
         StringGenerator stringGenerator = new StringGenerator();
-        Integer registeredMemory = r.nextInt(0, 244*1024); //d2.8xlarge
-        Integer remainingMemory = r.nextInt(0, registeredMemory);
-        Integer registeredCpu = r.nextInt(0, 40*1024); //m4.10xlarge
-        Integer remainingCpu = r.nextInt(0, registeredCpu);
+        int registeredMemory = r.nextInt(0, 244*1024); //d2.8xlarge
+        int remainingMemory = r.nextInt(0, registeredMemory);
+        int registeredCpu = r.nextInt(0, 40*1024); //m4.10xlarge
+        int remainingCpu = r.nextInt(0, registeredCpu);
         String containerInstanceArn = stringGenerator.generate(r, status);
         String instanceId = stringGenerator.generate(r, status);
         Date launchTime = new DateGenerator().generate(r, status);
-        Boolean agentConnected = r.nextBoolean();
+        boolean agentConnected = r.nextBoolean();
         return new DockerHost(remainingMemory, remainingCpu, registeredMemory, registeredCpu, containerInstanceArn, instanceId, launchTime, agentConnected);
     }
 }

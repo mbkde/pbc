@@ -8,18 +8,21 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import org.jetbrains.annotations.TestOnly;
 
 public class DockerHost {
-    private Integer remainingMemory;
-    private Integer remainingCpu;
-    private Integer registeredMemory;
-    private Integer registeredCpu;
-    private String containerInstanceArn;
-    private String instanceId;
-    private Date launchTime;
-    private Boolean agentConnected;
+    private final int remainingMemory;
+    private final int remainingCpu;
+    private final int registeredMemory;
+    private final int registeredCpu;
+    private final String containerInstanceArn;
+    private final String instanceId;
+    private final Date launchTime;
+    private final boolean agentConnected;
 
-    public DockerHost(Integer remainingMemory, Integer remainingCpu, Integer registeredMemory, Integer registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, Boolean agentConnected) {
+    @TestOnly
+    DockerHost(int remainingMemory, int remainingCpu, int registeredMemory, int registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, boolean agentConnected) {
         this.remainingMemory = remainingMemory;
         this.remainingCpu = remainingCpu;
         this.registeredMemory = registeredMemory;
@@ -41,11 +44,12 @@ public class DockerHost {
         agentConnected = containerInstance.isAgentConnected();
     }
 
-    private static Integer getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
+    private static int getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
         List<Resource> resources = isRemaining ? containerInstance.getRemainingResources() : containerInstance.getRegisteredResources();
         return resources.stream()
                 .filter(resource -> resource.getName().equals(name))
                 .map(Resource::getIntegerValue)
+                .filter(Objects::nonNull) // Apparently Resource::getIntegerValue can be null? but we want an int only.
                 .findFirst()
                 .orElseThrow(() -> new ECSException(new Exception(String.format(
                         "Container Instance %s missing '%s' resource", containerInstance.getContainerInstanceArn(), name
@@ -53,11 +57,11 @@ public class DockerHost {
     }
 
     public boolean canRun(Integer requiredMemory, Integer requiredCpu) {
-        return (requiredMemory <= remainingMemory && requiredCpu <= remainingCpu);
+        return requiredMemory <= remainingMemory && requiredCpu <= remainingCpu;
     }
 
     public boolean runningNothing() {
-        return (registeredMemory.equals(remainingMemory) && registeredCpu.equals(remainingCpu));
+        return registeredMemory == remainingMemory && registeredCpu == remainingCpu;
     }
 
     public long ageMillis() {
@@ -66,23 +70,23 @@ public class DockerHost {
 
     static Comparator<DockerHost> compareByResources() {
         return (o1, o2) -> {
-            if (o1.remainingMemory.equals(o2.remainingMemory)) {
-                return o1.remainingCpu.compareTo(o2.remainingCpu);
+            if (o1.remainingMemory == o2.remainingMemory) {
+                return Integer.compare(o1.remainingCpu, o2.remainingCpu);
             } else {
-                return o1.remainingMemory.compareTo(o2.remainingMemory);
+                return Integer.compare(o1.remainingMemory, o2.remainingMemory);
             }
         };
     }
 
-    public Integer getRemainingMemory() {
+    public int getRemainingMemory() {
         return remainingMemory;
     }
 
-    public Integer getRemainingCpu() {
+    public int getRemainingCpu() {
         return remainingCpu;
     }
 
-    public Integer getRegisteredCpu() {
+    public int getRegisteredCpu() {
         return registeredCpu;
     }
 
@@ -90,7 +94,7 @@ public class DockerHost {
         return containerInstanceArn;
     }
 
-    public Boolean getAgentConnected() {
+    public boolean getAgentConnected() {
         return agentConnected;
     }
 
@@ -105,31 +109,20 @@ public class DockerHost {
 
         DockerHost that = (DockerHost) o;
 
-        if (remainingMemory != null ? !remainingMemory.equals(that.remainingMemory) : that.remainingMemory != null)
+        if (containerInstanceArn != null ? !containerInstanceArn.equals(that.containerInstanceArn) : that.containerInstanceArn != null) {
             return false;
-        if (remainingCpu != null ? !remainingCpu.equals(that.remainingCpu) : that.remainingCpu != null) return false;
-        if (registeredMemory != null ? !registeredMemory.equals(that.registeredMemory) : that.registeredMemory != null)
+        }
+        if (instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) {
             return false;
-        if (registeredCpu != null ? !registeredCpu.equals(that.registeredCpu) : that.registeredCpu != null)
-            return false;
-        if (containerInstanceArn != null ? !containerInstanceArn.equals(that.containerInstanceArn) : that.containerInstanceArn != null)
-            return false;
-        if (instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) return false;
-        if (launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null) return false;
-        return !(agentConnected != null ? !agentConnected.equals(that.agentConnected) : that.agentConnected != null);
-
+        }
+        return !(launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null);
     }
 
     @Override
     public int hashCode() {
-        int result = remainingMemory != null ? remainingMemory.hashCode() : 0;
-        result = 31 * result + (remainingCpu != null ? remainingCpu.hashCode() : 0);
-        result = 31 * result + (registeredMemory != null ? registeredMemory.hashCode() : 0);
-        result = 31 * result + (registeredCpu != null ? registeredCpu.hashCode() : 0);
-        result = 31 * result + (containerInstanceArn != null ? containerInstanceArn.hashCode() : 0);
+        int result = (containerInstanceArn != null ? containerInstanceArn.hashCode() : 0);
         result = 31 * result + (instanceId != null ? instanceId.hashCode() : 0);
         result = 31 * result + (launchTime != null ? launchTime.hashCode() : 0);
-        result = 31 * result + (agentConnected != null ? agentConnected.hashCode() : 0);
         return result;
     }
 
