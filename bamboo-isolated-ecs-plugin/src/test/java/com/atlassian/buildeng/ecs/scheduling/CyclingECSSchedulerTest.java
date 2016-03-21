@@ -8,16 +8,21 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.Optional;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerTest {
     @Property public void percentageUtilizedValidBounds(@ForAll LinkedList<@From(DockerHostGenerator.class)DockerHost> testHosts) {
         double result = CyclingECSScheduler.percentageUtilized(testHosts);
-        assertTrue(result <= 1.0 && result >= 0.0);
+        assertThat(result, is(both(greaterThanOrEqualTo(0.0)).and(lessThanOrEqualTo(1.0))));
         // empty lists -> the cluster is fully utilized
         if (testHosts.isEmpty()) {
             assertEquals(1, result, 0.01d);
