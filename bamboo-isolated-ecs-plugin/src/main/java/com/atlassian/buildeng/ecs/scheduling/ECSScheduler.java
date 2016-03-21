@@ -6,8 +6,11 @@ public interface ECSScheduler {
     /**
      * Return an ECS Container Instance ARN suitable to run the given resource requirements.
      * @param cluster The cluster to run the task on.
+     * @param requiredMemory
+     * @param requiredCpu
      * @return The ARN of container instances suitable to use. If nothing is suitable, null is returned;
+     * @throws com.atlassian.buildeng.ecs.exceptions.ECSException
      */
 
-    String schedule(String cluster, Integer requiredMemory, Integer requiredCpu) throws ECSException;
+    String schedule(String cluster, int requiredMemory, int requiredCpu) throws ECSException;
 }

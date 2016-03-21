@@ -28,12 +28,12 @@ import java.util.stream.Collectors;
 public class CyclingECSScheduler implements ECSScheduler {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     static final Duration DEFAULT_GRACE_PERIOD = Duration.ofMinutes(5); // Give instances 5 minutes to pick up a task
-    static final Double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
+    static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
     static final String DEFAULT_ASG_NAME = "Staging Bamboo ECS";
 
     private final Duration stalePeriod;
     private final Duration gracePeriod;
-    private final Double highWatermark;
+    private final double highWatermark;
     private final String asgName;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
 
@@ -107,7 +107,7 @@ public class CyclingECSScheduler implements ECSScheduler {
 
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    static public Optional<DockerHost> selectHost(List<DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
+    static public Optional<DockerHost> selectHost(List<DockerHost> candidates, int requiredMemory, int requiredCpu) {
         return candidates.stream()
             .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
             .sorted(DockerHost.compareByResources())
@@ -180,7 +180,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     @Override
-    public String schedule(String cluster, Integer requiredMemory, Integer requiredCpu) throws ECSException {
+    public String schedule(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
         AmazonECSClient ecsClient = new AmazonECSClient();
         Collection<String> containerInstanceArns = getClusterContainerInstanceArns(cluster);
         DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()

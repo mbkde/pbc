@@ -56,7 +56,7 @@ public class DockerHost {
                 ))));
     }
 
-    public boolean canRun(Integer requiredMemory, Integer requiredCpu) {
+    public boolean canRun(int requiredMemory, int requiredCpu) {
         return requiredMemory <= remainingMemory && requiredCpu <= remainingCpu;
     }
 
@@ -65,6 +65,8 @@ public class DockerHost {
     }
 
     public long ageMillis() {
+        //TODO comparing Date.getTime() with System.currentTimeMillis() can
+        // have timezone/daylight savings consequences? depends on the bamboo server setup I suppose
         return System.currentTimeMillis() - launchTime.getTime();
     }
 

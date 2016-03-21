@@ -62,7 +62,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
-    private ECSScheduler ecsScheduler = new CyclingECSScheduler();
+    private final ECSScheduler ecsScheduler = new CyclingECSScheduler();
 
     @Autowired
     public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
