@@ -1,25 +1,13 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
-import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
-import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
-import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
-import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,56 +25,20 @@ public class CyclingECSScheduler implements ECSScheduler {
     private final double highWatermark;
     private final String asgName;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
+    
+    private final SchedulerBackend schedulerBackend;
 
-    public CyclingECSScheduler() {
+    public CyclingECSScheduler(SchedulerBackend schedulerBackend) {
         stalePeriod = DEFAULT_STALE_PERIOD;
         gracePeriod = DEFAULT_GRACE_PERIOD;
         highWatermark = DEFAULT_HIGH_WATERMARK;
         asgName = DEFAULT_ASG_NAME;
-    }
-
-    // Get the arns of all owned container instances on a cluster
-    static private Collection<String> getClusterContainerInstanceArns(String cluster) {
-        AmazonECSClient ecsClient = new AmazonECSClient();
-        ListContainerInstancesRequest req = new ListContainerInstancesRequest().withCluster(cluster);
-        boolean finished = false;
-        Collection<String> containerInstanceArns = new ArrayList<>();
-        while (!finished) {
-            ListContainerInstancesResult listContainerInstancesResult = ecsClient.listContainerInstances(req);
-            containerInstanceArns.addAll(listContainerInstancesResult.getContainerInstanceArns());
-            String nextToken = listContainerInstancesResult.getNextToken();
-            if (nextToken == null) {
-                finished = true;
-            } else {
-                req.setNextToken(nextToken);
-            }
-        }
-        return containerInstanceArns;
-    }
-
-    static private List<Instance> getInstances(List<ContainerInstance> containerInstances) {
-        AmazonEC2Client ec2Client = new AmazonEC2Client();
-        DescribeInstancesRequest req = new DescribeInstancesRequest().withInstanceIds(
-                containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList())
-        );
-        boolean finished = false;
-        List<Instance> instances = new ArrayList<>();
-        while (!finished) {
-            DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
-            describeInstancesResult.getReservations().forEach(reservation -> instances.addAll(reservation.getInstances()));
-            String nextToken = describeInstancesResult.getNextToken();
-            if (nextToken == null) {
-                finished = true;
-            } else {
-                req.setNextToken(nextToken);
-            }
-        }
-        return instances;
+        this.schedulerBackend = schedulerBackend;
     }
 
     // Get the instance models of the given instance ARNs
-    static List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
-        List<Instance> instances = getInstances(containerInstances);
+    List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
+        List<Instance> instances = schedulerBackend.getInstances(containerInstances);
         // Match up container instances and EC2 instances by instance id
         instances.sort((o1, o2) -> o1.getInstanceId().compareTo(o2.getInstanceId()));
         containerInstances.sort((o1, o2) -> o1.getEc2InstanceId().compareTo(o2.getEc2InstanceId()));
@@ -155,26 +107,10 @@ public class CyclingECSScheduler implements ECSScheduler {
         }
     }
 
-    private void scaleTo(int desiredCapacity) throws ECSException {
-        logger.info("Scaling to capacity: {} in ASG: {}", desiredCapacity, asgName);
-        AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
-        try {
-            asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
-                    .withDesiredCapacity(desiredCapacity)
-                    .withAutoScalingGroupName(asgName));
-        } catch (AmazonClientException e) {
-            throw new ECSException(e);
-        }
-    }
-
     @Override
     public String schedule(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
-        AmazonECSClient ecsClient = new AmazonECSClient();
-        Collection<String> containerInstanceArns = getClusterContainerInstanceArns(cluster);
-        DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()
-                .withCluster(cluster)
-                .withContainerInstances(containerInstanceArns);
-        final List<DockerHost> dockerHosts = getDockerHosts(ecsClient.describeContainerInstances(req).getContainerInstances());
+        List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster);
+        final List<DockerHost> dockerHosts = getDockerHosts(containerInstances);
         int currentSize = dockerHosts.size();
         
         final Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(dockerHosts);
@@ -205,12 +141,10 @@ public class CyclingECSScheduler implements ECSScheduler {
                 .collect(Collectors.toList());
         desiredScaleSize = desiredScaleSize - toTerminate.size();
         if (!toTerminate.isEmpty()) {
-            AmazonEC2Client ec2Client = new AmazonEC2Client();
-            logger.info("Terminating unused and stale instances: {}", toTerminate);
-            ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
+            schedulerBackend.terminateInstances(toTerminate);
         }
         if (desiredScaleSize != currentSize) {
-            scaleTo(desiredScaleSize);
+            schedulerBackend.scaleTo(desiredScaleSize, asgName);
         }
         return arn;
     }
