@@ -22,6 +22,11 @@ public interface Constants {
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
     public static final String DOCKER_IMAGE = "custom.isolated.docker.image";
     public static final String RESULT_ERROR = "custom.isolated.docker.error";
+    /**
+     * marker custom data piece key set in StopDockerAgentBuildProcessor
+     * when the agent was sentenced to die
+     */
+    public static final String RESULT_AGENT_DEATH_KISS = "custom.isolated.docker.stopped";
     public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
     public static final String CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.for";
     public static final long   REAPER_THRESHOLD_MILLIS = 300000L; //Reap agents if they're older than 5 minutes
@@ -31,6 +36,9 @@ public interface Constants {
     public static final String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     public static final String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
     public static final String REAPER_DEATH_LIST = "reaper-death-list";
-    //previx for custom data passed from the api implementation
+    /**
+     * prefix for custom data passed from the api implementation.
+     * Everything starting with this can end up in the UI.
+     */
     public static final String RESULT_PREFIX = "result.isolated.docker.";
 }

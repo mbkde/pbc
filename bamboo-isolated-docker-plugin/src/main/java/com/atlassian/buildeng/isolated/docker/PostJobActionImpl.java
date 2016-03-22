@@ -25,9 +25,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
 
 public class PostJobActionImpl implements PostJobAction {
-    private final org.slf4j.Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
 
     private final AgentManager agentManager;
 
