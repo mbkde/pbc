@@ -67,7 +67,7 @@ public class CyclingECSScheduler implements ECSScheduler {
             .findFirst();
     }
 
-    static Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts, Duration stalePeriod) {
+    private Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
         return dockerHosts.stream()
                 .filter(DockerHost::getAgentConnected)
@@ -97,7 +97,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     // Scale up if capacity is near full
-    static public double percentageUtilized(List<DockerHost> freshHosts) {
+    static double percentageUtilized(List<DockerHost> freshHosts) {
         double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
         double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
         if (clusterRegisteredCPU == 0) {
@@ -128,12 +128,7 @@ public class CyclingECSScheduler implements ECSScheduler {
         //calculate usage from used fresh instances only
         if (!candidate.isPresent() || percentageUtilized(usedFresh) >= highWatermark) {
             //if there are no unused fresh ones, scale up
-            if (unusedFresh.isEmpty()) {
-                desiredScaleSize = desiredScaleSize + 1;
-            } else {
-                //otherwise just reuse one of the unused ones
-                unusedFresh.remove(0);
-            }
+            desiredScaleSize = desiredScaleSize + 1;
         } 
         String arn = candidate.isPresent() ? candidate.get().getContainerInstanceArn() : null;
         List<String> toTerminate = Stream.concat(unusedStales.stream(), unusedFresh.stream())
