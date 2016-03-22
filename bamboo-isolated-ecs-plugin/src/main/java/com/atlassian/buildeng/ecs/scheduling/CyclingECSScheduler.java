@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CyclingECSScheduler implements ECSScheduler {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
@@ -84,7 +85,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     // Get the instance models of the given instance ARNs
-    static public List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
+    static List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
         List<Instance> instances = getInstances(containerInstances);
         // Match up container instances and EC2 instances by instance id
         instances.sort((o1, o2) -> o1.getInstanceId().compareTo(o2.getInstanceId()));
@@ -107,14 +108,14 @@ public class CyclingECSScheduler implements ECSScheduler {
 
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    static public Optional<DockerHost> selectHost(List<DockerHost> candidates, int requiredMemory, int requiredCpu) {
+    static Optional<DockerHost> selectHost(List<DockerHost> candidates, int requiredMemory, int requiredCpu) {
         return candidates.stream()
             .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
             .sorted(DockerHost.compareByResources())
             .findFirst();
     }
 
-    static public Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts, Duration stalePeriod) {
+    static Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
         return dockerHosts.stream()
                 .filter(DockerHost::getAgentConnected)
@@ -125,36 +126,22 @@ public class CyclingECSScheduler implements ECSScheduler {
         return partitionFreshness(dockerHosts, stalePeriod);
     }
 
-    // Terminate any stale hosts not running any tasks
-    static private void rotateStale(List<DockerHost> staleHosts) {
-        AmazonEC2Client ec2Client = new AmazonEC2Client();
-        List<String> toTerminate = staleHosts.stream()
+    /**
+     * Stream stale hosts not running any tasks
+     */
+    private List<DockerHost> unusedStaleInstances(List<DockerHost> staleHosts) {
+        return staleHosts.stream()
                 .filter(DockerHost::runningNothing)
-                .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
-        if (!toTerminate.isEmpty()) {
-            ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
-        }
     }
 
-    private void terminateUnused(List<DockerHost> freshHosts, Optional<DockerHost> candidate) throws ECSException {
-        int numRemaining = freshHosts.size();
-        if (candidate.isPresent()) {
-            freshHosts = freshHosts.stream()
-                    .filter(dockerHost -> !dockerHost.equals(candidate.get()))
-                    .collect(Collectors.toList());
-        }
-        AmazonEC2Client ec2Client = new AmazonEC2Client();
-        List<String> toTerminate = freshHosts.stream()
+    private List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, final Optional<DockerHost> candidateOpt) throws ECSException {
+        DockerHost candidate = candidateOpt.isPresent() ? candidateOpt.get() : null;
+        return freshHosts.stream()
+                .filter(dockerHost -> !dockerHost.equals(candidate))
                 .filter(DockerHost::runningNothing)
                 .filter(dockerHost -> dockerHost.ageMillis() > gracePeriod.toMillis())
-                .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
-        if (!toTerminate.isEmpty()) {
-            ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
-        }
-        numRemaining -= toTerminate.size();
-        scaleTo(numRemaining);
     }
 
     // Scale up if capacity is near full
@@ -169,6 +156,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     private void scaleTo(int desiredCapacity) throws ECSException {
+        logger.info("Scaling to capacity: {} in ASG: {}", desiredCapacity, asgName);
         AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
         try {
             asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
@@ -186,24 +174,43 @@ public class CyclingECSScheduler implements ECSScheduler {
         DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()
                 .withCluster(cluster)
                 .withContainerInstances(containerInstanceArns);
-        List<DockerHost> dockerHosts = getDockerHosts(ecsClient.describeContainerInstances(req).getContainerInstances());
-        Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(dockerHosts);
-        List<DockerHost> freshHosts = partitionedHosts.get(true);
-        List<DockerHost> staleHosts = partitionedHosts.get(false);
+        final List<DockerHost> dockerHosts = getDockerHosts(ecsClient.describeContainerInstances(req).getContainerInstances());
+        int currentSize = dockerHosts.size();
+        
+        final Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(dockerHosts);
+        final List<DockerHost> freshHosts = partitionedHosts.get(true);
+        final List<DockerHost> staleHosts = partitionedHosts.get(false);
         Optional<DockerHost> candidate = selectHost(freshHosts, requiredMemory, requiredCpu);
-        String arn = null;
-        rotateStale(staleHosts);
-        terminateUnused(freshHosts, candidate);
-        boolean scaled = false;
-        if (percentageUtilized(freshHosts) >= highWatermark) {
-            scaleTo(freshHosts.size() + 1);
-            scaled = true;
+        
+        List<DockerHost> unusedStales = unusedStaleInstances(staleHosts);
+        List<DockerHost> unusedFresh = unusedFreshInstances(freshHosts, candidate);
+        List<DockerHost> usedFresh = new ArrayList<>(freshHosts);
+        usedFresh.removeAll(unusedFresh);
+        
+        int desiredScaleSize = currentSize;
+        
+        //calculate usage from used fresh instances only
+        if (!candidate.isPresent() || percentageUtilized(usedFresh) >= highWatermark) {
+            //if there are no unused fresh ones, scale up
+            if (unusedFresh.isEmpty()) {
+                desiredScaleSize = desiredScaleSize + 1;
+            } else {
+                //otherwise just reuse one of the unused ones
+                unusedFresh.remove(0);
+            }
+        } 
+        String arn = candidate.isPresent() ? candidate.get().getContainerInstanceArn() : null;
+        List<String> toTerminate = Stream.concat(unusedStales.stream(), unusedFresh.stream())
+                .map(DockerHost::getInstanceId)
+                .collect(Collectors.toList());
+        desiredScaleSize = desiredScaleSize - toTerminate.size();
+        if (!toTerminate.isEmpty()) {
+            AmazonEC2Client ec2Client = new AmazonEC2Client();
+            logger.info("Terminating unused and stale instances: {}", toTerminate);
+            ec2Client.terminateInstances(new TerminateInstancesRequest(toTerminate));
         }
-        // If we have no candidate we are out of capacity, we need to scale if we haven't already
-        if (candidate.isPresent()) {
-            arn = candidate.get().getContainerInstanceArn();
-        } else if (!scaled) {
-            scaleTo(freshHosts.size() + 1);
+        if (desiredScaleSize != currentSize) {
+            scaleTo(desiredScaleSize);
         }
         return arn;
     }
