@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.atlassian.buildeng.isolated.docker;
+package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomBuildProcessor;
@@ -21,12 +21,15 @@ import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.agent.ExecutableBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.AgentContext;
+import com.atlassian.buildeng.isolated.docker.Configuration;
+import com.atlassian.buildeng.isolated.docker.Constants;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Responsible for stopping the Docker-based Bamboo agent so it won't run more than one job.
+ * Runs on agent and in coordination with PostJobActionImpl
  */
 public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     private static final Logger logger = LoggerFactory.getLogger(StopDockerAgentBuildProcessor.class);

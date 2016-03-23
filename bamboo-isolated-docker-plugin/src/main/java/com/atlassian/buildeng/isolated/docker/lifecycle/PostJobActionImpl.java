@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.isolated.docker;
+package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
+import com.atlassian.buildeng.isolated.docker.Configuration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 
+/**
+ * runs on server and removes the agent from db after StopDockerAgentBuildProcessor killed it.
+ */
 public class PostJobActionImpl implements PostJobAction {
     private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
 
@@ -39,7 +43,7 @@ public class PostJobActionImpl implements PostJobAction {
 
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
-        Configuration config = Configuration.forJob(job);
+        Configuration config = Configuration.forBuildResultSummary(buildResultsSummary);
         if (config.isEnabled()) {
             if (buildResultsSummary.getBuildAgentId() == null) {
                 LOG.info("Build agent already removed for job " + job.getId());
