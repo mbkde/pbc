@@ -9,14 +9,14 @@
     <resource type="i18n" name="i18n" location="isolated-docker-plugin"/>
 
     <preBuildAction key="measureContainerStartup" name="Measure time to start Container Agent"
-                    class="com.atlassian.buildeng.isolated.docker.CustomPreBuildActionImpl">
+                    class="com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl">
         <description>Measure the time between queue time and start time.</description>
         <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
         <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </preBuildAction>
 
     <buildProcessor key="stopContainerAgent" name="Stop Container Agent"
-                    class="com.atlassian.buildeng.isolated.docker.StopDockerAgentBuildProcessor">
+                    class="com.atlassian.buildeng.isolated.docker.lifecycle.StopDockerAgentBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
     <component-import key="isolatedAgentService"
@@ -36,7 +36,7 @@
     </buildAgentRequirementFilter>
     
     <postJobAction key="postJobActionImpl" name="PostJobActionImpl"
-                   class="com.atlassian.buildeng.isolated.docker.PostJobActionImpl">
+                   class="com.atlassian.buildeng.isolated.docker.lifecycle.PostJobActionImpl">
     </postJobAction>
 
     <component key="isolated-docker-reaper" class="com.atlassian.buildeng.isolated.docker.reaper.Reaper"
@@ -74,6 +74,7 @@
     </web-panel>
 
     <rest key="docker" path="/docker-ui" version="1.0">
+        <package>com.atlassian.buildeng.isolated.docker.rest</package>
         <description>Provides the REST resource for javascript code</description>
     </rest>
     
