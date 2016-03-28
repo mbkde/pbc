@@ -35,6 +35,7 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
+import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -62,7 +63,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
     private ConcurrentMap<String, Integer> dockerMappings = new ConcurrentHashMap<>();
-    private ECSScheduler ecsScheduler = new CyclingECSScheduler();
+    //TODO worth making these components?
+    private final ECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend());
 
     @Autowired
     public ECSIsolatedAgentServiceImpl(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
@@ -211,7 +213,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         boolean finished = false;
         while (!finished) {
             try {
-                String containerInstanceArn = ecsScheduler.schedule(getCurrentCluster(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+                String containerInstanceArn = null;
+                try {
+                     containerInstanceArn = ecsScheduler.schedule(getCurrentCluster(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+                } catch (ECSException e) {
+                    logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
+                }
                 if (containerInstanceArn == null) {
                     logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
                     finished = false; // Retry
