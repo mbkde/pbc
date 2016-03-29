@@ -17,12 +17,15 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.model.DetachInstancesRequest;
+import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
@@ -104,11 +107,18 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateInstances(List<String> instanceIds) {
+    public void terminateInstances(List<String> instanceIds, String asgName) {
+        AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
+        logger.info("Detaching and terminating unused and stale instances: {}", instanceIds);
+        DetachInstancesResult result = 
+              asClient.detachInstances(new DetachInstancesRequest()
+                    .withAutoScalingGroupName(asgName)
+                    .withInstanceIds(instanceIds)
+                    .withShouldDecrementDesiredCapacity(true));
+        logger.info("Result of detachment: {}", result);
         AmazonEC2Client ec2Client = new AmazonEC2Client();
-        logger.info("Terminating unused and stale instances: {}", instanceIds);
-        ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds));
-        //TODO are we interested in the result?
+        TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds));
+        logger.info("Result of instance termination: {}" + ec2Result);
     }
 
     

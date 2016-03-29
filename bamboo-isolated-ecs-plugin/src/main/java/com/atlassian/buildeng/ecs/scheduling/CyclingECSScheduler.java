@@ -134,9 +134,12 @@ public class CyclingECSScheduler implements ECSScheduler {
         List<String> toTerminate = Stream.concat(unusedStales.stream(), unusedFresh.stream())
                 .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
-        desiredScaleSize = desiredScaleSize - toTerminate.size();
         if (!toTerminate.isEmpty()) {
-            schedulerBackend.terminateInstances(toTerminate);
+            desiredScaleSize = desiredScaleSize - toTerminate.size();
+            //we are reducing the currentSize by the terminated list because that's
+            //what the terminateInstances method should reduce it to.
+            currentSize = currentSize - toTerminate.size();
+            schedulerBackend.terminateInstances(toTerminate, asgName);
         }
         if (desiredScaleSize != currentSize) {
             schedulerBackend.scaleTo(desiredScaleSize, asgName);
