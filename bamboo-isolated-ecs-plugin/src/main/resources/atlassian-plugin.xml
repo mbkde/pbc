@@ -12,12 +12,20 @@
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
     </component>
 
+    <component key="ecsScheduler" class="com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler">
+        <interface>com.atlassian.buildeng.ecs.scheduling.ECSScheduler</interface>
+    </component>
+    
+    <component key="schedulerBackend" class="com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend">
+        <interface>com.atlassian.buildeng.ecs.scheduling.SchedulerBackend</interface>
+    </component>
+
+    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+
     <!-- REST resources -->
     <rest key="docker" path="/docker" version="1.0">
         <description>Provides the REST resource</description>
     </rest>
-
-    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
     <web-resource key="aui-stuff">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
@@ -39,5 +47,4 @@
             </action>
         </package>
     </xwork>
-    
 </atlassian-plugin>

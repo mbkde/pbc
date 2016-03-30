@@ -46,6 +46,9 @@ import org.slf4j.LoggerFactory;
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
 
+    public AWSSchedulerBackend() {
+    }
+    
     @Override
     public List<ContainerInstance> getClusterContainerInstances(String cluster) {
         AmazonECSClient ecsClient = new AmazonECSClient();

@@ -12,8 +12,8 @@ import java.util.Objects;
 import org.jetbrains.annotations.TestOnly;
 
 public class DockerHost {
-    private final int remainingMemory;
-    private final int remainingCpu;
+    private int remainingMemory;
+    private int remainingCpu;
     private final int registeredMemory;
     private final int registeredCpu;
     private final String containerInstanceArn;
@@ -86,6 +86,14 @@ public class DockerHost {
 
     public int getRemainingCpu() {
         return remainingCpu;
+    }
+    
+    public void reduceAvailableCpuBy(int cpu) {
+        remainingCpu = remainingCpu - cpu;
+    }
+    
+    public void reduceAvailableMemoryBy( int memory ) {
+        remainingMemory = remainingMemory - memory;
     }
 
     public int getRegisteredCpu() {

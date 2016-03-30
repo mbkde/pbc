@@ -23,8 +23,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.mockito.Matchers;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -99,7 +102,15 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        scheduler.schedule("", 600, 100);
+        boolean thrown = false;
+        try {
+            scheduler.schedule("", 600, 100);
+        } catch (ECSException ex) {
+            thrown = true;
+        } 
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        assertTrue("Capacity overload", thrown);
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), Matchers.anyString());
     }
@@ -123,6 +134,9 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         String arn = scheduler.schedule("", 110, 110);
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
         assertEquals("arn2", arn);
@@ -147,6 +161,9 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         String arn = scheduler.schedule("", 100, 100);
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
@@ -172,6 +189,9 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         String arn = scheduler.schedule("", 100, 100);
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
@@ -195,15 +215,18 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);        
         String arn = scheduler.schedule("", 100, 100);
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
         assertEquals("arn2", arn);
     }
     
-        @Test
+    @Test
     public void scheduleUnusedFreshIsSelected() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
@@ -222,6 +245,9 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         String arn = scheduler.schedule("", 600, 600);
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
@@ -229,7 +255,29 @@ public class CyclingECSSchedulerTest {
     }
     
     
-    
+    @Test
+    public void scheduleRequestCoalesce() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 2000, 600, 2000, 600),
+                    ci("id2", "arn2", true, 2000, 200, 2000, 400)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        Future<String> arn = scheduler.scheduleImpl("", 199, 399);
+        Future<String> arn2 = scheduler.scheduleImpl("", 599, 599);
+        Thread.sleep(50); //wait to have the other thread start the processing
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        assertEquals("arn2", arn.get());
+        assertEquals("arn1", arn2.get());
+        verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
+        verify(schedulerBackend, times(1)).scaleTo(Matchers.anyInt(), Matchers.anyString());
+    }
+        
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
