@@ -50,9 +50,10 @@ public interface SchedulerBackend {
     void scaleTo(int desiredCapacity, String autoScalingGroup) throws ECSException;
     
     /**
-     * terminate the listed EC2 instances
+     * terminate the listed EC2 instances and reduce the size of ASG by the given amount
      * @param instanceIds 
+     * @param autoScalingGroup 
      */
-    void terminateInstances(List<String> instanceIds);
+    void terminateInstances(List<String> instanceIds, String autoScalingGroup);
 
 }
