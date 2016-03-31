@@ -49,6 +49,10 @@
     function processCurrentSidekick(response) {
         AJS.$("#sidekickToUse").attr("placeholder", "Current: " + response.sidekick).val("").focus().blur();
     }
+    
+    function processCurrentASG(response) {
+        AJS.$("#asgToUse").attr("placeholder", "Current: " + response.asg).val("").focus().blur();
+    }
 
     function drawTable(data) {
         var table = AJS.$("#dockerImageTable tbody");
@@ -147,12 +151,29 @@
             }
         });
     }
+    
+    function setASG() {
+        var asg = AJS.$("#asgToUse").val();
+        AJS.$.ajax({
+            type: "POST",
+            url: restEndpoint + "asg",
+            contentType: 'application/json',
+            data: '{"asg": "' + asg.trim() + '" }',
+            success: function () {
+                processResource(processCurrentASG, "asg");
+            },
+            error: function (err) {
+                alert(err.responseText);
+            }
+        });
+    }    
 
 AJS.$(document).ready(function() {
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
     processResource(processCurrentCluster, "cluster");
     processResource(processCurrentSidekick, "sidekick");
+    processResource(processCurrentASG, "asg");
 });
 
 

@@ -331,4 +331,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             return "Unknown RunTask reason:" + reason;
         }
     }
+
+    String getCurrentASG() {
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_ASG_KEY);
+        return name == null ? "" : name;
+    }
+    
+    void setCurrentASG(String name) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_ASG_KEY, name);
+    }    
 }
