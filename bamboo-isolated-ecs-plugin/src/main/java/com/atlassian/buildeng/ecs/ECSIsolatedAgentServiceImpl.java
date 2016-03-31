@@ -215,7 +215,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             try {
                 String containerInstanceArn = null;
                 try {
-                     containerInstanceArn = ecsScheduler.schedule(getCurrentCluster(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+                     containerInstanceArn = ecsScheduler.schedule(getCurrentCluster(), getCurrentASG(), Constants.TASK_MEMORY, Constants.TASK_CPU);
                 } catch (ECSException e) {
                     logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
                 }
