@@ -4,6 +4,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.util.concurrent.SettableFuture;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Autowired;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
@@ -34,7 +34,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private final double highWatermark;
     private final String asgName;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
-    //for tests
+    
+    @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final List<Request> requests = new ArrayList<>();
     
@@ -49,7 +50,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         executor.submit(new EndlessPolling());
     }
 
-    // Get the instance models of the given instance ARNs
+    // Get the instance models of the given instance ARNs    
     List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
         List<Instance> instances = schedulerBackend.getInstances(containerInstances);
         // Match up container instances and EC2 instances by instance id
@@ -128,7 +129,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         }
     }
 
-    //for tests
+    @VisibleForTesting
     Future<String> scheduleImpl(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
         SettableFuture<String> result = new SettableFuture<>();
         synchronized (requests) {
