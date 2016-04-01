@@ -25,7 +25,10 @@
                          class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
-
+    
+    <component key="AgentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationRescheduler">
+    </component>
+    
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>

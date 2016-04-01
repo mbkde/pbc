@@ -17,7 +17,6 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.executor.NamedExecutors;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
@@ -28,38 +27,31 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.event.api.EventListener;
-import com.atlassian.event.api.EventPublisher;
 import com.google.common.base.Joiner;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.DisposableBean;
 
 /**
  * this class is an event listener because preBuildQueuedAction requires restart
  * of bamboo when re-deployed.
  */
-public class PreBuildQueuedEventListener implements DisposableBean {
+public class PreBuildQueuedEventListener {
 
     private final IsolatedAgentService isolatedAgentService;
     private final Logger LOG = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
     private final ErrorUpdateHandler errorUpdateHandler;
     private final BuildQueueManager buildQueueManager;
-    private final EventPublisher eventPublisher;
-    private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, "Docker Agent Retry Pool");
-    private static final int MAX_RETRY_COUNT = 10;
+    private final AgentCreationRescheduler rescheduler;
 
 
     public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                        ErrorUpdateHandler errorUpdateHandler,
                                        BuildQueueManager buildQueueManager,
-                                       EventPublisher eventPublisher) {
+                                       AgentCreationRescheduler rescheduler) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
-        this.eventPublisher = eventPublisher;
+        this.rescheduler = rescheduler;
     }
 
     @EventListener
@@ -87,7 +79,7 @@ public class PreBuildQueuedEventListener implements DisposableBean {
                 event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
             });
             if (result.isRetryRecoverable()) {
-                if (reschedule(new RetryAgentStartupEvent(event.getDockerImage(), event.getContext(), event.getRetryCount() + 1))) {
+                if (rescheduler.reschedule(new RetryAgentStartupEvent(event.getDockerImage(), event.getContext(), event.getRetryCount() + 1))) {
                     return;
                 }
             }
@@ -106,29 +98,6 @@ public class PreBuildQueuedEventListener implements DisposableBean {
             buildQueueManager.removeBuildFromQueue(event.getContext().getPlanResultKey());
         }
 
-    }
-
-    private boolean reschedule(RetryAgentStartupEvent event) {
-        if (event.getRetryCount() > MAX_RETRY_COUNT) {
-            return false;
-        }
-        //total retry times:
-        int X = 10;
-        //for retry count 10 and X=10: 10 + 20 + 30 + 40 + 50 + 60 + 70 + 80 + 90 + 100 = 550s
-        //for retry count 10 and X=5 : 5 + 10 + 15 + 20 + 25 + 30 + 35 + 40 + 45 + 50 = 225s
-        LOG.info("Rescheduling {} for the {} time", event.getContext().getBuildResultKey(), event.getRetryCount());
-        executor.schedule(() -> {
-            eventPublisher.publish(event);
-        }, X * event.getRetryCount(), TimeUnit.SECONDS);
-        return true;
-    }
-
-    @Override
-    public void destroy() throws Exception {
-        //TODO this is likely called on reinstall of plugin. Is there a way to have these salvaged
-        // and re-inserted into the queue?
-        //otherwise we might end up with some unfortunate builds hanging forever.
-        executor.shutdownNow();
     }
 
     private boolean isStillQueued(BuildContext context) {
