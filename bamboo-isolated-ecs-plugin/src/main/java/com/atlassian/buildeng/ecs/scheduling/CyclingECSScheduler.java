@@ -15,10 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.DisposableBean;
@@ -37,7 +39,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    private final List<Request> requests = new ArrayList<>();
+    private final BlockingQueue<Request> requests = new LinkedBlockingQueue<>();
     
     private final SchedulerBackend schedulerBackend;
 
@@ -131,27 +133,12 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     @VisibleForTesting
     Future<String> scheduleImpl(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
-        SettableFuture<String> result = new SettableFuture<>();
-        synchronized (requests) {
-            requests.add(new Request(cluster, requiredCpu, requiredMemory, result));
-            requests.notifyAll();
-        }
-        return result;
+        Request request = new Request(cluster, requiredCpu, requiredMemory);
+        requests.add(request);
+        return request.getFuture();
     }
     
-    
-    private Request pollRequest() {
-        Request request = null;
-        synchronized (requests) {
-            if (!requests.isEmpty()) {
-                request = requests.remove(0);
-            }
-        }
-        return request;
-    }
-    
-    private void processRequests() {
-        Request request = pollRequest();
+    private void processRequests(Request request) {
         if (request == null) return;
         String cluster = request.getCluster();
         final List<DockerHost> dockerHosts;
@@ -163,7 +150,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             //mark all futures with exception.. and let the clients wait and retry..
             while (request != null) {
                 request.getFuture().setException(ex);
-                request = pollRequest();
+                request = requests.poll();
             }
             logger.error("Cannot query cluster " + cluster + " containers", ex);
             return;
@@ -194,7 +181,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 request.getFuture().setException(new ECSException("Capacity not available"));
                 someDiscarded = true;
             }
-            request = pollRequest();
+            request = requests.poll();
         }
         
         //see if we need to scale up or down..
@@ -243,18 +230,14 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         @Override
         public void run() {
-            synchronized (requests) {
-                if (requests.isEmpty()) {
-                    try {
-                        logger.debug("waiting for incoming requests");
-                        requests.wait();
-                    } catch (InterruptedException ex) {
-                        logger.error("Polling Thread interrupted");
-                    }
-                }
+            try {
+                processRequests(requests.take());
+            } catch (InterruptedException ex) {
+                logger.info("Interrupted", ex);
+            } finally {
+                //try finally to guard against unexpected exceptions.
+                executor.submit(this);
             }
-            processRequests();
-            executor.submit(this);
         }
 
     }
@@ -265,11 +248,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         private final int memory;
         private final SettableFuture<String> future;
 
-        public Request(String cluster, int cpu, int memory, SettableFuture<String> future) {
+        public Request(String cluster, int cpu, int memory) {
             this.cluster = cluster;
             this.cpu = cpu;
             this.memory = memory;
-            this.future = future;
+            this.future = new SettableFuture<>();
         }
 
         public String getCluster() {
