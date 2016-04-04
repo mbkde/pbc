@@ -47,11 +47,11 @@ import java.util.stream.Collectors;
 @WebSudoRequired
 @Path("/")
 public class Rest {
-    private final ECSIsolatedAgentServiceImpl dockerAgent;
+    private final GlobalConfiguration configuration;
 
     @Autowired
-    public Rest(ECSIsolatedAgentServiceImpl dockerAgent) {
-        this.dockerAgent = dockerAgent;
+    public Rest(GlobalConfiguration config) {
+        this.configuration = config;
     }
 
     // REST endpoints
@@ -59,7 +59,7 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
-        Map<String, Integer> mappings = dockerAgent.getAllRegistrations();
+        Map<String, Integer> mappings = configuration.getAllRegistrations();
         return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
                 (Map.Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
         ).collect(Collectors.toList()))).build();
@@ -79,14 +79,14 @@ public class Rest {
         if (dockerImage == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
         }
-        Integer revision = dockerAgent.registerDockerImage(dockerImage);
+        Integer revision = configuration.registerDockerImage(dockerImage);
         return Response.ok(new RegisterImageResponse(revision)).build();
     }
 
     @DELETE
     @Path("/{revision}")
     public Response delete(@PathParam("revision") Integer revision) throws RestableIsolatedDockerException {
-        dockerAgent.deregisterDockerImage(revision);
+        configuration.deregisterDockerImage(revision);
         return Response.noContent().build();
     }
 
@@ -94,7 +94,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster")
     public Response getCurrentCluster() {
-        return Response.ok(new GetCurrentClusterResponse(dockerAgent.getCurrentCluster())).build();
+        return Response.ok(new GetCurrentClusterResponse(configuration.getCurrentCluster())).build();
     }
 
     @POST
@@ -112,7 +112,7 @@ public class Rest {
         if (cluster == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
         }
-        dockerAgent.setCluster(cluster);
+        configuration.setCluster(cluster);
         return Response.created(URI.create("/cluster")).build();
     }
 
@@ -120,7 +120,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/sidekick")
     public Response getCurrentSidekick() {
-        return Response.ok(new GetCurrentSidekickResponse(dockerAgent.getCurrentSidekick())).build();
+        return Response.ok(new GetCurrentSidekickResponse(configuration.getCurrentSidekick())).build();
     }
 
     @POST
@@ -138,7 +138,7 @@ public class Rest {
         if (sidekick == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
         }
-        Collection<Exception> exceptions = dockerAgent.setSidekick(sidekick);
+        Collection<Exception> exceptions = configuration.setSidekick(sidekick);
         if (exceptions.isEmpty()) {
             return Response.noContent().build();
         } else {
@@ -151,7 +151,7 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sidekick/reset")
     public Response resetSidekick() {
-        Collection<Exception> exceptions = dockerAgent.resetSidekick();
+        Collection<Exception> exceptions = configuration.resetSidekick();
         if (exceptions.isEmpty()) {
             return Response.noContent().build();
         } else {
@@ -164,7 +164,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")
     public Response getValidClusters() throws RestableIsolatedDockerException {
-        List<String> clusters = dockerAgent.getValidClusters();
+        List<String> clusters = configuration.getValidClusters();
         return Response.ok(new GetValidClustersResponse(clusters)).build();
     }
 }
