@@ -11,6 +11,7 @@ public interface Constants {
     static final String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
     static final String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker";
     static final String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
+    static final String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
 
     // ECS
 

@@ -99,7 +99,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        scheduler.schedule("", 600, 100);
+        scheduler.schedule("cluster", "asg", 600, 100);
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), Matchers.anyString());
     }
@@ -122,7 +122,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 110, 110);
+        String arn = scheduler.schedule("cluster", "asg", 110, 110);
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
         assertEquals("arn2", arn);
@@ -146,7 +146,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", 100, 100);
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
@@ -171,7 +171,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", 100, 100);
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
@@ -196,7 +196,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", 100, 100);
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
@@ -221,7 +221,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 600, 600);
+        String arn = scheduler.schedule("cluster", "asg", 600, 600);
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(Matchers.anyList(), Matchers.anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), Matchers.anyString());
