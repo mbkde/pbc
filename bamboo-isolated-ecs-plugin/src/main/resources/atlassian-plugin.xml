@@ -11,6 +11,9 @@
     <component key="isolatedAgentService" class="com.atlassian.buildeng.ecs.ECSIsolatedAgentServiceImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
     </component>
+    
+    <component key="globalConfiguration" class="com.atlassian.buildeng.ecs.GlobalConfiguration">
+    </component>
 
     <component key="ecsScheduler" class="com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler">
         <interface>com.atlassian.buildeng.ecs.scheduling.ECSScheduler</interface>
