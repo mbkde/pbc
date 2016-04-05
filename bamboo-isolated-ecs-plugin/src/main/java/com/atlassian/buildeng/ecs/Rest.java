@@ -18,10 +18,10 @@ package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
-import com.atlassian.buildeng.ecs.exceptions.ExceptionMapper;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
+import com.atlassian.buildeng.ecs.rest.GetCurrentASGResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
@@ -167,4 +167,31 @@ public class Rest {
         List<String> clusters = configuration.getValidClusters();
         return Response.ok(new GetValidClustersResponse(clusters)).build();
     }
+    
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/asg")
+    public Response getCurrentASG() {
+        return Response.ok(new GetCurrentASGResponse(configuration.getCurrentASG())).build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/asg")
+    public Response setASG(String requestString) {
+        String asg;
+        try {
+            JSONObject o = new JSONObject(requestString);
+            asg = o.getString("asg");
+        } catch (JSONException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+        }
+        if (asg == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'asg' field").build();
+        }
+        configuration.setCurrentASG(asg);
+        return Response.noContent().build();
+    }
+    
 }

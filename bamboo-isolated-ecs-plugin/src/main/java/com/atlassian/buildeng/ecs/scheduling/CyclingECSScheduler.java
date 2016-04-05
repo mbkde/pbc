@@ -29,12 +29,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     static final Duration DEFAULT_GRACE_PERIOD = Duration.ofMinutes(5); // Give instances 5 minutes to pick up a task
     static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
-    static final String DEFAULT_ASG_NAME = "Staging Bamboo ECS";
 
     private final Duration stalePeriod;
     private final Duration gracePeriod;
     private final double highWatermark;
-    private final String asgName;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     
     @VisibleForTesting
@@ -47,7 +45,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         stalePeriod = DEFAULT_STALE_PERIOD;
         gracePeriod = DEFAULT_GRACE_PERIOD;
         highWatermark = DEFAULT_HIGH_WATERMARK;
-        asgName = DEFAULT_ASG_NAME;
         this.schedulerBackend = schedulerBackend;
         executor.submit(new EndlessPolling());
     }
@@ -123,17 +120,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-    public String schedule(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
+    public String schedule(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
         try {
-            return scheduleImpl(cluster, requiredMemory, requiredCpu).get();
+            return scheduleImpl(cluster, asgName, requiredMemory, requiredCpu).get();
         } catch (InterruptedException | ExecutionException ex) {
             throw new ECSException(ex);
         }
     }
 
     @VisibleForTesting
-    Future<String> scheduleImpl(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
-        Request request = new Request(cluster, requiredCpu, requiredMemory);
+    Future<String> scheduleImpl(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
+        Request request = new Request(cluster, asgName, requiredCpu, requiredMemory);
         requests.add(request);
         return request.getFuture();
     }
@@ -141,6 +138,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private void processRequests(Request request) {
         if (request == null) return;
         String cluster = request.getCluster();
+        String asgName = request.getAsgName();
         final List<DockerHost> dockerHosts;
         try {
             //this can take time (network) and in the meantime other requests can accumulate.
@@ -167,6 +165,12 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 //we need to save current cluster.. new items arrived for different one.
                 request.getFuture().setException(new ECSException("Different cluster processed now."));
                 logger.info("Skipped processing due to multiple clusters in queue");
+                break;
+            }
+            if (!asgName.equals(request.getAsgName())) {
+                //we need to save current cluster.. new items arrived for different one.
+                request.getFuture().setException(new ECSException("Different Auto Scaling Group Name processed now."));
+                logger.info("Skipped processing due to multiple auto scaling groups in queue");
                 break;
             }
             Optional<DockerHost> candidate = selectHost(freshHosts, request.getMemory(), request.getCpu());
@@ -244,12 +248,14 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     private static class Request {
         private final String cluster;
+        private final String asgName;
         private final int cpu;
         private final int memory;
         private final SettableFuture<String> future;
 
-        public Request(String cluster, int cpu, int memory) {
+        public Request(String cluster, String asgName, int cpu, int memory) {
             this.cluster = cluster;
+            this.asgName = asgName;
             this.cpu = cpu;
             this.memory = memory;
             this.future = new SettableFuture<>();
@@ -257,6 +263,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         public String getCluster() {
             return cluster;
+        }
+        
+        public String getAsgName() {
+            return asgName;
         }
 
         public int getCpu() {

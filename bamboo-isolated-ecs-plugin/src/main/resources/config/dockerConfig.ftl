@@ -64,4 +64,20 @@
     <ul class="aui-list-truncate" id="clusterList">
     </ul>
 </div>
+
+<h2>Set AutoScaling Group</h2>
+
+<form id="setASG" class="aui">
+    <fieldset>
+
+        <legend><span>Set AutoScaling Group</span></legend>
+        <div class="field-group">
+            <label for="asgToUse">AutoScaling Group</label>
+            <input type="text" class="text long-field" id="asgToUse"
+                    placeholder=""></input>
+            <button type="button" class="aui-button" onclick="setASG()">Set</button>
+        </div>
+    </fieldset>
+</form>
+
 </body>

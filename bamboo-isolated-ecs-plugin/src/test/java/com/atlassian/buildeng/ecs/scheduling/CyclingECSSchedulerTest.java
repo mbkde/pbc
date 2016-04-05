@@ -104,7 +104,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         boolean thrown = false;
         try {
-            scheduler.schedule("", 600, 100);
+            scheduler.schedule("cluster", "asg", 600, 100);
         } catch (ECSException ex) {
             thrown = true;
         } 
@@ -133,7 +133,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 110, 110);
+        String arn = scheduler.schedule("cluster", "asg", 110, 110);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -160,7 +160,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -188,7 +188,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -216,7 +216,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);        
-        String arn = scheduler.schedule("", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -244,7 +244,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("", 600, 600);
+        String arn = scheduler.schedule("cluster", "asg", 600, 600);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -267,8 +267,8 @@ public class CyclingECSSchedulerTest {
                         ec2("id2", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        Future<String> arn = scheduler.scheduleImpl("", 199, 399);
-        Future<String> arn2 = scheduler.scheduleImpl("", 599, 599);
+        Future<String> arn = scheduler.scheduleImpl("cluster", "asg", 199, 399);
+        Future<String> arn2 = scheduler.scheduleImpl("cluster", "asg", 599, 599);
         Thread.sleep(50); //wait to have the other thread start the processing
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
