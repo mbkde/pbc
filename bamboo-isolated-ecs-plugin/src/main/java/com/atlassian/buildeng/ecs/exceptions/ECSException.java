@@ -10,5 +10,9 @@ public class ECSException extends RestableIsolatedDockerException {
     public ECSException(Exception ecsException) {
         super(Response.Status.INTERNAL_SERVER_ERROR, ecsException);
     }
+    
+    public ECSException(String message) {
+        super(Response.Status.INTERNAL_SERVER_ERROR, message);
+    }
 
 }

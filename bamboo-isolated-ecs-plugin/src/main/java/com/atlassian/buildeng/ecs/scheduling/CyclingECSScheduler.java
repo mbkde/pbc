@@ -3,18 +3,29 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.util.concurrent.SettableFuture;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.beans.factory.DisposableBean;
 
-public class CyclingECSScheduler implements ECSScheduler {
+public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     static final Duration DEFAULT_GRACE_PERIOD = Duration.ofMinutes(5); // Give instances 5 minutes to pick up a task
     static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
@@ -24,6 +35,10 @@ public class CyclingECSScheduler implements ECSScheduler {
     private final double highWatermark;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     
+    @VisibleForTesting
+    final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final BlockingQueue<Request> requests = new LinkedBlockingQueue<>();
+    
     private final SchedulerBackend schedulerBackend;
 
     public CyclingECSScheduler(SchedulerBackend schedulerBackend) {
@@ -31,9 +46,10 @@ public class CyclingECSScheduler implements ECSScheduler {
         gracePeriod = DEFAULT_GRACE_PERIOD;
         highWatermark = DEFAULT_HIGH_WATERMARK;
         this.schedulerBackend = schedulerBackend;
+        executor.submit(new EndlessPolling());
     }
 
-    // Get the instance models of the given instance ARNs
+    // Get the instance models of the given instance ARNs    
     List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
         List<Instance> instances = schedulerBackend.getInstances(containerInstances);
         // Match up container instances and EC2 instances by instance id
@@ -84,10 +100,9 @@ public class CyclingECSScheduler implements ECSScheduler {
                 .collect(Collectors.toList());
     }
 
-    private List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, final Optional<DockerHost> candidateOpt) throws ECSException {
-        DockerHost candidate = candidateOpt.isPresent() ? candidateOpt.get() : null;
+    private List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, final Set<DockerHost> usedCandidates) {
         return freshHosts.stream()
-                .filter(dockerHost -> !dockerHost.equals(candidate))
+                .filter(dockerHost -> !usedCandidates.contains(dockerHost))
                 .filter(DockerHost::runningNothing)
                 .filter(dockerHost -> dockerHost.ageMillis() > gracePeriod.toMillis())
                 .collect(Collectors.toList());
@@ -106,28 +121,84 @@ public class CyclingECSScheduler implements ECSScheduler {
 
     @Override
     public String schedule(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
-        List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster);
-        final List<DockerHost> dockerHosts = getDockerHosts(containerInstances);
+        try {
+            return scheduleImpl(cluster, asgName, requiredMemory, requiredCpu).get();
+        } catch (InterruptedException | ExecutionException ex) {
+            throw new ECSException(ex);
+        }
+    }
+
+    @VisibleForTesting
+    Future<String> scheduleImpl(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
+        Request request = new Request(cluster, asgName, requiredCpu, requiredMemory);
+        requests.add(request);
+        return request.getFuture();
+    }
+    
+    private void processRequests(Request request) {
+        if (request == null) return;
+        String cluster = request.getCluster();
+        String asgName = request.getAsgName();
+        final List<DockerHost> dockerHosts;
+        try {
+            //this can take time (network) and in the meantime other requests can accumulate.
+            List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster);
+            dockerHosts = getDockerHosts(containerInstances);
+        } catch (ECSException ex) {
+            //mark all futures with exception.. and let the clients wait and retry..
+            while (request != null) {
+                request.getFuture().setException(ex);
+                request = requests.poll();
+            }
+            logger.error("Cannot query cluster " + cluster + " containers", ex);
+            return;
+        }
         int currentSize = dockerHosts.size();
-        
         final Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(dockerHosts);
         final List<DockerHost> freshHosts = partitionedHosts.get(true);
         final List<DockerHost> staleHosts = partitionedHosts.get(false);
-        Optional<DockerHost> candidate = selectHost(freshHosts, requiredMemory, requiredCpu);
+        final Set<DockerHost> usedCandidates = new HashSet<>();
+        boolean someDiscarded = false;
+        while (request != null) {
+            logger.debug("Processing request for {}", request);
+            if (!cluster.equals(request.getCluster())) {
+                //we need to save current cluster.. new items arrived for different one.
+                request.getFuture().setException(new ECSException("Different cluster processed now."));
+                logger.info("Skipped processing due to multiple clusters in queue");
+                break;
+            }
+            if (!asgName.equals(request.getAsgName())) {
+                //we need to save current cluster.. new items arrived for different one.
+                request.getFuture().setException(new ECSException("Different Auto Scaling Group Name processed now."));
+                logger.info("Skipped processing due to multiple auto scaling groups in queue");
+                break;
+            }
+            Optional<DockerHost> candidate = selectHost(freshHosts, request.getMemory(), request.getCpu());
+            if (candidate.isPresent()) {
+                DockerHost candidateHost = candidate.get();
+                usedCandidates.add(candidateHost);
+                candidateHost.reduceAvailableCpuBy(request.getCpu());
+                candidateHost.reduceAvailableMemoryBy(request.getMemory());
+                request.getFuture().set(candidateHost.getContainerInstanceArn());
+            } else {
+                //scale up + down and set all other queued requests to null.
+                request.getFuture().setException(new ECSException("Capacity not available"));
+                someDiscarded = true;
+            }
+            request = requests.poll();
+        }
         
+        //see if we need to scale up or down..
         List<DockerHost> unusedStales = unusedStaleInstances(staleHosts);
-        List<DockerHost> unusedFresh = unusedFreshInstances(freshHosts, candidate);
+        List<DockerHost> unusedFresh = unusedFreshInstances(freshHosts, usedCandidates);
         List<DockerHost> usedFresh = new ArrayList<>(freshHosts);
         usedFresh.removeAll(unusedFresh);
-        
         int desiredScaleSize = currentSize;
-        
         //calculate usage from used fresh instances only
-        if (!candidate.isPresent() || percentageUtilized(usedFresh) >= highWatermark) {
+        if (someDiscarded || percentageUtilized(usedFresh) >= highWatermark) {
             //if there are no unused fresh ones, scale up
             desiredScaleSize = desiredScaleSize + 1;
         } 
-        String arn = candidate.isPresent() ? candidate.get().getContainerInstanceArn() : null;
         List<String> toTerminate = Stream.concat(unusedStales.stream(), unusedFresh.stream())
                 .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
@@ -139,8 +210,76 @@ public class CyclingECSScheduler implements ECSScheduler {
             schedulerBackend.terminateInstances(toTerminate, asgName);
         }
         if (desiredScaleSize != currentSize) {
-            schedulerBackend.scaleTo(desiredScaleSize, asgName);
+            try {
+                schedulerBackend.scaleTo(desiredScaleSize, asgName);
+            } catch (ECSException ex) {
+                logger.error("Scaling of " + asgName + " failed", ex);
+            }
         }
-        return arn;
+    }
+    
+    void shutdownExecutor() {
+        executor.shutdown();
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        shutdownExecutor();
+    }
+
+    private class EndlessPolling implements Runnable {
+
+        public EndlessPolling() {
+        }
+
+        @Override
+        public void run() {
+            try {
+                processRequests(requests.take());
+            } catch (InterruptedException ex) {
+                logger.info("Interrupted", ex);
+            } finally {
+                //try finally to guard against unexpected exceptions.
+                executor.submit(this);
+            }
+        }
+
+    }
+
+    private static class Request {
+        private final String cluster;
+        private final String asgName;
+        private final int cpu;
+        private final int memory;
+        private final SettableFuture<String> future;
+
+        public Request(String cluster, String asgName, int cpu, int memory) {
+            this.cluster = cluster;
+            this.asgName = asgName;
+            this.cpu = cpu;
+            this.memory = memory;
+            this.future = new SettableFuture<>();
+        }
+
+        public String getCluster() {
+            return cluster;
+        }
+        
+        public String getAsgName() {
+            return asgName;
+        }
+
+        public int getCpu() {
+            return cpu;
+        }
+
+        public int getMemory() {
+            return memory;
+        }
+
+        public SettableFuture<String> getFuture() {
+            return future;
+        }
+        
     }
 }

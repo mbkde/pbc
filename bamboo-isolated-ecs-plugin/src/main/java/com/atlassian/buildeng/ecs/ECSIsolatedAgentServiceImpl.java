@@ -26,8 +26,6 @@ import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
-import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
-import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -44,12 +42,14 @@ import java.util.List;
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
+
     private final GlobalConfiguration globalConfiguration;
-    private final ECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend());
+    private final ECSScheduler ecsScheduler;
 
     @Autowired
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler scheduler) {
         this.globalConfiguration = globalConfiguration;
+        this.ecsScheduler = scheduler;
     }
  
     private StartTaskRequest createStartTaskRequest(String resultId, Integer revision, @NotNull String containerInstanceArn) throws ECSException {
