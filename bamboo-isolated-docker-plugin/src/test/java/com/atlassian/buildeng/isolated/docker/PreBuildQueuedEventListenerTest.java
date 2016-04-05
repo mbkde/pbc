@@ -99,8 +99,8 @@ public class PreBuildQueuedEventListenerTest {
     @Test
     public void testRescheduledRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
-        
-        IsolatedDockerAgentResult dockerResult = new IsolatedDockerAgentResult().withRetryRecoverable();
+        when(scheduler.reschedule(anyObject())).thenReturn(Boolean.TRUE);
+        IsolatedDockerAgentResult dockerResult = new IsolatedDockerAgentResult().withRetryRecoverable("error");
         when(isolatedAgentService.startAgent(anyObject())).thenReturn(dockerResult);
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
