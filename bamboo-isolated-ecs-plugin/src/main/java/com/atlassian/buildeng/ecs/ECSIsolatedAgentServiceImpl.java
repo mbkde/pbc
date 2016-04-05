@@ -70,51 +70,40 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         Integer revision = globalConfiguration.getAllRegistrations().get(req.getDockerImage());
         final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         String resultId = req.getBuildResultKey();
-        AmazonECSClient ecsClient = new AmazonECSClient();
         if (revision == null) {
             throw new ImageNotRegisteredException(req.getDockerImage());
         }
 
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
-        boolean finished = false;
-        while (!finished) {
-            try {
-                String containerInstanceArn = null;
-                try {
-                     containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), globalConfiguration.getCurrentASG(), Constants.TASK_MEMORY, Constants.TASK_CPU);
-                } catch (ECSException e) {
-                    logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
-                }
-                if (containerInstanceArn == null) {
-                    logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                    finished = false; // Retry
-                    Thread.sleep(5000); // 5 Seconds is a good amount of time.
-                    continue;
-                }
-                StartTaskResult startTaskResult = ecsClient.startTask(createStartTaskRequest(resultId, revision, containerInstanceArn));
-                startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
-                    toRet.withCustomResultData("TaskARN", t.getTaskArn());
-                });
-                logger.info("ECS Returned: {}", startTaskResult);
-                List<Failure> failures = startTaskResult.getFailures();
-                if (failures.size() == 1) {
-                    String err = failures.get(0).getReason();
-                    if (err.startsWith("RESOURCE")) {
-                        logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                        finished = false; // Retry
-                        Thread.sleep(5000); // 5 Seconds is a good amount of time.
-                    } else {
-                        toRet.withError(mapRunTaskErrorToDescription(err));
-                        finished = true; // Not a resource error, we don't handle
-                    }
-                } else {
-                    for (Failure err : startTaskResult.getFailures()) {
-                        toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
-                    }
-                    finished = true; // Either 0 or many errors, either way we're done
-                }
-            } catch (Exception e) {
-                throw new ECSException(e);
+        String containerInstanceArn = null;
+        try {
+             containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), globalConfiguration.getCurrentASG(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+        } catch (ECSException e) {
+            logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
+        }
+        if (containerInstanceArn == null) {
+            logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+            toRet.withRetryRecoverable();
+            return toRet;
+        }
+        AmazonECSClient ecsClient = new AmazonECSClient();
+        StartTaskResult startTaskResult = ecsClient.startTask(createStartTaskRequest(resultId, revision, containerInstanceArn));
+        startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
+            toRet.withCustomResultData("TaskARN", t.getTaskArn());
+        });
+        logger.info("ECS Returned: {}", startTaskResult);
+        List<Failure> failures = startTaskResult.getFailures();
+        if (failures.size() == 1) {
+            String err = failures.get(0).getReason();
+            if (err.startsWith("RESOURCE")) {
+                logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+                toRet.withRetryRecoverable();
+            } else {
+                toRet.withError(mapRunTaskErrorToDescription(err));
+            }
+        } else {
+            for (Failure err : startTaskResult.getFailures()) {
+                toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
             }
         }
         return toRet;
