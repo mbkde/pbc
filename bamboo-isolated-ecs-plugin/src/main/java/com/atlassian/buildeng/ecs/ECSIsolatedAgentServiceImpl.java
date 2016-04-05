@@ -77,7 +77,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
         String containerInstanceArn = null;
         try {
-             containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+             containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), globalConfiguration.getCurrentASG(), Constants.TASK_MEMORY, Constants.TASK_CPU);
         } catch (ECSException e) {
             logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
         }
@@ -129,4 +129,5 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             return "Unknown RunTask reason:" + reason;
         }
     }
+
 }

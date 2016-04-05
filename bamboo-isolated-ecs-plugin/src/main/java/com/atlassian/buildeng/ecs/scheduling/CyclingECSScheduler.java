@@ -18,12 +18,10 @@ public class CyclingECSScheduler implements ECSScheduler {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     static final Duration DEFAULT_GRACE_PERIOD = Duration.ofMinutes(5); // Give instances 5 minutes to pick up a task
     static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
-    static final String DEFAULT_ASG_NAME = "Staging Bamboo ECS";
 
     private final Duration stalePeriod;
     private final Duration gracePeriod;
     private final double highWatermark;
-    private final String asgName;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     
     private final SchedulerBackend schedulerBackend;
@@ -32,7 +30,6 @@ public class CyclingECSScheduler implements ECSScheduler {
         stalePeriod = DEFAULT_STALE_PERIOD;
         gracePeriod = DEFAULT_GRACE_PERIOD;
         highWatermark = DEFAULT_HIGH_WATERMARK;
-        asgName = DEFAULT_ASG_NAME;
         this.schedulerBackend = schedulerBackend;
     }
 
@@ -108,7 +105,7 @@ public class CyclingECSScheduler implements ECSScheduler {
     }
 
     @Override
-    public String schedule(String cluster, int requiredMemory, int requiredCpu) throws ECSException {
+    public String schedule(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
         List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster);
         final List<DockerHost> dockerHosts = getDockerHosts(containerInstances);
         int currentSize = dockerHosts.size();
