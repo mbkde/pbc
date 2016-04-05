@@ -83,7 +83,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
         if (containerInstanceArn == null) {
             logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-            toRet.withRetryRecoverable();
+            toRet.withRetryRecoverable("No Container Instance currently available");
             return toRet;
         }
         AmazonECSClient ecsClient = new AmazonECSClient();
@@ -97,7 +97,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             String err = failures.get(0).getReason();
             if (err.startsWith("RESOURCE")) {
                 logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                toRet.withRetryRecoverable();
+                toRet.withRetryRecoverable("Not enough resources available now.");
             } else {
                 toRet.withError(mapRunTaskErrorToDescription(err));
             }
