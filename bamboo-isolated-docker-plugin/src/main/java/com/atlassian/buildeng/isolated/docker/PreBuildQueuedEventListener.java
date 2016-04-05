@@ -59,6 +59,7 @@ public class PreBuildQueuedEventListener {
         BuildContext buildContext = event.getContext();
         Configuration config = Configuration.forBuildContext(buildContext);
         buildContext.getBuildResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
+        buildContext.getBuildResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
         if (config.isEnabled()) {
             retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext, 0));
         }
