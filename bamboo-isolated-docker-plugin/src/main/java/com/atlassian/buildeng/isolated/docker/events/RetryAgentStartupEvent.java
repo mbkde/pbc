@@ -16,7 +16,6 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.v2.build.BuildContext;
-import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.event.api.AsynchronousPreferred;
 
 /**
@@ -30,10 +29,16 @@ public final class RetryAgentStartupEvent {
     private final BuildContext context;
     private final String dockerImage;
 
-    public RetryAgentStartupEvent(String dockerImage, BuildContext context, int retryCount) {
+    public RetryAgentStartupEvent(String dockerImage, BuildContext context) {
         this.dockerImage = dockerImage;
         this.context = context;
-        this.retryCount = retryCount;
+        this.retryCount = 0;
+    }
+    
+    public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
+        this.dockerImage = previousEvent.getDockerImage();
+        this.context = previousEvent.getContext();
+        this.retryCount = previousEvent.getRetryCount() + 1;
     }
 
     public int getRetryCount() {

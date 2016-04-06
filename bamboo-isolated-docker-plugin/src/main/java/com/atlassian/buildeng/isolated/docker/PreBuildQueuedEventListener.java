@@ -17,11 +17,18 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
+import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
+import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
+import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
+import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
+import com.atlassian.bamboo.event.agent.AgentRegisteredEvent;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
+import com.atlassian.buildeng.isolated.docker.jmx.JMXRegistrationService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -42,16 +49,19 @@ public class PreBuildQueuedEventListener {
     private final ErrorUpdateHandler errorUpdateHandler;
     private final BuildQueueManager buildQueueManager;
     private final AgentCreationRescheduler rescheduler;
+    private final JMXRegistrationService jmx;
 
 
     public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                        ErrorUpdateHandler errorUpdateHandler,
                                        BuildQueueManager buildQueueManager,
-                                       AgentCreationRescheduler rescheduler) {
+                                       AgentCreationRescheduler rescheduler,
+                                       JMXRegistrationService jmx) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
         this.rescheduler = rescheduler;
+        this.jmx = jmx;
     }
 
     @EventListener
@@ -60,7 +70,8 @@ public class PreBuildQueuedEventListener {
         Configuration config = Configuration.forBuildContext(buildContext);
         buildContext.getBuildResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
         if (config.isEnabled()) {
-            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext, 0));
+            jmx.incrementQueued();
+            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
         }
     }
 
@@ -68,6 +79,7 @@ public class PreBuildQueuedEventListener {
     public void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
+            jmx.increamentCancelled();
             return;
         }
         boolean terminateBuild = false;
@@ -79,14 +91,17 @@ public class PreBuildQueuedEventListener {
                 event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
             });
             if (result.isRetryRecoverable()) {
-                if (rescheduler.reschedule(new RetryAgentStartupEvent(event.getDockerImage(), event.getContext(), event.getRetryCount() + 1))) {
+                if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
                     return;
                 }
+                jmx.incrementTimedOut();
             }
             if (result.hasErrors()) {
                 terminateBuild = true;
                 errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
                 event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
+            } else {
+                jmx.increaseScheduled();
             }
         } catch (IsolatedDockerAgentException ex) {
             terminateBuild = true;
@@ -94,6 +109,7 @@ public class PreBuildQueuedEventListener {
             event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
         }
         if (terminateBuild) {
+            jmx.incrementFailed();
             event.getContext().getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
             buildQueueManager.removeBuildFromQueue(event.getContext().getPlanResultKey());
         }
@@ -103,5 +119,26 @@ public class PreBuildQueuedEventListener {
     private boolean isStillQueued(BuildContext context) {
         LifeCycleState state = context.getBuildResult().getLifeCycleState();
         return LifeCycleState.isPending(state) || LifeCycleState.isQueued(state);
+    }
+    
+    @EventListener
+    public void agentRegistered(AgentRegisteredEvent event) {
+        event.getAgent().accept(new PipelineDefinitionVisitor() {
+            @Override
+            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
+            }
+
+            @Override
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
+            }
+
+            @Override
+            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
+                CapabilitySet cs = pipelineDefinition.getCapabilitySet();
+                if (cs != null && cs.getCapability(Constants.CAPABILITY_RESULT) != null) {
+                    jmx.increaseActive();
+                }
+            }
+        });
     }
 }
