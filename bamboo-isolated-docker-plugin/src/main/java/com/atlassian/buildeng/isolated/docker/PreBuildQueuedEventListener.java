@@ -79,7 +79,7 @@ public class PreBuildQueuedEventListener {
     public void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
-            jmx.increamentCancelled();
+            jmx.incrementCancelled();
             return;
         }
         boolean terminateBuild = false;
@@ -101,7 +101,7 @@ public class PreBuildQueuedEventListener {
                 errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
                 event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
             } else {
-                jmx.increaseScheduled();
+                jmx.incrementScheduled();
             }
         } catch (IsolatedDockerAgentException ex) {
             terminateBuild = true;
@@ -136,7 +136,7 @@ public class PreBuildQueuedEventListener {
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
                 CapabilitySet cs = pipelineDefinition.getCapabilitySet();
                 if (cs != null && cs.getCapability(Constants.CAPABILITY_RESULT) != null) {
-                    jmx.increaseActive();
+                    jmx.incrementActive();
                 }
             }
         });

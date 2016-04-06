@@ -48,7 +48,7 @@ public class JMXRegistrationService implements DisposableBean, InitializingBean 
        agentsCount.queued.incrementAndGet();
     }
 
-    public void increamentCancelled() {
+    public void incrementCancelled() {
        agentsCount.cancelled.incrementAndGet();
     }
 
@@ -60,11 +60,11 @@ public class JMXRegistrationService implements DisposableBean, InitializingBean 
         agentsCount.failed.incrementAndGet();
     }
 
-    public void increaseScheduled() {
+    public void incrementScheduled() {
         agentsCount.scheduled.incrementAndGet();
     }
     
-    public void increaseActive() {
+    public void incrementActive() {
         agentsCount.active.incrementAndGet();
     }
     
