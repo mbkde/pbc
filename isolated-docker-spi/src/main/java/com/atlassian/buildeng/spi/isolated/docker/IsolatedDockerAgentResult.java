@@ -41,8 +41,9 @@ public class IsolatedDockerAgentResult {
         return this;
     }
     
-    public IsolatedDockerAgentResult withRetryRecoverable() {
+    public IsolatedDockerAgentResult withRetryRecoverable(String errorMessage) {
         retry = true;
+        withError(errorMessage);
         return this;
     }
 
