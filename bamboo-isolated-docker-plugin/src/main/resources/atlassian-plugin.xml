@@ -29,7 +29,7 @@
     <component key="AgentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationRescheduler">
     </component>
     
-    <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXRegistrationService">
+    <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService">
     </component>
     
     <component-import key="pluginScheduler">

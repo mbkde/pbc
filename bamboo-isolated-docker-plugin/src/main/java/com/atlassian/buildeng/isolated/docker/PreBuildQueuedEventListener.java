@@ -28,7 +28,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
-import com.atlassian.buildeng.isolated.docker.jmx.JMXRegistrationService;
+import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -49,14 +49,14 @@ public class PreBuildQueuedEventListener {
     private final ErrorUpdateHandler errorUpdateHandler;
     private final BuildQueueManager buildQueueManager;
     private final AgentCreationRescheduler rescheduler;
-    private final JMXRegistrationService jmx;
+    private final JMXAgentsService jmx;
 
 
     public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                        ErrorUpdateHandler errorUpdateHandler,
                                        BuildQueueManager buildQueueManager,
                                        AgentCreationRescheduler rescheduler,
-                                       JMXRegistrationService jmx) {
+                                       JMXAgentsService jmx) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;

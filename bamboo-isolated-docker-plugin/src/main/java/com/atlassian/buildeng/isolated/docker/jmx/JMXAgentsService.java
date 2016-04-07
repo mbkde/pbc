@@ -25,7 +25,7 @@ import org.springframework.beans.factory.InitializingBean;
  *
  * @author mkleint
  */
-public class JMXRegistrationService implements DisposableBean, InitializingBean {
+public class JMXAgentsService implements DisposableBean, InitializingBean {
 
     private AgentCounts agentsCount;
     private ObjectName name;
