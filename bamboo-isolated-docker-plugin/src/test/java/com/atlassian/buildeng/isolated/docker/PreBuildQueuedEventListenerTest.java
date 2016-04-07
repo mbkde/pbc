@@ -22,6 +22,7 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -49,6 +50,8 @@ public class PreBuildQueuedEventListenerTest {
     private ErrorUpdateHandler errorUpdateHandler;
     @Mock
     private BuildQueueManager buildQueueManager;
+    @Mock
+    private JMXAgentsService jmx;
             
     @InjectMocks
     private PreBuildQueuedEventListener listener;
