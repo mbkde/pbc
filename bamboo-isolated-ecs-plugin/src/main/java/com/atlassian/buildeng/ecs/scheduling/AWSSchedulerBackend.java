@@ -17,6 +17,9 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DetachInstancesRequest;
 import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
@@ -35,8 +38,12 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +54,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
 
     @Override
-    public List<ContainerInstance> getClusterContainerInstances(String cluster) {
+    public List<ContainerInstance> getClusterContainerInstances(String cluster, String asgName) {
         AmazonECSClient ecsClient = new AmazonECSClient();
+        AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
         ListContainerInstancesRequest listReq = new ListContainerInstancesRequest().withCluster(cluster);
+        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgName);
+
+        // Get containerInstanceArns
         boolean finished = false;
         Collection<String> containerInstanceArns = new ArrayList<>();
         while (!finished) {
@@ -62,13 +73,33 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 listReq.setNextToken(nextToken);
             }
         }
+
+        // Get asg instances
+        Set<String> instanceIds = new HashSet<>();
+        finished = false;
+        while(!finished) {
+            DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
+            List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
+            instanceIds.addAll(asgs.stream()
+                    .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
+                    .collect(Collectors.toList()));
+            String nextToken = asgResult.getNextToken();
+            if (nextToken == null) {
+                finished = true;
+            } else {
+                asgReq.setNextToken(nextToken);
+            }
+        }
+
         if (containerInstanceArns.isEmpty()) {
             return Collections.emptyList();
         } else {
             DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
                     .withCluster(cluster)
                     .withContainerInstances(containerInstanceArns);
-            return ecsClient.describeContainerInstances(describeReq).getContainerInstances();
+            return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
+                    .filter(instanceIds::contains)
+                    .collect(Collectors.toList());
         }
     }
 

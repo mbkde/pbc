@@ -140,10 +140,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         if (request == null) return;
         String cluster = request.getCluster();
         String asgName = request.getAsgName();
+
         final List<DockerHost> dockerHosts;
         try {
             //this can take time (network) and in the meantime other requests can accumulate.
-            List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster);
+            List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster, asgName);
             dockerHosts = getDockerHosts(containerInstances);
         } catch (ECSException ex) {
             //mark all futures with exception.. and let the clients wait and retry..
