@@ -31,9 +31,15 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
+import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
+import com.amazonaws.services.ecs.model.StartTaskRequest;
+import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.amazonaws.services.ecs.model.TaskOverride;
+import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +50,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,5 +165,21 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         logger.info("Result of instance termination: {}" + ec2Result);
     }
 
-    
+    @Override
+    public SchedulingResult schedule(String containerArn, SchedulingRequest request) throws ECSException {
+        AmazonECSClient ecsClient = new AmazonECSClient();
+        ContainerOverride buildResultOverride = new ContainerOverride()
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
+                .withName(Constants.AGENT_CONTAINER_NAME);
+        try {
+            StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
+                    .withCluster(request.getCluster())
+                    .withContainerInstances(containerArn)
+                    .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + request.getRevision())
+                    .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride)));
+            return new SchedulingResult(startTaskResult, containerArn);
+        } catch (Exception e) {
+            throw new ECSException(e);
+        }
+    }
 }
