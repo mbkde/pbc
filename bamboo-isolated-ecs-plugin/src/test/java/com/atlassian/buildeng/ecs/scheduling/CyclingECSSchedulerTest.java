@@ -63,7 +63,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        List<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend).getDockerHosts(schedulerBackend.getClusterContainerInstances(""));
+        List<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend).getDockerHosts(schedulerBackend.getClusterContainerInstances("", ""));
         //100 & 100 means all are viable candidates
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, 100, 100);
         assertTrue(candidate.isPresent());
@@ -200,7 +200,7 @@ public class CyclingECSSchedulerTest {
     }    
     
     @Test
-    public void scheduleTerminatingOfIdleOutOfGracePeriod() throws Exception {
+    public void scheduleTerminatingOfIdleInSecondHalfOfBillingCycle() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
                     ci("id1", "arn1", true, 2000, 2000, 2000, 2000),
@@ -286,7 +286,7 @@ public class CyclingECSSchedulerTest {
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
-        when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
+        when(mocked.getClusterContainerInstances(anyString(), anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(Matchers.anyList())).thenReturn(ec2Instances);
         return mocked;
     }

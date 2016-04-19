@@ -71,7 +71,7 @@ public class DockerHost {
     public boolean inSecondHalfOfBillingCycle() {
         // Mod by hour
         long millisSinceStartOfCycle = ageMillis() % (1000 * 60 * 60);
-        // Are we in the first half hour of an hourly cycle
+        // Are we in the second half hour of an hourly cycle
         return millisSinceStartOfCycle >= 1000 * 60 * 30;
     }
 
