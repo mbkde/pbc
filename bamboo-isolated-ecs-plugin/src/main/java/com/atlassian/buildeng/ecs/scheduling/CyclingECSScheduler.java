@@ -299,9 +299,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             if (memory != request.memory) return false;
             if (cluster != null ? !cluster.equals(request.cluster) : request.cluster != null) return false;
             if (asgName != null ? !asgName.equals(request.asgName) : request.asgName != null) return false;
-            if (identifier != null ? !identifier.equals(request.identifier) : request.identifier != null) return false;
-            return !(future != null ? !future.equals(request.future) : request.future != null);
-
+            return !(identifier != null ? !identifier.equals(request.identifier) : request.identifier != null);
         }
 
         @Override
@@ -311,7 +309,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             result = 31 * result + (identifier != null ? identifier.hashCode() : 0);
             result = 31 * result + cpu;
             result = 31 * result + memory;
-            result = 31 * result + (future != null ? future.hashCode() : 0);
             return result;
         }
 
