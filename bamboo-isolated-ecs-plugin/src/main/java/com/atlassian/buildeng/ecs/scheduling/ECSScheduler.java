@@ -13,5 +13,5 @@ public interface ECSScheduler {
      * @throws com.atlassian.buildeng.ecs.exceptions.ECSException
      */
 
-    String schedule(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException;
+    String schedule(String cluster, String asgName, String identifier, int requiredMemory, int requiredCpu) throws ECSException;
 }

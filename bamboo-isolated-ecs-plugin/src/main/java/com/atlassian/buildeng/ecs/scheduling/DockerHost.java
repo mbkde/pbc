@@ -65,9 +65,14 @@ public class DockerHost {
     }
 
     public long ageMillis() {
-        //TODO comparing Date.getTime() with System.currentTimeMillis() can
-        // have timezone/daylight savings consequences? depends on the bamboo server setup I suppose
         return System.currentTimeMillis() - launchTime.getTime();
+    }
+
+    public boolean inSecondHalfOfBillingCycle() {
+        // Mod by hour
+        long millisSinceStartOfCycle = ageMillis() % (1000 * 60 * 60);
+        // Are we in the first half hour of an hourly cycle
+        return millisSinceStartOfCycle >= 1000 * 60 * 30;
     }
 
     static Comparator<DockerHost> compareByResources() {

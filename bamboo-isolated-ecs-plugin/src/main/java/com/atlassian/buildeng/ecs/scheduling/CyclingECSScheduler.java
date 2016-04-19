@@ -2,11 +2,13 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.util.concurrent.SettableFuture;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -23,17 +25,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.springframework.beans.factory.DisposableBean;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
-    static final Duration DEFAULT_GRACE_PERIOD = Duration.ofMinutes(5); // Give instances 5 minutes to pick up a task
     static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
 
     private final Duration stalePeriod;
-    private final Duration gracePeriod;
     private final double highWatermark;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
+    private long lackingCPU = 0;
+    private long lackingMemory = 0;
+    private Set<Request> consideredRequests = new HashSet<>();
     
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -43,7 +45,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     public CyclingECSScheduler(SchedulerBackend schedulerBackend) {
         stalePeriod = DEFAULT_STALE_PERIOD;
-        gracePeriod = DEFAULT_GRACE_PERIOD;
         highWatermark = DEFAULT_HIGH_WATERMARK;
         this.schedulerBackend = schedulerBackend;
         executor.submit(new EndlessPolling());
@@ -104,7 +105,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         return freshHosts.stream()
                 .filter(dockerHost -> !usedCandidates.contains(dockerHost))
                 .filter(DockerHost::runningNothing)
-                .filter(dockerHost -> dockerHost.ageMillis() > gracePeriod.toMillis())
+                .filter(DockerHost::inSecondHalfOfBillingCycle)
                 .collect(Collectors.toList());
     }
 
@@ -120,17 +121,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-    public String schedule(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
+    public String schedule(String cluster, String asgName, String identifier, int requiredMemory, int requiredCpu) throws ECSException {
         try {
-            return scheduleImpl(cluster, asgName, requiredMemory, requiredCpu).get();
+            return scheduleImpl(cluster, asgName, identifier, requiredMemory, requiredCpu).get();
         } catch (InterruptedException | ExecutionException ex) {
             throw new ECSException(ex);
         }
     }
 
     @VisibleForTesting
-    Future<String> scheduleImpl(String cluster, String asgName, int requiredMemory, int requiredCpu) throws ECSException {
-        Request request = new Request(cluster, asgName, requiredCpu, requiredMemory);
+    Future<String> scheduleImpl(String cluster, String asgName, String identifier, int requiredMemory, int requiredCpu) throws ECSException {
+        Request request = new Request(cluster, asgName, identifier, requiredCpu, requiredMemory);
         requests.add(request);
         return request.getFuture();
     }
@@ -180,9 +181,25 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 candidateHost.reduceAvailableCpuBy(request.getCpu());
                 candidateHost.reduceAvailableMemoryBy(request.getMemory());
                 request.getFuture().set(candidateHost.getContainerInstanceArn());
+                lackingCPU = Math.max(0, lackingCPU - request.getCpu());
+                lackingMemory = Math.max(0, lackingMemory - request.getMemory());
+                // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
+                // Clear everything out, we're probably fine
+                if (lackingCPU < Constants.AGENT_CPU || lackingMemory < Constants.AGENT_MEMORY) {
+                    consideredRequests.clear();
+                    lackingCPU = 0;
+                    lackingMemory = 0;
+                }
             } else {
                 //scale up + down and set all other queued requests to null.
                 request.getFuture().setException(new ECSException("Capacity not available"));
+                // Note how much capacity we're lacking
+                // But don't double count the same request that comes through
+                if (!consideredRequests.contains(request)) {
+                    lackingCPU += request.getCpu();
+                    lackingMemory += request.getMemory();
+                    consideredRequests.add(request);
+                }
                 someDiscarded = true;
             }
             request = requests.poll();
@@ -196,8 +213,15 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         int desiredScaleSize = currentSize;
         //calculate usage from used fresh instances only
         if (someDiscarded || percentageUtilized(usedFresh) >= highWatermark) {
-            //if there are no unused fresh ones, scale up
-            desiredScaleSize = desiredScaleSize + 1;
+            // cpu and memory requirements in instances
+            long cpuRequirements = lackingCPU / Constants.INSTANCE_CPU;
+            long memoryRequirements = lackingMemory / Constants.INSTANCE_MEMORY;
+            logger.info("Scaling w.r.t. this much cpu " + lackingCPU);
+            //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
+            //by at least one instance.
+            long extraRequired = 1 + Math.max(cpuRequirements, memoryRequirements);
+
+            desiredScaleSize += extraRequired;
         } 
         List<String> toTerminate = Stream.concat(unusedStales.stream(), unusedFresh.stream())
                 .map(DockerHost::getInstanceId)
@@ -249,16 +273,45 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private static class Request {
         private final String cluster;
         private final String asgName;
+        private final String identifier;
         private final int cpu;
         private final int memory;
         private final SettableFuture<String> future;
 
-        public Request(String cluster, String asgName, int cpu, int memory) {
+        public Request(String cluster, String asgName, String identifier, int cpu, int memory) {
             this.cluster = cluster;
             this.asgName = asgName;
+            this.identifier = identifier;
             this.cpu = cpu;
             this.memory = memory;
             this.future = new SettableFuture<>();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Request request = (Request) o;
+
+            if (cpu != request.cpu) return false;
+            if (memory != request.memory) return false;
+            if (cluster != null ? !cluster.equals(request.cluster) : request.cluster != null) return false;
+            if (asgName != null ? !asgName.equals(request.asgName) : request.asgName != null) return false;
+            if (identifier != null ? !identifier.equals(request.identifier) : request.identifier != null) return false;
+            return !(future != null ? !future.equals(request.future) : request.future != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = cluster != null ? cluster.hashCode() : 0;
+            result = 31 * result + (asgName != null ? asgName.hashCode() : 0);
+            result = 31 * result + (identifier != null ? identifier.hashCode() : 0);
+            result = 31 * result + cpu;
+            result = 31 * result + memory;
+            result = 31 * result + (future != null ? future.hashCode() : 0);
+            return result;
         }
 
         public String getCluster() {

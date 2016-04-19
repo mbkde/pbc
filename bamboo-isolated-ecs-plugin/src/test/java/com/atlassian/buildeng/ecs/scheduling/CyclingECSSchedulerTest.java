@@ -30,6 +30,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mockito.Matchers;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -104,7 +105,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         boolean thrown = false;
         try {
-            scheduler.schedule("cluster", "asg", 600, 100);
+            scheduler.schedule("cluster", "asg", "apple-1", 600, 100);
         } catch (ECSException ex) {
             thrown = true;
         } 
@@ -133,7 +134,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 110, 110);
+        String arn = scheduler.schedule("cluster", "asg", "apple-1", 110, 110);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -160,7 +161,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", "apple-1", 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -188,7 +189,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", "apple-1", 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -209,14 +210,16 @@ public class CyclingECSSchedulerTest {
                     ci("id5", "arn5", true, 2000, 500, 2000, 100)
                     ),
                 Arrays.asList(
-                        ec2("id1", new Date(System.currentTimeMillis() - (CyclingECSScheduler.DEFAULT_GRACE_PERIOD.toMillis() + 1000))),
-                        ec2("id2", new Date()),
+                        // 40 minute old instance, i.e. in its second half of the billing cycle and should be terminated
+                        ec2("id1", new Date(System.currentTimeMillis() - (1000*60*40))),
+                        // 20 minute old instance i.e. in its first half of the billing cycle, should not be terminated
+                        ec2("id2", new Date(System.currentTimeMillis() - (1000*60*20))),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);        
-        String arn = scheduler.schedule("cluster", "asg", 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", "apple-1", 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -237,14 +240,16 @@ public class CyclingECSSchedulerTest {
                     ci("id5", "arn5", true, 2000, 500, 2000, 100)
                     ),
                 Arrays.asList(
-                        ec2("id1", new Date(System.currentTimeMillis() - (CyclingECSScheduler.DEFAULT_GRACE_PERIOD.toMillis() + 1000))),
+                        // 40 minutes old instance (past halfway in billing cycle)\
+                        // Should pick up the job anyway (isn't stale)
+                        ec2("id1", new Date(System.currentTimeMillis() - (1000*60*40))),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 600, 600);
+        String arn = scheduler.schedule("cluster", "asg", "apple-1", 600, 600);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -267,8 +272,8 @@ public class CyclingECSSchedulerTest {
                         ec2("id2", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        Future<String> arn = scheduler.scheduleImpl("cluster", "asg", 199, 399);
-        Future<String> arn2 = scheduler.scheduleImpl("cluster", "asg", 599, 599);
+        Future<String> arn = scheduler.scheduleImpl("cluster", "asg", "apple-1", 199, 399);
+        Future<String> arn2 = scheduler.scheduleImpl("cluster", "asg", "apple-2", 599, 599);
         Thread.sleep(50); //wait to have the other thread start the processing
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
