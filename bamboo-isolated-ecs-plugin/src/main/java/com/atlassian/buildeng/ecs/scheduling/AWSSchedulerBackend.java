@@ -98,7 +98,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withCluster(cluster)
                     .withContainerInstances(containerInstanceArns);
             return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
-                    .filter(instanceIds::contains)
+                    .filter(x -> instanceIds.contains(x.getEc2InstanceId()))
+                    .filter(ContainerInstance::isAgentConnected)
                     .collect(Collectors.toList());
         }
     }

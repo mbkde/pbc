@@ -84,7 +84,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private Map<Boolean, List<DockerHost>> partitionFreshness (List<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
         return dockerHosts.stream()
-                .filter(DockerHost::getAgentConnected)
                 .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
     }
 
