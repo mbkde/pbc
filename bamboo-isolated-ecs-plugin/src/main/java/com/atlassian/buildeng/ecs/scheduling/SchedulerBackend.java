@@ -17,6 +17,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.List;
 
@@ -32,7 +33,7 @@ public interface SchedulerBackend {
      * @param cluster
      * @return 
      */
-    List<ContainerInstance> getClusterContainerInstances(String cluster);
+    List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup);
     
     /**
      * get EC2 Instances for the passed ContainerInstances
@@ -56,4 +57,5 @@ public interface SchedulerBackend {
      */
     void terminateInstances(List<String> instanceIds, String autoScalingGroup);
 
+    SchedulingResult schedule(String containerArn, SchedulingRequest req) throws ECSException;
 }

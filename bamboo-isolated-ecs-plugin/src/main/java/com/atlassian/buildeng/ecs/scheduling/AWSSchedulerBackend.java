@@ -17,6 +17,9 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DetachInstancesRequest;
 import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
@@ -28,15 +31,26 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
+import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
+import com.amazonaws.services.ecs.model.StartTaskRequest;
+import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.amazonaws.services.ecs.model.TaskOverride;
+import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +61,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
 
     @Override
-    public List<ContainerInstance> getClusterContainerInstances(String cluster) {
+    public List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) {
         AmazonECSClient ecsClient = new AmazonECSClient();
+        AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
         ListContainerInstancesRequest listReq = new ListContainerInstancesRequest().withCluster(cluster);
+        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScalingGroup);
+
+        // Get containerInstanceArns
         boolean finished = false;
         Collection<String> containerInstanceArns = new ArrayList<>();
         while (!finished) {
@@ -62,13 +80,39 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 listReq.setNextToken(nextToken);
             }
         }
+
+        // Get asg instances
+        // We need these as there is potentially a disparity between instances with container instances registered
+        // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
+        // then terminate them, if the cluster still reports the instance as connected we might assign a task to
+        // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
+        // from both ECS and ASG
+        Set<String> instanceIds = new HashSet<>();
+        finished = false;
+        while(!finished) {
+            DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
+            List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
+            instanceIds.addAll(asgs.stream()
+                    .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
+                    .collect(Collectors.toList()));
+            String nextToken = asgResult.getNextToken();
+            if (nextToken == null) {
+                finished = true;
+            } else {
+                asgReq.setNextToken(nextToken);
+            }
+        }
+
         if (containerInstanceArns.isEmpty()) {
             return Collections.emptyList();
         } else {
             DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
                     .withCluster(cluster)
                     .withContainerInstances(containerInstanceArns);
-            return ecsClient.describeContainerInstances(describeReq).getContainerInstances();
+            return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
+                    .filter(x -> instanceIds.contains(x.getEc2InstanceId()))
+                    .filter(ContainerInstance::isAgentConnected)
+                    .collect(Collectors.toList());
         }
     }
 
@@ -121,5 +165,21 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         logger.info("Result of instance termination: {}" + ec2Result);
     }
 
-    
+    @Override
+    public SchedulingResult schedule(String containerArn, SchedulingRequest request) throws ECSException {
+        AmazonECSClient ecsClient = new AmazonECSClient();
+        ContainerOverride buildResultOverride = new ContainerOverride()
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
+                .withName(Constants.AGENT_CONTAINER_NAME);
+        try {
+            StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
+                    .withCluster(request.getCluster())
+                    .withContainerInstances(containerArn)
+                    .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + request.getRevision())
+                    .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride)));
+            return new SchedulingResult(startTaskResult, containerArn);
+        } catch (Exception e) {
+            throw new ECSException(e);
+        }
+    }
 }

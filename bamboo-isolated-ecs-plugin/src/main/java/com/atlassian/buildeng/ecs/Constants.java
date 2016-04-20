@@ -59,6 +59,10 @@ public interface Constants {
     int TASK_CPU = SIDEKICK_CPU + AGENT_CPU;
     int TASK_MEMORY = SIDEKICK_MEMORY + AGENT_MEMORY;
 
+    //m4.4xlarge
+    int INSTANCE_CPU = 16384;
+    int INSTANCE_MEMORY = 64419;
+
     // The container definition of the sidekick
     static final ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
