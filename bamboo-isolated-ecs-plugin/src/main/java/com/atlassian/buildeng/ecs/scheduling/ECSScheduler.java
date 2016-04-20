@@ -1,19 +1,14 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
 import java.util.UUID;
 
 public interface ECSScheduler {
-    /**
-     * Return an ECS Container Instance ARN suitable to run the given resource requirements.
-     * @param cluster The cluster to run the task on.
-     * @param autoScalingGroup AutoScaling Group to use
-     * @param requiredMemory
-     * @param requiredCpu
-     * @return The ARN of container instances suitable to use. If nothing is suitable, null is returned;
-     * @throws com.atlassian.buildeng.ecs.exceptions.ECSException
-     */
 
-    String schedule(String cluster, String autoScalingGroup, UUID identifier, int requiredMemory, int requiredCpu) throws ECSException;
+    /* Run the given resource requirements on ECS.
+     * @throws com.atlassian.buildeng.ecs.exceptions.ECSException if nothing is suitable to run on
+     */
+    SchedulingResult schedule(SchedulingRequest request) throws ECSException;
 }

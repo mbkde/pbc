@@ -16,21 +16,17 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.services.ecs.AmazonECSClient;
-import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.Failure;
-import com.amazonaws.services.ecs.model.KeyValuePair;
-import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.amazonaws.services.ecs.model.Task;
-import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
+import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,18 +47,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = scheduler;
     }
- 
-    private StartTaskRequest createStartTaskRequest(String resultId, Integer revision, @NotNull String containerInstanceArn) throws ECSException {
-        ContainerOverride buildResultOverride = new ContainerOverride()
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(resultId))
-                .withName(Constants.AGENT_CONTAINER_NAME);
-        return new StartTaskRequest()
-                .withCluster(globalConfiguration.getCurrentCluster())
-                .withContainerInstances(containerInstanceArn)
-                .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision)
-                .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride));
-    }
-
 
     // Isolated Agent Service methods
     @Override
@@ -73,38 +57,41 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         if (revision == null) {
             throw new ImageNotRegisteredException(req.getDockerImage());
         }
-
-        logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
-        String containerInstanceArn = null;
+        logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, resultId);
+        SchedulingResult schedulingResult;
+        SchedulingRequest schedulingRequest = new SchedulingRequest(
+                globalConfiguration.getCurrentCluster(),
+                globalConfiguration.getCurrentASG(),
+                req.getUniqueIdentifier(),
+                resultId,
+                revision,
+                Constants.TASK_CPU,
+                Constants.TASK_MEMORY);
         try {
-             containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), globalConfiguration.getCurrentASG(), req.getUniqueIdentifier(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+            schedulingResult = ecsScheduler.schedule(schedulingRequest);
+            StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
+            startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
+                toRet.withCustomResultData("TaskARN", t.getTaskArn());
+            });
+            logger.info("ECS Returned: {}", startTaskResult);
+            List<Failure> failures = startTaskResult.getFailures();
+            if (failures.size() == 1) {
+                String err = failures.get(0).getReason();
+                if (err.startsWith("RESOURCE")) {
+                    logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+                    toRet.withRetryRecoverable("Not enough resources available now.");
+                } else {
+                    toRet.withError(mapRunTaskErrorToDescription(err));
+                }
+            } else {
+                for (Failure err : startTaskResult.getFailures()) {
+                    toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
+                }
+            }
         } catch (ECSException e) {
             logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
-        }
-        if (containerInstanceArn == null) {
             logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
             toRet.withRetryRecoverable("No Container Instance currently available");
-            return toRet;
-        }
-        AmazonECSClient ecsClient = new AmazonECSClient();
-        StartTaskResult startTaskResult = ecsClient.startTask(createStartTaskRequest(resultId, revision, containerInstanceArn));
-        startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
-            toRet.withCustomResultData("TaskARN", t.getTaskArn());
-        });
-        logger.info("ECS Returned: {}", startTaskResult);
-        List<Failure> failures = startTaskResult.getFailures();
-        if (failures.size() == 1) {
-            String err = failures.get(0).getReason();
-            if (err.startsWith("RESOURCE")) {
-                logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                toRet.withRetryRecoverable("Not enough resources available now.");
-            } else {
-                toRet.withError(mapRunTaskErrorToDescription(err));
-            }
-        } else {
-            for (Failure err : startTaskResult.getFailures()) {
-                toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
-            }
         }
         return toRet;
     }

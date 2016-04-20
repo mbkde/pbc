@@ -12,7 +12,7 @@ public class SchedulingRequest {
     private final Integer revision;
     private final int cpu;
     private final int memory;
-    private final SettableFuture<String> future;
+    private final SettableFuture<SchedulingResult> future;
 
     public SchedulingRequest(String cluster, String asgName, UUID identifier, String resultId, Integer revision, int cpu, int memory) {
         this.cluster = cluster;
@@ -53,7 +53,8 @@ public class SchedulingRequest {
         return memory;
     }
 
-    public SettableFuture<String> getFuture() {
+
+    public SettableFuture<SchedulingResult> getFuture() {
         return future;
     }
 
