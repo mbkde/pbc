@@ -19,6 +19,7 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.event.api.AsynchronousPreferred;
 
 import java.util.Random;
+import java.util.UUID;
 
 /**
  *
@@ -30,14 +31,14 @@ public final class RetryAgentStartupEvent {
     private final int retryCount;
     private final BuildContext context;
     private final String dockerImage;
-    private final Long uniqueIdentifier;
+    private final UUID uniqueIdentifier;
     private final static Random rand = new Random();
 
     public RetryAgentStartupEvent(String dockerImage, BuildContext context) {
         this.dockerImage = dockerImage;
         this.context = context;
         this.retryCount = 0;
-        this.uniqueIdentifier = rand.nextLong();
+        this.uniqueIdentifier = UUID.randomUUID();
     }
     
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
@@ -59,7 +60,7 @@ public final class RetryAgentStartupEvent {
         return context;
     }
 
-    public Long getUniqueIdentifier() {
+    public UUID getUniqueIdentifier() {
         return uniqueIdentifier;
     }
 }

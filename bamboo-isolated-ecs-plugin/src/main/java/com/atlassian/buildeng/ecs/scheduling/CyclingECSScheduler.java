@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -35,8 +36,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     private long lackingCPU = 0;
     private long lackingMemory = 0;
-    private Set<Long> consideredRequestIdentifiers = new HashSet<>();
-    
+    private Set<UUID> consideredRequestIdentifiers = new HashSet<>();
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final BlockingQueue<Request> requests = new LinkedBlockingQueue<>();
@@ -120,7 +120,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-    public String schedule(String cluster, String autoScalingGroup, Long identifier, int requiredMemory, int requiredCpu) throws ECSException {
+    public String schedule(String cluster, String autoScalingGroup, UUID identifier, int requiredMemory, int requiredCpu) throws ECSException {
         try {
             return scheduleImpl(cluster, autoScalingGroup, identifier, requiredMemory, requiredCpu).get();
         } catch (InterruptedException | ExecutionException ex) {
@@ -129,7 +129,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @VisibleForTesting
-    Future<String> scheduleImpl(String cluster, String asgName, Long identifier, int requiredMemory, int requiredCpu) throws ECSException {
+    Future<String> scheduleImpl(String cluster, String asgName, UUID identifier, int requiredMemory, int requiredCpu) throws ECSException {
         Request request = new Request(cluster, asgName, identifier, requiredCpu, requiredMemory);
         requests.add(request);
         return request.getFuture();
@@ -272,12 +272,12 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private static class Request {
         private final String cluster;
         private final String asgName;
-        private final Long identifier;
+        private final UUID identifier;
         private final int cpu;
         private final int memory;
         private final SettableFuture<String> future;
 
-        public Request(String cluster, String asgName, Long identifier, int cpu, int memory) {
+        public Request(String cluster, String asgName, UUID identifier, int cpu, int memory) {
             this.cluster = cluster;
             this.asgName = asgName;
             this.identifier = identifier;
@@ -302,7 +302,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             return memory;
         }
 
-        public Long getIdentifier() {
+        public UUID getIdentifier() {
             return identifier;
         }
 

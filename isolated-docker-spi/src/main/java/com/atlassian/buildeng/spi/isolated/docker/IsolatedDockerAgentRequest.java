@@ -16,18 +16,20 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import java.util.UUID;
+
 public final class IsolatedDockerAgentRequest {
 
     private final String dockerImage;
     private final String buildResultKey;
-    private final Long uniqueIdentifier;
+    private final UUID uniqueIdentifier;
 
     /**
      * @param dockerImage      - image for isolated docker agent to use
      * @param buildResultKey   - bamboo build result key
      * @param uniqueIdentifier - something to uniquely identifier the request with
      */
-    public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey, Long uniqueIdentifier) {
+    public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey, UUID uniqueIdentifier) {
         this.dockerImage = dockerImage;
         this.buildResultKey = buildResultKey;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -41,7 +43,7 @@ public final class IsolatedDockerAgentRequest {
         return buildResultKey;
     }
 
-    public Long getUniqueIdentifier() {
+    public UUID getUniqueIdentifier() {
         return uniqueIdentifier;
     }
 }

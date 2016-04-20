@@ -2,6 +2,8 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
+import java.util.UUID;
+
 public interface ECSScheduler {
     /**
      * Return an ECS Container Instance ARN suitable to run the given resource requirements.
@@ -13,5 +15,5 @@ public interface ECSScheduler {
      * @throws com.atlassian.buildeng.ecs.exceptions.ECSException
      */
 
-    String schedule(String cluster, String autoScalingGroup, Long identifier, int requiredMemory, int requiredCpu) throws ECSException;
+    String schedule(String cluster, String autoScalingGroup, UUID identifier, int requiredMemory, int requiredCpu) throws ECSException;
 }

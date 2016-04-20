@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
@@ -105,7 +106,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         boolean thrown = false;
         try {
-            scheduler.schedule("cluster", "asg", 1l, 600, 100);
+            scheduler.schedule("cluster", "asg", UUID.randomUUID(), 600, 100);
         } catch (ECSException ex) {
             thrown = true;
         } 
@@ -134,7 +135,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 1l, 110, 110);
+        String arn = scheduler.schedule("cluster", "asg", UUID.randomUUID(), 110, 110);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -161,7 +162,8 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 1l, 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", UUID.randomUUID(), 100, 100);
+
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -189,7 +191,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 1l, 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", UUID.randomUUID(), 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -219,7 +221,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);        
-        String arn = scheduler.schedule("cluster", "asg", 1l, 100, 100);
+        String arn = scheduler.schedule("cluster", "asg", UUID.randomUUID(), 100, 100);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -249,7 +251,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        String arn = scheduler.schedule("cluster", "asg", 1l, 600, 600);
+        String arn = scheduler.schedule("cluster", "asg", UUID.randomUUID(), 600, 600);
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
         
@@ -272,8 +274,8 @@ public class CyclingECSSchedulerTest {
                         ec2("id2", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
-        Future<String> arn = scheduler.scheduleImpl("cluster", "asg", 1l, 199, 399);
-        Future<String> arn2 = scheduler.scheduleImpl("cluster", "asg", 2l, 599, 599);
+        Future<String> arn = scheduler.scheduleImpl("cluster", "asg", UUID.randomUUID(), 199, 399);
+        Future<String> arn2 = scheduler.scheduleImpl("cluster", "asg", UUID.randomUUID(), 599, 599);
         Thread.sleep(50); //wait to have the other thread start the processing
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
