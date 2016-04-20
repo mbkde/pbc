@@ -86,7 +86,7 @@ public class PreBuildQueuedEventListener {
         boolean terminateBuild = false;
         try {
             IsolatedDockerAgentResult result = isolatedAgentService.startAgent(
-                    new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey()));
+                    new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey(), event.getUniqueIdentifier()));
             //custom items pushed by the implementation, we give it a unique prefix
             result.getCustomResultData().entrySet().stream().forEach((ent) -> {
                 event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());

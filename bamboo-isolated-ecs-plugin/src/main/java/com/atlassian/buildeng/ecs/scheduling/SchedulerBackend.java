@@ -32,7 +32,7 @@ public interface SchedulerBackend {
      * @param cluster
      * @return 
      */
-    List<ContainerInstance> getClusterContainerInstances(String cluster, String asgName);
+    List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup);
     
     /**
      * get EC2 Instances for the passed ContainerInstances

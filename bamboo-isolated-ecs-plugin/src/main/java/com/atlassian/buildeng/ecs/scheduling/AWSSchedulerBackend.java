@@ -54,11 +54,11 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
 
     @Override
-    public List<ContainerInstance> getClusterContainerInstances(String cluster, String asgName) {
+    public List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) {
         AmazonECSClient ecsClient = new AmazonECSClient();
         AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
         ListContainerInstancesRequest listReq = new ListContainerInstancesRequest().withCluster(cluster);
-        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgName);
+        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScalingGroup);
 
         // Get containerInstanceArns
         boolean finished = false;
@@ -75,6 +75,11 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         }
 
         // Get asg instances
+        // We need these as there is potentially a disparity between instances with container instances registered
+        // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
+        // then terminate them, if the cluster still reports the instance as connected we might assign a task to
+        // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
+        // from both ECS and ASG
         Set<String> instanceIds = new HashSet<>();
         finished = false;
         while(!finished) {

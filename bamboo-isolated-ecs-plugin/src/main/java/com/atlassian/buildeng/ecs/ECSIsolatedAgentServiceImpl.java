@@ -77,7 +77,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, req.getBuildResultKey());
         String containerInstanceArn = null;
         try {
-             containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), globalConfiguration.getCurrentASG(), req.getBuildResultKey(), Constants.TASK_MEMORY, Constants.TASK_CPU);
+             containerInstanceArn = ecsScheduler.schedule(globalConfiguration.getCurrentCluster(), globalConfiguration.getCurrentASG(), req.getUniqueIdentifier(), Constants.TASK_MEMORY, Constants.TASK_CPU);
         } catch (ECSException e) {
             logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
         }

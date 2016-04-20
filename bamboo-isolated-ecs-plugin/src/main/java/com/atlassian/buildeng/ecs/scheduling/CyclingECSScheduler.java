@@ -35,7 +35,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     private long lackingCPU = 0;
     private long lackingMemory = 0;
-    private Set<Request> consideredRequests = new HashSet<>();
+    private Set<Long> consideredRequestIdentifiers = new HashSet<>();
     
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -120,16 +120,16 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-    public String schedule(String cluster, String asgName, String identifier, int requiredMemory, int requiredCpu) throws ECSException {
+    public String schedule(String cluster, String autoScalingGroup, Long identifier, int requiredMemory, int requiredCpu) throws ECSException {
         try {
-            return scheduleImpl(cluster, asgName, identifier, requiredMemory, requiredCpu).get();
+            return scheduleImpl(cluster, autoScalingGroup, identifier, requiredMemory, requiredCpu).get();
         } catch (InterruptedException | ExecutionException ex) {
             throw new ECSException(ex);
         }
     }
 
     @VisibleForTesting
-    Future<String> scheduleImpl(String cluster, String asgName, String identifier, int requiredMemory, int requiredCpu) throws ECSException {
+    Future<String> scheduleImpl(String cluster, String asgName, Long identifier, int requiredMemory, int requiredCpu) throws ECSException {
         Request request = new Request(cluster, asgName, identifier, requiredCpu, requiredMemory);
         requests.add(request);
         return request.getFuture();
@@ -186,7 +186,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
                 // Clear everything out, we're probably fine
                 if (lackingCPU < Constants.AGENT_CPU || lackingMemory < Constants.AGENT_MEMORY) {
-                    consideredRequests.clear();
+                    consideredRequestIdentifiers.clear();
                     lackingCPU = 0;
                     lackingMemory = 0;
                 }
@@ -195,10 +195,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 request.getFuture().setException(new ECSException("Capacity not available"));
                 // Note how much capacity we're lacking
                 // But don't double count the same request that comes through
-                if (!consideredRequests.contains(request)) {
+                if (consideredRequestIdentifiers.add(request.getIdentifier())) {
                     lackingCPU += request.getCpu();
                     lackingMemory += request.getMemory();
-                    consideredRequests.add(request);
                 }
                 someDiscarded = true;
             }
@@ -273,42 +272,18 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private static class Request {
         private final String cluster;
         private final String asgName;
-        private final String identifier;
+        private final Long identifier;
         private final int cpu;
         private final int memory;
         private final SettableFuture<String> future;
 
-        public Request(String cluster, String asgName, String identifier, int cpu, int memory) {
+        public Request(String cluster, String asgName, Long identifier, int cpu, int memory) {
             this.cluster = cluster;
             this.asgName = asgName;
             this.identifier = identifier;
             this.cpu = cpu;
             this.memory = memory;
             this.future = new SettableFuture<>();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Request request = (Request) o;
-
-            if (cpu != request.cpu) return false;
-            if (memory != request.memory) return false;
-            if (cluster != null ? !cluster.equals(request.cluster) : request.cluster != null) return false;
-            if (asgName != null ? !asgName.equals(request.asgName) : request.asgName != null) return false;
-            return !(identifier != null ? !identifier.equals(request.identifier) : request.identifier != null);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = cluster != null ? cluster.hashCode() : 0;
-            result = 31 * result + (asgName != null ? asgName.hashCode() : 0);
-            result = 31 * result + (identifier != null ? identifier.hashCode() : 0);
-            result = 31 * result + cpu;
-            result = 31 * result + memory;
-            return result;
         }
 
         public String getCluster() {
@@ -325,6 +300,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         public int getMemory() {
             return memory;
+        }
+
+        public Long getIdentifier() {
+            return identifier;
         }
 
         public SettableFuture<String> getFuture() {

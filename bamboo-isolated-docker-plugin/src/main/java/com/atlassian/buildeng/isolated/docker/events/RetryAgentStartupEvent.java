@@ -18,6 +18,8 @@ package com.atlassian.buildeng.isolated.docker.events;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.event.api.AsynchronousPreferred;
 
+import java.util.Random;
+
 /**
  *
  * @author mkleint
@@ -28,17 +30,21 @@ public final class RetryAgentStartupEvent {
     private final int retryCount;
     private final BuildContext context;
     private final String dockerImage;
+    private final Long uniqueIdentifier;
+    private final static Random rand = new Random();
 
     public RetryAgentStartupEvent(String dockerImage, BuildContext context) {
         this.dockerImage = dockerImage;
         this.context = context;
         this.retryCount = 0;
+        this.uniqueIdentifier = rand.nextLong();
     }
     
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
         this.dockerImage = previousEvent.getDockerImage();
         this.context = previousEvent.getContext();
         this.retryCount = previousEvent.getRetryCount() + 1;
+        this.uniqueIdentifier = previousEvent.uniqueIdentifier;
     }
 
     public int getRetryCount() {
@@ -52,5 +58,8 @@ public final class RetryAgentStartupEvent {
     public BuildContext getContext() {
         return context;
     }
-    
+
+    public Long getUniqueIdentifier() {
+        return uniqueIdentifier;
+    }
 }

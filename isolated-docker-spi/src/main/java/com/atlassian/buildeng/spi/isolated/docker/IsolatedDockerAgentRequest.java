@@ -20,14 +20,17 @@ public final class IsolatedDockerAgentRequest {
 
     private final String dockerImage;
     private final String buildResultKey;
+    private final Long uniqueIdentifier;
 
     /**
-     * @param dockerImage    - image for isolated docker agent to use
-     * @param buildResultKey - bamboo build result key
+     * @param dockerImage      - image for isolated docker agent to use
+     * @param buildResultKey   - bamboo build result key
+     * @param uniqueIdentifier - something to uniquely identifier the request with
      */
-    public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey) {
+    public IsolatedDockerAgentRequest(String dockerImage, String buildResultKey, Long uniqueIdentifier) {
         this.dockerImage = dockerImage;
         this.buildResultKey = buildResultKey;
+        this.uniqueIdentifier = uniqueIdentifier;
     }
 
     public String getDockerImage() {
@@ -38,4 +41,7 @@ public final class IsolatedDockerAgentRequest {
         return buildResultKey;
     }
 
+    public Long getUniqueIdentifier() {
+        return uniqueIdentifier;
+    }
 }
