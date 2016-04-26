@@ -163,24 +163,21 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         final Set<DockerHost> usedCandidates = new HashSet<>();
         boolean someDiscarded = false;
         while (request != null) {
-            logger.debug("Processing request for {}", request);
-            if (!cluster.equals(request.getCluster())) {
-                //we need to save current cluster.. new items arrived for different one.
-                request.getFuture().setException(new ECSException("Different cluster processed now."));
-                logger.info("Skipped processing due to multiple clusters in queue");
-                break;
-            }
-            if (!asgName.equals(request.getAsgName())) {
-                //we need to save current cluster.. new items arrived for different one.
-                request.getFuture().setException(new ECSException("Different Auto Scaling Group Name processed now."));
-                logger.info("Skipped processing due to multiple auto scaling groups in queue");
-                break;
-            }
-            Optional<DockerHost> candidate = selectHost(freshHosts, request.getMemory(), request.getCpu());
-            if (candidate.isPresent()) {
-                DockerHost candidateHost = candidate.get();
-
-                try {
+            try {
+                logger.debug("Processing request for {}", request);
+                if (!cluster.equals(request.getCluster())) {
+                    //we need to save current cluster.. new items arrived for different one.
+                    logger.info("Skipped processing due to multiple clusters in queue");
+                    throw new ECSException("Different cluster processed now.");
+                }
+                if (!asgName.equals(request.getAsgName())) {
+                    //we need to save current cluster.. new items arrived for different one.
+                    logger.info("Skipped processing due to multiple auto scaling groups in queue");
+                    throw new ECSException("Different Auto Scaling Group Name processed now.");
+                }
+                Optional<DockerHost> candidate = selectHost(freshHosts, request.getMemory(), request.getCpu());
+                if (candidate.isPresent()) {
+                    DockerHost candidateHost = candidate.get();
                     SchedulingResult schedulingResult = schedulerBackend.schedule(candidateHost.getContainerInstanceArn(), request);
                     usedCandidates.add(candidateHost);
                     candidateHost.reduceAvailableCpuBy(request.getCpu());
@@ -195,19 +192,19 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                         lackingCPU = 0;
                         lackingMemory = 0;
                     }
-                } catch (ECSException e) {
-                    request.getFuture().setException(e);
+                } else {
+                    // Note how much capacity we're lacking
+                    // But don't double count the same request that comes through
+                    if (consideredRequestIdentifiers.add(request.getIdentifier())) {
+                        lackingCPU += request.getCpu();
+                        lackingMemory += request.getMemory();
+                    }
+                    //scale up + down and set all other queued requests to null.
+                    someDiscarded = true;
+                    throw new ECSException("Capacity not available");
                 }
-            } else {
-                //scale up + down and set all other queued requests to null.
-                request.getFuture().setException(new ECSException("Capacity not available"));
-                // Note how much capacity we're lacking
-                // But don't double count the same request that comes through
-                if (consideredRequestIdentifiers.add(request.getIdentifier())) {
-                    lackingCPU += request.getCpu();
-                    lackingMemory += request.getMemory();
-                }
-                someDiscarded = true;
+            } catch (ECSException ex) {
+                request.getFuture().setException(ex);
             }
             request = requests.poll();
         }
@@ -238,7 +235,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             //we are reducing the currentSize by the terminated list because that's
             //what the terminateInstances method should reduce it to.
             currentSize = currentSize - toTerminate.size();
-            schedulerBackend.terminateInstances(toTerminate, asgName);
+            try {
+                schedulerBackend.terminateInstances(toTerminate, asgName);
+            } catch (ECSException ex) {
+                logger.error("Terminating instances failed", ex);
+            }
         }
         if (desiredScaleSize != currentSize) {
             try {
@@ -269,6 +270,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 processRequests(requests.take());
             } catch (InterruptedException ex) {
                 logger.info("Interrupted", ex);
+            } catch (RuntimeException ex) {
+                logger.error("Runtime Exception", ex);
             } finally {
                 //try finally to guard against unexpected exceptions.
                 executor.submit(this);

@@ -91,7 +91,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
             }
         } catch (ECSException e) {
             logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
-            logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
             if (e.getCause() instanceof TimeoutException) {
                 toRet.withRetryRecoverable("Request timed out without completing.");
             } else {

@@ -59,125 +59,137 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private static final int REQUEST_TIMEOUT_MS = 5000;
 
     @Override
-    public List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) {
-        AmazonECSClient ecsClient = new AmazonECSClient();
-        AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
-        ListContainerInstancesRequest listReq = new ListContainerInstancesRequest()
-                .withCluster(cluster)
-                .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
-        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
-                .withAutoScalingGroupNames(autoScalingGroup)
-                .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
-
-        // Get containerInstanceArns
-        boolean finished = false;
-        Collection<String> containerInstanceArns = new ArrayList<>();
-        while (!finished) {
-            ListContainerInstancesResult listContainerInstancesResult = ecsClient.listContainerInstances(listReq);
-            containerInstanceArns.addAll(listContainerInstancesResult.getContainerInstanceArns());
-            String nextToken = listContainerInstancesResult.getNextToken();
-            if (nextToken == null) {
-                finished = true;
-            } else {
-                listReq.setNextToken(nextToken);
-            }
-        }
-
-        // Get asg instances
-        // We need these as there is potentially a disparity between instances with container instances registered
-        // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
-        // then terminate them, if the cluster still reports the instance as connected we might assign a task to
-        // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
-        // from both ECS and ASG
-        Set<String> instanceIds = new HashSet<>();
-        finished = false;
-        while(!finished) {
-            DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
-            List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
-            instanceIds.addAll(asgs.stream()
-                    .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
-                    .collect(Collectors.toList()));
-            String nextToken = asgResult.getNextToken();
-            if (nextToken == null) {
-                finished = true;
-            } else {
-                asgReq.setNextToken(nextToken);
-            }
-        }
-
-        if (containerInstanceArns.isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
+    public List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) throws ECSException {
+        try {
+            AmazonECSClient ecsClient = new AmazonECSClient();
+            AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
+            ListContainerInstancesRequest listReq = new ListContainerInstancesRequest()
                     .withCluster(cluster)
-                    .withContainerInstances(containerInstanceArns)
                     .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
-            return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
-                    .filter(x -> instanceIds.contains(x.getEc2InstanceId()))
-                    .filter(ContainerInstance::isAgentConnected)
-                    .collect(Collectors.toList());
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
+                    .withAutoScalingGroupNames(autoScalingGroup)
+                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+
+            // Get containerInstanceArns
+            boolean finished = false;
+            Collection<String> containerInstanceArns = new ArrayList<>();
+            while (!finished) {
+                ListContainerInstancesResult listContainerInstancesResult = ecsClient.listContainerInstances(listReq);
+                containerInstanceArns.addAll(listContainerInstancesResult.getContainerInstanceArns());
+                String nextToken = listContainerInstancesResult.getNextToken();
+                if (nextToken == null) {
+                    finished = true;
+                } else {
+                    listReq.setNextToken(nextToken);
+                }
+            }
+
+            // Get asg instances
+            // We need these as there is potentially a disparity between instances with container instances registered
+            // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
+            // then terminate them, if the cluster still reports the instance as connected we might assign a task to
+            // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
+            // from both ECS and ASG
+            Set<String> instanceIds = new HashSet<>();
+            finished = false;
+            while(!finished) {
+                DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
+                List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
+                instanceIds.addAll(asgs.stream()
+                        .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
+                        .collect(Collectors.toList()));
+                String nextToken = asgResult.getNextToken();
+                if (nextToken == null) {
+                    finished = true;
+                } else {
+                    asgReq.setNextToken(nextToken);
+                }
+            }
+
+            if (containerInstanceArns.isEmpty()) {
+                return Collections.emptyList();
+            } else {
+                DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
+                        .withCluster(cluster)
+                        .withContainerInstances(containerInstanceArns)
+                        .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+                return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
+                        .filter(x -> instanceIds.contains(x.getEc2InstanceId()))
+                        .filter(ContainerInstance::isAgentConnected)
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception ex) {
+            throw new ECSException(ex);
         }
     }
 
     @Override
-    public List<Instance> getInstances(List<ContainerInstance> containerInstances) {
-        AmazonEC2Client ec2Client = new AmazonEC2Client();
-        DescribeInstancesRequest req = new DescribeInstancesRequest()
-                .withInstanceIds(containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList()))
-                .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
-        boolean finished = false;
-        List<Instance> instances = new ArrayList<>();
-        while (!finished) {
-            DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
-            describeInstancesResult.getReservations().forEach(reservation -> instances.addAll(reservation.getInstances()));
-            String nextToken = describeInstancesResult.getNextToken();
-            if (nextToken == null) {
-                finished = true;
-            } else {
-                req.setNextToken(nextToken);
+    public List<Instance> getInstances(List<ContainerInstance> containerInstances) throws ECSException {
+        try {
+            AmazonEC2Client ec2Client = new AmazonEC2Client();
+            DescribeInstancesRequest req = new DescribeInstancesRequest()
+                    .withInstanceIds(containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList()))
+                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+            boolean finished = false;
+            List<Instance> instances = new ArrayList<>();
+            while (!finished) {
+                DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
+                describeInstancesResult.getReservations().forEach(reservation -> instances.addAll(reservation.getInstances()));
+                String nextToken = describeInstancesResult.getNextToken();
+                if (nextToken == null) {
+                    finished = true;
+                } else {
+                    req.setNextToken(nextToken);
+                }
             }
+            return instances;
+        } catch (Exception ex) {
+            throw new ECSException(ex);
         }
-        return instances;
     }
 
     @Override
     public void scaleTo(int desiredCapacity, String autoScalingGroup) throws ECSException {
         logger.info("Scaling to capacity: {} in ASG: {}", desiredCapacity, autoScalingGroup);
-        AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
         try {
+            AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
             asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
                     .withDesiredCapacity(desiredCapacity)
                     .withAutoScalingGroupName(autoScalingGroup)
                     .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
-        } catch (AmazonClientException e) {
+        } catch (Exception e) {
             throw new ECSException(e);
         }
     }
 
     @Override
-    public void terminateInstances(List<String> instanceIds, String asgName) {
-        AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
-        logger.info("Detaching and terminating unused and stale instances: {}", instanceIds);
-        DetachInstancesResult result = 
-              asClient.detachInstances(new DetachInstancesRequest()
-                    .withAutoScalingGroupName(asgName)
-                    .withInstanceIds(instanceIds)
-                    .withShouldDecrementDesiredCapacity(true)
+    public void terminateInstances(List<String> instanceIds, String asgName) throws ECSException {
+        try {
+            AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
+            logger.info("Detaching and terminating unused and stale instances: {}", instanceIds);
+            DetachInstancesResult result = 
+                  asClient.detachInstances(new DetachInstancesRequest()
+                        .withAutoScalingGroupName(asgName)
+                        .withInstanceIds(instanceIds)
+                        .withShouldDecrementDesiredCapacity(true)
+                        .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
+            logger.info("Result of detachment: {}", result);
+            AmazonEC2Client ec2Client = new AmazonEC2Client();
+            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds)
                     .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
-        logger.info("Result of detachment: {}", result);
-        AmazonEC2Client ec2Client = new AmazonEC2Client();
-        TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds)
-                .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
-        logger.info("Result of instance termination: {}" + ec2Result);
+            logger.info("Result of instance termination: {}" + ec2Result);
+        } catch (Exception e) {
+            throw new ECSException(e);
+        }
     }
 
     @Override
     public SchedulingResult schedule(String containerArn, SchedulingRequest request) throws ECSException {
-        AmazonECSClient ecsClient = new AmazonECSClient();
-        ContainerOverride buildResultOverride = new ContainerOverride()
+        try {
+            AmazonECSClient ecsClient = new AmazonECSClient();
+            ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
                 .withName(Constants.AGENT_CONTAINER_NAME);
-        try {
             StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
                     .withCluster(request.getCluster())
                     .withContainerInstances(containerArn)

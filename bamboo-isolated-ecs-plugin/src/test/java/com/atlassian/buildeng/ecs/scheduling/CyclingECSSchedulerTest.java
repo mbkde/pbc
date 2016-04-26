@@ -116,8 +116,7 @@ public class CyclingECSSchedulerTest {
         } catch (ECSException ex) {
             thrown = true;
         } 
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); 
         assertTrue("Capacity overload", thrown);
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
@@ -142,8 +141,7 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         String arn = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 110, 110)).getContainerArn();
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); 
         
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
@@ -170,8 +168,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
 
         String arn = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100)).getContainerArn();
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString());
@@ -199,8 +196,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
 
         String arn = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100)).getContainerArn();
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -229,8 +225,7 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);        
         String arn = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100)).getContainerArn();
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString());
@@ -259,8 +254,7 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         String arn = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 600)).getContainerArn();
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -283,9 +277,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         Future<SchedulingResult> res = scheduler.scheduleImpl(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399));
         Future<SchedulingResult> res2 = scheduler.scheduleImpl(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a2", 1, 599, 599));
-        Thread.sleep(50); //wait to have the other thread start the processing
-        scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        avaitProcessing(scheduler); //wait to have the other thread start the processing
         assertEquals("arn1", res.get().getContainerArn());
         try {
             res2.get().getContainerArn();
@@ -296,7 +288,53 @@ public class CyclingECSSchedulerTest {
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
         verify(schedulerBackend, times(1)).scaleTo(Matchers.anyInt(), anyString());
     }
+    
+    @Test(expected=ECSException.class)
+    public void scheduleBackendFailGetContainers() throws Exception {
+        SchedulerBackend backend = mock(SchedulerBackend.class);
+        when(backend.getClusterContainerInstances(anyString(), anyString())).thenThrow(new ECSException("error1"));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
+        SchedulingResult res = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399));
+        avaitProcessing(scheduler); 
+    }
+
         
+    @Test(expected=ECSException.class)
+    public void scheduleBackendFailGetInstances() throws Exception {
+        SchedulerBackend backend = mock(SchedulerBackend.class);
+        when(backend.getClusterContainerInstances(anyString(), anyString())).thenReturn(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 2000, 600, 2000, 600),
+                    ci("id2", "arn2", true, 2000, 200, 2000, 400)
+                )
+        );
+        when(backend.getInstances(anyList())).thenThrow(new ECSException("error2"));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
+        SchedulingResult res = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399));
+        avaitProcessing(scheduler); 
+        
+    }
+    
+    @Test(expected=ECSException.class)
+    public void scheduleBackendFailSchedule() throws Exception {
+        SchedulerBackend backend = mock(SchedulerBackend.class);
+        when(backend.getClusterContainerInstances(anyString(), anyString())).thenReturn(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 2000, 600, 2000, 600),
+                    ci("id2", "arn2", true, 2000, 200, 2000, 400)
+                    )
+        );
+        when(backend.getInstances(anyList())).thenReturn(Arrays.asList(
+                    ec2("id1", new Date()),
+                    ec2("id2", new Date())
+                )
+        );
+        when(backend.schedule(anyString(), Matchers.any())).thenThrow(new ECSException("error3"));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
+        SchedulingResult res = scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399));
+        avaitProcessing(scheduler); 
+        
+    }
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
@@ -329,6 +367,12 @@ public class CyclingECSSchedulerTest {
     
     private Instance ec2(String ec2id, Date launchTime) {
         return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime);
+    }
+    
+    private void avaitProcessing(CyclingECSScheduler scheduler) throws InterruptedException {
+        Thread.sleep(50); //wait to have the other thread start the processing
+        scheduler.shutdownExecutor();
+        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
     }
     
 }
