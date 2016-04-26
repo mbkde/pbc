@@ -272,6 +272,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 logger.info("Interrupted", ex);
             } catch (RuntimeException ex) {
                 logger.error("Runtime Exception", ex);
+            } catch (Throwable t) {
+                logger.error("A very unexpected throwable", t);
             } finally {
                 //try finally to guard against unexpected exceptions.
                 executor.submit(this);

@@ -56,7 +56,6 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
-    private static final int REQUEST_TIMEOUT_MS = 5000;
 
     @Override
     public List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) throws ECSException {
@@ -64,11 +63,9 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             AmazonECSClient ecsClient = new AmazonECSClient();
             AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
             ListContainerInstancesRequest listReq = new ListContainerInstancesRequest()
-                    .withCluster(cluster)
-                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+                    .withCluster(cluster);
             DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
-                    .withAutoScalingGroupNames(autoScalingGroup)
-                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+                    .withAutoScalingGroupNames(autoScalingGroup);
 
             // Get containerInstanceArns
             boolean finished = false;
@@ -111,8 +108,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             } else {
                 DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
                         .withCluster(cluster)
-                        .withContainerInstances(containerInstanceArns)
-                        .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+                        .withContainerInstances(containerInstanceArns);
                 return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
                         .filter(x -> instanceIds.contains(x.getEc2InstanceId()))
                         .filter(ContainerInstance::isAgentConnected)
@@ -128,8 +124,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             DescribeInstancesRequest req = new DescribeInstancesRequest()
-                    .withInstanceIds(containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList()))
-                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS);
+                    .withInstanceIds(containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList()));
             boolean finished = false;
             List<Instance> instances = new ArrayList<>();
             while (!finished) {
@@ -156,7 +151,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
                     .withDesiredCapacity(desiredCapacity)
                     .withAutoScalingGroupName(autoScalingGroup)
-                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
+            );
         } catch (Exception e) {
             throw new ECSException(e);
         }
@@ -171,12 +166,10 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                   asClient.detachInstances(new DetachInstancesRequest()
                         .withAutoScalingGroupName(asgName)
                         .withInstanceIds(instanceIds)
-                        .withShouldDecrementDesiredCapacity(true)
-                        .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
+                        .withShouldDecrementDesiredCapacity(true));
             logger.info("Result of detachment: {}", result);
             AmazonEC2Client ec2Client = new AmazonEC2Client();
-            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds)
-                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
+            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds));
             logger.info("Result of instance termination: {}" + ec2Result);
         } catch (Exception e) {
             throw new ECSException(e);
@@ -195,7 +188,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withContainerInstances(containerArn)
                     .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + request.getRevision())
                     .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
-                    .withSdkRequestTimeout(REQUEST_TIMEOUT_MS));
+            );
             return new SchedulingResult(startTaskResult, containerArn);
         } catch (Exception e) {
             throw new ECSException(e);
