@@ -31,16 +31,19 @@ public interface SchedulerBackend {
      * Get all owned container instances on a cluster
      * 
      * @param cluster
+     * @param autoScalingGroup
      * @return 
+     * @throws com.atlassian.buildeng.ecs.exceptions.ECSException 
      */
-    List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup);
+    List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) throws ECSException;
     
     /**
      * get EC2 Instances for the passed ContainerInstances
      * @param containerInstances
      * @return 
+     * @throws com.atlassian.buildeng.ecs.exceptions.ECSException 
      */
-    List<Instance> getInstances(List<ContainerInstance> containerInstances);
+    List<Instance> getInstances(List<ContainerInstance> containerInstances) throws ECSException;
     
     /**
      * scale the ASG to desired capacity
@@ -54,8 +57,9 @@ public interface SchedulerBackend {
      * terminate the listed EC2 instances and reduce the size of ASG by the given amount
      * @param instanceIds 
      * @param autoScalingGroup 
+     * @throws com.atlassian.buildeng.ecs.exceptions.ECSException 
      */
-    void terminateInstances(List<String> instanceIds, String autoScalingGroup);
+    void terminateInstances(List<String> instanceIds, String autoScalingGroup) throws ECSException;
 
     SchedulingResult schedule(String containerArn, SchedulingRequest req) throws ECSException;
 }
