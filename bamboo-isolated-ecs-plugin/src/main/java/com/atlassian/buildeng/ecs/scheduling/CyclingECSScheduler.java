@@ -2,10 +2,8 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.util.concurrent.SettableFuture;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,19 +23,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
+    private static final int TIMEOUT_FUTURE_SECONDS = 60;
 
     private final Duration stalePeriod;
     private final double highWatermark;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     private long lackingCPU = 0;
     private long lackingMemory = 0;
-    private Set<UUID> consideredRequestIdentifiers = new HashSet<>();
+    private final Set<UUID> consideredRequestIdentifiers = new HashSet<>();
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final BlockingQueue<SchedulingRequest> requests = new LinkedBlockingQueue<>();
@@ -124,8 +125,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     public SchedulingResult schedule(SchedulingRequest request) throws ECSException {
         try {
-            return scheduleImpl(request).get();
-        } catch (InterruptedException | ExecutionException ex) {
+            return scheduleImpl(request).get(TIMEOUT_FUTURE_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException ex) {
             throw new ECSException(ex);
         }
     }
