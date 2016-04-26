@@ -93,6 +93,7 @@ public class PreBuildQueuedEventListener {
             });
             if (result.isRetryRecoverable()) {
                 if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
+                    LOG.warn("Build was not queued but recoverable, retrying.. Error message:" + Joiner.on("\n").join(result.getErrors()));
                     return;
                 }
                 jmx.incrementTimedOut();
