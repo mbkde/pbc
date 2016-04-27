@@ -27,6 +27,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -65,10 +66,10 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
         Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
-            IsolatedDockerAgentRequest req = invocation.getArgumentAt(0, IsolatedDockerAgentRequest.class);
-            req.getCallback().handle(new IsolatedDockerAgentResult().withError("Error"));
+            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            cb.handle(new IsolatedDockerAgentResult().withError("Error"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject());
+        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
@@ -80,10 +81,10 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
         Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
-            IsolatedDockerAgentRequest req = invocation.getArgumentAt(0, IsolatedDockerAgentRequest.class);
-            req.getCallback().handle(new IsolatedDockerAgentException("throw"));
+            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            cb.handle(new IsolatedDockerAgentException("throw"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject());
+        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
@@ -97,7 +98,7 @@ public class PreBuildQueuedEventListenerTest {
         listener.call(event);
         verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
         verify(scheduler, never()).reschedule(anyObject());
-        verify(isolatedAgentService, never()).startAgent(anyObject());
+        verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
     }
     
     @Test
@@ -107,7 +108,7 @@ public class PreBuildQueuedEventListenerTest {
         listener.call(event);
         verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
         verify(scheduler, never()).reschedule(anyObject());
-        verify(isolatedAgentService, never()).startAgent(anyObject());
+        verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
     }
     
     @Test
@@ -115,10 +116,10 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         when(scheduler.reschedule(anyObject())).thenReturn(Boolean.TRUE);
         Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
-            IsolatedDockerAgentRequest req = invocation.getArgumentAt(0, IsolatedDockerAgentRequest.class);
-            req.getCallback().handle(new IsolatedDockerAgentResult().withRetryRecoverable("error"));
+            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            cb.handle(new IsolatedDockerAgentResult().withRetryRecoverable("error"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject());
+        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);

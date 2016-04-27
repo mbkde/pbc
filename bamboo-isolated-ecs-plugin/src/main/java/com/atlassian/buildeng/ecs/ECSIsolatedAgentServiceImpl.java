@@ -27,6 +27,7 @@ import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,11 +52,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     // Isolated Agent Service methods
     @Override
-    public void startAgent(final IsolatedDockerAgentRequest req) {
+    public void startAgent(final IsolatedDockerAgentRequest req, final IsolatedDockerRequestCallback callback) {
         Integer revision = globalConfiguration.getAllRegistrations().get(req.getDockerImage());
         String resultId = req.getBuildResultKey();
         if (revision == null) {
-            req.getCallback().handle(new ImageNotRegisteredException(req.getDockerImage()));
+            callback.handle(new ImageNotRegisteredException(req.getDockerImage()));
             return;
         }
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, resultId);
@@ -90,7 +91,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                                 toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
                             }
                         }
-                        req.getCallback().handle(toRet);
+                        callback.handle(toRet);
                     }
 
                     @Override
@@ -102,7 +103,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         } else {
                             toRet.withRetryRecoverable("No Container Instance currently available");
                         }
-                        req.getCallback().handle(toRet);
+                        callback.handle(toRet);
                     }
         }
         );

@@ -7,8 +7,9 @@ public interface IsolatedAgentService {
      * Start an isolated docker agent to handle the build request
      *
      * @param request - request object
+     * @param callback callback to process the result
      */
-    void startAgent(IsolatedDockerAgentRequest request);
+    void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback);
 
     List<String> getKnownDockerImages();
 }

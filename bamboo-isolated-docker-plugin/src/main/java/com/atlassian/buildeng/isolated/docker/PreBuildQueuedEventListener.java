@@ -85,7 +85,7 @@ public class PreBuildQueuedEventListener {
             return;
         }
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey(), event.getUniqueIdentifier(),
+                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey(), event.getUniqueIdentifier()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
@@ -121,7 +121,7 @@ public class PreBuildQueuedEventListener {
                         event.getContext().getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
                         buildQueueManager.removeBuildFromQueue(event.getContext().getPlanResultKey());
                     }
-                }));
+                });
 
     }
 
