@@ -4,5 +4,5 @@ public interface ECSScheduler {
 
     /* Run the given resource requirements on ECS.
      */
-    void schedule(SchedulingRequest request);
+    void schedule(SchedulingRequest request, SchedulingCallback callback);
 }

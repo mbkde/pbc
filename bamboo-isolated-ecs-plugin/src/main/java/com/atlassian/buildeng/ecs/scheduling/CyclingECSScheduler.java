@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
@@ -36,7 +37,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private final Set<UUID> consideredRequestIdentifiers = new HashSet<>();
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    private final BlockingQueue<SchedulingRequest> requests = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Pair<SchedulingRequest, SchedulingCallback>> requests = new LinkedBlockingQueue<>();
 
     private final SchedulerBackend schedulerBackend;
 
@@ -117,12 +118,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-    public void schedule(SchedulingRequest request) {
-        requests.add(request);
+    public void schedule(SchedulingRequest request, SchedulingCallback callback) {
+        requests.add(Pair.of(request, callback));
     }
 
-    private void processRequests(SchedulingRequest request) {
-        if (request == null) return;
+    private void processRequests(Pair<SchedulingRequest, SchedulingCallback> pair) {
+        if (pair == null) return;
+        SchedulingRequest request = pair.getLeft();
         String cluster = request.getCluster();
         String asgName = request.getAsgName();
 
@@ -133,9 +135,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             dockerHosts = getDockerHosts(containerInstances);
         } catch (ECSException ex) {
             //mark all futures with exception.. and let the clients wait and retry..
-            while (request != null) {
-                request.getCallback().handle(ex);
-                request = requests.poll();
+            while (pair != null) {
+                pair.getRight().handle(ex);
+                pair = requests.poll();
             }
             logger.error("Cannot query cluster " + cluster + " containers", ex);
             return;
@@ -146,9 +148,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         final List<DockerHost> staleHosts = partitionedHosts.get(false);
         final Set<DockerHost> usedCandidates = new HashSet<>();
         boolean someDiscarded = false;
-        while (request != null) {
+        while (pair != null) {
             try {
-                logger.debug("Processing request for {}", request);
+                logger.debug("Processing request for {}", pair);
                 if (!cluster.equals(request.getCluster())) {
                     //we need to save current cluster.. new items arrived for different one.
                     logger.info("Skipped processing due to multiple clusters in queue");
@@ -166,7 +168,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     usedCandidates.add(candidateHost);
                     candidateHost.reduceAvailableCpuBy(request.getCpu());
                     candidateHost.reduceAvailableMemoryBy(request.getMemory());
-                    request.getCallback().handle(schedulingResult);
+                    pair.getRight().handle(schedulingResult);
                     lackingCPU = Math.max(0, lackingCPU - request.getCpu());
                     lackingMemory = Math.max(0, lackingMemory - request.getMemory());
                     // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
@@ -188,9 +190,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     throw new ECSException("Capacity not available");
                 }
             } catch (ECSException ex) {
-                request.getCallback().handle(ex);
+                pair.getRight().handle(ex);
             }
-            request = requests.poll();
+            pair = requests.poll();
         }
 
         //see if we need to scale up or down..

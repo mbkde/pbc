@@ -22,6 +22,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -67,8 +68,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 resultId,
                 revision,
                 Constants.TASK_CPU,
-                Constants.TASK_MEMORY,
-                new SchedulingRequest.Callback() {
+                Constants.TASK_MEMORY);
+        ecsScheduler.schedule(schedulingRequest,
+                new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult schedulingResult) {
                         final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
@@ -105,9 +107,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         }
                         callback.handle(toRet);
                     }
-        }
-        );
-        ecsScheduler.schedule(schedulingRequest);
+        });
     }
     
     @Override

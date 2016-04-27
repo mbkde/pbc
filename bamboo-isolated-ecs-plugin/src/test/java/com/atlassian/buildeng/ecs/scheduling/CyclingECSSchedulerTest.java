@@ -110,7 +110,7 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 100, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -119,7 +119,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
                 thrown.set(true);
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         assertTrue("Capacity overload", thrown.get());
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -145,7 +145,7 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 110, 110, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 110, 110), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -154,7 +154,7 @@ public class CyclingECSSchedulerTest {
             @Override
             public void handle(ECSException exception) {
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -182,7 +182,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
 
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -191,7 +191,7 @@ public class CyclingECSSchedulerTest {
             @Override
             public void handle(ECSException exception) {
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
@@ -220,7 +220,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
 
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -229,7 +229,7 @@ public class CyclingECSSchedulerTest {
             @Override
             public void handle(ECSException exception) {
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
@@ -260,7 +260,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend); 
         final AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -269,7 +269,7 @@ public class CyclingECSSchedulerTest {
             @Override
             public void handle(ECSException exception) {
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
@@ -299,7 +299,7 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 600, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 600), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -308,7 +308,7 @@ public class CyclingECSSchedulerTest {
             @Override
             public void handle(ECSException exception) {
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         
         //TODO how to verify that it contained id1?
@@ -332,7 +332,7 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
         final AtomicBoolean thrown = new AtomicBoolean(false);
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -341,8 +341,8 @@ public class CyclingECSSchedulerTest {
             @Override
             public void handle(ECSException exception) {
             }
-        }));
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a2", 1, 599, 599, new SchedulingRequest.Callback() {
+        });
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a2", 1, 599, 599), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -351,7 +351,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
                 thrown.set(true);
             }
-        }));
+        });
         avaitProcessing(scheduler); //wait to have the other thread start the processing
         assertEquals("arn1", arn.get());
         assertTrue("Exception Thrown correctly", thrown.get());
@@ -365,7 +365,7 @@ public class CyclingECSSchedulerTest {
         when(backend.getClusterContainerInstances(anyString(), anyString())).thenThrow(new ECSException("error1"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -374,7 +374,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
                 thrown.set(true);
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         assertTrue("Exception Thrown correctly", thrown.get());
     }
@@ -392,7 +392,7 @@ public class CyclingECSSchedulerTest {
         when(backend.getInstances(anyList())).thenThrow(new ECSException("error2"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -401,7 +401,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
                 thrown.set(true);
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         assertTrue("Exception Thrown correctly", thrown.get());
     }
@@ -423,7 +423,7 @@ public class CyclingECSSchedulerTest {
         when(backend.schedule(anyString(), Matchers.any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399, new SchedulingRequest.Callback() {
+        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -432,7 +432,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
                 thrown.set(true);
             }
-        }));
+        });
         avaitProcessing(scheduler); 
         assertTrue("Exception Thrown correctly", thrown.get());
         
