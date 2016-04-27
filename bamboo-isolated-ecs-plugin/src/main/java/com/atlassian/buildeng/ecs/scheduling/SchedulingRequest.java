@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.atlassian.util.concurrent.SettableFuture;
+import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 
 import java.util.UUID;
 
@@ -12,9 +13,9 @@ public class SchedulingRequest {
     private final Integer revision;
     private final int cpu;
     private final int memory;
-    private final SettableFuture<SchedulingResult> future;
+    private final Callback callback;
 
-    public SchedulingRequest(String cluster, String asgName, UUID identifier, String resultId, Integer revision, int cpu, int memory) {
+    public SchedulingRequest(String cluster, String asgName, UUID identifier, String resultId, Integer revision, int cpu, int memory, Callback callback) {
         this.cluster = cluster;
         this.asgName = asgName;
         this.identifier = identifier;
@@ -22,7 +23,7 @@ public class SchedulingRequest {
         this.revision = revision;
         this.cpu = cpu;
         this.memory = memory;
-        this.future = new SettableFuture<>();
+        this.callback = callback;
     }
 
     public String getCluster() {
@@ -53,9 +54,13 @@ public class SchedulingRequest {
         return memory;
     }
 
-
-    public SettableFuture<SchedulingResult> getFuture() {
-        return future;
+    public Callback getCallback() {
+        return callback;
     }
 
+    public static interface Callback {
+        
+        void handle (SchedulingResult result);
+        void handle (ECSException exception);
+    }
 }

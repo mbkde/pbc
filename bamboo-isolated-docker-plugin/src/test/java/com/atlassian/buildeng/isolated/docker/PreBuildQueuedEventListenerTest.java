@@ -25,6 +25,7 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,12 +34,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import static org.mockito.Matchers.anyObject;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PreBuildQueuedEventListenerTest {
@@ -60,8 +64,11 @@ public class PreBuildQueuedEventListenerTest {
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
-        IsolatedDockerAgentResult dockerResult = new IsolatedDockerAgentResult().withError("Error");
-        when(isolatedAgentService.startAgent(anyObject())).thenReturn(dockerResult);
+        Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
+            IsolatedDockerAgentRequest req = invocation.getArgumentAt(0, IsolatedDockerAgentRequest.class);
+            req.getCallback().handle(new IsolatedDockerAgentResult().withError("Error"));
+            return null;
+        }).when(isolatedAgentService).startAgent(anyObject());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
@@ -72,7 +79,11 @@ public class PreBuildQueuedEventListenerTest {
     public void testNonRecoverableException() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
-        when(isolatedAgentService.startAgent(anyObject())).thenThrow(new IsolatedDockerAgentException("throw"));
+        Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
+            IsolatedDockerAgentRequest req = invocation.getArgumentAt(0, IsolatedDockerAgentRequest.class);
+            req.getCallback().handle(new IsolatedDockerAgentException("throw"));
+            return null;
+        }).when(isolatedAgentService).startAgent(anyObject());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
@@ -103,8 +114,11 @@ public class PreBuildQueuedEventListenerTest {
     public void testRescheduledRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         when(scheduler.reschedule(anyObject())).thenReturn(Boolean.TRUE);
-        IsolatedDockerAgentResult dockerResult = new IsolatedDockerAgentResult().withRetryRecoverable("error");
-        when(isolatedAgentService.startAgent(anyObject())).thenReturn(dockerResult);
+        Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
+            IsolatedDockerAgentRequest req = invocation.getArgumentAt(0, IsolatedDockerAgentRequest.class);
+            req.getCallback().handle(new IsolatedDockerAgentResult().withRetryRecoverable("error"));
+            return null;
+        }).when(isolatedAgentService).startAgent(anyObject());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);

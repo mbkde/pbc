@@ -18,20 +18,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
-    private static final int TIMEOUT_FUTURE_SECONDS = 60;
 
     private final Duration stalePeriod;
     private final double highWatermark;
@@ -122,19 +117,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-
-    public SchedulingResult schedule(SchedulingRequest request) throws ECSException {
-        try {
-            return scheduleImpl(request).get(TIMEOUT_FUTURE_SECONDS, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-            throw new ECSException(ex);
-        }
-    }
-
-    @VisibleForTesting
-    Future<SchedulingResult> scheduleImpl(SchedulingRequest request) throws ECSException {
+    public void schedule(SchedulingRequest request) {
         requests.add(request);
-        return request.getFuture();
     }
 
     private void processRequests(SchedulingRequest request) {
@@ -150,7 +134,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         } catch (ECSException ex) {
             //mark all futures with exception.. and let the clients wait and retry..
             while (request != null) {
-                request.getFuture().setException(ex);
+                request.getCallback().handle(ex);
                 request = requests.poll();
             }
             logger.error("Cannot query cluster " + cluster + " containers", ex);
@@ -182,7 +166,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     usedCandidates.add(candidateHost);
                     candidateHost.reduceAvailableCpuBy(request.getCpu());
                     candidateHost.reduceAvailableMemoryBy(request.getMemory());
-                    request.getFuture().set(schedulingResult);
+                    request.getCallback().handle(schedulingResult);
                     lackingCPU = Math.max(0, lackingCPU - request.getCpu());
                     lackingMemory = Math.max(0, lackingMemory - request.getMemory());
                     // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
@@ -204,7 +188,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     throw new ECSException("Capacity not available");
                 }
             } catch (ECSException ex) {
-                request.getFuture().setException(ex);
+                request.getCallback().handle(ex);
             }
             request = requests.poll();
         }

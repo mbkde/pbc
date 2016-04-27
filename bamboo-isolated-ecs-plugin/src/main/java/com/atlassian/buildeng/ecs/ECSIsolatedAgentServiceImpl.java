@@ -51,15 +51,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     // Isolated Agent Service methods
     @Override
-    public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) throws ImageNotRegisteredException, ECSException {
+    public void startAgent(final IsolatedDockerAgentRequest req) {
         Integer revision = globalConfiguration.getAllRegistrations().get(req.getDockerImage());
-        final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         String resultId = req.getBuildResultKey();
         if (revision == null) {
-            throw new ImageNotRegisteredException(req.getDockerImage());
+            req.getCallback().handle(new ImageNotRegisteredException(req.getDockerImage()));
+            return;
         }
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, resultId);
-        SchedulingResult schedulingResult;
         SchedulingRequest schedulingRequest = new SchedulingRequest(
                 globalConfiguration.getCurrentCluster(),
                 globalConfiguration.getCurrentASG(),
@@ -67,37 +66,47 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 resultId,
                 revision,
                 Constants.TASK_CPU,
-                Constants.TASK_MEMORY);
-        try {
-            schedulingResult = ecsScheduler.schedule(schedulingRequest);
-            StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
-            startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
-                toRet.withCustomResultData("TaskARN", t.getTaskArn());
-            });
-            logger.info("ECS Returned: {}", startTaskResult);
-            List<Failure> failures = startTaskResult.getFailures();
-            if (failures.size() == 1) {
-                String err = failures.get(0).getReason();
-                if (err.startsWith("RESOURCE")) {
-                    logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                    toRet.withRetryRecoverable("Not enough resources available now.");
-                } else {
-                    toRet.withError(mapRunTaskErrorToDescription(err));
-                }
-            } else {
-                for (Failure err : startTaskResult.getFailures()) {
-                    toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
-                }
-            }
-        } catch (ECSException e) {
-            logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
-            if (e.getCause() instanceof TimeoutException) {
-                toRet.withRetryRecoverable("Request timed out without completing.");
-            } else {
-                toRet.withRetryRecoverable("No Container Instance currently available");
-            }
+                Constants.TASK_MEMORY,
+                new SchedulingRequest.Callback() {
+                    @Override
+                    public void handle(SchedulingResult schedulingResult) {
+                        final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+                        StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
+                        startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
+                            toRet.withCustomResultData("TaskARN", t.getTaskArn());
+                        });
+                        logger.info("ECS Returned: {}", startTaskResult);
+                        List<Failure> failures = startTaskResult.getFailures();
+                        if (failures.size() == 1) {
+                            String err = failures.get(0).getReason();
+                            if (err.startsWith("RESOURCE")) {
+                                logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+                                toRet.withRetryRecoverable("Not enough resources available now.");
+                            } else {
+                                toRet.withError(mapRunTaskErrorToDescription(err));
+                            }
+                        } else {
+                            for (Failure err : startTaskResult.getFailures()) {
+                                toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
+                            }
+                        }
+                        req.getCallback().handle(toRet);
+                    }
+
+                    @Override
+                    public void handle(ECSException exception) {
+                        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+                        logger.warn("Failed to schedule, treating as overload: " + String.valueOf(exception));
+                        if (exception.getCause() instanceof TimeoutException) {
+                            toRet.withRetryRecoverable("Request timed out without completing.");
+                        } else {
+                            toRet.withRetryRecoverable("No Container Instance currently available");
+                        }
+                        req.getCallback().handle(toRet);
+                    }
         }
-        return toRet;
+        );
+        ecsScheduler.schedule(schedulingRequest);
     }
     
     @Override

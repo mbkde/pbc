@@ -33,6 +33,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventListener;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
@@ -83,38 +84,44 @@ public class PreBuildQueuedEventListener {
             jmx.incrementCancelled();
             return;
         }
-        boolean terminateBuild = false;
-        try {
-            IsolatedDockerAgentResult result = isolatedAgentService.startAgent(
-                    new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey(), event.getUniqueIdentifier()));
-            //custom items pushed by the implementation, we give it a unique prefix
-            result.getCustomResultData().entrySet().stream().forEach((ent) -> {
-                event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
-            });
-            if (result.isRetryRecoverable()) {
-                if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
-                    LOG.warn("Build was not queued but recoverable, retrying.. Error message:" + Joiner.on("\n").join(result.getErrors()));
-                    return;
-                }
-                jmx.incrementTimedOut();
-            }
-            if (result.hasErrors()) {
-                terminateBuild = true;
-                errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
-                event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
-            } else {
-                jmx.incrementScheduled();
-            }
-        } catch (IsolatedDockerAgentException ex) {
-            terminateBuild = true;
-            errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", ex);
-            event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
-        }
-        if (terminateBuild) {
-            jmx.incrementFailed();
-            event.getContext().getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
-            buildQueueManager.removeBuildFromQueue(event.getContext().getPlanResultKey());
-        }
+        isolatedAgentService.startAgent(
+                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey(), event.getUniqueIdentifier(),
+                        new IsolatedDockerRequestCallback() {
+                    @Override
+                    public void handle(IsolatedDockerAgentResult result) {
+                        //custom items pushed by the implementation, we give it a unique prefix
+                        result.getCustomResultData().entrySet().stream().forEach((ent) -> {
+                            event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
+                        });
+                        if (result.isRetryRecoverable()) {
+                            if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
+                                LOG.warn("Build was not queued but recoverable, retrying.. Error message:" + Joiner.on("\n").join(result.getErrors()));
+                                return;
+                            }
+                            jmx.incrementTimedOut();
+                        }
+                        if (result.hasErrors()) {
+                            terminateBuild();
+                            errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
+                            event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
+                        } else {
+                            jmx.incrementScheduled();
+                        }
+                    }
+
+                    @Override
+                    public void handle(IsolatedDockerAgentException ex) {
+                        terminateBuild();
+                        errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", ex);
+                        event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
+                    }
+
+                    private void terminateBuild() {
+                        jmx.incrementFailed();
+                        event.getContext().getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
+                        buildQueueManager.removeBuildFromQueue(event.getContext().getPlanResultKey());
+                    }
+                }));
 
     }
 
