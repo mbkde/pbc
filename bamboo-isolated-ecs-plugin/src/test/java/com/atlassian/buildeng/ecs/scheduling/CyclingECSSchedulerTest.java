@@ -19,6 +19,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Arrays;
 import java.util.Date;
@@ -69,7 +70,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        List<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend).getDockerHosts(schedulerBackend.getClusterContainerInstances("", ""));
+        List<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()).getDockerHosts(schedulerBackend.getClusterContainerInstances("", ""));
         //100 & 100 means all are viable candidates
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, 100, 100);
         assertTrue(candidate.isPresent());
@@ -108,9 +109,9 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -143,9 +144,9 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 110, 110), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 110, 110), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -179,10 +180,10 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
 
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -217,10 +218,10 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
 
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -257,10 +258,10 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend); 
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()); 
         final AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -297,9 +298,9 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 600, 600), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 600), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -329,10 +330,10 @@ public class CyclingECSSchedulerTest {
                         ec2("id1", new Date()),
                         ec2("id2", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
         final AtomicBoolean thrown = new AtomicBoolean(false);
         final AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
                 arn.set(result.getContainerArn());
@@ -342,7 +343,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
             }
         });
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a2", 1, 599, 599), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a2", 1, 599, 599), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -363,9 +364,9 @@ public class CyclingECSSchedulerTest {
     public void scheduleBackendFailGetContainers() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
         when(backend.getClusterContainerInstances(anyString(), anyString())).thenThrow(new ECSException("error1"));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -390,9 +391,9 @@ public class CyclingECSSchedulerTest {
                 )
         );
         when(backend.getInstances(anyList())).thenThrow(new ECSException("error2"));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -420,10 +421,10 @@ public class CyclingECSSchedulerTest {
                     ec2("id2", new Date())
                 )
         );
-        when(backend.schedule(anyString(), Matchers.any())).thenThrow(new ECSException("error3"));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend);
+        when(backend.schedule(anyString(), anyString(), Matchers.any())).thenThrow(new ECSException("error3"));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         final AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest("cluster", "asg", UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
             @Override
             public void handle(SchedulingResult result) {
             }
@@ -442,7 +443,7 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString(), anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
-        when(mocked.schedule(anyString(), Matchers.any())).thenAnswer(new Answer<SchedulingResult>() {
+        when(mocked.schedule(anyString(), anyString(), Matchers.any())).thenAnswer(new Answer<SchedulingResult>() {
 
             @Override
             public SchedulingResult answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -477,4 +478,11 @@ public class CyclingECSSchedulerTest {
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
     }
     
+    
+    GlobalConfiguration mockGlobalConfig() {
+        GlobalConfiguration mock = mock(GlobalConfiguration.class);
+        when(mock.getCurrentCluster()).thenReturn("cluster");
+        when(mock.getCurrentASG()).thenReturn("asg");
+        return mock;
+    }
 }
