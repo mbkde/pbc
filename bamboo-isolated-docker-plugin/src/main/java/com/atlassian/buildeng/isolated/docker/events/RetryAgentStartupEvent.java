@@ -18,7 +18,6 @@ package com.atlassian.buildeng.isolated.docker.events;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.event.api.AsynchronousPreferred;
 
-import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -32,7 +31,6 @@ public final class RetryAgentStartupEvent {
     private final BuildContext context;
     private final String dockerImage;
     private final UUID uniqueIdentifier;
-    private final static Random rand = new Random();
 
     public RetryAgentStartupEvent(String dockerImage, BuildContext context) {
         this.dockerImage = dockerImage;
