@@ -193,6 +193,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 pair.getRight().handle(ex);
             }
             pair = requests.poll();
+            request = pair.getLeft();
         }
 
         //see if we need to scale up or down..
