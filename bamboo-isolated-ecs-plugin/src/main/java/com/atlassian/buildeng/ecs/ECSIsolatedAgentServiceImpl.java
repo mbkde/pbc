@@ -22,11 +22,13 @@ import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,15 +53,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
 
     // Isolated Agent Service methods
     @Override
-    public IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest req) throws ImageNotRegisteredException, ECSException {
+    public void startAgent(final IsolatedDockerAgentRequest req, final IsolatedDockerRequestCallback callback) {
         Integer revision = globalConfiguration.getAllRegistrations().get(req.getDockerImage());
-        final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         String resultId = req.getBuildResultKey();
         if (revision == null) {
-            throw new ImageNotRegisteredException(req.getDockerImage());
+            callback.handle(new ImageNotRegisteredException(req.getDockerImage()));
+            return;
         }
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, resultId);
-        SchedulingResult schedulingResult;
         SchedulingRequest schedulingRequest = new SchedulingRequest(
                 globalConfiguration.getCurrentCluster(),
                 globalConfiguration.getCurrentASG(),
@@ -68,36 +69,45 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 revision,
                 Constants.TASK_CPU,
                 Constants.TASK_MEMORY);
-        try {
-            schedulingResult = ecsScheduler.schedule(schedulingRequest);
-            StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
-            startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
-                toRet.withCustomResultData("TaskARN", t.getTaskArn());
-            });
-            logger.info("ECS Returned: {}", startTaskResult);
-            List<Failure> failures = startTaskResult.getFailures();
-            if (failures.size() == 1) {
-                String err = failures.get(0).getReason();
-                if (err.startsWith("RESOURCE")) {
-                    logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                    toRet.withRetryRecoverable("Not enough resources available now.");
-                } else {
-                    toRet.withError(mapRunTaskErrorToDescription(err));
-                }
-            } else {
-                for (Failure err : startTaskResult.getFailures()) {
-                    toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
-                }
-            }
-        } catch (ECSException e) {
-            logger.warn("Failed to schedule, treating as overload: " + String.valueOf(e));
-            if (e.getCause() instanceof TimeoutException) {
-                toRet.withRetryRecoverable("Request timed out without completing.");
-            } else {
-                toRet.withRetryRecoverable("No Container Instance currently available");
-            }
-        }
-        return toRet;
+        ecsScheduler.schedule(schedulingRequest,
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult schedulingResult) {
+                        final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+                        StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
+                        startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
+                            toRet.withCustomResultData("TaskARN", t.getTaskArn());
+                        });
+                        logger.info("ECS Returned: {}", startTaskResult);
+                        List<Failure> failures = startTaskResult.getFailures();
+                        if (failures.size() == 1) {
+                            String err = failures.get(0).getReason();
+                            if (err.startsWith("RESOURCE")) {
+                                logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
+                                toRet.withRetryRecoverable("Not enough resources available now.");
+                            } else {
+                                toRet.withError(mapRunTaskErrorToDescription(err));
+                            }
+                        } else {
+                            for (Failure err : startTaskResult.getFailures()) {
+                                toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
+                            }
+                        }
+                        callback.handle(toRet);
+                    }
+
+                    @Override
+                    public void handle(ECSException exception) {
+                        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+                        logger.warn("Failed to schedule, treating as overload: " + String.valueOf(exception));
+                        if (exception.getCause() instanceof TimeoutException) {
+                            toRet.withRetryRecoverable("Request timed out without completing.");
+                        } else {
+                            toRet.withRetryRecoverable("No Container Instance currently available");
+                        }
+                        callback.handle(toRet);
+                    }
+        });
     }
     
     @Override

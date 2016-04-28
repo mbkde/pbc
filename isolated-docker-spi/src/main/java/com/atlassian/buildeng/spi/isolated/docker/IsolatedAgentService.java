@@ -7,10 +7,9 @@ public interface IsolatedAgentService {
      * Start an isolated docker agent to handle the build request
      *
      * @param request - request object
-     * @return Any implementation specific errors that prevent agent startup
-     * @throws IsolatedDockerAgentException Any bamboo related errors that prevent agent startup
+     * @param callback callback to process the result
      */
-    IsolatedDockerAgentResult startAgent(IsolatedDockerAgentRequest request) throws IsolatedDockerAgentException;
+    void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback);
 
     List<String> getKnownDockerImages();
 }
