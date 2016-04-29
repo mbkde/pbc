@@ -219,12 +219,12 @@ public class GlobalConfiguration {
         return values != null ? values : new ConcurrentHashMap<>();
     }
     
-    public String getCurrentASG() {
+    public synchronized String getCurrentASG() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_ASG_KEY);
         return name == null ? "" : name;
     }
     
-    void setCurrentASG(String name) {
+    synchronized void setCurrentASG(String name) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_ASG_KEY, name);
     }    
 
