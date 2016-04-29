@@ -230,12 +230,12 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 logger.error("Terminating instances failed", ex);
             }
         }
-        if (desiredScaleSize != currentSize) {
-            try {
+        try {
+            if (desiredScaleSize > currentSize && desiredScaleSize > schedulerBackend.getCurrentASGDesiredCapacity(asgName)) {
                 schedulerBackend.scaleTo(desiredScaleSize, asgName);
-            } catch (ECSException ex) {
-                logger.error("Scaling of " + asgName + " failed", ex);
             }
+        } catch (ECSException ex) {
+            logger.error("Scaling of " + asgName + " failed", ex);
         }
     }
 
