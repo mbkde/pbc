@@ -61,4 +61,6 @@ public interface SchedulerBackend {
     void terminateInstances(List<String> instanceIds, String autoScalingGroup) throws ECSException;
 
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req) throws ECSException;
+    
+    int getCurrentASGDesiredCapacity(String autoScalingGroup) throws ECSException;
 }

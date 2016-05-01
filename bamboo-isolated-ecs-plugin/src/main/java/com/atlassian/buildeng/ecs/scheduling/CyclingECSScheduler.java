@@ -180,6 +180,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 pair.getRight().handle(ex);
             }
             pair = requests.poll();
+            if (pair != null) {
+                request = pair.getLeft();
+            }
         }
 
         //see if we need to scale up or down..
@@ -202,12 +205,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //we are reducing the currentSize by the terminated list because that's
         //what the terminateInstances method should reduce it to.
         currentSize = currentSize - terminatedCount;
-        if (desiredScaleSize != currentSize) {
-            try {
+        try {
+            if (desiredScaleSize > currentSize && desiredScaleSize > schedulerBackend.getCurrentASGDesiredCapacity(asgName)) {
+                //this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, asgName);
-            } catch (ECSException ex) {
-                logger.error("Scaling of " + asgName + " failed", ex);
             }
+        } catch (ECSException ex) {
+            logger.error("Scaling of " + asgName + " failed", ex);
         }
     }
     

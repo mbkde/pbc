@@ -193,4 +193,27 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             throw new ECSException(e);
         }
     }
+
+    @Override
+    public int getCurrentASGDesiredCapacity(String autoScalingGroup) throws ECSException {
+        try {
+            AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
+                    .withAutoScalingGroupNames(autoScalingGroup);
+            List<AutoScalingGroup> groups = asgClient.describeAutoScalingGroups(asgReq).getAutoScalingGroups();
+            if (groups.size() > 1) {
+                throw new ECSException("More than one group by name:" + autoScalingGroup);
+            }
+            if (groups.isEmpty()) {
+                throw new ECSException("No auto scaling group with name:" + autoScalingGroup);
+            }
+            return groups.get(0).getDesiredCapacity();
+        } catch (Exception ex) {
+            if (ex instanceof ECSException) {
+                throw ex;
+            } else {
+                throw new ECSException(ex);
+            }
+        }
+    }
 }
