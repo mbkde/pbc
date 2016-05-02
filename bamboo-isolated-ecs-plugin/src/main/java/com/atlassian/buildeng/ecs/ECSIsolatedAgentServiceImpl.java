@@ -62,8 +62,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         }
         logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, resultId);
         SchedulingRequest schedulingRequest = new SchedulingRequest(
-                globalConfiguration.getCurrentCluster(),
-                globalConfiguration.getCurrentASG(),
                 req.getUniqueIdentifier(),
                 resultId,
                 revision,

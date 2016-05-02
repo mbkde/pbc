@@ -15,7 +15,6 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
@@ -177,14 +176,14 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public SchedulingResult schedule(String containerArn, SchedulingRequest request) throws ECSException {
+    public SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest request) throws ECSException {
         try {
             AmazonECSClient ecsClient = new AmazonECSClient();
             ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
                 .withName(Constants.AGENT_CONTAINER_NAME);
             StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
-                    .withCluster(request.getCluster())
+                    .withCluster(cluster)
                     .withContainerInstances(containerArn)
                     .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + request.getRevision())
                     .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
