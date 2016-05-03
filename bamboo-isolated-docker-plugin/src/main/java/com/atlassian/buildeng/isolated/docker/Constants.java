@@ -41,4 +41,10 @@ public interface Constants {
      * Everything starting with this can end up in the UI.
      */
     public static final String RESULT_PREFIX = "result.isolated.docker.";
+
+    //task related equvalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
+    // don't like dots in names.
+    public final String TASK_DOCKER_IMAGE = "dockerImage";
+    public final String TASK_DOCKER_ENABLE = "enabled";
+    
 }
