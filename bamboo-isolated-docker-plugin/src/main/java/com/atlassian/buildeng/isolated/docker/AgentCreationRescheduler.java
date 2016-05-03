@@ -48,7 +48,7 @@ public class AgentCreationRescheduler implements DisposableBean  {
         // for retry count 20 and X=5: 5 + 10 + 15 + ... + 100 = 1050s = 17.5 min
         //for retry count 10 and X=10: 10 + 20 + 30 + 40 + 50 + 60 + 70 + 80 + 90 + 100 = 550s
         //for retry count 10 and X=5 : 5 + 10 + 15 + 20 + 25 + 30 + 35 + 40 + 45 + 50 = 225s
-        LOG.info("Rescheduling {} for the {} time", event.getContext().getBuildResultKey(), event.getRetryCount());
+        LOG.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
         executor.schedule(() -> {
             eventPublisher.publish(event);
         }, X * event.getRetryCount(), TimeUnit.SECONDS);

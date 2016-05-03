@@ -21,14 +21,24 @@ import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
+import com.atlassian.bamboo.buildqueue.manager.AgentManager;
+import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
+import com.atlassian.bamboo.deployments.execution.DeploymentContext;
+import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
+import com.atlassian.bamboo.deployments.results.DeploymentResult;
+import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.event.agent.AgentRegisteredEvent;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.CommonContext;
+import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
+import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
+import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -51,26 +61,34 @@ public class PreBuildQueuedEventListener {
     private final BuildQueueManager buildQueueManager;
     private final AgentCreationRescheduler rescheduler;
     private final JMXAgentsService jmx;
-
+    private final DeploymentResultService deploymentResultService;
+    private final AgentCommandSender agentCommandSender;
+    private final AgentManager agentManager;
 
     public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                        ErrorUpdateHandler errorUpdateHandler,
                                        BuildQueueManager buildQueueManager,
                                        AgentCreationRescheduler rescheduler,
-                                       JMXAgentsService jmx) {
+                                       JMXAgentsService jmx,
+                                       DeploymentResultService deploymentResultService,
+                                       AgentCommandSender agentCommandSender,
+                                       AgentManager agentManager) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
         this.rescheduler = rescheduler;
         this.jmx = jmx;
+        this.deploymentResultService = deploymentResultService;
+        this.agentManager = agentManager;
+        this.agentCommandSender = agentCommandSender;
     }
 
     @EventListener
     public void call(BuildQueuedEvent event) {
         BuildContext buildContext = event.getContext();
         Configuration config = Configuration.forBuildContext(buildContext);
-        buildContext.getBuildResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
-        buildContext.getBuildResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
+        buildContext.getCurrentResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
+        buildContext.getCurrentResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
         if (config.isEnabled()) {
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
@@ -85,13 +103,13 @@ public class PreBuildQueuedEventListener {
             return;
         }
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getBuildResultKey(), event.getUniqueIdentifier()),
+                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
                         //custom items pushed by the implementation, we give it a unique prefix
                         result.getCustomResultData().entrySet().stream().forEach((ent) -> {
-                            event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
+                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
                         });
                         if (result.isRetryRecoverable()) {
                             if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
@@ -103,7 +121,7 @@ public class PreBuildQueuedEventListener {
                         if (result.hasErrors()) {
                             terminateBuild();
                             errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
-                            event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
+                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
                         } else {
                             jmx.incrementScheduled();
                         }
@@ -113,20 +131,22 @@ public class PreBuildQueuedEventListener {
                     public void handle(IsolatedDockerAgentException ex) {
                         terminateBuild();
                         errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", ex);
-                        event.getContext().getBuildResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
+                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
                     }
 
                     private void terminateBuild() {
                         jmx.incrementFailed();
-                        event.getContext().getBuildResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
-                        buildQueueManager.removeBuildFromQueue(event.getContext().getPlanResultKey());
+                        event.getContext().getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
+                        if (event.getContext() instanceof BuildContext) {
+                            buildQueueManager.removeBuildFromQueue(event.getContext().getResultKey());
+                        }
                     }
                 });
 
     }
 
-    private boolean isStillQueued(BuildContext context) {
-        LifeCycleState state = context.getBuildResult().getLifeCycleState();
+    private boolean isStillQueued(CommonContext context) {
+        LifeCycleState state = context.getCurrentResult().getLifeCycleState();
         return LifeCycleState.isPending(state) || LifeCycleState.isQueued(state);
     }
     
@@ -149,5 +169,31 @@ public class PreBuildQueuedEventListener {
                 }
             }
         });
+    }
+    
+    
+    //2 events related to deployment environments
+    @EventListener
+    public void deploymentTriggered(DeploymentTriggeredEvent event) {
+        LOG.info("deployment triggered event:" + event);
+        DeploymentContext buildContext = event.getContext();
+        Configuration config = Configuration.forDeploymentContext(buildContext);
+        if (config.isEnabled()) {
+            buildContext.getCurrentResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
+            buildContext.getCurrentResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
+            jmx.incrementQueued();
+            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
+        }
+    }
+    
+    @EventListener
+    public void deploymentFinished(DeploymentFinishedEvent event) {
+        LOG.info("deployment finished event:" + event);
+        DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
+        BuildAgent agent = dr != null ? dr.getAgent() : null;
+        if (agent != null) {
+            DeleterGraveling dg = new DeleterGraveling(agentCommandSender, agentManager);
+            dg.visitRemote(agent);
+        }
     }
 }
