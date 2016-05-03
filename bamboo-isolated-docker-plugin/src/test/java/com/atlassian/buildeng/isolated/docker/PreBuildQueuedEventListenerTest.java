@@ -18,6 +18,7 @@ package com.atlassian.buildeng.isolated.docker;
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
@@ -132,10 +133,10 @@ public class PreBuildQueuedEventListenerTest {
     private BuildContext mockBuildContext(boolean dockerEnabled, String image, LifeCycleState state) {
         BuildContext buildContext = mock(BuildContext.class);
         CurrentBuildResult result = mock(CurrentBuildResult.class);
-        when(buildContext.getBuildResult()).thenReturn(result);
+        when(buildContext.getCurrentResult()).thenReturn(result);
         BuildDefinition bd = mock(BuildDefinition.class);
         when(buildContext.getBuildDefinition()).thenReturn(bd);
-//        when(buildContext.getEntityKey()).thenReturn(PlanKeys.getPlanKey("AAA-BBB"));
+        when(buildContext.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-CCC-1"));
         Map<String, String> resultData = new HashMap<>();
         when(result.getLifeCycleState()).thenReturn(state);
         when(result.getCustomBuildData()).thenReturn(resultData);

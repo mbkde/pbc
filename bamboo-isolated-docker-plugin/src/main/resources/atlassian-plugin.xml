@@ -102,4 +102,11 @@
         <skipIfFailed/>
         <description/>
     </buildProcessorServer>
+    
+    <taskType key="dockertask" name="Docker Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
+      <description>Sets up Docker Agent Image for Deployment Environment to run on</description>
+      <configuration class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator"/>
+      <resource type="freemarker" name="edit" location="/templates/plugin/editRequirementTask.ftl"/>
+    </taskType>
+    
 </atlassian-plugin>

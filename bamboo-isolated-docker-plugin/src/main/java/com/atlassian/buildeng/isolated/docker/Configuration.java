@@ -16,8 +16,11 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
+import com.atlassian.bamboo.task.TaskDefinition;
+import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 
@@ -25,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 
 public final class Configuration {
+
 
 
     private final boolean enabled;
@@ -37,9 +41,6 @@ public final class Configuration {
 
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
-        if (config == null) {
-            return null;
-        }
         boolean enable = config.getBoolean(Constants.ENABLED_FOR_JOB);
         String image = config.getString(Constants.DOCKER_IMAGE);
         return new Configuration(enable, image);
@@ -50,6 +51,22 @@ public final class Configuration {
         Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
         return forMap(cc);
     }
+    
+    @Nonnull
+    public static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
+        for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
+            if ("com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockertask".equals(task.getPluginKey())) {
+                return forTaskConfiguration(task);
+            }
+        }
+        return new Configuration(false, "");
+    }
+    
+    @Nonnull
+    public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
+        return forMap(taskDefinition.getConfiguration());
+    }
+
 
     public static Configuration forJob(ImmutableJob job) {
         Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
