@@ -64,7 +64,10 @@ public final class Configuration {
     
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
-        return forMap(taskDefinition.getConfiguration());
+        Map<String, String> cc = taskDefinition.getConfiguration();
+        String value = cc.getOrDefault(Constants.TASK_DOCKER_ENABLE, "false");
+        String image = cc.get(Constants.TASK_DOCKER_IMAGE);
+        return new Configuration(Boolean.parseBoolean(value), image);
     }
 
 
