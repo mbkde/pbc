@@ -66,7 +66,7 @@ public final class Configuration {
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
         String value = cc.getOrDefault(Constants.TASK_DOCKER_ENABLE, "false");
-        String image = cc.get(Constants.TASK_DOCKER_IMAGE);
+        String image = cc.getOrDefault(Constants.TASK_DOCKER_IMAGE, "");
         return new Configuration(Boolean.parseBoolean(value), image);
     }
 
@@ -84,7 +84,7 @@ public final class Configuration {
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
         String value = cc.getOrDefault(Constants.ENABLED_FOR_JOB, "false");
-        String image = cc.get(Constants.DOCKER_IMAGE);
+        String image = cc.getOrDefault(Constants.DOCKER_IMAGE, "");
         return new Configuration(Boolean.parseBoolean(value), image);
     }
 
