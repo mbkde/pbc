@@ -87,9 +87,9 @@ public class PreBuildQueuedEventListener {
     public void call(BuildQueuedEvent event) {
         BuildContext buildContext = event.getContext();
         Configuration config = Configuration.forBuildContext(buildContext);
-        buildContext.getCurrentResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
-        buildContext.getCurrentResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
         if (config.isEnabled()) {
+            buildContext.getCurrentResult().getCustomBuildData().put(Constants.ENABLED_FOR_JOB, "" + config.isEnabled());
+            buildContext.getCurrentResult().getCustomBuildData().put(Constants.DOCKER_IMAGE, config.getDockerImage());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
         }
