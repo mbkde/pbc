@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * pre or post actions on the agent if artifact download fails.
  * 
  */
-class BuildProcessorServerImpl implements CustomBuildProcessorServer {
+public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     private final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
 
     private BuildContext buildContext;

@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-class ReaperJob implements PluginJob {
+public class ReaperJob implements PluginJob {
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {

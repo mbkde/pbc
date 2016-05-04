@@ -72,7 +72,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                     public void handle(SchedulingResult schedulingResult) {
                         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                         StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
-                        startTaskResult.getTasks().stream().findFirst().ifPresent(t -> toRet.withCustomResultData("TaskARN", t.getTaskArn()));
+                        startTaskResult.getTasks().stream().findFirst().ifPresent(t -> {
+                            toRet.withCustomResultData("TaskARN", t.getTaskArn());
+                        });
                         logger.info("ECS Returned: {}", startTaskResult);
                         List<Failure> failures = startTaskResult.getFailures();
                         if (failures.size() == 1) {

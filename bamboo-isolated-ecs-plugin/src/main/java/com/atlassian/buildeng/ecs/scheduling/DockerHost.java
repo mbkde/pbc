@@ -127,7 +127,10 @@ public class DockerHost {
         if (containerInstanceArn != null ? !containerInstanceArn.equals(that.containerInstanceArn) : that.containerInstanceArn != null) {
             return false;
         }
-        return !(instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) && !(launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null);
+        if (instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) {
+            return false;
+        }
+        return !(launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null);
     }
 
     @Override

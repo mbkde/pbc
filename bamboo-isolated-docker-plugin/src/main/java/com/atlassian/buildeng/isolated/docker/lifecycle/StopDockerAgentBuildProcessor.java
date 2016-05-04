@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * Responsible for stopping the Docker-based Bamboo agent so it won't run more than one job.
  * Runs on agent and in coordination with PostJobActionImpl
  */
-class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
+public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     private static final Logger logger = LoggerFactory.getLogger(StopDockerAgentBuildProcessor.class);
 
     private final AgentContext agentContext;

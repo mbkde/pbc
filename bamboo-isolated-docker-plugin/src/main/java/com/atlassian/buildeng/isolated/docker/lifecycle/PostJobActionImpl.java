@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 /**
  * runs on server and removes the agent from db after StopDockerAgentBuildProcessor killed it.
  */
-class PostJobActionImpl implements PostJobAction {
+public class PostJobActionImpl implements PostJobAction {
     private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
 
     private final AgentManager agentManager;

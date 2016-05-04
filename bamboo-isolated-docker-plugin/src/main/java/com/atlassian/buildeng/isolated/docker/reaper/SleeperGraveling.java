@@ -8,7 +8,7 @@ import com.atlassian.bamboo.v2.build.agent.LocalBuildAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class SleeperGraveling implements BuildAgentVisitor {
+public class SleeperGraveling implements BuildAgentVisitor {
     private final AgentManager agentManager;
 
     private final Logger LOG = LoggerFactory.getLogger(SleeperGraveling.class);

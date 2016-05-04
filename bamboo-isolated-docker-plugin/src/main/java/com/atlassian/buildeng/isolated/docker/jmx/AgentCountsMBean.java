@@ -19,7 +19,7 @@ package com.atlassian.buildeng.isolated.docker.jmx;
  *
  * @author mkleint
  */
-interface AgentCountsMBean {
+public interface AgentCountsMBean {
     
     long getQueuedAgentsCount();
     long getScheduledAgentsCount();

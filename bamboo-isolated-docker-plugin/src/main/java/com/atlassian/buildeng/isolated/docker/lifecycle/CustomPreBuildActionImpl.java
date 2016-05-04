@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
+public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
 
     private final Logger LOG = LoggerFactory.getLogger(CustomPreBuildActionImpl.class);
     private BuildContext buildContext;

@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * this class is an event listener because preBuildQueuedAction requires restart
  * of bamboo when re-deployed.
  */
-class PreBuildQueuedEventListener {
+public class PreBuildQueuedEventListener {
 
     private final IsolatedAgentService isolatedAgentService;
     private final Logger LOG = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
@@ -108,7 +108,9 @@ class PreBuildQueuedEventListener {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
                         //custom items pushed by the implementation, we give it a unique prefix
-                        result.getCustomResultData().entrySet().stream().forEach(ent -> event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue()));
+                        result.getCustomResultData().entrySet().stream().forEach(ent -> {
+                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
+                        });
                         if (result.isRetryRecoverable()) {
                             if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
                                 LOG.warn("Build was not queued but recoverable, retrying.. Error message:" + Joiner.on("\n").join(result.getErrors()));
