@@ -120,12 +120,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Override
     public List<Instance> getInstances(List<ContainerInstance> containerInstances) throws ECSException {
-        try {
+        List<Instance> instances = new ArrayList<>();
+        if (!containerInstances.isEmpty()) try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             DescribeInstancesRequest req = new DescribeInstancesRequest()
                     .withInstanceIds(containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList()));
             boolean finished = false;
-            List<Instance> instances = new ArrayList<>();
+
             while (!finished) {
                 DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
                 describeInstancesResult.getReservations().forEach(reservation -> instances.addAll(reservation.getInstances()));
@@ -136,10 +137,10 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     req.setNextToken(nextToken);
                 }
             }
-            return instances;
         } catch (Exception ex) {
             throw new ECSException(ex);
         }
+        return instances.stream().distinct().collect(Collectors.toList());
     }
 
     @Override
