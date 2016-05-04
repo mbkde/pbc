@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(Include.NON_EMPTY)
 public class RegisterImageResponse {
-    private Integer revision;
-    private String failureReason;
+    public Integer revision;
+    public String failureReason;
 
     public RegisterImageResponse(Integer revision) {
         this.revision = revision;

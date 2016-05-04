@@ -18,7 +18,7 @@ package com.atlassian.buildeng.isolated.docker.rest;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-final public class JobsUsingImageResponse {
+public final class JobsUsingImageResponse {
     private final String image;
     private final List<JobInfo> jobs;
 
