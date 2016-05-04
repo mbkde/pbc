@@ -12,22 +12,23 @@ import com.atlassian.buildeng.isolated.docker.Constants;
 import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Set;
 
-public class RequirementTaskConfigurator extends AbstractTaskConfigurator implements TaskRequirementSupport
+class RequirementTaskConfigurator extends AbstractTaskConfigurator implements TaskRequirementSupport
 {
 
     @SuppressWarnings("UnusedDeclaration")
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(RequirementTaskConfigurator.class);
+    private static final Logger log = Logger.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
 
     // ---------------------------------------------------------------------------------------------------- Constructors
 
-    public RequirementTaskConfigurator(TextProvider textProvider)
+    private RequirementTaskConfigurator(TextProvider textProvider)
     {
         this.textProvider = textProvider;
     }
@@ -44,12 +45,6 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         configMap.put(Constants.TASK_DOCKER_IMAGE, params.getString(Constants.TASK_DOCKER_IMAGE));
         configMap.put(Constants.TASK_DOCKER_ENABLE, "" + !StringUtils.isBlank(params.getString(Constants.TASK_DOCKER_IMAGE)));
         return configMap;
-    }
-
-    @Override
-    public void populateContextForCreate(@NotNull Map<String, Object> context)
-    {
-        super.populateContextForCreate(context);
     }
 
     @Override

@@ -258,7 +258,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()); 
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
         final AtomicReference<String> arn = new AtomicReference<>();
 
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100), new SchedulingCallback() {
@@ -443,13 +443,9 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString(), anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
-        when(mocked.schedule(anyString(), anyString(), Matchers.any())).thenAnswer(new Answer<SchedulingResult>() {
-
-            @Override
-            public SchedulingResult answer(InvocationOnMock invocationOnMock) throws Throwable {
-                String foo = (String) invocationOnMock.getArguments()[0];
-                return new SchedulingResult(new StartTaskResult(), foo);
-            }
+        when(mocked.schedule(anyString(), anyString(), Matchers.any())).thenAnswer(invocationOnMock -> {
+            String foo = (String) invocationOnMock.getArguments()[0];
+            return new SchedulingResult(new StartTaskResult(), foo);
         });
         return mocked;
     }
@@ -479,7 +475,7 @@ public class CyclingECSSchedulerTest {
     }
     
     
-    GlobalConfiguration mockGlobalConfig() {
+    private GlobalConfiguration mockGlobalConfig() {
         GlobalConfiguration mock = mock(GlobalConfiguration.class);
         when(mock.getCurrentCluster()).thenReturn("cluster");
         when(mock.getCurrentASG()).thenReturn("asg");

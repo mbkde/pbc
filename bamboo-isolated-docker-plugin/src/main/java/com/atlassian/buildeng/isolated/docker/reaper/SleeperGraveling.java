@@ -3,11 +3,12 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
+import com.atlassian.bamboo.v2.build.agent.BuildAgent.BuildAgentVisitor;
 import com.atlassian.bamboo.v2.build.agent.LocalBuildAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SleeperGraveling implements BuildAgent.BuildAgentVisitor {
+class SleeperGraveling implements BuildAgentVisitor {
     private final AgentManager agentManager;
 
     private final Logger LOG = LoggerFactory.getLogger(SleeperGraveling.class);

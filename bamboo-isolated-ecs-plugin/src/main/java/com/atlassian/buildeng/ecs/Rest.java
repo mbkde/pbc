@@ -38,10 +38,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 @WebSudoRequired
@@ -50,8 +52,8 @@ public class Rest {
     private final GlobalConfiguration configuration;
 
     @Autowired
-    public Rest(GlobalConfiguration config) {
-        this.configuration = config;
+    public Rest(GlobalConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     // REST endpoints
@@ -61,7 +63,7 @@ public class Rest {
     public Response getAllDockerMappings() {
         Map<String, Integer> mappings = configuration.getAllRegistrations();
         return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
-                (Map.Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
+                (Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
         ).collect(Collectors.toList()))).build();
     }
 
@@ -74,10 +76,10 @@ public class Rest {
             JSONObject o = new JSONObject(requestString);
             dockerImage = o.getString("dockerImage");
         } catch (JSONException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).type("text/plain").build();
+            return Response.status(Status.BAD_REQUEST).entity(e.toString()).type("text/plain").build();
         }
         if (dockerImage == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
+            return Response.status(Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
         }
         Integer revision = configuration.registerDockerImage(dockerImage);
         return Response.ok(new RegisterImageResponse(revision)).build();
@@ -107,10 +109,10 @@ public class Rest {
             JSONObject o = new JSONObject(requestString);
             cluster = o.getString("cluster");
         } catch (JSONException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (cluster == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
+            return Response.status(Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
         }
         configuration.setCluster(cluster);
         return Response.created(URI.create("/cluster")).build();
@@ -133,16 +135,16 @@ public class Rest {
             JSONObject o = new JSONObject(requestString);
             sidekick = o.getString("sidekick");
         } catch (JSONException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (sidekick == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
+            return Response.status(Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
         }
         Collection<Exception> exceptions = configuration.setSidekick(sidekick);
         if (exceptions.isEmpty()) {
             return Response.noContent().build();
         } else {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
         }
     }
 
@@ -155,7 +157,7 @@ public class Rest {
         if (exceptions.isEmpty()) {
             return Response.noContent().build();
         } else {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
         }
     }
 
@@ -185,10 +187,10 @@ public class Rest {
             JSONObject o = new JSONObject(requestString);
             asg = o.getString("asg");
         } catch (JSONException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.toString()).build();
+            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (asg == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Missing 'asg' field").build();
+            return Response.status(Status.BAD_REQUEST).entity("Missing 'asg' field").build();
         }
         configuration.setCurrentASG(asg);
         return Response.noContent().build();

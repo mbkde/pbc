@@ -28,14 +28,14 @@ import org.springframework.beans.factory.DisposableBean;
  *
  * @author mkleint
  */
-public class AgentCreationRescheduler implements DisposableBean  {
+class AgentCreationRescheduler implements DisposableBean  {
     private final Logger LOG = LoggerFactory.getLogger(AgentCreationRescheduler.class);
     
     private final EventPublisher eventPublisher;
     private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, "Docker Agent Retry Pool");
     private static final int MAX_RETRY_COUNT = 20;
 
-    public AgentCreationRescheduler(EventPublisher eventPublisher) {
+    private AgentCreationRescheduler(EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
     
@@ -49,9 +49,7 @@ public class AgentCreationRescheduler implements DisposableBean  {
         //for retry count 10 and X=10: 10 + 20 + 30 + 40 + 50 + 60 + 70 + 80 + 90 + 100 = 550s
         //for retry count 10 and X=5 : 5 + 10 + 15 + 20 + 25 + 30 + 35 + 40 + 45 + 50 = 225s
         LOG.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
-        executor.schedule(() -> {
-            eventPublisher.publish(event);
-        }, X * event.getRetryCount(), TimeUnit.SECONDS);
+        executor.schedule(() -> eventPublisher.publish(event), X * event.getRetryCount(), TimeUnit.SECONDS);
         return true;
     }
     

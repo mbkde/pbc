@@ -127,15 +127,12 @@ public class DockerHost {
         if (containerInstanceArn != null ? !containerInstanceArn.equals(that.containerInstanceArn) : that.containerInstanceArn != null) {
             return false;
         }
-        if (instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) {
-            return false;
-        }
-        return !(launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null);
+        return !(instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) && !(launchTime != null ? !launchTime.equals(that.launchTime) : that.launchTime != null);
     }
 
     @Override
     public int hashCode() {
-        int result = (containerInstanceArn != null ? containerInstanceArn.hashCode() : 0);
+        int result = containerInstanceArn != null ? containerInstanceArn.hashCode() : 0;
         result = 31 * result + (instanceId != null ? instanceId.hashCode() : 0);
         result = 31 * result + (launchTime != null ? launchTime.hashCode() : 0);
         return result;

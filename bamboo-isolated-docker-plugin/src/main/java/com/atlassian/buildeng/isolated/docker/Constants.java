@@ -19,32 +19,32 @@ package com.atlassian.buildeng.isolated.docker;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 
 public interface Constants {
-    public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
-    public static final String DOCKER_IMAGE = "custom.isolated.docker.image";
-    public static final String RESULT_ERROR = "custom.isolated.docker.error";
+    String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
+    String DOCKER_IMAGE = "custom.isolated.docker.image";
+    String RESULT_ERROR = "custom.isolated.docker.error";
     /**
      * marker custom data piece key set in StopDockerAgentBuildProcessor
      * when the agent was sentenced to die
      */
-    public static final String RESULT_AGENT_DEATH_KISS = "custom.isolated.docker.stopped";
-    public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
-    public static final String CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.for";
-    public static final long   REAPER_THRESHOLD_MILLIS = 300000L; //Reap agents if they're older than 5 minutes
-    public static final long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
-    public static final String REAPER_KEY = "isolated-docker-reaper";
-    public static final String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
-    public static final String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
-    public static final String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
-    public static final String REAPER_DEATH_LIST = "reaper-death-list";
+    String RESULT_AGENT_DEATH_KISS = "custom.isolated.docker.stopped";
+    String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
+    String CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.for";
+    long   REAPER_THRESHOLD_MILLIS = 300000L; //Reap agents if they're older than 5 minutes
+    long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
+    String REAPER_KEY = "isolated-docker-reaper";
+    String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
+    String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
+    String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
+    String REAPER_DEATH_LIST = "reaper-death-list";
     /**
      * prefix for custom data passed from the api implementation.
      * Everything starting with this can end up in the UI.
      */
-    public static final String RESULT_PREFIX = "result.isolated.docker.";
+    String RESULT_PREFIX = "result.isolated.docker.";
 
-    //task related equvalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
+    //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
-    public final String TASK_DOCKER_IMAGE = "dockerImage";
-    public final String TASK_DOCKER_ENABLE = "enabled";
+    String TASK_DOCKER_IMAGE = "dockerImage";
+    String TASK_DOCKER_ENABLE = "enabled";
     
 }

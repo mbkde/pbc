@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * this class is an event listener because preBuildQueuedAction requires restart
  * of bamboo when re-deployed.
  */
-public class PreBuildQueuedEventListener {
+class PreBuildQueuedEventListener {
 
     private final IsolatedAgentService isolatedAgentService;
     private final Logger LOG = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
@@ -65,14 +65,14 @@ public class PreBuildQueuedEventListener {
     private final AgentCommandSender agentCommandSender;
     private final AgentManager agentManager;
 
-    public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
-                                       ErrorUpdateHandler errorUpdateHandler,
-                                       BuildQueueManager buildQueueManager,
-                                       AgentCreationRescheduler rescheduler,
-                                       JMXAgentsService jmx,
-                                       DeploymentResultService deploymentResultService,
-                                       AgentCommandSender agentCommandSender,
-                                       AgentManager agentManager) {
+    private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
+                                        ErrorUpdateHandler errorUpdateHandler,
+                                        BuildQueueManager buildQueueManager,
+                                        AgentCreationRescheduler rescheduler,
+                                        JMXAgentsService jmx,
+                                        DeploymentResultService deploymentResultService,
+                                        AgentCommandSender agentCommandSender,
+                                        AgentManager agentManager) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -96,7 +96,7 @@ public class PreBuildQueuedEventListener {
     }
 
     @EventListener
-    public void retry(RetryAgentStartupEvent event) {
+    private void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             jmx.incrementCancelled();
@@ -108,9 +108,7 @@ public class PreBuildQueuedEventListener {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
                         //custom items pushed by the implementation, we give it a unique prefix
-                        result.getCustomResultData().entrySet().stream().forEach((ent) -> {
-                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
-                        });
+                        result.getCustomResultData().entrySet().stream().forEach(ent -> event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue()));
                         if (result.isRetryRecoverable()) {
                             if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
                                 LOG.warn("Build was not queued but recoverable, retrying.. Error message:" + Joiner.on("\n").join(result.getErrors()));

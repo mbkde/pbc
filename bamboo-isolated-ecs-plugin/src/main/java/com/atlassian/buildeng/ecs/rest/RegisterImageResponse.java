@@ -1,14 +1,13 @@
 package com.atlassian.buildeng.ecs.rest;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-/**
- * Created by obrent on 4/02/2016.
- */
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+
+@JsonInclude(Include.NON_EMPTY)
 public class RegisterImageResponse {
-    public Integer revision;
-    public String failureReason;
+    private Integer revision;
+    private String failureReason;
 
     public RegisterImageResponse(Integer revision) {
         this.revision = revision;

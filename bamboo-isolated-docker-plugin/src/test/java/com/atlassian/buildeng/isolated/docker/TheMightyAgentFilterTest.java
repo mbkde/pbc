@@ -65,7 +65,7 @@ public class TheMightyAgentFilterTest {
     }
     
     @Test
-    public void testDockerJobMissignAgent() {
+    public void testDockerJobMissingAgent() {
         CommonContext context = mock(CommonContext.class);
         when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 2));
         Collection<BuildAgent> agents = mockAgents();
@@ -103,14 +103,13 @@ public class TheMightyAgentFilterTest {
         CapabilitySet cs2 = new CapabilitySetImpl();
         cs2.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, "AAA-BBB-JOB2-2"));
         cs2.addCapability(new CapabilityImpl(Constants.CAPABILITY, "true"));
-        Collection<BuildAgent> agents = Arrays.asList(new BuildAgent[] {
-            mockLocalAgent(),
-            mockElasticAgent(),
-            mockRemoteAgent(cs1),
-            mockRemoteAgent(cs2),
-            mockRemoteAgent(new CapabilitySetImpl())
-        });
-        return agents;
+        return Arrays.asList(
+                mockLocalAgent(),
+                mockElasticAgent(),
+                mockRemoteAgent(cs1),
+                mockRemoteAgent(cs2),
+                mockRemoteAgent(new CapabilitySetImpl())
+        );
     }
     
     
@@ -120,15 +119,15 @@ public class TheMightyAgentFilterTest {
         return toRet;
     }
     
-    BuildAgent mockLocalAgent() {
+    private BuildAgent mockLocalAgent() {
         return mockAgent(AgentType.LOCAL);
     }
     
-    BuildAgent mockElasticAgent() {
+    private BuildAgent mockElasticAgent() {
         return mockAgent(AgentType.ELASTIC);
     }
     
-    BuildAgent mockRemoteAgent(CapabilitySet set) {
+    private BuildAgent mockRemoteAgent(CapabilitySet set) {
         BuildAgent agent = mockAgent(AgentType.REMOTE);
         RemoteAgentDefinition d2 = new RemoteAgentDefinitionImpl();
         d2.setCapabilitySet(set);

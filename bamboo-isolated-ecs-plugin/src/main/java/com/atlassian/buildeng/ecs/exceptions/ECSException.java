@@ -1,18 +1,15 @@
 package com.atlassian.buildeng.ecs.exceptions;
 
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
-/**
- * Created by obrent on 8/02/2016.
- */
 public class ECSException extends RestableIsolatedDockerException {
 
     public ECSException(Exception ecsException) {
-        super(Response.Status.INTERNAL_SERVER_ERROR, ecsException);
+        super(Status.INTERNAL_SERVER_ERROR, ecsException);
     }
     
     public ECSException(String message) {
-        super(Response.Status.INTERNAL_SERVER_ERROR, message);
+        super(Status.INTERNAL_SERVER_ERROR, message);
     }
 
 }

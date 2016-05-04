@@ -3,6 +3,7 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
+import com.atlassian.bamboo.v2.build.agent.BuildAgent.BuildAgentVisitor;
 import com.atlassian.bamboo.v2.build.agent.LocalBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.messages.StopAgentNicelyMessage;
 import org.slf4j.Logger;
@@ -10,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
 
-public class DeleterGraveling implements BuildAgent.BuildAgentVisitor {
+public class DeleterGraveling implements BuildAgentVisitor {
     private final AgentCommandSender agentCommandSender;
     private final AgentManager agentManager;
 

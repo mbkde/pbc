@@ -63,7 +63,7 @@ public class IsolatedDockerAgentResult {
      * when the request fails, but the state of the docker cloud suggests that
      * later retry might succeed. Eg. when the docker containers are in process
      * of scaling up.
-     * @return 
+     * @return whether to retry
      */
     public boolean isRetryRecoverable() {
         return retry;

@@ -27,7 +27,7 @@ public class AgentCounts implements AgentCountsMBean {
     final AtomicLong scheduled = new AtomicLong(0);
     final AtomicLong active = new AtomicLong(0);
     final AtomicLong cancelled = new AtomicLong(0);
-    final AtomicLong timedout = new AtomicLong(0);
+    final AtomicLong timedOut = new AtomicLong(0);
     final AtomicLong failed = new AtomicLong(0);
 
     @Override
@@ -52,7 +52,7 @@ public class AgentCounts implements AgentCountsMBean {
 
     @Override
     public long getTimedOutAgentsCount() {
-        return timedout.get();
+        return timedOut.get();
     }
 
     @Override

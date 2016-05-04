@@ -72,12 +72,7 @@ public class GlobalConfigurationTest {
         when(aministrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
-        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(new Answer<RegisterTaskDefinitionResult>() {
-            @Override
-            public RegisterTaskDefinitionResult answer(InvocationOnMock invocation) throws Throwable {
-                return new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4));
-            }
-        });
+        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertTrue(errors.isEmpty());
         assertEquals(3, map.size());
@@ -96,17 +91,9 @@ public class GlobalConfigurationTest {
         when(aministrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
-        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(new Answer<RegisterTaskDefinitionResult>() {
-            @Override
-            public RegisterTaskDefinitionResult answer(InvocationOnMock invocation) throws Throwable {
-                return new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4));
-            }
-        });
-        when(configuration.ecsClient.deregisterTaskDefinition(anyObject())).then(new Answer<RegisterTaskDefinitionResult>() {
-            @Override
-            public RegisterTaskDefinitionResult answer(InvocationOnMock invocation) throws Throwable {
-                throw new Exception("Error on deregistering");
-            }
+        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        when(configuration.ecsClient.deregisterTaskDefinition(anyObject())).then(invocation -> {
+            throw new Exception("Error on deregistering");
         });
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertEquals(3, errors.size());
@@ -127,11 +114,8 @@ public class GlobalConfigurationTest {
         when(aministrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
-        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(new Answer<RegisterTaskDefinitionResult>() {
-            @Override
-            public RegisterTaskDefinitionResult answer(InvocationOnMock invocation) throws Throwable {
-                throw new Exception("Error on registering");
-            }
+        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> {
+            throw new Exception("Error on registering");
         });
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertEquals(3, errors.size());

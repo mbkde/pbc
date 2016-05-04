@@ -18,7 +18,6 @@ package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.StartTaskResult;
-import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
@@ -46,16 +45,16 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
     private final ECSScheduler ecsScheduler;
 
     @Autowired
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler scheduler) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler) {
         this.globalConfiguration = globalConfiguration;
-        this.ecsScheduler = scheduler;
+        this.ecsScheduler = ecsScheduler;
     }
 
     // Isolated Agent Service methods
     @Override
-    public void startAgent(final IsolatedDockerAgentRequest req, final IsolatedDockerRequestCallback callback) {
+    public void startAgent(IsolatedDockerAgentRequest req, IsolatedDockerRequestCallback callback) {
         Integer revision = globalConfiguration.getAllRegistrations().get(req.getDockerImage());
-        String resultId = req.getBuildResultKey();
+        String resultId = req.getResultKey();
         if (revision == null) {
             callback.handle(new ImageNotRegisteredException(req.getDockerImage()));
             return;
@@ -71,11 +70,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult schedulingResult) {
-                        final IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+                        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                         StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
-                        startTaskResult.getTasks().stream().findFirst().ifPresent((Task t) -> {
-                            toRet.withCustomResultData("TaskARN", t.getTaskArn());
-                        });
+                        startTaskResult.getTasks().stream().findFirst().ifPresent(t -> toRet.withCustomResultData("TaskARN", t.getTaskArn()));
                         logger.info("ECS Returned: {}", startTaskResult);
                         List<Failure> failures = startTaskResult.getFailures();
                         if (failures.size() == 1) {
@@ -97,7 +94,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                     @Override
                     public void handle(ECSException exception) {
                         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
-                        logger.warn("Failed to schedule, treating as overload: " + String.valueOf(exception));
+                        logger.warn("Failed to schedule, treating as overload: " + exception);
                         if (exception.getCause() instanceof TimeoutException) {
                             toRet.withRetryRecoverable("Request timed out without completing.");
                         } else {

@@ -26,6 +26,7 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * pre or post actions on the agent if artifact download fails.
  * 
  */
-public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
+class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     private final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
 
     private BuildContext buildContext;
@@ -44,28 +45,33 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     private final AgentCommandSender agentCommandSender;
     private final BuildExecutionManager buildExecutionManager;
 
-    public BuildProcessorServerImpl(AgentManager agentManager, AgentCommandSender agentCommandSender, BuildExecutionManager buildExecutionManager) {
+    private BuildProcessorServerImpl(AgentManager agentManager, AgentCommandSender agentCommandSender, BuildExecutionManager buildExecutionManager) {
         this.agentManager = agentManager;
         this.agentCommandSender = agentCommandSender;
         this.buildExecutionManager = buildExecutionManager;
     }
     
     @Override
-    public void init(BuildContext buildContext) {
+    public void init(@NotNull BuildContext buildContext) {
         this.buildContext = buildContext;
     }
 
+    @NotNull
     @Override
-    public BuildContext call() throws InterruptedException, Exception {
-        final Configuration conf = Configuration.forBuildContext(buildContext);
-        final CurrentBuildResult buildResult = buildContext.getBuildResult();
+    public BuildContext call() throws Exception {
+        Configuration conf = Configuration.forBuildContext(buildContext);
+        CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails
         // and out plugin is not executed. absence of the marker property tells us that we didn't run on agent
         if (conf.isEnabled() &&  null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_DEATH_KISS)) {
             CurrentlyBuilding building = buildExecutionManager.getCurrentlyBuildingByBuildResult(buildContext);
+            Long agentId = null;
             if (building != null) {
-                BuildAgent agent = agentManager.getAgent(building.getBuildAgentId());
+                agentId = building.getBuildAgentId();
+            }
+            if (building != null && agentId != null) {
+                BuildAgent agent = agentManager.getAgent(agentId);
                 assert agent != null;
                 new DeleterGraveling(agentCommandSender, agentManager).visitRemote(agent);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.", buildContext.getBuildResultKey(), agent.getName());

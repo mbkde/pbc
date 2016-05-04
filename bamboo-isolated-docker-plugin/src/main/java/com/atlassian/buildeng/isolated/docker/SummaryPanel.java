@@ -6,6 +6,7 @@ import com.atlassian.plugin.web.model.WebPanel;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class SummaryPanel implements WebPanel {
     @Override
@@ -24,8 +25,8 @@ public class SummaryPanel implements WebPanel {
                    .append("</dd>");
             }
             summary.getCustomBuildData().entrySet().stream()
-                    .filter((Map.Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
-                    .forEach((Map.Entry<String, String> entry) -> {
+                    .filter((Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
+                    .forEach((Entry<String, String> entry) -> {
                         ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
                         ret.append("<dd>").append(entry.getValue()).append("</dd>");
                     }

@@ -30,15 +30,16 @@ import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -92,7 +93,7 @@ public class GlobalConfiguration {
     synchronized Collection<Exception> setSidekick(String name) {
         ConcurrentMap<String, Integer> dockerMappings = getAllRegistrations();
         Collection<Exception> exceptions = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry: Maps.newHashMap(dockerMappings).entrySet()) {
+        for (Entry<String, Integer> entry: Maps.newHashMap(dockerMappings).entrySet()) {
             String dockerImage = entry.getKey();
             Integer revision = entry.getValue();
             try {
@@ -193,7 +194,7 @@ public class GlobalConfiguration {
      *
      * @param revision The internal ECS task definition to deregister
      */
-    synchronized void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, ECSException, ECSException, ECSException {
+    synchronized void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, ECSException {
         ConcurrentMap<String, Integer> dockerMappings = getAllRegistrations();
         if (!dockerMappings.containsValue(revision)) {
             throw new RevisionNotActiveException(revision);
@@ -229,7 +230,7 @@ public class GlobalConfiguration {
     }    
 
     @VisibleForTesting
-    protected AmazonECS createClient() {
+    AmazonECS createClient() {
         return new AmazonECSClient();
     }    
     

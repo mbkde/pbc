@@ -31,20 +31,20 @@ import org.slf4j.LoggerFactory;
  * Responsible for stopping the Docker-based Bamboo agent so it won't run more than one job.
  * Runs on agent and in coordination with PostJobActionImpl
  */
-public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
+class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     private static final Logger logger = LoggerFactory.getLogger(StopDockerAgentBuildProcessor.class);
 
     private final AgentContext agentContext;
     private final BuildLoggerManager buildLoggerManager;
     private BuildContext buildContext;
 
-    public StopDockerAgentBuildProcessor(AgentContext agentContext, BuildLoggerManager buildLoggerManager) {
+    private StopDockerAgentBuildProcessor(AgentContext agentContext, BuildLoggerManager buildLoggerManager) {
         this.agentContext = agentContext;
         this.buildLoggerManager = buildLoggerManager;
     }
 
     @Override
-    public void init(final @NotNull BuildContext buildContext) {
+    public void init(@NotNull BuildContext buildContext) {
         this.buildContext = buildContext;
     }
 
@@ -52,8 +52,8 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     @Override
     public BuildContext call() {
         Configuration config = Configuration.forBuildContext(buildContext);
-        final ExecutableBuildAgent buildAgent = agentContext.getBuildAgent();
-        final BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
+        ExecutableBuildAgent buildAgent = agentContext.getBuildAgent();
+        BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
 
         if (buildAgent != null && config.isEnabled()) {
             buildLogger.addBuildLogEntry(String.format("Agent %s (id: %s) is a docker agent and will be stopped after this build (reason: isolated docker feature enabled).", buildAgent.getName(), buildAgent.getId()));
@@ -63,7 +63,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
         return buildContext;
     }
 
-    private void stopAgent(final BuildLogger buildLogger, final ExecutableBuildAgent buildAgent) {
+    private void stopAgent(BuildLogger buildLogger, ExecutableBuildAgent buildAgent) {
         try {
             buildAgent.stopNicely();
             // in some cases, eg. when artifact subscription has failed the execution
@@ -73,7 +73,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
             buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_AGENT_DEATH_KISS, "true");
         } catch (RuntimeException e) {
             buildLogger.addErrorLogEntry(String.format("Failed to stop agent %s (id: %s) due to: %s. Please notify Build Engineering about this. More information can be found in the agent's log file.", buildAgent.getName(), buildAgent.getId(), e.getMessage()));
-            logger.warn("Failed to stop agent {} (id: {}) due to: {}", new Object[]{buildAgent.getName(), buildAgent.getId(), e.getMessage(), e});
+            logger.warn("Failed to stop agent {} (id: {}) due to: {}", buildAgent.getName(), buildAgent.getId(), e.getMessage(), e);
         }
     }
 }

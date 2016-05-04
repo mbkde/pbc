@@ -53,7 +53,7 @@ public class JMXAgentsService implements DisposableBean, InitializingBean {
     }
 
     public void incrementTimedOut() {
-        agentsCount.timedout.incrementAndGet();
+        agentsCount.timedOut.incrementAndGet();
     }
 
     public void incrementFailed() {
