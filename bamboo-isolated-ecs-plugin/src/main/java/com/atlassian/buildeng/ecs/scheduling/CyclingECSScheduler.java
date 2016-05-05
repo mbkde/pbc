@@ -89,20 +89,20 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
     }
 
-    private Map<Boolean, List<DockerHost>> partitionFreshness(List<DockerHost> dockerHosts) {
+    Map<Boolean, List<DockerHost>> partitionFreshness(List<DockerHost> dockerHosts) {
         return partitionFreshness(dockerHosts, stalePeriod);
     }
 
     /**
      * Stream stale hosts not running any tasks
      */
-    private List<DockerHost> unusedStaleInstances(List<DockerHost> staleHosts) {
+    List<DockerHost> unusedStaleInstances(List<DockerHost> staleHosts) {
         return staleHosts.stream()
                 .filter(DockerHost::runningNothing)
                 .collect(Collectors.toList());
     }
 
-    private List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, final Set<DockerHost> usedCandidates) {
+    List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, final Set<DockerHost> usedCandidates) {
         return freshHosts.stream()
                 .filter(dockerHost -> !usedCandidates.contains(dockerHost))
                 .filter(DockerHost::runningNothing)
@@ -189,7 +189,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         int currentSize = hosts.getSize();
         int desiredScaleSize = currentSize;
         //calculate usage from used fresh instances only
-        if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
+        if (someDiscarded || percentageUtilized(hosts.usedFresh(this)) >= highWatermark) {
             // cpu and memory requirements in instances
             long cpuRequirements = lackingCPU / Constants.INSTANCE_CPU;
             long memoryRequirements = lackingMemory / Constants.INSTANCE_MEMORY;
@@ -219,7 +219,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //this can take time (network) and in the meantime other requests can accumulate.
         List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster, asgName);
         List<DockerHost> dockerHosts = getDockerHosts(containerInstances);
-        return  new DockerHosts(dockerHosts);
+        return  new DockerHosts(dockerHosts, this);
     }
     
     private void checkScaleDown() {
@@ -241,8 +241,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         shutdownExecutor();
     }
 
-    private int scaleDown(DockerHosts hosts, String asgName) {
-        List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
+    List<String> selectToTerminate(DockerHosts hosts) {
+        List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh(this).stream())
                 .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
         // If we're terminating all of our hosts (and we have any) keep one
@@ -250,6 +250,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         if (hosts.getSize() == toTerminate.size() && !toTerminate.isEmpty()) {
             toTerminate.remove(0);
         }
+        return toTerminate;
+    }
+
+    private int scaleDown(DockerHosts hosts, String asgName) {
+        List<String> toTerminate = selectToTerminate(hosts);
         if (!toTerminate.isEmpty()) {
             try {
                 schedulerBackend.terminateInstances(toTerminate, asgName);
@@ -286,47 +291,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             }
         }
     }
-    
-    private final class DockerHosts {
 
-        private final List<DockerHost> all;
-        private final Set<DockerHost> usedCandidates = new HashSet<>();
-        
-        private final List<DockerHost> freshHosts;
-        private final List<DockerHost> unusedStaleHosts;
-        
-        private DockerHosts(List<DockerHost> allHosts) {
-            this.all = allHosts;
-            final Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(allHosts);
-            freshHosts = partitionedHosts.get(true);
-            unusedStaleHosts = unusedStaleInstances(partitionedHosts.get(false));
-        }
-        
-        public void addUsedCandidate(DockerHost host) {
-            usedCandidates.add(host);
-        }
-        
-        public int getSize() {
-            return all.size();
-        }
 
-        private List<DockerHost> fresh() {
-            return freshHosts;
-        }
-
-        public List<DockerHost> unusedStale() {
-            return unusedStaleHosts;
-        }
-        
-        public List<DockerHost> unusedFresh() {
-            return unusedFreshInstances(freshHosts, usedCandidates);            
-        }
-        
-        public List<DockerHost> usedFresh() {
-            List<DockerHost> usedFresh = new ArrayList<>(freshHosts);
-            usedFresh.removeAll(unusedFresh());
-            return usedFresh;
-        }
-        
-    }
 }
