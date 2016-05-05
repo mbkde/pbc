@@ -245,6 +245,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
+        // If we're terminating all of our hosts (and we have any) keep one
+        // around
+        if (hosts.getSize() == toTerminate.size() && !toTerminate.isEmpty()) {
+            toTerminate.remove(0);
+        }
         if (!toTerminate.isEmpty()) {
             try {
                 schedulerBackend.terminateInstances(toTerminate, asgName);
