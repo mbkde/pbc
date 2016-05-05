@@ -13,6 +13,7 @@ import java.util.Optional;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.percentageUtilized;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
 import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -20,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeThat;
 
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerQuickTest {
@@ -33,6 +35,8 @@ public class CyclingECSSchedulerQuickTest {
     }
 
     @Property public void selectHostTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
+        assumeThat(requiredMemory, greaterThan(0));
+        assumeThat(requiredCpu, greaterThan(0));
         Optional<DockerHost> result = selectHost(candidates, requiredMemory, requiredCpu);
         if (result.isPresent()) {
             DockerHost candidate = result.get();
