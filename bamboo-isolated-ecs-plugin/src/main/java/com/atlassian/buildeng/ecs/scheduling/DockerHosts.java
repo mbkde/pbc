@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@VisibleForTesting
 final class DockerHosts {
 
     private final List<DockerHost> all;
@@ -16,6 +15,7 @@ final class DockerHosts {
 
     private final List<DockerHost> freshHosts;
     private final List<DockerHost> unusedStaleHosts;
+    private final CyclingECSScheduler ecsScheduler;
 
     @VisibleForTesting
     public DockerHosts(List<DockerHost> allHosts, CyclingECSScheduler ecsScheduler) {
@@ -23,6 +23,7 @@ final class DockerHosts {
         final Map<Boolean, List<DockerHost>> partitionedHosts = ecsScheduler.partitionFreshness(allHosts);
         freshHosts = partitionedHosts.get(true);
         unusedStaleHosts = ecsScheduler.unusedStaleInstances(partitionedHosts.get(false));
+        this.ecsScheduler = ecsScheduler;
     }
 
     public void addUsedCandidate(DockerHost host) {
@@ -41,13 +42,13 @@ final class DockerHosts {
         return unusedStaleHosts;
     }
 
-    public List<DockerHost> unusedFresh(CyclingECSScheduler ecsScheduler) {
+    public List<DockerHost> unusedFresh() {
         return ecsScheduler.unusedFreshInstances(freshHosts, usedCandidates);
     }
 
-    public List<DockerHost> usedFresh(CyclingECSScheduler ecsScheduler) {
+    public List<DockerHost> usedFresh() {
         List<DockerHost> usedFresh = new ArrayList<>(freshHosts);
-        usedFresh.removeAll(unusedFresh(ecsScheduler));
+        usedFresh.removeAll(unusedFresh());
         return usedFresh;
     }
 

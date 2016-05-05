@@ -189,7 +189,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         int currentSize = hosts.getSize();
         int desiredScaleSize = currentSize;
         //calculate usage from used fresh instances only
-        if (someDiscarded || percentageUtilized(hosts.usedFresh(this)) >= highWatermark) {
+        if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
             // cpu and memory requirements in instances
             long cpuRequirements = lackingCPU / Constants.INSTANCE_CPU;
             long memoryRequirements = lackingMemory / Constants.INSTANCE_MEMORY;
@@ -242,7 +242,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     List<String> selectToTerminate(DockerHosts hosts) {
-        List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh(this).stream())
+        List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
         // If we're terminating all of our hosts (and we have any) keep one

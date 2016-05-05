@@ -1,7 +1,6 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
-import com.atlassian.plugins.rest.common.Link;
 import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
@@ -11,7 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.*;
+import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.percentageUtilized;
+import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
