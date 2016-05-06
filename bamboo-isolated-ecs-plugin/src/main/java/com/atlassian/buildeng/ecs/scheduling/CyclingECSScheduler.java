@@ -117,7 +117,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         if (clusterRegisteredCPU == 0) {
             return 1;
         } else {
-            return 1 - (clusterRemainingCPU / clusterRegisteredCPU);
+            return 1 - clusterRemainingCPU / clusterRegisteredCPU;
         }
     }
 
