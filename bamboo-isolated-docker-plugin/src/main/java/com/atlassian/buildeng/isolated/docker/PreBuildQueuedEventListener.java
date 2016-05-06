@@ -128,10 +128,10 @@ public class PreBuildQueuedEventListener {
                     }
 
                     @Override
-                    public void handle(IsolatedDockerAgentException ex) {
+                    public void handle(IsolatedDockerAgentException exception) {
                         terminateBuild();
-                        errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", ex);
-                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
+                        errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", exception);
+                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, exception.getLocalizedMessage());
                     }
 
                     private void terminateBuild() {

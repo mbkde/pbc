@@ -33,8 +33,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mockito.Matchers;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -48,6 +46,7 @@ import static org.mockito.Mockito.times;
  *
  * @author mkleint
  */
+@SuppressWarnings("unchecked")
 public class CyclingECSSchedulerTest {
     
     public CyclingECSSchedulerTest() {
@@ -121,7 +120,7 @@ public class CyclingECSSchedulerTest {
                 thrown.set(true);
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         assertTrue("Capacity overload", thrown.get());
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
@@ -156,7 +155,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
@@ -193,7 +192,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString());
@@ -231,7 +230,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -271,7 +270,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString());
@@ -310,7 +309,7 @@ public class CyclingECSSchedulerTest {
             public void handle(ECSException exception) {
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -353,7 +352,7 @@ public class CyclingECSSchedulerTest {
                 thrown.set(true);
             }
         });
-        avaitProcessing(scheduler); //wait to have the other thread start the processing
+        awaitProcessing(scheduler); //wait to have the other thread start the processing
         assertEquals("arn1", arn.get());
         assertTrue("Exception Thrown correctly", thrown.get());
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
@@ -376,7 +375,7 @@ public class CyclingECSSchedulerTest {
                 thrown.set(true);
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         assertTrue("Exception Thrown correctly", thrown.get());
     }
 
@@ -403,7 +402,7 @@ public class CyclingECSSchedulerTest {
                 thrown.set(true);
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         assertTrue("Exception Thrown correctly", thrown.get());
     }
     
@@ -434,7 +433,7 @@ public class CyclingECSSchedulerTest {
                 thrown.set(true);
             }
         });
-        avaitProcessing(scheduler); 
+        awaitProcessing(scheduler);
         assertTrue("Exception Thrown correctly", thrown.get());
         
     }
@@ -468,7 +467,7 @@ public class CyclingECSSchedulerTest {
         return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime);
     }
     
-    private void avaitProcessing(CyclingECSScheduler scheduler) throws InterruptedException {
+    private void awaitProcessing(CyclingECSScheduler scheduler) throws InterruptedException {
         Thread.sleep(50); //wait to have the other thread start the processing
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes

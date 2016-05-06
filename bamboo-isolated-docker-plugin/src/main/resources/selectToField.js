@@ -41,7 +41,7 @@ AJS.$(document).ready(function () {
                 index = $("form#createTask input#createTask_taskId").attr("value");
             }
             return index;
-        }
+        };
         insertionQ('select.builderSelectWidget').every(function (element) {
             var jq = $(element);
             var index = findTaskIndex();

@@ -102,7 +102,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 .collect(Collectors.toList());
     }
 
-    private List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
+    List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
         return freshHosts.stream()
                 .filter(dockerHost -> !usedCandidates.contains(dockerHost))
                 .filter(DockerHost::runningNothing)
