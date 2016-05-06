@@ -44,7 +44,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     private BuildContext buildContext;
     private BuildLoggerManager buildLoggerManager;
 
-    private CustomPreBuildActionImpl() {
+    public CustomPreBuildActionImpl() {
     }
 
     public BuildLoggerManager getBuildLoggerManager() {

@@ -3,7 +3,7 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 public class IsolatedDockerAgentException extends Exception {
     
-    protected IsolatedDockerAgentException(Throwable cause) {
+    public IsolatedDockerAgentException(Throwable cause) {
         super(cause);
     }
 

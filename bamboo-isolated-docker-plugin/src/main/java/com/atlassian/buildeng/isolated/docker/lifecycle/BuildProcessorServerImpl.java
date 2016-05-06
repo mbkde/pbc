@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * the purpose of the class is to do cleanup if the normal way of killing the agent
  * after the job completion fails.
- * The one usecase we know about is BUILDENG-10514 where the agent fails to run any
+ * The one use case we know about is BUILDENG-10514 where the agent fails to run any
  * pre or post actions on the agent if artifact download fails.
  * 
  */
@@ -45,7 +45,7 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     private final AgentCommandSender agentCommandSender;
     private final BuildExecutionManager buildExecutionManager;
 
-    private BuildProcessorServerImpl(AgentManager agentManager, AgentCommandSender agentCommandSender, BuildExecutionManager buildExecutionManager) {
+    public BuildProcessorServerImpl(AgentManager agentManager, AgentCommandSender agentCommandSender, BuildExecutionManager buildExecutionManager) {
         this.agentManager = agentManager;
         this.agentCommandSender = agentCommandSender;
         this.buildExecutionManager = buildExecutionManager;

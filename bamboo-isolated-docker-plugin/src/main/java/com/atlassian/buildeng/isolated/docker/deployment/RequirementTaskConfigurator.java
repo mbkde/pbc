@@ -12,7 +12,8 @@ import com.atlassian.buildeng.isolated.docker.Constants;
 import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +24,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
 {
 
     @SuppressWarnings("UnusedDeclaration")
-    private static final Logger log = Logger.getLogger(RequirementTaskConfigurator.class);
+    private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
 
     // ---------------------------------------------------------------------------------------------------- Constructors
