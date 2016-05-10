@@ -34,9 +34,9 @@ public final class Configuration {
     private final boolean enabled;
     private final String dockerImage;
 
-    private Configuration(boolean enabled, String image) {
+    private Configuration(boolean enabled, String dockerImage) {
         this.enabled = enabled;
-        this.dockerImage = image;
+        this.dockerImage = dockerImage;
     }
 
     @Nonnull

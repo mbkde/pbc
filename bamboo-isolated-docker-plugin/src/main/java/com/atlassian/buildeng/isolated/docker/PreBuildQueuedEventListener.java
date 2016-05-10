@@ -65,14 +65,14 @@ public class PreBuildQueuedEventListener {
     private final AgentCommandSender agentCommandSender;
     private final AgentManager agentManager;
 
-    public PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
-                                       ErrorUpdateHandler errorUpdateHandler,
-                                       BuildQueueManager buildQueueManager,
-                                       AgentCreationRescheduler rescheduler,
-                                       JMXAgentsService jmx,
-                                       DeploymentResultService deploymentResultService,
-                                       AgentCommandSender agentCommandSender,
-                                       AgentManager agentManager) {
+    private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
+                                        ErrorUpdateHandler errorUpdateHandler,
+                                        BuildQueueManager buildQueueManager,
+                                        AgentCreationRescheduler rescheduler,
+                                        JMXAgentsService jmx,
+                                        DeploymentResultService deploymentResultService,
+                                        AgentCommandSender agentCommandSender,
+                                        AgentManager agentManager) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -96,7 +96,7 @@ public class PreBuildQueuedEventListener {
     }
 
     @EventListener
-    public void retry(RetryAgentStartupEvent event) {
+    private void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             jmx.incrementCancelled();
@@ -108,7 +108,7 @@ public class PreBuildQueuedEventListener {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
                         //custom items pushed by the implementation, we give it a unique prefix
-                        result.getCustomResultData().entrySet().stream().forEach((ent) -> {
+                        result.getCustomResultData().entrySet().stream().forEach(ent -> {
                             event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
                         });
                         if (result.isRetryRecoverable()) {
@@ -128,10 +128,10 @@ public class PreBuildQueuedEventListener {
                     }
 
                     @Override
-                    public void handle(IsolatedDockerAgentException ex) {
+                    public void handle(IsolatedDockerAgentException exception) {
                         terminateBuild();
-                        errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", ex);
-                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, ex.getLocalizedMessage());
+                        errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", exception);
+                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, exception.getLocalizedMessage());
                     }
 
                     private void terminateBuild() {

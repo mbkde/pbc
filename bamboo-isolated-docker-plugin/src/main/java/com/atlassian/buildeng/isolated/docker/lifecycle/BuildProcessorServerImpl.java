@@ -26,13 +26,14 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * the purpose of the class is to do cleanup if the normal way of killing the agent
  * after the job completion fails.
- * The one usecase we know about is BUILDENG-10514 where the agent fails to run any
+ * The one use case we know about is BUILDENG-10514 where the agent fails to run any
  * pre or post actions on the agent if artifact download fails.
  * 
  */
@@ -51,21 +52,26 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     }
     
     @Override
-    public void init(BuildContext buildContext) {
+    public void init(@NotNull BuildContext buildContext) {
         this.buildContext = buildContext;
     }
 
+    @NotNull
     @Override
-    public BuildContext call() throws InterruptedException, Exception {
-        final Configuration conf = Configuration.forBuildContext(buildContext);
-        final CurrentBuildResult buildResult = buildContext.getBuildResult();
+    public BuildContext call() throws Exception {
+        Configuration conf = Configuration.forBuildContext(buildContext);
+        CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails
         // and out plugin is not executed. absence of the marker property tells us that we didn't run on agent
         if (conf.isEnabled() &&  null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_DEATH_KISS)) {
             CurrentlyBuilding building = buildExecutionManager.getCurrentlyBuildingByBuildResult(buildContext);
+            Long agentId = null;
             if (building != null) {
-                BuildAgent agent = agentManager.getAgent(building.getBuildAgentId());
+                agentId = building.getBuildAgentId();
+            }
+            if (building != null && agentId != null) {
+                BuildAgent agent = agentManager.getAgent(agentId);
                 assert agent != null;
                 new DeleterGraveling(agentCommandSender, agentManager).visitRemote(agent);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.", buildContext.getBuildResultKey(), agent.getName());

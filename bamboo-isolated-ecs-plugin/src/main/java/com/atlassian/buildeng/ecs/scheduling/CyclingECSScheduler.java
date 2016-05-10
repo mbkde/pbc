@@ -29,7 +29,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
-    static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
+    private static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
 
     private final Duration stalePeriod;
     private final double highWatermark;
@@ -102,7 +102,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 .collect(Collectors.toList());
     }
 
-    List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, final Set<DockerHost> usedCandidates) {
+    List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
         return freshHosts.stream()
                 .filter(dockerHost -> !usedCandidates.contains(dockerHost))
                 .filter(DockerHost::runningNothing)
@@ -117,7 +117,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         if (clusterRegisteredCPU == 0) {
             return 1;
         } else {
-            return 1 - (clusterRemainingCPU / clusterRegisteredCPU);
+            return 1 - clusterRemainingCPU / clusterRegisteredCPU;
         }
     }
 
@@ -132,7 +132,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         String cluster = globalConfiguration.getCurrentCluster();
         String asgName = globalConfiguration.getCurrentASG();
 
-        final DockerHosts hosts;
+        DockerHosts hosts;
         try {
             hosts = loadHosts(cluster, asgName);
         } catch (ECSException ex) {
@@ -291,6 +291,4 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             }
         }
     }
-
-
 }

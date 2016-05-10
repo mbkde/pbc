@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
+@SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
     @Override
     public String getHtml(Map<String, Object> context) {

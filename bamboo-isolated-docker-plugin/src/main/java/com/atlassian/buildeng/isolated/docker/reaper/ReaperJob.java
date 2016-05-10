@@ -4,6 +4,7 @@ import com.atlassian.bamboo.agent.AgentType;
 import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
+import com.atlassian.bamboo.plan.ExecutableAgentsHelper.ExecutorQuery;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
@@ -34,8 +35,8 @@ public class ReaperJob implements PluginJob {
         deathList.clear();
 
         RequirementSetImpl reqs = new RequirementSetImpl();
-        reqs.addRequirement(new RequirementImpl(com.atlassian.buildeng.isolated.docker.Constants.CAPABILITY, true, ".*"));
-        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutableAgentsHelper.ExecutorQuery.newQuery(reqs));
+        reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY, true, ".*"));
+        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQuery(reqs));
         Collection<BuildAgent> relevantAgents = new ArrayList<>();
 
         // Only care about agents which are remote, idle and 'old'
@@ -51,13 +52,11 @@ public class ReaperJob implements PluginJob {
             }
         }
 
-        for (BuildAgent agent: relevantAgents) {
-            // Disable enabled agents
-            if (agent.isEnabled()) {
-                agent.accept(new SleeperGraveling(agentManager));
-                deathList.add(agent);
-            }
-        }
+        // Disable enabled agents
+        relevantAgents.stream().filter(BuildAgent::isEnabled).forEach(agent -> {
+            agent.accept(new SleeperGraveling(agentManager));
+            deathList.add(agent);
+        });
         jobDataMap.put(Constants.REAPER_DEATH_LIST, deathList);
     }
 }

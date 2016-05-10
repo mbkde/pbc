@@ -66,7 +66,7 @@ public class PreBuildQueuedEventListenerTest {
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
-        Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
+        Mockito.doAnswer(invocation -> {
             IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
             return null;
@@ -81,7 +81,7 @@ public class PreBuildQueuedEventListenerTest {
     public void testNonRecoverableException() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
-        Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
+        Mockito.doAnswer(invocation -> {
             IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
             cb.handle(new IsolatedDockerAgentException("throw"));
             return null;
@@ -116,7 +116,7 @@ public class PreBuildQueuedEventListenerTest {
     public void testRescheduledRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         when(scheduler.reschedule(anyObject())).thenReturn(Boolean.TRUE);
-        Mockito.doAnswer((Answer) (InvocationOnMock invocation) -> {
+        Mockito.doAnswer(invocation -> {
             IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
             cb.handle(new IsolatedDockerAgentResult().withRetryRecoverable("error"));
             return null;

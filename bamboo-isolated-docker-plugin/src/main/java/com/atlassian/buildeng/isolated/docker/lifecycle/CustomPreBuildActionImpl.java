@@ -56,22 +56,23 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     }
 
     @Override
-    public void init(BuildContext buildContext) {
+    public void init(@NotNull BuildContext buildContext) {
         this.buildContext = buildContext;
     }
 
+    @NotNull
     @Override
-    public BuildContext call() throws InterruptedException, Exception {
+    public BuildContext call() throws Exception {
         Configuration config = Configuration.forBuildContext(buildContext);
         if (config.isEnabled()) {
-            final BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
+            BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
         }
         return buildContext;
     }
 
     @Override
-    public void customizeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
+    public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
         if (config.isEnabled()) {
@@ -79,8 +80,9 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         }
     }
 
+    @NotNull
     @Override
-    public ErrorCollection validate(BuildConfiguration bc) {
+    public ErrorCollection validate(@NotNull BuildConfiguration bc) {
         Configuration config = Configuration.forBuildConfiguration(bc);
         if (config.isEnabled() && StringUtils.isBlank(config.getDockerImage())) {
             return new SimpleErrorCollection("Docker image cannot be blank.");
@@ -91,12 +93,12 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
 
 
     @Override
-    public void removeBuildRequirements(PlanKey planKey, BuildConfiguration buildConfiguration, RequirementSet requirementSet) {
+    public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
         requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(Constants.CAPABILITY));
     }
 
     @Override
-    protected void populateContextForEdit(Map<String, Object> context, BuildConfiguration buildConfiguration, Plan plan) {
+    protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
         context.put(Constants.ENABLED_FOR_JOB, config.isEnabled());
@@ -104,7 +106,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     }
 
     @Override
-    public void addDefaultValues(@NotNull final BuildConfiguration buildConfiguration) {
+    public void addDefaultValues(@NotNull BuildConfiguration buildConfiguration) {
         super.addDefaultValues(buildConfiguration);
         buildConfiguration.addProperty(Constants.ENABLED_FOR_JOB, false);
         buildConfiguration.addProperty(Constants.DOCKER_IMAGE, "docker:xxx");

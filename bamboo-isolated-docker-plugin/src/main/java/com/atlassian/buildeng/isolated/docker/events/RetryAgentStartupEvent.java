@@ -36,15 +36,15 @@ public final class RetryAgentStartupEvent {
     public RetryAgentStartupEvent(String dockerImage, CommonContext context) {
         this.dockerImage = dockerImage;
         this.context = context;
-        this.retryCount = 0;
-        this.uniqueIdentifier = UUID.randomUUID();
+        retryCount = 0;
+        uniqueIdentifier = UUID.randomUUID();
     }
     
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
-        this.dockerImage = previousEvent.getDockerImage();
-        this.context = previousEvent.getContext();
-        this.retryCount = previousEvent.getRetryCount() + 1;
-        this.uniqueIdentifier = previousEvent.uniqueIdentifier;
+        dockerImage = previousEvent.getDockerImage();
+        context = previousEvent.getContext();
+        retryCount = previousEvent.getRetryCount() + 1;
+        uniqueIdentifier = previousEvent.uniqueIdentifier;
     }
 
     public int getRetryCount() {

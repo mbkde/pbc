@@ -41,7 +41,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
                 if (!AgentType.REMOTE.equals(agent.getType())) {
                     continue;
                 }
-                final CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
+                CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
                 if (capabilitySet != null) {
                     Capability cap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
                     if (cap != null) {
@@ -59,7 +59,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
             for (BuildAgent agent : agents) {
                 if (AgentType.REMOTE.equals(agent.getType())) {
                     //only check remote agents
-                    final CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
+                    CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
                     if (capabilitySet != null) {
                         if (capabilitySet.getCapability(Constants.CAPABILITY) != null) {
                             continue;

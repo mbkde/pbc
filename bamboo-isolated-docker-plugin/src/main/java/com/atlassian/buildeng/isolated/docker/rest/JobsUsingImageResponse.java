@@ -18,11 +18,12 @@ package com.atlassian.buildeng.isolated.docker.rest;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-public final class JobsUsingImageReponse {
-    public final String image;
-    public final List<JobInfo> jobs;
+@SuppressWarnings("FieldCanBeLocal")
+public final class JobsUsingImageResponse {
+    private final String image;
+    private final List<JobInfo> jobs;
 
-    public JobsUsingImageReponse(@NotNull String image, @NotNull List<JobInfo> jobs) {
+    public JobsUsingImageResponse(@NotNull String image, @NotNull List<JobInfo> jobs) {
         this.jobs = jobs;
         this.image = image;
     }

@@ -36,7 +36,7 @@ public class PostJobActionImpl implements PostJobAction {
 
     private final AgentManager agentManager;
 
-    public PostJobActionImpl(AgentManager agentManager) {
+    private PostJobActionImpl(AgentManager agentManager) {
         this.agentManager = agentManager;
     }
 

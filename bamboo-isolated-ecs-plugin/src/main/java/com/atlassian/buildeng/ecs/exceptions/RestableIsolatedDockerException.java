@@ -19,16 +19,17 @@ package com.atlassian.buildeng.ecs.exceptions;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 public abstract class RestableIsolatedDockerException extends IsolatedDockerAgentException {
 
-    private final Response.Status status;
-    protected RestableIsolatedDockerException(Response.Status status, Exception exc) {
+    private final Status status;
+    RestableIsolatedDockerException(Status status, Exception exc) {
         super(exc);
         this.status = status;
     }
 
-    protected RestableIsolatedDockerException(Response.Status status, String message) {
+    RestableIsolatedDockerException(Status status, String message) {
         super(message);
         this.status = status;
     }

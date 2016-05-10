@@ -135,7 +135,7 @@ public class DockerHost {
 
     @Override
     public int hashCode() {
-        int result = (containerInstanceArn != null ? containerInstanceArn.hashCode() : 0);
+        int result = containerInstanceArn != null ? containerInstanceArn.hashCode() : 0;
         result = 31 * result + (instanceId != null ? instanceId.hashCode() : 0);
         result = 31 * result + (launchTime != null ? launchTime.hashCode() : 0);
         return result;

@@ -3,7 +3,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 
 public class SchedulingResult {
-    private StartTaskResult startTaskResult;
+    private final StartTaskResult startTaskResult;
     private String containerArn;
 
     public SchedulingResult(StartTaskResult startTaskResult, String containerArn) {

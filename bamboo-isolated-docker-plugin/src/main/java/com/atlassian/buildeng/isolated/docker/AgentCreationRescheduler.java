@@ -35,7 +35,7 @@ public class AgentCreationRescheduler implements DisposableBean  {
     private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, "Docker Agent Retry Pool");
     private static final int MAX_RETRY_COUNT = 20;
 
-    public AgentCreationRescheduler(EventPublisher eventPublisher) {
+    private AgentCreationRescheduler(EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
     

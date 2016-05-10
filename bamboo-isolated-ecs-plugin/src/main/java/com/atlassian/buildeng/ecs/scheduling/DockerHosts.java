@@ -19,8 +19,8 @@ final class DockerHosts {
 
     @VisibleForTesting
     public DockerHosts(List<DockerHost> allHosts, CyclingECSScheduler ecsScheduler) {
-        this.all = allHosts;
-        final Map<Boolean, List<DockerHost>> partitionedHosts = ecsScheduler.partitionFreshness(allHosts);
+        all = allHosts;
+        Map<Boolean, List<DockerHost>> partitionedHosts = ecsScheduler.partitionFreshness(allHosts);
         freshHosts = partitionedHosts.get(true);
         unusedStaleHosts = ecsScheduler.unusedStaleInstances(partitionedHosts.get(false));
         this.ecsScheduler = ecsScheduler;
