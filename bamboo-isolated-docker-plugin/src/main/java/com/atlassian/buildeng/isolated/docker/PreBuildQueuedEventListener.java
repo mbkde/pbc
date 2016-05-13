@@ -96,7 +96,7 @@ public class PreBuildQueuedEventListener {
     }
 
     @EventListener
-    private void retry(RetryAgentStartupEvent event) {
+    public void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             jmx.incrementCancelled();
