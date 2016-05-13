@@ -50,6 +50,7 @@ public class AgentCreationRescheduler implements DisposableBean  {
         //for retry count 10 and X=5 : 5 + 10 + 15 + 20 + 25 + 30 + 35 + 40 + 45 + 50 = 225s
         LOG.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
         executor.schedule(() -> {
+            LOG.info("Publishing {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
             eventPublisher.publish(event);
         }, X * event.getRetryCount(), TimeUnit.SECONDS);
         return true;
@@ -61,6 +62,7 @@ public class AgentCreationRescheduler implements DisposableBean  {
         //TODO this is likely called on reinstall of plugin. Is there a way to have these salvaged
         // and re-inserted into the queue?
         //otherwise we might end up with some unfortunate builds hanging forever.
+        LOG.info("Destroying executor");
         executor.shutdownNow();
     }
     

@@ -96,7 +96,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                     @Override
                     public void handle(ECSException exception) {
                         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
-                        logger.warn("Failed to schedule, treating as overload: " + exception);
+                        logger.warn("Failed to schedule {}, treating as overload: {}", resultId, exception);
                         if (exception.getCause() instanceof TimeoutException) {
                             toRet.withRetryRecoverable("Request timed out without completing.");
                         } else {
