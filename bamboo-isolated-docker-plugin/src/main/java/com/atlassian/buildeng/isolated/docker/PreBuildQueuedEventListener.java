@@ -99,6 +99,7 @@ public class PreBuildQueuedEventListener {
     public void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
+            LOG.info("Retrying but {} was already cancelled, aborting. (state:{})", event.getContext().getResultKey().getKey(), event.getContext().getCurrentResult().getLifeCycleState());
             jmx.incrementCancelled();
             return;
         }
@@ -112,8 +113,8 @@ public class PreBuildQueuedEventListener {
                             event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
                         });
                         if (result.isRetryRecoverable()) {
+                            LOG.warn("Build {} was not queued but recoverable, retrying.. Error message: {}", event.getContext().getResultKey().getKey(), Joiner.on("\n").join(result.getErrors()));
                             if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
-                                LOG.warn("Build was not queued but recoverable, retrying.. Error message:" + Joiner.on("\n").join(result.getErrors()));
                                 return;
                             }
                             jmx.incrementTimedOut();
