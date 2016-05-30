@@ -20,8 +20,8 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("FieldCanBeLocal")
 public final class JobsUsingImageResponse {
-    private final String image;
-    private final List<JobInfo> jobs;
+    public final String image;
+    public final List<JobInfo> jobs;
 
     public JobsUsingImageResponse(@NotNull String image, @NotNull List<JobInfo> jobs) {
         this.jobs = jobs;
