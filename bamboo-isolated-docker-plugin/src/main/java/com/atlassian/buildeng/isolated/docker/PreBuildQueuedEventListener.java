@@ -191,10 +191,13 @@ public class PreBuildQueuedEventListener {
     public void deploymentFinished(DeploymentFinishedEvent event) {
         LOG.info("deployment finished event:" + event);
         DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
-        BuildAgent agent = dr != null ? dr.getAgent() : null;
-        if (agent != null) {
-            DeleterGraveling dg = new DeleterGraveling(agentCommandSender, agentManager);
-            dg.visitRemote(agent);
+        Configuration config = Configuration.forDeploymentResult(dr);
+        if (config.isEnabled()) {
+            BuildAgent agent = dr != null ? dr.getAgent() : null;
+            if (agent != null) {
+                DeleterGraveling dg = new DeleterGraveling(agentCommandSender, agentManager);
+                dg.visitRemote(agent);
+            }
         }
     }
 }

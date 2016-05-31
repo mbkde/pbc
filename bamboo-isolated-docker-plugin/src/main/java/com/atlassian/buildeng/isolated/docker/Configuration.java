@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
+import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.task.TaskDefinition;
@@ -61,6 +62,11 @@ public final class Configuration {
         }
         return new Configuration(false, "");
     }
+    
+    static Configuration forDeploymentResult(DeploymentResult dr) {
+        return forMap(dr.getCustomData());
+    }
+    
     
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
