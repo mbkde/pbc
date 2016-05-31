@@ -1,5 +1,9 @@
 package com.atlassian.buildeng.isolated.docker.reaper;
 
+import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
+import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
+import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
+import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
@@ -28,17 +32,33 @@ public class DeleterGraveling implements BuildAgentVisitor {
     }
 
     @Override
-    public void visitRemote(BuildAgent buildAgent) {
-        Long agentId = buildAgent.getId();
-        String agentName = buildAgent.getName();
-        // Stop the agent
-        try {
-            buildAgent.setRequestedToBeStopped(true); // Set status correctly
-            agentManager.removeAgent(agentId);        // Remove agent from the UI/server side
-            agentCommandSender.send(new StopAgentNicelyMessage(), agentId);
-            LOG.info(String.format("Successfully reaped agent %s (id: %s)", agentName, agentId));
-        } catch (TimeoutException e) {
-            LOG.error(String.format("timeout on removing agent %s (id: %s)", agentName, agentId), e);
-        }
+    public void visitRemote(final BuildAgent buildAgent) {
+        buildAgent.getDefinition().accept(new PipelineDefinitionVisitor() {
+            @Override
+            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
+                LOG.error("Wrong agent picked up. Type:{} Idle:{} Name:{}", 
+                        buildAgent.getType(), buildAgent.getAgentStatus().isIdle(),
+                        buildAgent.getName());
+            }
+
+            @Override
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
+            }
+
+            @Override
+            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
+                Long agentId = buildAgent.getId();
+                String agentName = buildAgent.getName();
+                // Stop the agent
+                try {
+                    buildAgent.setRequestedToBeStopped(true); // Set status correctly
+                    agentManager.removeAgent(agentId);        // Remove agent from the UI/server side
+                    agentCommandSender.send(new StopAgentNicelyMessage(), agentId);
+                    LOG.info("Successfully reaped agent {} (id: {})", agentName, agentId);
+                } catch (TimeoutException e) {
+                    LOG.error(String.format("timeout on removing agent %s (id: %s)", agentName, agentId), e);
+                }
+            }
+        });
     }
 }
