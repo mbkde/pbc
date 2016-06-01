@@ -137,9 +137,13 @@ public class PreBuildQueuedEventListener {
 
                     private void terminateBuild() {
                         jmx.incrementFailed();
-                        event.getContext().getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
-                        if (event.getContext() instanceof BuildContext) { //TODO what about DeploymentContext??
+                        if (event.getContext() instanceof BuildContext) { 
+                            event.getContext().getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
                             buildQueueManager.removeBuildFromQueue(event.getContext().getResultKey());
+                        } else if (event.getContext() instanceof DeploymentContext) {
+                            //TODO not sure how to deal with queued deployments
+//                            DeploymentContext dc = (DeploymentContext)event.getContext();
+//                            deploymentResultService.updateLifeCycleState(dc.getDeploymentResultId(), LifeCycleState.NOT_BUILT);
                         }
                     }
                 });

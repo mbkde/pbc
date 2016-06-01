@@ -18,8 +18,13 @@ package com.atlassian.buildeng.ecs;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.bamboo.builder.LifeCycleState;
+import com.atlassian.bamboo.deployments.DeploymentResultKey;
+import com.atlassian.bamboo.deployments.execution.DeploymentContext;
+import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
+import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
@@ -49,6 +54,11 @@ public class ECSWatchdogJob implements PluginJob {
         BuildQueueManager buildQueueManager = (BuildQueueManager) ContainerManager.getComponent("buildQueueManager");
         if (buildQueueManager == null) {
             logger.info("no BuildQueueManager");
+            throw new IllegalStateException();
+        }
+        DeploymentExecutionService deploymentExecutionService = (DeploymentExecutionService) ContainerManager.getComponent("deploymentExecutionService");
+        if (deploymentExecutionService == null) {
+            logger.info("no deploymentExecutionService");
             throw new IllegalStateException();
         }
         ErrorUpdateHandler errorUpdateHandler = (ErrorUpdateHandler) ContainerManager.getComponent("errorUpdateHandler");
@@ -102,10 +112,18 @@ public class ECSWatchdogJob implements PluginJob {
                         if (tsk != null) {
                             String error = getError(tsk);
                             logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), taskArn, error);
-                            current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                             errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(Constants.RESULT_ERROR, error);
-                            buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
+                            if (t.getView() instanceof BuildContext) {
+                                current.setLifeCycleState(LifeCycleState.NOT_BUILT);
+                                buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
+                            } else if (t.getView() instanceof DeploymentContext) {
+                                //TODO not sure how to deal with queued deployments
+//                                DeploymentContext dc = (DeploymentContext) t.getView();
+//                                deploymentExecutionService.stop(dc.getDeploymentResultId());
+                            } else {
+                                logger.error("unknown type of CommonContext {}", t.getView().getClass());
+                            }
                         }
                     }
                 });
