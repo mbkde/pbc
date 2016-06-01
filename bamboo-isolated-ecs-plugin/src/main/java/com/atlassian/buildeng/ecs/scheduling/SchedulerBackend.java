@@ -17,14 +17,16 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import java.util.Collection;
 import java.util.List;
 
 /**
  *
  * @author mkleint
  */
-interface SchedulerBackend {
+public interface SchedulerBackend {
 
     /**
      * Get all owned container instances on a cluster
@@ -63,4 +65,6 @@ interface SchedulerBackend {
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req) throws ECSException;
     
     int getCurrentASGDesiredCapacity(String autoScalingGroup) throws ECSException;
+    
+    Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException;
 }

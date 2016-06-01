@@ -75,6 +75,15 @@ public interface Constants {
     String ECS_CLUSTER_VAL                = DEFAULT_CLUSTER;
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
+    
+    long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
+    String PLUGIN_JOB_KEY = "ecs-watchdog";
+    String RESULT_PART_TASKARN = "TaskARN";
+    
+    //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
+    String RESULT_PREFIX = "result.isolated.docker.";
+    String RESULT_ERROR = "custom.isolated.docker.error";
+    
     LogConfiguration LAAS_CONFIGURATION =
             new LogConfiguration()
                     .withLogDriver(LogDriver.Fluentd)

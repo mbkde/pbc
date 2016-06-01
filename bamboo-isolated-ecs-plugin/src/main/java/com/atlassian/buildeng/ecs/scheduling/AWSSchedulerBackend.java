@@ -32,15 +32,19 @@ import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
+import com.amazonaws.services.ecs.model.DescribeTasksRequest;
+import com.amazonaws.services.ecs.model.DescribeTasksResult;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -217,5 +221,33 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 throw new ECSException(ex);
             }
         }
+    }
+    
+
+    @Override
+    public Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException {
+        AmazonECSClient ecsClient = new AmazonECSClient();
+        try {
+            final List<Task> toRet = new ArrayList<>();
+            DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(taskArns));
+            res.getTasks().forEach((Task t) -> {
+                toRet.add(t);
+            });
+            if (!res.getFailures().isEmpty()) {
+                if (toRet.isEmpty()) {
+                    throw new ECSException(Arrays.toString(res.getFailures().toArray()));
+                } else {
+                    logger.info("Error on retrieving tasks: {}",Arrays.toString(res.getFailures().toArray()));
+                }
+            }
+            return toRet;
+        } catch (Exception ex) {
+            if (ex instanceof ECSException) {
+                throw ex;
+            } else {
+                throw new ECSException(ex);
+            }
+        }
+        
     }
 }

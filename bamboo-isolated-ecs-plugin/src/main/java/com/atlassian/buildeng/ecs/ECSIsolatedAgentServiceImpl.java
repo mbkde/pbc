@@ -21,6 +21,7 @@ import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
@@ -28,26 +29,34 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.sal.api.lifecycle.LifecycleAware;
+import com.atlassian.sal.api.scheduling.PluginScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 
-public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
+public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
 
     private final GlobalConfiguration globalConfiguration;
     private final ECSScheduler ecsScheduler;
+    private final PluginScheduler pluginScheduler;
+    private final SchedulerBackend schedulerBackend;
 
-    @Autowired
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
+            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
+        this.pluginScheduler = pluginScheduler;
+        this.schedulerBackend = schedulerBackend;
     }
 
     // Isolated Agent Service methods
@@ -73,7 +82,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
                         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                         StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
                         startTaskResult.getTasks().stream().findFirst().ifPresent(t -> {
-                            toRet.withCustomResultData("TaskARN", t.getTaskArn());
+                            toRet.withCustomResultData(Constants.RESULT_PART_TASKARN, t.getTaskArn());
                         });
                         logger.info("ECS Returned: {}", startTaskResult);
                         List<Failure> failures = startTaskResult.getFailures();
@@ -126,6 +135,19 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService {
         } else {
             return "Unknown RunTask reason:" + reason;
         }
+    }
+
+    @Override
+    public void onStart() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("globalConfiguration", globalConfiguration);
+        config.put("schedulerBackend", schedulerBackend);
+        pluginScheduler.scheduleJob(Constants.PLUGIN_JOB_KEY, ECSWatchdogJob.class, config, new Date(), Constants.PLUGIN_JOB_INTERVAL_MILLIS);
+    }
+
+    @Override
+    public void onStop() {
+        pluginScheduler.unscheduleJob(Constants.PLUGIN_JOB_KEY);
     }
 
 }

@@ -138,7 +138,7 @@ public class PreBuildQueuedEventListener {
                     private void terminateBuild() {
                         jmx.incrementFailed();
                         event.getContext().getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
-                        if (event.getContext() instanceof BuildContext) {
+                        if (event.getContext() instanceof BuildContext) { //TODO what about DeploymentContext??
                             buildQueueManager.removeBuildFromQueue(event.getContext().getResultKey());
                         }
                     }
