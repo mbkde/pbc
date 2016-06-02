@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.atlassian.buildeng</groupId>
     <artifactId>bamboo-isolated-docker</artifactId>
-    <version>1.8-SNAPSHOT</version>
+    <version>1.9-SNAPSHOT</version>
     <name>Bamboo plugins for ECS based docker agents...</name>
     <description>more relevant text here</description>
     <packaging>pom</packaging>
