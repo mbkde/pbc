@@ -21,7 +21,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 public interface Constants {
     String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
     String DOCKER_IMAGE = "custom.isolated.docker.image";
-    String RESULT_ERROR = "custom.isolated.docker.error";
+    String RESULT_ERROR = "custom.isolated.docker.error"; //copied in ecs-plugin
     /**
      * marker custom data piece key set in StopDockerAgentBuildProcessor
      * when the agent was sentenced to die
@@ -40,7 +40,7 @@ public interface Constants {
      * prefix for custom data passed from the api implementation.
      * Everything starting with this can end up in the UI.
      */
-    String RESULT_PREFIX = "result.isolated.docker.";
+    String RESULT_PREFIX = "result.isolated.docker."; //copied in ecs-plugin
 
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
