@@ -22,13 +22,13 @@ public interface Constants {
     String AGENT_CONTAINER_NAME = "bamboo-agent";
 
     // The name used for the generated task definition (a.k.a. family)
-    String TASK_DEFINITION_NAME = "staging-bamboo-generated";
+    String TASK_DEFINITION_SUFFIX = "-generated";
 
     // The name of the atlassian docker registry sidekick
     String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 
     // The default cluster to use
-    String DEFAULT_CLUSTER = "staging_bamboo";
+    String DEFAULT_CLUSTER = "default";
 
     /**
      * The environment variable to override on the agent per image

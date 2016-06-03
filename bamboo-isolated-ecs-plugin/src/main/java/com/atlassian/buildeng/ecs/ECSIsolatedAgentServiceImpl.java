@@ -68,7 +68,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             callback.handle(new ImageNotRegisteredException(req.getDockerImage()));
             return;
         }
-        logger.info("Spinning up new docker agent from task definition {}:{} {}", Constants.TASK_DEFINITION_NAME, revision, resultId);
+        logger.info("Spinning up new docker agent from task definition {}:{} {}", globalConfiguration.getTaskDefinitionName(), revision, resultId);
         SchedulingRequest schedulingRequest = new SchedulingRequest(
                 req.getUniqueIdentifier(),
                 resultId,

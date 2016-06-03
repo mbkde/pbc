@@ -420,7 +420,7 @@ public class CyclingECSSchedulerTest {
                     ec2("id2", new Date())
                 )
         );
-        when(backend.schedule(anyString(), anyString(), Matchers.any())).thenThrow(new ECSException("error3"));
+        when(backend.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
@@ -442,7 +442,7 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString(), anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
-        when(mocked.schedule(anyString(), anyString(), Matchers.any())).thenAnswer(invocationOnMock -> {
+        when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);
         });

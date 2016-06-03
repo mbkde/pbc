@@ -181,7 +181,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest request) throws ECSException {
+    public SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest request, String taskDefinition) throws ECSException {
         try {
             AmazonECSClient ecsClient = new AmazonECSClient();
             ContainerOverride buildResultOverride = new ContainerOverride()
@@ -191,7 +191,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
                     .withCluster(cluster)
                     .withContainerInstances(containerArn)
-                    .withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + request.getRevision())
+                    .withTaskDefinition(taskDefinition + ":" + request.getRevision())
                     .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
             );
             return new SchedulingResult(startTaskResult, containerArn);
