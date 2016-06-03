@@ -54,6 +54,12 @@ public class GlobalConfiguration {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
     }
+
+    public String getTaskDefinitionName() {
+        return admConfAccessor.getAdministrationConfiguration().getInstanceName() + Constants.TASK_DEFINITION_SUFFIX;
+    }
+
+
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage, String baseUrl, String sidekick) {
         return new RegisterTaskDefinitionRequest()
@@ -64,13 +70,12 @@ public class GlobalConfiguration {
                             .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(dockerImage)),
                         Constants.SIDEKICK_DEFINITION
                             .withImage(sidekick))
-                .withFamily(Constants.TASK_DEFINITION_NAME);
+                .withFamily(getTaskDefinitionName());
     }
     
-    
     // Constructs a standard de-register request for a standard generated task definition
-    private static DeregisterTaskDefinitionRequest deregisterTaskDefinitionRequest(Integer revision) {
-        return new DeregisterTaskDefinitionRequest().withTaskDefinition(Constants.TASK_DEFINITION_NAME + ":" + revision);
+    private DeregisterTaskDefinitionRequest deregisterTaskDefinitionRequest(Integer revision) {
+        return new DeregisterTaskDefinitionRequest().withTaskDefinition(getTaskDefinitionName() + ":" + revision);
     }
 
    // Sidekick management
