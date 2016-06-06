@@ -36,7 +36,7 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
-import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
+import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;

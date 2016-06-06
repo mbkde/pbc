@@ -80,9 +80,12 @@ public interface Constants {
     String PLUGIN_JOB_KEY = "ecs-watchdog";
     String RESULT_PART_TASKARN = "TaskARN";
     
-    //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
+    //these 4 copied from bamboo-isolated-docker-plugin to avoid dependency
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";
+    String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
+    String DOCKER_IMAGE = "custom.isolated.docker.image";
+    
     
     LogConfiguration LAAS_CONFIGURATION =
             new LogConfiguration()

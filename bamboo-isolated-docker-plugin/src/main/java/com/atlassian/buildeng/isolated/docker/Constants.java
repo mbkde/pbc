@@ -19,8 +19,8 @@ package com.atlassian.buildeng.isolated.docker;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 
 public interface Constants {
-    String ENABLED_FOR_JOB = "custom.isolated.docker.enabled";
-    String DOCKER_IMAGE = "custom.isolated.docker.image";
+    String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; //copied in ecs-plugin
+    String DOCKER_IMAGE = "custom.isolated.docker.image"; //copied in ecs-plugin
     String RESULT_ERROR = "custom.isolated.docker.error"; //copied in ecs-plugin
     /**
      * marker custom data piece key set in StopDockerAgentBuildProcessor

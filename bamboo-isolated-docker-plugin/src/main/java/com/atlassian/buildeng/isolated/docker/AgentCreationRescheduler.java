@@ -16,7 +16,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.executor.NamedExecutors;
-import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
+import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
