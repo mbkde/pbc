@@ -13,10 +13,6 @@
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
     
-    <component key="pluginRestartQueueMonitor" class="com.atlassian.buildeng.ecs.PluginRestartQueueMonitor" public="true">
-        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
-    </component>
-    
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
