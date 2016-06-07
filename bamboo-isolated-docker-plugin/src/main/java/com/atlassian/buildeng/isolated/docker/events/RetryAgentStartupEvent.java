@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.atlassian.buildeng.spi.isolated.docker;
+package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.event.api.AsynchronousPreferred;
