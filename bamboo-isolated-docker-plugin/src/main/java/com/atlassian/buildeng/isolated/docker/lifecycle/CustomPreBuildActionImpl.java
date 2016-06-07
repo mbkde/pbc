@@ -63,7 +63,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     @NotNull
     @Override
     public BuildContext call() throws Exception {
-        Configuration config = Configuration.forBuildContext(buildContext);
+        Configuration config = Configuration.forContext(buildContext);
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");

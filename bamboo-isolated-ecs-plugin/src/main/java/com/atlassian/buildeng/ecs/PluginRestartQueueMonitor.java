@@ -18,6 +18,7 @@ package com.atlassian.buildeng.ecs;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
@@ -47,14 +48,13 @@ public class PluginRestartQueueMonitor implements LifecycleAware {
         QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
         queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
             Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
-            String enabled = bd.get(Constants.ENABLED_FOR_JOB);
-            if (Boolean.parseBoolean(enabled)) {
-                String image = bd.get(Constants.DOCKER_IMAGE);
+            Configuration c = Configuration.forContext(t.getView());
+            if (c.isEnabled()) {
                 String taskArn = bd.get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
                 if (taskArn == null) {
                     //we need to restart this guy.
                     logger.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
-                    eventPublisher.publish(new RetryAgentStartupEvent(image, t.getView()));
+                    eventPublisher.publish(new RetryAgentStartupEvent(c.getDockerImage(), t.getView()));
                 } else {
                     //docker agent for this one is either coming up online or will be dumped/stopped by ECSWatchDogJob
                 }

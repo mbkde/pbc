@@ -23,6 +23,7 @@ import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 
 import javax.annotation.Nonnull;
@@ -54,14 +55,25 @@ public final class Configuration {
         return new Configuration(enable, image);
     }
 
+    public static Configuration forContext(@Nonnull CommonContext context) {
+        if (context instanceof BuildContext) {
+            return forBuildContext((BuildContext) context);
+        }
+        if (context instanceof DeploymentContext) {
+            return forDeploymentContext((DeploymentContext) context);
+        }
+        throw new IllegalStateException("Unknown Common Context subclass:" + context.getClass().getName());
+    }
+    
+    
     @Nonnull
-    public static Configuration forBuildContext(@Nonnull BuildContext context) {
+    private static Configuration forBuildContext(@Nonnull BuildContext context) {
         Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
         return forMap(cc);
     }
     
     @Nonnull
-    public static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
+    private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
             //XXX interplugin dependency
             if ("com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockertask".equals(task.getPluginKey())) {

@@ -87,7 +87,7 @@ public class PreBuildQueuedEventListener {
     @EventListener
     public void call(BuildQueuedEvent event) {
         BuildContext buildContext = event.getContext();
-        Configuration config = Configuration.forBuildContext(buildContext);
+        Configuration config = Configuration.forContext(buildContext);
         if (config.isEnabled()) {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
@@ -183,7 +183,7 @@ public class PreBuildQueuedEventListener {
     public void deploymentTriggered(DeploymentTriggeredEvent event) {
         LOG.info("deployment triggered event:" + event);
         DeploymentContext buildContext = event.getContext();
-        Configuration config = Configuration.forDeploymentContext(buildContext);
+        Configuration config = Configuration.forContext(buildContext);
         if (config.isEnabled()) {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
