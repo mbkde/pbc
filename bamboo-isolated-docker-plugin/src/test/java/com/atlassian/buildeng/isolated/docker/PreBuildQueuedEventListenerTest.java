@@ -24,7 +24,6 @@ import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
