@@ -7,7 +7,7 @@ import com.atlassian.bamboo.task.TaskRequirementSupport;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
-import com.atlassian.buildeng.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
@@ -43,8 +43,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params, @Nullable TaskDefinition previousTaskDefinition)
     {
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
-        configMap.put(Constants.TASK_DOCKER_IMAGE, params.getString(Constants.TASK_DOCKER_IMAGE));
-        configMap.put(Constants.TASK_DOCKER_ENABLE, "" + !StringUtils.isBlank(params.getString(Constants.TASK_DOCKER_IMAGE)));
+        configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
+        configMap.put(Configuration.TASK_DOCKER_ENABLE, "" + !StringUtils.isBlank(params.getString(Configuration.TASK_DOCKER_IMAGE)));
         return configMap;
     }
 
@@ -53,7 +53,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     {
         super.populateContextForEdit(context, taskDefinition);
         context.putAll(taskDefinition.getConfiguration());
-        context.put(Constants.TASK_DOCKER_IMAGE, taskDefinition.getConfiguration().get(Constants.DOCKER_IMAGE));
+        context.put(Configuration.TASK_DOCKER_IMAGE, taskDefinition.getConfiguration().get(Configuration.DOCKER_IMAGE));
     }
 
     @Override
@@ -61,12 +61,12 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     {
         super.validate(params, errorCollection);
 
-        String image = params.getString(Constants.TASK_DOCKER_IMAGE);
+        String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
 
 
         if (StringUtils.isBlank(image))
         {
-            errorCollection.addError(Constants.TASK_DOCKER_IMAGE, textProvider.getText("requirement.error.emptyImage"));
+            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, textProvider.getText("requirement.error.emptyImage"));
         }
     }
 

@@ -21,7 +21,7 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
-import com.atlassian.buildeng.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 

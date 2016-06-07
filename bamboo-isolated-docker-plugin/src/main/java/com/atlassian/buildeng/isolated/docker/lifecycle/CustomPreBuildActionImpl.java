@@ -29,7 +29,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import com.atlassian.buildeng.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -101,15 +101,15 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
-        context.put(Constants.ENABLED_FOR_JOB, config.isEnabled());
-        context.put(Constants.DOCKER_IMAGE, config.getDockerImage());
+        context.put(Configuration.ENABLED_FOR_JOB, config.isEnabled());
+        context.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
     }
 
     @Override
     public void addDefaultValues(@NotNull BuildConfiguration buildConfiguration) {
         super.addDefaultValues(buildConfiguration);
-        buildConfiguration.addProperty(Constants.ENABLED_FOR_JOB, false);
-        buildConfiguration.addProperty(Constants.DOCKER_IMAGE, "docker:xxx");
+        buildConfiguration.addProperty(Configuration.ENABLED_FOR_JOB, false);
+        buildConfiguration.addProperty(Configuration.DOCKER_IMAGE, "docker:xxx");
     }
 
 }
