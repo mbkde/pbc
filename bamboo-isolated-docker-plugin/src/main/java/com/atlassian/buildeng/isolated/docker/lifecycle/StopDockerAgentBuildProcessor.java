@@ -51,7 +51,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     @NotNull
     @Override
     public BuildContext call() {
-        Configuration config = Configuration.forBuildContext(buildContext);
+        Configuration config = Configuration.forContext(buildContext);
         ExecutableBuildAgent buildAgent = agentContext.getBuildAgent();
         BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
 

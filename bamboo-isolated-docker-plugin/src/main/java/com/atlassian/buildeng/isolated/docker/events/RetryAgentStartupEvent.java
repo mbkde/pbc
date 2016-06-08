@@ -15,14 +15,13 @@
  */
 package com.atlassian.buildeng.isolated.docker.events;
 
-import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.event.api.AsynchronousPreferred;
 
 import java.util.UUID;
 
 /**
- *
+ * Event to schedule docker agent creation.
  * @author mkleint
  */
 @AsynchronousPreferred

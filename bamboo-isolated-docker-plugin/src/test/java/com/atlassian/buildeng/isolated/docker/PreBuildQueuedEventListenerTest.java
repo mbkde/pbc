@@ -26,7 +26,6 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import java.util.HashMap;
@@ -42,9 +41,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PreBuildQueuedEventListenerTest {
@@ -141,8 +138,8 @@ public class PreBuildQueuedEventListenerTest {
         when(result.getLifeCycleState()).thenReturn(state);
         when(result.getCustomBuildData()).thenReturn(resultData);
         Map<String, String> customConfig = new HashMap<>();
-        customConfig.put(Constants.ENABLED_FOR_JOB, "" + dockerEnabled);
-        customConfig.put(Constants.DOCKER_IMAGE, image);
+        customConfig.put(Configuration.ENABLED_FOR_JOB, "" + dockerEnabled);
+        customConfig.put(Configuration.DOCKER_IMAGE, image);
         when(bd.getCustomConfiguration()).thenReturn(customConfig);
         return buildContext;
     }

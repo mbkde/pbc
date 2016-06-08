@@ -59,7 +59,7 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     @NotNull
     @Override
     public BuildContext call() throws Exception {
-        Configuration conf = Configuration.forBuildContext(buildContext);
+        Configuration conf = Configuration.forContext(buildContext);
         CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails

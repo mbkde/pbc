@@ -63,7 +63,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     @NotNull
     @Override
     public BuildContext call() throws Exception {
-        Configuration config = Configuration.forBuildContext(buildContext);
+        Configuration config = Configuration.forContext(buildContext);
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
@@ -101,15 +101,15 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
-        context.put(Constants.ENABLED_FOR_JOB, config.isEnabled());
-        context.put(Constants.DOCKER_IMAGE, config.getDockerImage());
+        context.put(Configuration.ENABLED_FOR_JOB, config.isEnabled());
+        context.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
     }
 
     @Override
     public void addDefaultValues(@NotNull BuildConfiguration buildConfiguration) {
         super.addDefaultValues(buildConfiguration);
-        buildConfiguration.addProperty(Constants.ENABLED_FOR_JOB, false);
-        buildConfiguration.addProperty(Constants.DOCKER_IMAGE, "docker:xxx");
+        buildConfiguration.addProperty(Configuration.ENABLED_FOR_JOB, false);
+        buildConfiguration.addProperty(Configuration.DOCKER_IMAGE, "docker:xxx");
     }
 
 }

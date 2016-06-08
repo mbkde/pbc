@@ -26,7 +26,8 @@
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
     
-    <component key="AgentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationRescheduler">
+    <component key="AgentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationRescheduler" public="true">
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
     
     <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService">

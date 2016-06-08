@@ -84,6 +84,7 @@ public interface Constants {
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";
     
+    
     LogConfiguration LAAS_CONFIGURATION =
             new LogConfiguration()
                     .withLogDriver(LogDriver.Fluentd)

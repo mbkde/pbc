@@ -23,6 +23,7 @@ import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 
 import javax.annotation.Nonnull;
@@ -30,6 +31,13 @@ import java.util.Map;
 
 public final class Configuration {
 
+    
+    public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
+    public static final String DOCKER_IMAGE = "custom.isolated.docker.image"; 
+    //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
+    // don't like dots in names.
+    public static final String TASK_DOCKER_IMAGE = "dockerImage";
+    public static final String TASK_DOCKER_ENABLE = "enabled";
 
 
     private final boolean enabled;
@@ -42,20 +50,32 @@ public final class Configuration {
 
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
-        boolean enable = config.getBoolean(Constants.ENABLED_FOR_JOB);
-        String image = config.getString(Constants.DOCKER_IMAGE);
+        boolean enable = config.getBoolean(ENABLED_FOR_JOB);
+        String image = config.getString(DOCKER_IMAGE);
         return new Configuration(enable, image);
     }
 
+    public static Configuration forContext(@Nonnull CommonContext context) {
+        if (context instanceof BuildContext) {
+            return forBuildContext((BuildContext) context);
+        }
+        if (context instanceof DeploymentContext) {
+            return forDeploymentContext((DeploymentContext) context);
+        }
+        throw new IllegalStateException("Unknown Common Context subclass:" + context.getClass().getName());
+    }
+    
+    
     @Nonnull
-    public static Configuration forBuildContext(@Nonnull BuildContext context) {
+    private static Configuration forBuildContext(@Nonnull BuildContext context) {
         Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
         return forMap(cc);
     }
     
     @Nonnull
-    public static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
+    private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
+            //XXX interplugin dependency
             if ("com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockertask".equals(task.getPluginKey())) {
                 return forTaskConfiguration(task);
             }
@@ -63,7 +83,7 @@ public final class Configuration {
         return new Configuration(false, "");
     }
     
-    static Configuration forDeploymentResult(DeploymentResult dr) {
+    public static Configuration forDeploymentResult(DeploymentResult dr) {
         return forMap(dr.getCustomData());
     }
     
@@ -71,8 +91,8 @@ public final class Configuration {
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
-        String value = cc.getOrDefault(Constants.TASK_DOCKER_ENABLE, "false");
-        String image = cc.getOrDefault(Constants.TASK_DOCKER_IMAGE, "");
+        String value = cc.getOrDefault(TASK_DOCKER_ENABLE, "false");
+        String image = cc.getOrDefault(TASK_DOCKER_IMAGE, "");
         return new Configuration(Boolean.parseBoolean(value), image);
     }
 
@@ -89,8 +109,8 @@ public final class Configuration {
 
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
-        String value = cc.getOrDefault(Constants.ENABLED_FOR_JOB, "false");
-        String image = cc.getOrDefault(Constants.DOCKER_IMAGE, "");
+        String value = cc.getOrDefault(ENABLED_FOR_JOB, "false");
+        String image = cc.getOrDefault(DOCKER_IMAGE, "");
         return new Configuration(Boolean.parseBoolean(value), image);
     }
 
