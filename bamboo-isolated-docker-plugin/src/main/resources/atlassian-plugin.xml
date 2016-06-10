@@ -57,6 +57,7 @@
         <dependency>com.atlassian.auiplugin:ajs</dependency>
 
         <resource type="download" name="selectToField.js" location="/selectToField.js"/>
+        <resource type="download" name="requirements.js" location="/requirements.js"/>
         <resource type="download" name="insQ.min.js" location="/insQ.min.js"/>
 
         <context>bamboo.configuration</context>
