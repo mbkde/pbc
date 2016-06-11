@@ -25,11 +25,13 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import java.io.Serializable;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Objects;
 
-public final class Configuration {
+public final class Configuration implements Serializable {
 
     
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
@@ -39,8 +41,13 @@ public final class Configuration {
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
+    //TODO temporary for conversion
+    public static Configuration of(String image) {
+        return new Configuration(true, image);
+    }
 
-    private final boolean enabled;
+    //when storing using bandana/xstream transient means it's not to be serialized
+    private final transient boolean enabled;
     private final String dockerImage;
 
     private Configuration(boolean enabled, String dockerImage) {
@@ -123,5 +130,29 @@ public final class Configuration {
         return dockerImage;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 59 * hash + Objects.hashCode(this.dockerImage);
+        return hash;
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Configuration other = (Configuration) obj;
+        return Objects.equals(this.dockerImage, other.dockerImage);
+    }
+
+
+    
+    
 }

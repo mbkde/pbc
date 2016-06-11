@@ -25,6 +25,7 @@ import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -34,13 +35,13 @@ import com.atlassian.sal.api.scheduling.PluginScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
@@ -62,10 +63,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     // Isolated Agent Service methods
     @Override
     public void startAgent(IsolatedDockerAgentRequest req, IsolatedDockerRequestCallback callback) {
-        Integer revision = globalConfiguration.getAllRegistrations().get(req.getDockerImage());
+        Integer revision = globalConfiguration.getAllRegistrations().get(req.getConfiguration());
         String resultId = req.getResultKey();
         if (revision == null) {
-            callback.handle(new ImageNotRegisteredException(req.getDockerImage()));
+            callback.handle(new ImageNotRegisteredException(req.getConfiguration().getDockerImage()));
             return;
         }
         logger.info("Spinning up new docker agent from task definition {}:{} {}", globalConfiguration.getTaskDefinitionName(), revision, resultId);
@@ -118,7 +119,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     
     @Override
     public List<String> getKnownDockerImages() {
-        List<String> toRet = new ArrayList<>(globalConfiguration.getAllRegistrations().keySet());
+        List<String> toRet = globalConfiguration.getAllRegistrations().keySet().stream()
+                .map((Configuration t) -> t.getDockerImage())
+                .collect(Collectors.toList());
         // sort for sake of UI/consistency?
         Collections.sort(toRet);
         return toRet;

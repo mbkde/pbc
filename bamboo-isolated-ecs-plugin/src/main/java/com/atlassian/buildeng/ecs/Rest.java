@@ -26,6 +26,7 @@ import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.ecs.rest.RegisterImageResponse;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -61,9 +62,9 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
-        Map<String, Integer> mappings = configuration.getAllRegistrations();
+        Map<Configuration, Integer> mappings = configuration.getAllRegistrations();
         return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
-                (Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
+                (Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(), entry.getValue())
         ).collect(Collectors.toList()))).build();
     }
 
@@ -81,7 +82,7 @@ public class Rest {
         if (dockerImage == null) {
             return Response.status(Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
         }
-        Integer revision = configuration.registerDockerImage(dockerImage);
+        Integer revision = configuration.registerDockerImage(Configuration.of(dockerImage));
         return Response.ok(new RegisterImageResponse(revision)).build();
     }
 

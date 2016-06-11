@@ -92,7 +92,7 @@ public class PreBuildQueuedEventListener {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
             jmx.incrementQueued();
-            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
+            retry(new RetryAgentStartupEvent(config, buildContext));
         }
     }
 
@@ -105,7 +105,7 @@ public class PreBuildQueuedEventListener {
             return;
         }
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
+                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
@@ -188,7 +188,7 @@ public class PreBuildQueuedEventListener {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
             jmx.incrementQueued();
-            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
+            retry(new RetryAgentStartupEvent(config, buildContext));
         }
     }
     
