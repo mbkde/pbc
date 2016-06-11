@@ -23,7 +23,7 @@ import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.util.Narrow;
-import com.atlassian.buildeng.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.rest.JobsUsingImageResponse.JobInfo;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.ArrayList;

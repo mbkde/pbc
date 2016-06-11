@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;

@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.executor.NamedExecutors;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
