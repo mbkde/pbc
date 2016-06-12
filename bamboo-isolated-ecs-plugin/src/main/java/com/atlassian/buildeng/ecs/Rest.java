@@ -187,7 +187,7 @@ public class Rest {
     @GET
     @Path("/usages/{revision}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUsages(@PathParam("revision") int revision) {
+    public Response getUsages(@PathParam("revision") final int revision) {
         //TODO environments
         List<JobsUsingImageResponse.JobInfo> toRet = new ArrayList<>();
         cachedPlanManager.getPlans(ImmutableJob.class).stream()
