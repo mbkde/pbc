@@ -45,6 +45,13 @@ public final class Configuration implements Serializable {
     public static Configuration of(String image) {
         return new Configuration(true, image);
     }
+    
+    private Object readResolve() {
+        //this is where backwardcompatibility for Configuration deserialization lives.
+        //http://x-stream.github.io/faq.html#Serialization
+        return this;
+    }
+    
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
