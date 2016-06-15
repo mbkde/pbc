@@ -71,7 +71,7 @@ public class GlobalConfigurationPersistenceTest {
         when(gc.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         ConcurrentMap<String, Integer> old = new ConcurrentHashMap<>();
         old.put("aaa", 4);
-        dbm.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, old);
+        dbm.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD, old);
 
         ConcurrentMap<Configuration, Integer> map = gc.getAllRegistrations();
         assertEquals(1, map.size());
