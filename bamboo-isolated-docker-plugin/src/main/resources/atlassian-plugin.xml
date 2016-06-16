@@ -86,20 +86,6 @@
         <description>Provides the REST resource for javascript code</description>
     </rest>
     
-    <xwork key="usages" name="Show Jobs using Docker image">
-        <package name="dockerUsages" extends="admin">
-            <action name="viewDockerUsages" class="com.atlassian.buildeng.isolated.docker.DockerUsagesAction">
-                <result name="success" type="freemarker">/templates/plugin/dockerUsages.ftl</result>
-            </action>
-        </package>
-    </xwork>
-    <web-resource key="docker-usages-ui-js" name="JavaScript for usages panel.">
-        <dependency>com.atlassian.auiplugin:ajs</dependency>
-        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
-
-        <resource type="download" name="usages.js" location="/templates/plugin/dockerUsages.js"/>
-        <context>viewDockerUsages</context>
-    </web-resource>
     <buildProcessorServer key="agentSafeguard" name="Safeguarding agents get properly discarded after build." class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
         <skipIfFailed/>
         <description/>

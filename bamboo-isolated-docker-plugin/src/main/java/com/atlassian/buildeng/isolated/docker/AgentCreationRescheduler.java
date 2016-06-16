@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.executor.NamedExecutors;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
@@ -77,7 +78,7 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                 if (wasWaiting != null) {
                     //we need to restart this guy.
                     LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
-                    eventPublisher.publish(new RetryAgentStartupEvent(c.getDockerImage(), t.getView()));
+                    eventPublisher.publish(new RetryAgentStartupEvent(c, t.getView()));
                 } else {
                     //docker agent for this one is either coming up online or will be dumped/stopped by ECSWatchDogJob
                 }

@@ -65,7 +65,7 @@
             parent.append('<tr id="row-revision-' + mapping.revision + '">' + 
                          "<td>" + mapping.dockerImage + "</td>" + 
                          '<td><button type="button" class="aui-button" onclick="deleteImage(' + mapping.revision + ')">Deregister</button></td>' +
-                         '<td><a href="/admin/viewDockerUsages.action?image=' + mapping.dockerImage + '">Usages</a></td>' +
+                         '<td><a href="/admin/viewDockerUsages.action?revision=' + mapping.revision + '&image=' + mapping.dockerImage + '">Usages</a></td>' +
                          "</tr>");
     }
 

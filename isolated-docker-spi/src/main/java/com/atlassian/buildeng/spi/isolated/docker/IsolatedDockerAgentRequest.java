@@ -20,23 +20,23 @@ import java.util.UUID;
 
 public final class IsolatedDockerAgentRequest {
 
-    private final String dockerImage;
+    private final Configuration configuration;
     private final String resultKey;
     private final UUID uniqueIdentifier;
 
     /**
-     * @param dockerImage      - image for isolated docker agent to use
+     * @param configuration
      * @param resultKey        - bamboo build result key
      * @param uniqueIdentifier - something to uniquely identifier the request with
      */
-    public IsolatedDockerAgentRequest(String dockerImage, String resultKey, UUID uniqueIdentifier) {
-        this.dockerImage = dockerImage;
+    public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier) {
+        this.configuration = configuration;
         this.resultKey = resultKey;
         this.uniqueIdentifier = uniqueIdentifier;
     }
 
-    public String getDockerImage() {
-        return dockerImage;
+    public Configuration getConfiguration() {
+        return configuration;
     }
 
     public String getResultKey() {

@@ -28,6 +28,7 @@ import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -61,13 +62,13 @@ public class GlobalConfiguration {
 
 
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    private RegisterTaskDefinitionRequest taskDefinitionRequest(String dockerImage, String baseUrl, String sidekick) {
+    private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
         return new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
                         Constants.AGENT_BASE_DEFINITION
-                            .withImage(dockerImage)
+                            .withImage(configuration.getDockerImage())
                             .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(dockerImage)),
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
                         Constants.SIDEKICK_DEFINITION
                             .withImage(sidekick))
                 .withFamily(getTaskDefinitionName());
@@ -96,24 +97,24 @@ public class GlobalConfiguration {
      * @param name The sidekick repository
      */
     synchronized Collection<Exception> setSidekick(String name) {
-        ConcurrentMap<String, Integer> dockerMappings = getAllRegistrations();
+        ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
         Collection<Exception> exceptions = new ArrayList<>();
-        for (Entry<String, Integer> entry: Maps.newHashMap(dockerMappings).entrySet()) {
-            String dockerImage = entry.getKey();
+        for (Entry<Configuration, Integer> entry: Maps.newHashMap(dockerMappings).entrySet()) {
+            Configuration configuration = entry.getKey();
             Integer revision = entry.getValue();
             try {
-                Integer newRev = registerDockerImageECS(dockerImage, name);
-                dockerMappings.put(dockerImage, newRev);
+                Integer newRev = registerDockerImageECS(configuration, name);
+                dockerMappings.put(configuration, newRev);
             } catch (ECSException e) {
                 exceptions.add(e);
-                dockerMappings.remove(dockerImage);
-                logger.error("Error on re-registering image " + dockerImage, e);
+                dockerMappings.remove(configuration);
+                logger.error("Error on re-registering image " + configuration.getDockerImage(), e);
             } finally {
                 try {
                     deregisterDockerImageECS(revision);
                 } catch (ECSException e) {
                     exceptions.add(e);
-                    logger.error("Error on deregistering image " + dockerImage, e);
+                    logger.error("Error on deregistering image " + configuration, e);
                 }
             }
         }
@@ -172,22 +173,22 @@ public class GlobalConfiguration {
      * @param dockerImage The image to register
      * @return The internal identifier for the registered image.
      */
-    synchronized Integer registerDockerImage(String dockerImage) throws ImageAlreadyRegisteredException, ECSException {
-        ConcurrentMap<String, Integer> dockerMappings = getAllRegistrations();
-        if (dockerMappings.containsKey(dockerImage)) {
-            throw new ImageAlreadyRegisteredException(dockerImage);
+    synchronized Integer registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
+        ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
+        if (dockerMappings.containsKey(configuration)) {
+            throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
         }
         
-        Integer revision = registerDockerImageECS(dockerImage, getCurrentSidekick());
-        dockerMappings.put(dockerImage, revision);
+        Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
+        dockerMappings.put(configuration, revision);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
         return revision;
     }
     
-    private Integer registerDockerImageECS(String dockerImage, String sidekick) throws ECSException {
+    private Integer registerDockerImageECS(Configuration configuration, String sidekick) throws ECSException {
         try {
-            RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(
-                    taskDefinitionRequest(dockerImage, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), sidekick));
+            RegisterTaskDefinitionRequest req = taskDefinitionRequest(configuration, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), sidekick);
+            RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(req);
             return result.getTaskDefinition().getRevision();
         } catch (Exception e) {
             throw new ECSException(e);
@@ -200,11 +201,12 @@ public class GlobalConfiguration {
      * @param revision The internal ECS task definition to deregister
      */
     synchronized void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, ECSException {
-        ConcurrentMap<String, Integer> dockerMappings = getAllRegistrations();
+        ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
         if (!dockerMappings.containsValue(revision)) {
             throw new RevisionNotActiveException(revision);
         }
         deregisterDockerImageECS(revision);
+        //TODO with configuration objects no longer viable solution to remoe just values.
         dockerMappings.values().remove(revision);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
     }
@@ -216,12 +218,25 @@ public class GlobalConfiguration {
             throw new ECSException(e);
         }
     }
+    
+    synchronized Integer findTaskRegistrationVersion(Configuration configuration) {
+        return getAllRegistrations().get(configuration);
+    }
 
     /**
      * @return All the docker image:identifier pairs this service has registered
      */
-    synchronized ConcurrentMap<String, Integer> getAllRegistrations() {
-        ConcurrentHashMap<String, Integer> values = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
+    synchronized ConcurrentMap<Configuration, Integer> getAllRegistrations() {
+        ConcurrentHashMap<Configuration, Integer> values = (ConcurrentHashMap<Configuration, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
+        if (values == null) {
+            //check the old mappings. TODO remove
+            ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+            if (compat != null) {
+                values = convert(compat);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, values);
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+            }
+        }
         return values != null ? values : new ConcurrentHashMap<>();
     }
     
@@ -238,5 +253,13 @@ public class GlobalConfiguration {
     AmazonECS createClient() {
         return new AmazonECSClient();
     }    
+
+    private ConcurrentHashMap<Configuration, Integer> convert(ConcurrentHashMap<String, Integer> compat) {
+        final ConcurrentHashMap<Configuration, Integer> newMap = new ConcurrentHashMap<>();
+        compat.forEach((String t, Integer u) -> {
+            newMap.put(Configuration.of(t), u);
+        });
+        return newMap;
+    }
     
 }
