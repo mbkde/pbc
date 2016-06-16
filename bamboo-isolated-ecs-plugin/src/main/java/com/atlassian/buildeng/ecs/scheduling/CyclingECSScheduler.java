@@ -256,6 +256,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private int scaleDown(DockerHosts hosts, String asgName) {
         List<String> toTerminate = selectToTerminate(hosts);
         if (!toTerminate.isEmpty()) {
+            if (toTerminate.size() > 15) {
+                //actual AWS limit is apparently 20
+                logger.info("Too many instances to kill in one go ({}), killing the first 15 only.", toTerminate.size());
+                toTerminate = toTerminate.subList(0, 14);
+            }
             try {
                 schedulerBackend.terminateInstances(toTerminate, asgName);
             } catch (ECSException ex) {
