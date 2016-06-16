@@ -219,6 +219,11 @@ public class GlobalConfiguration {
         }
     }
     
+    /**
+     * find task definition registration for given configuration
+     * @param configuration
+     * @return either the revision or -1 when not found
+     */
     synchronized int findTaskRegistrationVersion(Configuration configuration) {
         Integer val = getAllRegistrations().get(configuration);
         return val != null ? val : -1;
