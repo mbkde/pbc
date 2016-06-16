@@ -173,7 +173,7 @@ public class GlobalConfiguration {
      * @param dockerImage The image to register
      * @return The internal identifier for the registered image.
      */
-    synchronized Integer registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
+    synchronized int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
         ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
         if (dockerMappings.containsKey(configuration)) {
             throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
@@ -219,8 +219,9 @@ public class GlobalConfiguration {
         }
     }
     
-    synchronized Integer findTaskRegistrationVersion(Configuration configuration) {
-        return getAllRegistrations().get(configuration);
+    synchronized int findTaskRegistrationVersion(Configuration configuration) {
+        Integer val = getAllRegistrations().get(configuration);
+        return val != null ? val : -1;
     }
 
     /**
