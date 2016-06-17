@@ -66,7 +66,7 @@ public class GlobalConfigurationTest {
         map.put(Configuration.of("docker3"), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
@@ -85,7 +85,7 @@ public class GlobalConfigurationTest {
         map.put(Configuration.of("docker3"), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         when(configuration.ecsClient.deregisterTaskDefinition(anyObject())).then(invocation -> {
@@ -108,7 +108,7 @@ public class GlobalConfigurationTest {
         map.put(Configuration.of("docker3"), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> {
             throw new Exception("Error on registering");

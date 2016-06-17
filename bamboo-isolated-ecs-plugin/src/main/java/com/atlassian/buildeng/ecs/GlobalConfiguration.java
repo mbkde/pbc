@@ -118,7 +118,7 @@ public class GlobalConfiguration {
                 }
             }
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new, dockerMappings);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, name);
         return exceptions;
     }
@@ -181,7 +181,7 @@ public class GlobalConfiguration {
         
         Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
         dockerMappings.put(configuration, revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new, dockerMappings);
         return revision;
     }
     
@@ -208,7 +208,7 @@ public class GlobalConfiguration {
         deregisterDockerImageECS(revision);
         //TODO with configuration objects no longer viable solution to remoe just values.
         dockerMappings.values().remove(revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new, dockerMappings);
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {
@@ -227,14 +227,14 @@ public class GlobalConfiguration {
      * @return All the docker image:identifier pairs this service has registered
      */
     synchronized ConcurrentMap<Configuration, Integer> getAllRegistrations() {
-        ConcurrentHashMap<Configuration, Integer> values = (ConcurrentHashMap<Configuration, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
+        ConcurrentHashMap<Configuration, Integer> values = (ConcurrentHashMap<Configuration, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new);
         if (values == null) {
             //check the old mappings. TODO remove
-            ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+            ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
             if (compat != null) {
                 values = convert(compat);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, values);
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new, values);
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
             }
         }
         return values != null ? values : new ConcurrentHashMap<>();
