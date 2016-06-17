@@ -63,9 +63,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     // Isolated Agent Service methods
     @Override
     public void startAgent(IsolatedDockerAgentRequest req, IsolatedDockerRequestCallback callback) {
-        int revision = globalConfiguration.findTaskRegistrationVersion(req.getConfiguration());
+        Integer revision = globalConfiguration.findTaskRegistrationVersion(req.getConfiguration());
         String resultId = req.getResultKey();
-        if (revision == -1) {
+        if (revision == null) {
             try {
                 revision = globalConfiguration.registerDockerImage(req.getConfiguration());
             } catch (ImageAlreadyRegisteredException | ECSException ex) {

@@ -5,11 +5,11 @@ import java.util.UUID;
 public class SchedulingRequest {
     private final UUID identifier;
     private final String resultId;
-    private final int revision;
+    private final Integer revision;
     private final int cpu;
     private final int memory;
 
-    public SchedulingRequest(UUID identifier, String resultId, int revision, int cpu, int memory) {
+    public SchedulingRequest(UUID identifier, String resultId, Integer revision, int cpu, int memory) {
         this.identifier = identifier;
         this.resultId = resultId;
         this.revision = revision;
@@ -25,7 +25,7 @@ public class SchedulingRequest {
         return resultId;
     }
 
-    public int getRevision() {
+    public Integer getRevision() {
         return revision;
     }
 
