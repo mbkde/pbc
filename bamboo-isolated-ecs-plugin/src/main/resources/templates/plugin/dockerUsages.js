@@ -32,7 +32,7 @@ AJS.$(document).ready(function () {
     } else {
         AJS.$('span#dockerImage').append(image);
         AJS.$("#dockerImageDiv").append("<p>Loading...</p>");
-        AJS.$.getJSON(AJS.contextPath() + "/rest/docker/1.0/usages/" + revision, function( data ) {
+        AJS.$.getJSON(AJS.contextPath() + "/rest/docker-ui/1.0/ui/usages/" + revision, function( data ) {
             var div = AJS.$("#dockerImageDiv");
             div.empty();
             if (data.jobs === undefined || data.jobs.length === 0) {
