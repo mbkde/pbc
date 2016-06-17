@@ -208,7 +208,7 @@ public class GlobalConfiguration {
         deregisterDockerImageECS(revision);
         //TODO with configuration objects no longer viable solution to remoe just values.
         dockerMappings.values().remove(revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_new, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {
@@ -217,10 +217,6 @@ public class GlobalConfiguration {
         } catch (Exception e) {
             throw new ECSException(e);
         }
-    }
-    
-    synchronized Integer findTaskRegistrationVersion(Configuration configuration) {
-        return getAllRegistrations().get(configuration);
     }
 
     /**

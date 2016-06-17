@@ -6,8 +6,20 @@
 
 <body>
     <h1>ECS Isolated Docker Agents</h1><br>
-        Only Docker images (and tags) registered with ECS can run in the cluster. Below is the list of images known to this Bamboo server/ECS cluster. 
-List is updated on running a plan the first time, not editing it.
+        Only Docker images (and tags) registered with ECS can run in the cluster. Below is the list of images known to this Bamboo server/ECS cluster.
+
+            <h2>Register new Docker Images</h2>
+
+            <form id="registerDockerImage" class="aui">
+                <fieldset>
+                    <div class="field-group">
+                        <label for="dockerImageToRegister">Register New Image</label>
+                        <input type="text" class="text long-field" id="dockerImageToRegister"
+                                  placeholder="e.g. docker.atlassian.io/buildeng/agent-baseagent"></input>
+                        <button type="button" class="aui-button" onclick="registerImage()">Register</button>
+                    </div>
+                </fieldset>
+            </form>
 
             <h2>Registered Docker Images</h2><br>
 

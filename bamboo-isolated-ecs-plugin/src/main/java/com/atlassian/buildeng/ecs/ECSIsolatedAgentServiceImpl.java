@@ -19,7 +19,7 @@ package com.atlassian.buildeng.ecs;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
+import com.atlassian.buildeng.ecs.exceptions.ImageNotRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
@@ -63,15 +63,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     // Isolated Agent Service methods
     @Override
     public void startAgent(IsolatedDockerAgentRequest req, IsolatedDockerRequestCallback callback) {
-        Integer revision = globalConfiguration.findTaskRegistrationVersion(req.getConfiguration());
+        Integer revision = globalConfiguration.getAllRegistrations().get(req.getConfiguration());
         String resultId = req.getResultKey();
         if (revision == null) {
-            try {
-                revision = globalConfiguration.registerDockerImage(req.getConfiguration());
-            } catch (ImageAlreadyRegisteredException | ECSException ex) {
-                callback.handle(ex);
-                return;
-            }
+            callback.handle(new ImageNotRegisteredException(req.getConfiguration().getDockerImage()));
+            return;
         }
         logger.info("Spinning up new docker agent from task definition {}:{} {}", globalConfiguration.getTaskDefinitionName(), revision, resultId);
         SchedulingRequest schedulingRequest = new SchedulingRequest(
