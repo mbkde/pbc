@@ -16,11 +16,8 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
-import com.atlassian.bamboo.plan.cache.CachedPlanManager;
-import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
@@ -28,7 +25,7 @@ import com.atlassian.buildeng.ecs.rest.GetCurrentASGResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.ecs.rest.RegisterImageResponse;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -43,7 +40,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +50,10 @@ import java.util.stream.Collectors;
 @Path("/")
 public class Rest {
     private final GlobalConfiguration configuration;
-    private final CachedPlanManager cachedPlanManager;
 
     @Autowired
-    public Rest(GlobalConfiguration configuration, CachedPlanManager cachedPlanManager) {
+    public Rest(GlobalConfiguration configuration) {
         this.configuration = configuration;
-        this.cachedPlanManager = cachedPlanManager;
     }
 
     // REST endpoints
@@ -67,10 +61,28 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
-        Map<Configuration, Integer> mappings = configuration.getAllRegistrations();
+        Map<String, Integer> mappings = configuration.getAllRegistrations();
         return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
-                (Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(), entry.getValue())
+                (Entry<String, Integer> entry) -> new DockerMapping(entry.getKey(), entry.getValue())
         ).collect(Collectors.toList()))).build();
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response create(String requestString) throws RestableIsolatedDockerException {
+        String dockerImage;
+        try {
+            JSONObject o = new JSONObject(requestString);
+            dockerImage = o.getString("dockerImage");
+        } catch (JSONException e) {
+            return Response.status(Status.BAD_REQUEST).entity(e.toString()).type("text/plain").build();
+        }
+        if (dockerImage == null) {
+            return Response.status(Status.BAD_REQUEST).entity("Missing 'dockerImage' field").build();
+        }
+        Integer revision = configuration.registerDockerImage(dockerImage);
+        return Response.ok(new RegisterImageResponse(revision)).build();
     }
 
     @DELETE
@@ -182,25 +194,6 @@ public class Rest {
         }
         configuration.setCurrentASG(asg);
         return Response.noContent().build();
-    }
-    
-    @GET
-    @Path("/usages/{revision}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getUsages(@PathParam("revision") final int revision) {
-        //TODO environments
-        List<JobsUsingImageResponse.JobInfo> toRet = new ArrayList<>();
-        cachedPlanManager.getPlans(ImmutableJob.class).stream()
-                .filter(job -> !job.hasMaster())
-                .forEach(job -> {
-                    Configuration config = Configuration.forJob(job);
-                    if (config.isEnabled()) {
-                        if (revision == configuration.findTaskRegistrationVersion(config)) {
-                            toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
-                        }
-                    }
-                });
-        return Response.ok(new JobsUsingImageResponse(toRet)).build();
     }
     
 }

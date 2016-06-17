@@ -1,6 +1,5 @@
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;

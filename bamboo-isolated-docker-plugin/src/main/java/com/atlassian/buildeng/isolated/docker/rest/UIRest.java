@@ -23,8 +23,10 @@ import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.util.Narrow;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.isolated.docker.Configuration;
+import com.atlassian.buildeng.isolated.docker.rest.JobsUsingImageResponse.JobInfo;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
+import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,6 +41,7 @@ import javax.ws.rs.core.Response.Status;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.lang.StringUtils;
 
 @Path("/ui")
 public class UIRest {
@@ -93,5 +96,26 @@ public class UIRest {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> getKnownImages() {
         return isolatedAgentService.getKnownDockerImages();
+    }
+
+    @GET
+    @Path("/usages")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUsages(@QueryParam("image") String dockerImage) {
+        if (StringUtils.isBlank(dockerImage)) {
+            return Response.status(Status.BAD_REQUEST).entity("No 'image' query parameter defined").build();
+        }
+        //TODO environments
+        List<JobInfo> toRet = new ArrayList<>();
+                
+        cpm.getPlans(ImmutableJob.class).stream()
+                .filter(job -> !job.hasMaster())
+                .forEach(job -> {
+                    Configuration config = Configuration.forJob(job);
+                    if (config.isEnabled() && dockerImage.equals(config.getDockerImage())) {
+                        toRet.add(new JobInfo(job.getName(), job.getKey()));
+                    }
+                });
+        return Response.ok(new JobsUsingImageResponse(dockerImage, toRet)).build();
     }
 }

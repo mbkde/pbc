@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.spi.isolated.docker;
+package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
@@ -25,13 +25,11 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import java.io.Serializable;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
-import java.util.Objects;
 
-public final class Configuration implements Serializable {
+public final class Configuration {
 
     
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
@@ -41,20 +39,8 @@ public final class Configuration implements Serializable {
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
-    //TODO temporary for conversion
-    public static Configuration of(String image) {
-        return new Configuration(true, image);
-    }
-    
-    private Object readResolve() {
-        //this is where backwardcompatibility for Configuration deserialization lives.
-        //http://x-stream.github.io/faq.html#Serialization
-        return this;
-    }
-    
 
-    //when storing using bandana/xstream transient means it's not to be serialized
-    private final transient boolean enabled;
+    private final boolean enabled;
     private final String dockerImage;
 
     private Configuration(boolean enabled, String dockerImage) {
@@ -137,29 +123,5 @@ public final class Configuration implements Serializable {
         return dockerImage;
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 59 * hash + Objects.hashCode(this.dockerImage);
-        return hash;
-    }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Configuration other = (Configuration) obj;
-        return Objects.equals(this.dockerImage, other.dockerImage);
-    }
-
-
-    
-    
 }

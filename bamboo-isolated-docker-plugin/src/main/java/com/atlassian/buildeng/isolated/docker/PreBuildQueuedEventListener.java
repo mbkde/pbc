@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
@@ -92,7 +91,7 @@ public class PreBuildQueuedEventListener {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
             jmx.incrementQueued();
-            retry(new RetryAgentStartupEvent(config, buildContext));
+            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
         }
     }
 
@@ -105,7 +104,7 @@ public class PreBuildQueuedEventListener {
             return;
         }
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
+                new IsolatedDockerAgentRequest(event.getDockerImage(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
@@ -188,7 +187,7 @@ public class PreBuildQueuedEventListener {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
             jmx.incrementQueued();
-            retry(new RetryAgentStartupEvent(config, buildContext));
+            retry(new RetryAgentStartupEvent(config.getDockerImage(), buildContext));
         }
     }
     

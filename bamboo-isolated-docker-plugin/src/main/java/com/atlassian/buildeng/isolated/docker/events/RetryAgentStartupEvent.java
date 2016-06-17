@@ -16,7 +16,6 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.v2.build.CommonContext;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.event.api.AsynchronousPreferred;
 
 import java.util.UUID;
@@ -30,18 +29,18 @@ public final class RetryAgentStartupEvent {
 
     private final int retryCount;
     private final CommonContext context;
-    private final Configuration configuration;
+    private final String dockerImage;
     private final UUID uniqueIdentifier;
 
-    public RetryAgentStartupEvent(Configuration configuration, CommonContext context) {
-        this.configuration = configuration;
+    public RetryAgentStartupEvent(String dockerImage, CommonContext context) {
+        this.dockerImage = dockerImage;
         this.context = context;
         retryCount = 0;
         uniqueIdentifier = UUID.randomUUID();
     }
     
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
-        configuration = previousEvent.getConfiguration();
+        dockerImage = previousEvent.getDockerImage();
         context = previousEvent.getContext();
         retryCount = previousEvent.getRetryCount() + 1;
         uniqueIdentifier = previousEvent.uniqueIdentifier;
@@ -51,8 +50,8 @@ public final class RetryAgentStartupEvent {
         return retryCount;
     }
 
-    public Configuration getConfiguration() {
-        return configuration;
+    public String getDockerImage() {
+        return dockerImage;
     }
 
     public CommonContext getContext() {
