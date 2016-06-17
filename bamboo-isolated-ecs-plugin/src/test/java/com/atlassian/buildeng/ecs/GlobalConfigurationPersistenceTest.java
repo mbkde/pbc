@@ -24,6 +24,7 @@ import com.atlassian.bandana.DefaultBandanaManager;
 import com.atlassian.bandana.impl.MemoryBandanaPersister;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +57,7 @@ public class GlobalConfigurationPersistenceTest {
         Integer number = gc.registerDockerImage(c);
         Integer number2 = gc.findTaskRegistrationVersion(c);
         assertEquals(number, number2);
-        ConcurrentMap<Configuration, Integer> map = gc.getAllRegistrations();
+        Map<Configuration, Integer> map = gc.getAllRegistrations();
         
     }
     
@@ -73,7 +74,7 @@ public class GlobalConfigurationPersistenceTest {
         old.put("aaa", 4);
         dbm.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD, old);
 
-        ConcurrentMap<Configuration, Integer> map = gc.getAllRegistrations();
+        Map<Configuration, Integer> map = gc.getAllRegistrations();
         assertEquals(1, map.size());
         Configuration c = Configuration.of("aaa");
         assertEquals(new Integer(4), map.get(c));

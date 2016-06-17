@@ -30,6 +30,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -60,7 +62,7 @@ public class GlobalConfigurationTest {
 
     @Test
     public void setSidekickHappyPath() {
-        ConcurrentMap<Configuration, Integer> map = new ConcurrentHashMap<>();
+        Map<Configuration, Integer> map = new HashMap<>();
         map.put(Configuration.of("docker1"), 1);
         map.put(Configuration.of("docker2"), 2);
         map.put(Configuration.of("docker3"), 3);
@@ -79,7 +81,7 @@ public class GlobalConfigurationTest {
     
     @Test 
     public void setSidekickFailedDeregistrations() {
-        ConcurrentMap<Configuration, Integer> map = new ConcurrentHashMap<>();
+        Map<Configuration, Integer> map = new HashMap<>();
         map.put(Configuration.of("docker1"), 1);
         map.put(Configuration.of("docker2"), 2);
         map.put(Configuration.of("docker3"), 3);
@@ -102,7 +104,7 @@ public class GlobalConfigurationTest {
     
    @Test 
     public void setSidekickFailedRegistrations() {
-        ConcurrentMap<Configuration, Integer> map = new ConcurrentHashMap<>();
+        Map<Configuration, Integer> map = new HashMap<>();
         map.put(Configuration.of("docker1"), 1);
         map.put(Configuration.of("docker2"), 2);
         map.put(Configuration.of("docker3"), 3);

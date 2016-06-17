@@ -36,10 +36,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -97,7 +98,7 @@ public class GlobalConfiguration {
      * @param name The sidekick repository
      */
     synchronized Collection<Exception> setSidekick(String name) {
-        ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
+        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
         Collection<Exception> exceptions = new ArrayList<>();
         for (Entry<Configuration, Integer> entry: Maps.newHashMap(dockerMappings).entrySet()) {
             Configuration configuration = entry.getKey();
@@ -174,7 +175,7 @@ public class GlobalConfiguration {
      * @return The internal identifier for the registered image.
      */
     synchronized int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
-        ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
+        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
         if (dockerMappings.containsKey(configuration)) {
             throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
         }
@@ -201,7 +202,7 @@ public class GlobalConfiguration {
      * @param revision The internal ECS task definition to deregister
      */
     synchronized void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, ECSException {
-        ConcurrentMap<Configuration, Integer> dockerMappings = getAllRegistrations();
+        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
         if (!dockerMappings.containsValue(revision)) {
             throw new RevisionNotActiveException(revision);
         }
@@ -232,8 +233,8 @@ public class GlobalConfiguration {
     /**
      * @return All the docker image:identifier pairs this service has registered
      */
-    synchronized ConcurrentMap<Configuration, Integer> getAllRegistrations() {
-        ConcurrentHashMap<Configuration, Integer> values = (ConcurrentHashMap<Configuration, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
+    synchronized Map<Configuration, Integer> getAllRegistrations() {
+        HashMap<Configuration, Integer> values = (HashMap<Configuration, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
         if (values == null) {
             //check the old mappings. TODO remove
             ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
@@ -243,7 +244,7 @@ public class GlobalConfiguration {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
             }
         }
-        return values != null ? values : new ConcurrentHashMap<>();
+        return values != null ? values : new HashMap<>();
     }
     
     public synchronized String getCurrentASG() {
@@ -260,8 +261,8 @@ public class GlobalConfiguration {
         return new AmazonECSClient();
     }    
 
-    private ConcurrentHashMap<Configuration, Integer> convert(ConcurrentHashMap<String, Integer> compat) {
-        final ConcurrentHashMap<Configuration, Integer> newMap = new ConcurrentHashMap<>();
+    private HashMap<Configuration, Integer> convert(ConcurrentHashMap<String, Integer> compat) {
+        final HashMap<Configuration, Integer> newMap = new HashMap<>();
         compat.forEach((String t, Integer u) -> {
             newMap.put(Configuration.of(t), u);
         });
