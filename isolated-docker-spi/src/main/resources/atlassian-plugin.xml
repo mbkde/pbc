@@ -4,7 +4,4 @@
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
-    <preBuildAction key="dummyPreBuildAction" name="Action performing a very complicated thing" class="com.atlassian.buildeng.spi.isolated.docker.DummyPreBuildAction">
-        <description/>
-    </preBuildAction>
 </atlassian-plugin>
