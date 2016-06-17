@@ -15,7 +15,6 @@
  */
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.Request;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
@@ -23,7 +22,6 @@ import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
-import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
@@ -188,8 +186,8 @@ public class GlobalConfiguration {
     
     private Integer registerDockerImageECS(String dockerImage, String sidekick) throws ECSException {
         try {
-            RegisterTaskDefinitionRequest req = taskDefinitionRequest(dockerImage, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), sidekick);
-            RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(req);
+            RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(
+                    taskDefinitionRequest(dockerImage, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), sidekick));
             return result.getTaskDefinition().getRevision();
         } catch (Exception e) {
             throw new ECSException(e);
