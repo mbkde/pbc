@@ -22,6 +22,7 @@ import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -59,10 +60,10 @@ public class GlobalConfigurationTest {
 
     @Test
     public void setSidekickHappyPath() {
-        ConcurrentMap<String, Integer> map = new ConcurrentHashMap<>();
-        map.put("docker1", 1);
-        map.put("docker2", 2);
-        map.put("docker3", 3);
+        ConcurrentMap<Configuration, Integer> map = new ConcurrentHashMap<>();
+        map.put(Configuration.of("docker1"), 1);
+        map.put(Configuration.of("docker2"), 2);
+        map.put(Configuration.of("docker3"), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
@@ -78,10 +79,10 @@ public class GlobalConfigurationTest {
     
     @Test 
     public void setSidekickFailedDeregistrations() {
-        ConcurrentMap<String, Integer> map = new ConcurrentHashMap<>();
-        map.put("docker1", 1);
-        map.put("docker2", 2);
-        map.put("docker3", 3);
+        ConcurrentMap<Configuration, Integer> map = new ConcurrentHashMap<>();
+        map.put(Configuration.of("docker1"), 1);
+        map.put(Configuration.of("docker2"), 2);
+        map.put(Configuration.of("docker3"), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
@@ -101,10 +102,10 @@ public class GlobalConfigurationTest {
     
    @Test 
     public void setSidekickFailedRegistrations() {
-        ConcurrentMap<String, Integer> map = new ConcurrentHashMap<>();
-        map.put("docker1", 1);
-        map.put("docker2", 2);
-        map.put("docker3", 3);
+        ConcurrentMap<Configuration, Integer> map = new ConcurrentHashMap<>();
+        map.put(Configuration.of("docker1"), 1);
+        map.put(Configuration.of("docker2"), 2);
+        map.put(Configuration.of("docker3"), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
