@@ -51,6 +51,14 @@ import java.util.stream.Collectors;
  * @author mkleint
  */
 public class GlobalConfiguration {
+    
+    // Bandana access keys
+    static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
+    static String BANDANA_DOCKER_MAPPING_KEY_OLD = "com.atlassian.buildeng.ecs.docker";
+    static String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.config";
+    static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
+    static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
+    
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -91,7 +99,7 @@ public class GlobalConfiguration {
      * @return The current sidekick repository
      */
     synchronized String getCurrentSidekick() {
-        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY);
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
         return name == null ? Constants.DEFAULT_SIDEKICK_REPOSITORY : name;
     }
 
@@ -122,8 +130,8 @@ public class GlobalConfiguration {
                 }
             }
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_SIDEKICK_KEY, name);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, name);
         return exceptions;
     }
 
@@ -142,7 +150,7 @@ public class GlobalConfiguration {
      * @return The current cluster name
      */
     public synchronized String getCurrentCluster() {
-        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_CLUSTER_KEY);
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY);
         return name == null ? Constants.DEFAULT_CLUSTER : name;
     }
 
@@ -152,7 +160,7 @@ public class GlobalConfiguration {
      * @param name The cluster name
      */
     synchronized void setCluster(String name) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_CLUSTER_KEY, name);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, name);
     }
 
     /**
@@ -185,7 +193,7 @@ public class GlobalConfiguration {
         
         Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
         dockerMappings.put(configuration, revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
         return revision;
     }
     
@@ -212,7 +220,7 @@ public class GlobalConfiguration {
         deregisterDockerImageECS(revision);
         //TODO with configuration objects no longer viable solution to remoe just values.
         dockerMappings.values().remove(revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {
@@ -237,14 +245,14 @@ public class GlobalConfiguration {
      * @return All the docker image:identifier pairs this service has registered
      */
     synchronized Map<Configuration, Integer> getAllRegistrations() {
-        Map<String, Integer> values = (HashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
+        Map<String, Integer> values = (HashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         if (values == null) {
             //check the old mappings. TODO remove
-            ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+            ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
             if (compat != null) {
                 Map<Configuration, Integer> newVals = convertOld(compat);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, newVals);
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, newVals);
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
                 return newVals;
             } else {
                 return new HashMap<>();
@@ -255,12 +263,12 @@ public class GlobalConfiguration {
     }
     
     public synchronized String getCurrentASG() {
-        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_ASG_KEY);
+        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY);
         return name == null ? "" : name;
     }
     
     synchronized void setCurrentASG(String name) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_ASG_KEY, name);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, name);
     }    
 
     @VisibleForTesting

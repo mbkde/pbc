@@ -72,13 +72,13 @@ public class GlobalConfigurationTest {
         map.put(configuration.persist(Configuration.of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertTrue(errors.isEmpty());
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(Constants.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
     }
     
     @Test 
@@ -89,7 +89,7 @@ public class GlobalConfigurationTest {
         map.put(configuration.persist(Configuration.of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         when(configuration.ecsClient.deregisterTaskDefinition(anyObject())).then(invocation -> {
@@ -97,7 +97,7 @@ public class GlobalConfigurationTest {
         });
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertEquals(3, errors.size());
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(Constants.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
     }
     
    @Test 
@@ -108,7 +108,7 @@ public class GlobalConfigurationTest {
         map.put(configuration.persist(Configuration.of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> {
             throw new Exception("Error on registering");
@@ -116,7 +116,7 @@ public class GlobalConfigurationTest {
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertEquals(3, errors.size());
         //registrations unsuccessful, removed
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(Constants.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new EmptyMapMatcher()));
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new EmptyMapMatcher()));
     }    
 
     public static class GlobalConfigurationSubclass extends GlobalConfiguration {

@@ -7,12 +7,6 @@ import com.amazonaws.services.ecs.model.LogDriver;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 
 public interface Constants {
-    // Bandana access keys
-    String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
-    String BANDANA_DOCKER_MAPPING_KEY_OLD = "com.atlassian.buildeng.ecs.docker";
-    String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.config";
-    String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
-    String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
 
     // ECS
 
