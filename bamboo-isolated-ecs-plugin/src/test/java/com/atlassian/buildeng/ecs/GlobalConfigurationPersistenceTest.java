@@ -27,7 +27,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.mockito.Matchers.anyObject;
@@ -61,7 +63,7 @@ public class GlobalConfigurationPersistenceTest {
         
     }
     
-       @Test
+    @Test
     public void conversionFromOldTest() throws Exception {
         DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
         AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
@@ -78,5 +80,17 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals(1, map.size());
         Configuration c = Configuration.of("aaa");
         assertEquals(new Integer(4), map.get(c));
+    }
+    
+    @Test
+    public void testVersion1() {
+        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
+        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
+        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
+        
+        String persistedValue = "{'image'='aaa'}";
+        Configuration conf = gc.load(persistedValue);
+        assertNotNull(conf);
+        assertEquals("aaa", conf.getDockerImage());
     }
 }

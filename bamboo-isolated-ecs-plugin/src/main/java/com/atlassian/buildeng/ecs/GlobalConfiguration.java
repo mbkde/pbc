@@ -31,6 +31,9 @@ import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,7 +185,7 @@ public class GlobalConfiguration {
         
         Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
         dockerMappings.put(configuration, revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
         return revision;
     }
     
@@ -209,7 +212,7 @@ public class GlobalConfiguration {
         deregisterDockerImageECS(revision);
         //TODO with configuration objects no longer viable solution to remoe just values.
         dockerMappings.values().remove(revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {
@@ -234,17 +237,21 @@ public class GlobalConfiguration {
      * @return All the docker image:identifier pairs this service has registered
      */
     synchronized Map<Configuration, Integer> getAllRegistrations() {
-        HashMap<Configuration, Integer> values = (HashMap<Configuration, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
+        Map<String, Integer> values = (HashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY);
         if (values == null) {
             //check the old mappings. TODO remove
             ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
             if (compat != null) {
-                values = convert(compat);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, values);
+                Map<Configuration, Integer> newVals = convertOld(compat);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY, newVals);
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY_OLD);
+                return newVals;
+            } else {
+                return new HashMap<>();
             }
+        } else {
+            return convertFromPersisted(values);
         }
-        return values != null ? values : new HashMap<>();
     }
     
     public synchronized String getCurrentASG() {
@@ -261,12 +268,46 @@ public class GlobalConfiguration {
         return new AmazonECSClient();
     }    
 
-    private HashMap<Configuration, Integer> convert(ConcurrentHashMap<String, Integer> compat) {
+    private Map<Configuration, Integer> convertOld(ConcurrentHashMap<String, Integer> compat) {
         final HashMap<Configuration, Integer> newMap = new HashMap<>();
         compat.forEach((String t, Integer u) -> {
             newMap.put(Configuration.of(t), u);
         });
         return newMap;
     }
+    
+    private Map<Configuration, Integer> convertFromPersisted(Map<String, Integer> persisted) {
+        final HashMap<Configuration, Integer> newMap = new HashMap<>();
+        persisted.forEach((String t, Integer u) -> {
+            newMap.put(load(t), u);
+        });
+        return newMap;
+    }    
+    
+    private Map<String, Integer> convertToPersisted(Map<Configuration, Integer> val) {
+        final HashMap<String, Integer> newMap = new HashMap<>();
+        val.forEach((Configuration t, Integer u) -> {
+            newMap.put(persist(t), u);
+        });
+        return newMap;
+    }
+    
+    @VisibleForTesting
+    String persist(Configuration conf) {
+        JsonObject el = new JsonObject();
+        el.addProperty("image", conf.getDockerImage());
+        return el.toString();
+    }
+    
+    @VisibleForTesting
+    Configuration load(String source) {
+        JsonParser p = new JsonParser();
+        JsonElement obj = p.parse(source);
+        if (obj.isJsonObject()) {
+            return Configuration.of(obj.getAsJsonObject().getAsJsonPrimitive("image").getAsString());
+        }
+        return null;
+    }
+    
     
 }
