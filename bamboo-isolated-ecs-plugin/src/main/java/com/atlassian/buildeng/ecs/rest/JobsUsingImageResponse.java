@@ -13,12 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.atlassian.buildeng.ecs.rest;
 
-package com.atlassian.buildeng.isolated.docker;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
-import com.opensymphony.xwork2.ActionSupport;
+@SuppressWarnings("FieldCanBeLocal")
+public final class JobsUsingImageResponse {
+    public final List<JobInfo> jobs;
 
-public class DockerUsagesAction extends ActionSupport {
+    public JobsUsingImageResponse( @NotNull List<JobInfo> jobs) {
+        this.jobs = jobs;
+    }
     
-    
+
+    public final static class JobInfo {
+        public final String name;
+        public final String key;
+
+        public JobInfo(String name, String key) {
+            this.name = name;
+            this.key = key;
+        }
+        
+    }
 }

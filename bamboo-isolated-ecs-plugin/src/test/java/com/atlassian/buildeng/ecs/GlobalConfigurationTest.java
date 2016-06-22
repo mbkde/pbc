@@ -22,6 +22,7 @@ import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -29,13 +30,19 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -59,32 +66,30 @@ public class GlobalConfigurationTest {
 
     @Test
     public void setSidekickHappyPath() {
-        ConcurrentMap<String, Integer> map = new ConcurrentHashMap<>();
-        map.put("docker1", 1);
-        map.put("docker2", 2);
-        map.put("docker3", 3);
+        Map<String, Integer> map = new HashMap<>();
+        map.put(configuration.persist(Configuration.of("docker1")), 1);
+        map.put(configuration.persist(Configuration.of("docker2")), 2);
+        map.put(configuration.persist(Configuration.of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertTrue(errors.isEmpty());
-        assertEquals(3, map.size());
-        for (Integer val : map.values()) {
-            assertTrue("value greater than 3", val > 3);
-        }
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
     }
     
     @Test 
     public void setSidekickFailedDeregistrations() {
-        ConcurrentMap<String, Integer> map = new ConcurrentHashMap<>();
-        map.put("docker1", 1);
-        map.put("docker2", 2);
-        map.put("docker3", 3);
+        Map<String, Integer> map = new HashMap<>();
+        map.put(configuration.persist(Configuration.of("docker1")), 1);
+        map.put(configuration.persist(Configuration.of("docker2")), 2);
+        map.put(configuration.persist(Configuration.of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         when(configuration.ecsClient.deregisterTaskDefinition(anyObject())).then(invocation -> {
@@ -92,22 +97,18 @@ public class GlobalConfigurationTest {
         });
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertEquals(3, errors.size());
-        assertEquals(3, map.size());
-        //all new registration are there..
-        for (Integer val : map.values()) {
-            assertTrue("value greater than 3", val > 3);
-        }
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
     }
     
    @Test 
     public void setSidekickFailedRegistrations() {
-        ConcurrentMap<String, Integer> map = new ConcurrentHashMap<>();
-        map.put("docker1", 1);
-        map.put("docker2", 2);
-        map.put("docker3", 3);
+        Map<String, Integer> map = new HashMap<>();
+        map.put(configuration.persist(Configuration.of("docker1")), 1);
+        map.put(configuration.persist(Configuration.of("docker2")), 2);
+        map.put(configuration.persist(Configuration.of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, Constants.BANDANA_DOCKER_MAPPING_KEY))
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
                 .thenReturn(map);
         when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> {
             throw new Exception("Error on registering");
@@ -115,7 +116,7 @@ public class GlobalConfigurationTest {
         Collection<Exception> errors = configuration.setSidekick("newSidekick");
         assertEquals(3, errors.size());
         //registrations unsuccessful, removed
-        assertEquals(0, map.size());
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new EmptyMapMatcher()));
     }    
 
     public static class GlobalConfigurationSubclass extends GlobalConfiguration {
@@ -130,6 +131,37 @@ public class GlobalConfigurationTest {
             return ecsClient;
         }
         
+    }
+    
+    private static class MapMatcher extends BaseMatcher<Map<String, Integer>> {
+        @Override
+            public boolean matches(Object item) {
+                Map<String, Integer> map = (Map<String, Integer>) item;
+                assertEquals(3, map.size());
+                for (Integer val : map.values()) {
+                    assertTrue("value greater than 3", val > 3);
+                }
+                return true;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("map");
+            }
+    }
+    
+    private static class EmptyMapMatcher extends BaseMatcher<Map<String, Integer>> {
+        @Override
+            public boolean matches(Object item) {
+                Map<String, Integer> map = (Map<String, Integer>) item;
+                assertEquals(0, map.size());
+                return true;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("map");
+            }
     }
     
 }
