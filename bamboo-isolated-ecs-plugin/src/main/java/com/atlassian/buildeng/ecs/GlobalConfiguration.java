@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -245,7 +246,17 @@ public class GlobalConfiguration {
      * @return All the docker image:identifier pairs this service has registered
      */
     synchronized Map<Configuration, Integer> getAllRegistrations() {
-        Map<String, Integer> values = (HashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
+        //TODO remove once deployed everywhere and the old data is wiped
+        //a previously rollbacked version was keeping a Concurrent map here, we
+        //changed that eventually to a plan Map, but we don't want to data inside either
+        // need to wipe it.
+        Object val = bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
+        Map<String, Integer> values;
+        if (val instanceof ConcurrentHashMap) {
+            values = null;
+        } else {
+            values = (Map<String, Integer>)val;
+        }
         if (values == null) {
             //check the old mappings. TODO remove
             ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
