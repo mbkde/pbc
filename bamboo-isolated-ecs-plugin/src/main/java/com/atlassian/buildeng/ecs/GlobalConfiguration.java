@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +55,7 @@ public class GlobalConfiguration {
     // Bandana access keys
     static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
     static String BANDANA_DOCKER_MAPPING_KEY_OLD = "com.atlassian.buildeng.ecs.docker";
-    static String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.config";
+    static String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.config2";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
     
@@ -131,9 +130,13 @@ public class GlobalConfiguration {
                 }
             }
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, dockerMappings);
+        persistBandanaDockerMappingsConfiguration(dockerMappings);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, name);
         return exceptions;
+    }
+
+    private void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
     }
 
     /**
@@ -194,7 +197,7 @@ public class GlobalConfiguration {
         
         Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
         dockerMappings.put(configuration, revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
+        persistBandanaDockerMappingsConfiguration(dockerMappings);
         return revision;
     }
     
@@ -221,7 +224,7 @@ public class GlobalConfiguration {
         deregisterDockerImageECS(revision);
         //TODO with configuration objects no longer viable solution to remoe just values.
         dockerMappings.values().remove(revision);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
+        persistBandanaDockerMappingsConfiguration(dockerMappings);
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {
@@ -246,23 +249,13 @@ public class GlobalConfiguration {
      * @return All the docker image:identifier pairs this service has registered
      */
     synchronized Map<Configuration, Integer> getAllRegistrations() {
-        //TODO remove once deployed everywhere and the old data is wiped
-        //a previously rollbacked version was keeping a Concurrent map here, we
-        //changed that eventually to a plan Map, but we don't want to data inside either
-        // need to wipe it.
-        Object val = bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
-        Map<String, Integer> values;
-        if (val instanceof ConcurrentHashMap) {
-            values = null;
-        } else {
-            values = (Map<String, Integer>)val;
-        }
+        Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         if (values == null) {
             //check the old mappings. TODO remove
             ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
             if (compat != null) {
                 Map<Configuration, Integer> newVals = convertOld(compat);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, newVals);
+                persistBandanaDockerMappingsConfiguration(newVals);
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
                 return newVals;
             } else {
