@@ -29,6 +29,7 @@ public class DockerHostGenerator extends Generator<DockerHost> {
         String instanceId = stringGenerator.generate(r, status);
         Date launchTime = new DateGenerator().generate(r, status);
         boolean agentConnected = r.nextBoolean();
-        return new DockerHost(remainingMemory, remainingCpu, registeredMemory, registeredCpu, containerInstanceArn, instanceId, launchTime, agentConnected);
+        return new DockerHost(remainingMemory, remainingCpu, registeredMemory, registeredCpu, 
+                containerInstanceArn, instanceId, launchTime, agentConnected, "m4.10xlarge");
     }
 }

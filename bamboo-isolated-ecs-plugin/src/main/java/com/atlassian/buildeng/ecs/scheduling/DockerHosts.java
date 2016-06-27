@@ -3,6 +3,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,10 @@ final class DockerHosts {
 
     public int getSize() {
         return all.size();
+    }
+    
+    public List<DockerHost> all() {
+        return Collections.unmodifiableList(all);
     }
 
     List<DockerHost> fresh() {

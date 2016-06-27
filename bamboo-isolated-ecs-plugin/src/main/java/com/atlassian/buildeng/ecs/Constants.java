@@ -54,10 +54,6 @@ public interface Constants {
     int TASK_CPU = SIDEKICK_CPU + AGENT_CPU;
     int TASK_MEMORY = SIDEKICK_MEMORY + AGENT_MEMORY;
 
-    //m4.10xlarge
-    int INSTANCE_CPU = 40960;
-    int INSTANCE_MEMORY = 161186;
-
     // fluentd config
 
     // LaaS requirements

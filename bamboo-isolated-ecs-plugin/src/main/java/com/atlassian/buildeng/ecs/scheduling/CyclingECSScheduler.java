@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -191,8 +192,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //calculate usage from used fresh instances only
         if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
             // cpu and memory requirements in instances
-            long cpuRequirements = lackingCPU / Constants.INSTANCE_CPU;
-            long memoryRequirements = lackingMemory / Constants.INSTANCE_MEMORY;
+            Pair<Integer, Integer> t = computeLimits(hosts.all());
+            long cpuRequirements = lackingCPU / t.getLeft();
+            long memoryRequirements = lackingMemory / t.getRight();
             logger.info("Scaling w.r.t. this much cpu " + lackingCPU);
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
@@ -268,6 +270,18 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             }
         }
         return toTerminate.size();
+    }
+
+    //compute what the current instance type can satisfy
+    private Pair<Integer, Integer> computeLimits(List<DockerHost> fresh) {
+        //we settle on minimum as that's the safer option here, better to scale faster than slower.
+        //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
+        // the current instance size is in launchconfig
+        OptionalInt minCpu = fresh.stream().mapToInt((DockerHost value) -> value.getInstanceCPU()).min();
+        OptionalInt minMemory = fresh.stream().mapToInt((DockerHost value) -> value.getInstanceMemory()).min();
+        //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
+        //current arbitrary values based on "m4.4xlarge"
+        return Pair.of(minCpu.orElse(16384), minMemory.orElse(64419));
     }
 
     private class EndlessPolling implements Runnable {

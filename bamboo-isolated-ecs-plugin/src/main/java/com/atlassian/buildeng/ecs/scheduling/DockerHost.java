@@ -10,8 +10,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.TestOnly;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DockerHost {
+    private final static Logger logger = LoggerFactory.getLogger(DockerHost.class);
+
     private int remainingMemory;
     private int remainingCpu;
     private final int registeredMemory;
@@ -20,9 +24,13 @@ public class DockerHost {
     private final String instanceId;
     private final Date launchTime;
     private final boolean agentConnected;
+    //how much memory has the instance available for docker containers
+    private final int instanceCPU;
+    private final int instanceMemory;
+    
 
     @TestOnly
-    DockerHost(int remainingMemory, int remainingCpu, int registeredMemory, int registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, boolean agentConnected) {
+    DockerHost(int remainingMemory, int remainingCpu, int registeredMemory, int registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, boolean agentConnected, String instanceType) {
         this.remainingMemory = remainingMemory;
         this.remainingCpu = remainingCpu;
         this.registeredMemory = registeredMemory;
@@ -31,6 +39,8 @@ public class DockerHost {
         this.instanceId = instanceId;
         this.launchTime = launchTime;
         this.agentConnected = agentConnected;
+        this.instanceCPU = computeInstanceCPU(instanceType);
+        this.instanceMemory = computeInstanceMemory(instanceType);
     }
 
     public DockerHost(ContainerInstance containerInstance, Instance instance) throws ECSException {
@@ -42,6 +52,8 @@ public class DockerHost {
         instanceId = containerInstance.getEc2InstanceId();
         launchTime = instance.getLaunchTime();
         agentConnected = containerInstance.isAgentConnected();
+        instanceCPU = computeInstanceCPU(instance.getInstanceType());
+        instanceMemory = computeInstanceMemory(instance.getInstanceType());
     }
 
     private static int getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
@@ -117,6 +129,22 @@ public class DockerHost {
         return instanceId;
     }
 
+    /**
+     * the total cpu available for docker containers on the instance.
+     * @return 
+     */
+    public int getInstanceCPU() {
+        return instanceCPU;
+    }
+
+    /**
+     * the total memory available for docker containers on the instance.
+     * @return 
+     */
+    public int getInstanceMemory() {
+        return instanceMemory;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -148,10 +176,34 @@ public class DockerHost {
                 ", remainingCpu=" + remainingCpu +
                 ", registeredMemory=" + registeredMemory +
                 ", registeredCpu=" + registeredCpu +
+                ", instanceMemory=" + instanceMemory + 
+                ", instanceCpu=" + instanceCPU + 
                 ", containerInstanceArn='" + containerInstanceArn + '\'' +
                 ", instanceId='" + instanceId + '\'' +
                 ", launchTime=" + launchTime +
                 ", agentConnected=" + agentConnected +
                 '}';
+    } 
+
+    private int computeInstanceCPU(String instanceType) {
+        if ("m4.4xlarge".equals(instanceType)) {
+            return 16384;
+        }
+        else if ("m4.10xlarge".equals(instanceType)) {
+            return 40960;
+        }
+        logger.error("unknown instance type {}, cannot calculate instance CPU, falling back to 16384", instanceType);
+        return 16384;
+    }
+
+    private int computeInstanceMemory(String instanceType) {
+        if ("m4.4xlarge".equals(instanceType)) {
+            return 64419;
+        }
+        else if ("m4.10xlarge".equals(instanceType)) {
+            return 161186;
+        }
+        logger.error("unknown instance type {}, cannot calculate instance memory, falling back to 64419", instanceType);
+        return 64419;
     }
 }
