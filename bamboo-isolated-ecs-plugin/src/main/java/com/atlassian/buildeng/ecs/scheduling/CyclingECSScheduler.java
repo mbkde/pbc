@@ -281,7 +281,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         OptionalInt minMemory = fresh.stream().mapToInt((DockerHost value) -> value.getInstanceMemory()).min();
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
-        return Pair.of(minCpu.orElse(16384), minMemory.orElse(64419));
+        return Pair.of(minCpu.orElse(DockerHost.DEFAULT_INSTANCE_CPU), minMemory.orElse(DockerHost.DEFAULT_INSTANCE_MEMORY));
     }
 
     private class EndlessPolling implements Runnable {

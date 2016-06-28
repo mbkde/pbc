@@ -184,6 +184,10 @@ public class DockerHost {
                 ", agentConnected=" + agentConnected +
                 '}';
     } 
+    
+    //magic numbers derived from m4.4xlarge
+    static int DEFAULT_INSTANCE_CPU = 16384;
+    static int DEFAULT_INSTANCE_MEMORY = 64419;
 
     private int computeInstanceCPU(String instanceType) {
         if ("m4.4xlarge".equals(instanceType)) {
@@ -193,7 +197,7 @@ public class DockerHost {
             return 40960;
         }
         logger.error("unknown instance type {}, cannot calculate instance CPU, falling back to 16384", instanceType);
-        return 16384;
+        return DEFAULT_INSTANCE_CPU;
     }
 
     private int computeInstanceMemory(String instanceType) {
@@ -204,6 +208,6 @@ public class DockerHost {
             return 161186;
         }
         logger.error("unknown instance type {}, cannot calculate instance memory, falling back to 64419", instanceType);
-        return 64419;
+        return DEFAULT_INSTANCE_MEMORY;
     }
 }
