@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,10 +138,9 @@ public class ECSWatchdogJob implements PluginJob {
         StringBuilder sb = new StringBuilder();
         sb.append(tsk.getStoppedReason()).append(":");
         tsk.getContainers().stream()
-                .filter((Container t) -> Constants.AGENT_CONTAINER_NAME.equals(t.getName()))
-                .filter((Container t) -> t.getReason() != null)
+                .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
                 .forEach((c) -> {
-                    sb.append(c.getReason());
+                    sb.append(c.getName()).append("[").append(c.getReason()).append("],");
         });
         return sb.toString();
     }
