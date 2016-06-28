@@ -192,9 +192,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //calculate usage from used fresh instances only
         if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
             // cpu and memory requirements in instances
-            Pair<Integer, Integer> t = computeLimits(hosts.all());
-            long cpuRequirements = lackingCPU / t.getLeft();
-            long memoryRequirements = lackingMemory / t.getRight();
+            long cpuRequirements = lackingCPU / computeInstanceCPULimits(hosts.all());
+            long memoryRequirements = lackingMemory / computeInstanceMemoryLimits(hosts.all());
             logger.info("Scaling w.r.t. this much cpu " + lackingCPU);
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
@@ -272,16 +271,37 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         return toTerminate.size();
     }
 
-    //compute what the current instance type can satisfy
-    private Pair<Integer, Integer> computeLimits(List<DockerHost> fresh) {
+    /**
+     * compute current value for available instance CPU of currently running instances
+     * 
+     * @param hosts known current hosts
+     * @return number of CPU power available
+     */
+    private int computeInstanceCPULimits(List<DockerHost> hosts) {
         //we settle on minimum as that's the safer option here, better to scale faster than slower.
         //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
-        OptionalInt minCpu = fresh.stream().mapToInt((DockerHost value) -> value.getInstanceCPU()).min();
-        OptionalInt minMemory = fresh.stream().mapToInt((DockerHost value) -> value.getInstanceMemory()).min();
+        OptionalInt minCpu = hosts.stream().mapToInt((DockerHost value) -> value.getInstanceCPU()).min();
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
-        return Pair.of(minCpu.orElse(DockerHost.DEFAULT_INSTANCE_CPU), minMemory.orElse(DockerHost.DEFAULT_INSTANCE_MEMORY));
+        return minCpu.orElse(DockerHost.DEFAULT_INSTANCE_CPU);
+    }
+ 
+    
+    /**
+     * compute current value for available instance memory of currently running instances
+     * 
+     * @param hosts known current hosts
+     * @return number of memory available
+     */
+    private int computeInstanceMemoryLimits(List<DockerHost> hosts) {
+        //we settle on minimum as that's the safer option here, better to scale faster than slower.
+        //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
+        // the current instance size is in launchconfig
+        OptionalInt minMemory = hosts.stream().mapToInt((DockerHost value) -> value.getInstanceMemory()).min();
+        //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
+        //current arbitrary values based on "m4.4xlarge"
+        return minMemory.orElse(DockerHost.DEFAULT_INSTANCE_MEMORY);
     }
 
     private class EndlessPolling implements Runnable {
