@@ -185,29 +185,34 @@ public class DockerHost {
                 '}';
     } 
     
-    //magic numbers derived from m4.4xlarge
-    static int DEFAULT_INSTANCE_CPU = 16384;
-    static int DEFAULT_INSTANCE_MEMORY = 64419;
+    private static final int M44XLARGE_CPU = 16384;
+    private static final int M44XLARGE_MEMORY = 64419;
+    private static final int M410XLARGE_MEMORY = 161186;
+    private static final int M410XLARGE_CPU = 40960;
+    static int DEFAULT_INSTANCE_MEMORY = M44XLARGE_MEMORY;
+    static int DEFAULT_INSTANCE_CPU = M44XLARGE_CPU;
+    private static final String M410XLARGE = "m4.10xlarge";
+    private static final String M44XLARGE = "m4.4xlarge";
 
     private int computeInstanceCPU(String instanceType) {
-        if ("m4.4xlarge".equals(instanceType)) {
-            return 16384;
+        if (M44XLARGE.equals(instanceType)) {
+            return M44XLARGE_CPU;
         }
-        else if ("m4.10xlarge".equals(instanceType)) {
-            return 40960;
+        else if (M410XLARGE.equals(instanceType)) {
+            return M410XLARGE_CPU;
         }
-        logger.error("unknown instance type {}, cannot calculate instance CPU, falling back to 16384", instanceType);
+        logger.error("unknown instance type {}, cannot calculate instance CPU, falling back to {}", instanceType, DEFAULT_INSTANCE_CPU);
         return DEFAULT_INSTANCE_CPU;
     }
 
     private int computeInstanceMemory(String instanceType) {
-        if ("m4.4xlarge".equals(instanceType)) {
-            return 64419;
+        if (M44XLARGE.equals(instanceType)) {
+            return M44XLARGE_MEMORY;
         }
-        else if ("m4.10xlarge".equals(instanceType)) {
-            return 161186;
+        else if (M410XLARGE.equals(instanceType)) {
+            return M410XLARGE_MEMORY;
         }
-        logger.error("unknown instance type {}, cannot calculate instance memory, falling back to 64419", instanceType);
+        logger.error("unknown instance type {}, cannot calculate instance memory, falling back to {}", instanceType, DEFAULT_INSTANCE_MEMORY);
         return DEFAULT_INSTANCE_MEMORY;
     }
 }
