@@ -464,7 +464,7 @@ public class CyclingECSSchedulerTest {
     }
     
     private Instance ec2(String ec2id, Date launchTime) {
-        return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime);
+        return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime).withInstanceType("m4.4xlarge");
     }
     
     private void awaitProcessing(CyclingECSScheduler scheduler) throws InterruptedException {
