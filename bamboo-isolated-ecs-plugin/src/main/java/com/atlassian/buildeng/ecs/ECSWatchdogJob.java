@@ -112,7 +112,7 @@ public class ECSWatchdogJob implements PluginJob {
                         Task tsk = stoppedTasksByArn.get(taskArn);
                         if (tsk != null) {
                             String error = getError(tsk);
-                            logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), taskArn, error);
+                            logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                             errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(Constants.RESULT_ERROR, error);
                             if (t.getView() instanceof BuildContext) {
