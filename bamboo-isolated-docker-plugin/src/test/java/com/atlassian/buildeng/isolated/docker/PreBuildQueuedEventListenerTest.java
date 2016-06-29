@@ -31,6 +31,10 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -73,6 +77,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
     @Test
@@ -124,8 +129,62 @@ public class PreBuildQueuedEventListenerTest {
         listener.call(event);
         verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
         verify(scheduler, times(1)).reschedule(anyObject());
+        assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
+    @Test
+    public void testRerunAfterFailure() throws IsolatedDockerAgentException {
+        BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
+        
+        Mockito.doAnswer(invocation -> {
+            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            cb.handle(new IsolatedDockerAgentResult().withError("Error"));
+            return null;
+        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        
+        //now check the rerun
+        Mockito.doAnswer(invocation -> {
+            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            cb.handle(new IsolatedDockerAgentResult());
+            return null;
+        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+
+        event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+        assertNotEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        
+    }
+    
+    @Test
+    public void testRerunAfterFailureWithoutDocker() throws IsolatedDockerAgentException {
+        BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
+        
+        Mockito.doAnswer(invocation -> {
+            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            cb.handle(new IsolatedDockerAgentResult().withError("Error1"));
+            return null;
+        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        assertEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        
+        //now check the rerun
+        buildContext.getBuildDefinition().getCustomConfiguration().put(Configuration.ENABLED_FOR_JOB, "false");
+        assertEquals("false", buildContext.getBuildDefinition().getCustomConfiguration().get(Configuration.ENABLED_FOR_JOB));
+                
+        event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+        assertNotEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.ENABLED_FOR_JOB));
+        assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.DOCKER_IMAGE));
+    }    
     
 
     private BuildContext mockBuildContext(boolean dockerEnabled, String image, LifeCycleState state) {
