@@ -93,6 +93,11 @@ public class PreBuildQueuedEventListener {
             buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config, buildContext));
+        } else {
+            //when a rerun happens and docker agents were disabled.
+            buildContext.getCurrentResult().getCustomBuildData().remove(Configuration.ENABLED_FOR_JOB);
+            buildContext.getCurrentResult().getCustomBuildData().remove(Configuration.DOCKER_IMAGE);
+            clearResultCustomData(event.getContext());
         }
     }
 
@@ -104,15 +109,13 @@ public class PreBuildQueuedEventListener {
             jmx.incrementCancelled();
             return;
         }
+        clearResultCustomData(event.getContext());
+        
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
-                        //custom items pushed by the implementation, we give it a unique prefix
-                        result.getCustomResultData().entrySet().stream().forEach(ent -> {
-                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
-                        });
                         if (result.isRetryRecoverable()) {
                             LOG.warn("Build {} was not queued but recoverable, retrying.. Error message: {}", event.getContext().getResultKey().getKey(), Joiner.on("\n").join(result.getErrors()));
                             if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
@@ -120,6 +123,10 @@ public class PreBuildQueuedEventListener {
                             }
                             jmx.incrementTimedOut();
                         }
+                        //custom items pushed by the implementation, we give it a unique prefix
+                        result.getCustomResultData().entrySet().stream().forEach(ent -> {
+                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
+                        });
                         if (result.hasErrors()) {
                             terminateBuild();
                             errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
@@ -149,6 +156,17 @@ public class PreBuildQueuedEventListener {
                     }
                 });
 
+    }
+
+    private void clearResultCustomData(CommonContext context) {
+        //remove any preexisting items when queuing, these are remains of the
+        //previous run and can interfere with further processing and are polluting the ui.
+        context.getCurrentResult().getCustomBuildData().keySet().stream()
+                .filter((String t) -> t.startsWith(Constants.RESULT_PREFIX))
+                .forEach((String t) -> {
+                    context.getCurrentResult().getCustomBuildData().remove(t);
+                });
+        context.getCurrentResult().getCustomBuildData().remove(Constants.RESULT_ERROR);
     }
 
     private boolean isStillQueued(CommonContext context) {
