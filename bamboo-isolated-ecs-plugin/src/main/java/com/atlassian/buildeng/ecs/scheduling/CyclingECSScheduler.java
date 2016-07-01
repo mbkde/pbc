@@ -175,9 +175,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     }
                     //scale up + down and set all other queued requests to null.
                     someDiscarded = true;
-                    throw new ECSException("Capacity not available");
+                    pair.getRight().handle(new ECSException("Capacity not available"));
                 }
             } catch (ECSException ex) {
+                logger.error("Scheduling failed", ex);
                 pair.getRight().handle(ex);
             }
             pair = requests.poll();
