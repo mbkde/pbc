@@ -143,8 +143,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         //see if we need to scale up or down..
         int currentSize = hosts.getUsableSize();
-        //TODO substract because we currently keeping those that have some reservations, but is this just stale data or
-        // valid content?
+        //substract because we currently keeping those that have some reservations, but is this just stale data or
         int disconnectedSize = hosts.agentDisconnected().size() - terminateInstances(selectDisconnectedAgents(hosts), asgName, false);
         int desiredScaleSize = currentSize;
         //calculate usage from used fresh instances only
@@ -259,6 +258,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 schedulerBackend.terminateInstances(toTerminate, asgName, decrementAsgSize);
             } catch (ECSException ex) {
                 logger.error("Terminating instances failed", ex);
+                return 0;
             }
         }
         return toTerminate.size();
