@@ -64,32 +64,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 .findFirst();
     }
 
-    private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
-        // Java pls
-        return dockerHosts.stream()
-                .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
-    }
-
-    Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts) {
-        return partitionFreshness(dockerHosts, stalePeriod);
-    }
-
-    /**
-     * Stream stale hosts not running any tasks
-     */
-    List<DockerHost> unusedStaleInstances(List<DockerHost> staleHosts) {
-        return staleHosts.stream()
-                .filter(DockerHost::runningNothing)
-                .collect(Collectors.toList());
-    }
-
-    List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
-        return freshHosts.stream()
-                .filter(dockerHost -> !usedCandidates.contains(dockerHost))
-                .filter(DockerHost::runningNothing)
-                .filter(DockerHost::inSecondHalfOfBillingCycle)
-                .collect(Collectors.toList());
-    }
 
     // Scale up if capacity is near full
     static double percentageUtilized(List<DockerHost> freshHosts) {
@@ -229,7 +203,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         if (asgInstances.size() != containerInstances.size()) {
             logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})", asgInstances.size(), containerInstances.size());
         }
-        return new DockerHosts(dockerHosts.values(), this);
+        return new DockerHosts(dockerHosts.values(), stalePeriod);
     }
     
     private void checkScaleDown() {

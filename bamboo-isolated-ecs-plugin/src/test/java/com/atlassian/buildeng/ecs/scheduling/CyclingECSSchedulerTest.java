@@ -452,7 +452,7 @@ public class CyclingECSSchedulerTest {
         return mocked;
     }
     
-    private ContainerInstance ci(String ec2Id, String arn, boolean connected, int regMem, int remMem, int regCpu, int remCpu) {
+    static ContainerInstance ci(String ec2Id, String arn, boolean connected, int regMem, int remMem, int regCpu, int remCpu) {
         return new ContainerInstance()
                 .withEc2InstanceId(ec2Id)
                 .withContainerInstanceArn(arn)
@@ -466,7 +466,7 @@ public class CyclingECSSchedulerTest {
         
     }
     
-    private Instance ec2(String ec2id, Date launchTime) {
+    static Instance ec2(String ec2id, Date launchTime) {
         return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime).withInstanceType("m4.4xlarge");
     }
     
