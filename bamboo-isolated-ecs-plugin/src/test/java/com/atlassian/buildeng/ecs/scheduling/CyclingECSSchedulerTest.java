@@ -38,6 +38,8 @@ import org.mockito.Matchers;
 
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -440,11 +442,88 @@ public class CyclingECSSchedulerTest {
         
     }
     
+    
+    @Test
+    public void scheduleScaleUpWithDisconnected() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", false, 2000, 100, 2000, 500),
+                    ci("id2", "arn2", false, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", false, 2000, 800, 2000, 800),
+                    ci("id4", "arn4", false, 2000, 800, 2000, 800),
+                    ci("id5", "arn5", false, 2000, 800, 2000, 800)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        AtomicBoolean thrown = new AtomicBoolean(false);
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+                thrown.set(true);
+            }
+        });
+        awaitProcessing(scheduler);
+        assertTrue("Capacity overload", thrown.get());
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(false));
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
+        //we don't scale up, because the broken, reprovisioned instances are enough.
+        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+    }    
+    
+   @Test
+    public void scheduleScaleUpWithDisconnectedTerminationFailed() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", false, 2000, 100, 2000, 500),
+                    ci("id2", "arn2", false, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", false, 2000, 800, 2000, 800),
+                    ci("id4", "arn4", false, 2000, 800, 2000, 800),
+                    ci("id5", "arn5", false, 2000, 800, 2000, 800)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        Mockito.doThrow(new ECSException("error")).when(schedulerBackend).terminateInstances(anyList(), anyString(), eq(false));
+        AtomicBoolean thrown = new AtomicBoolean(false);
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+                thrown.set(true);
+            }
+        });
+        awaitProcessing(scheduler);
+        assertTrue("Capacity overload", thrown.get());
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(false));
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
+        //we have to scale up as we failed to terminate the disconnected agents in some way
+        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
+    }        
+    
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
         when(mocked.getAsgInstanceIds(anyString())).thenReturn(ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
+        when(mocked.getCurrentASGDesiredCapacity(anyString())).thenReturn(containerInstances.size());
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);
