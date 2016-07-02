@@ -61,14 +61,11 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
 
     @Override
-    public List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) throws ECSException {
+    public List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException {
         try {
             AmazonECSClient ecsClient = new AmazonECSClient();
-            AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
             ListContainerInstancesRequest listReq = new ListContainerInstancesRequest()
                     .withCluster(cluster);
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
-                    .withAutoScalingGroupNames(autoScalingGroup);
 
             // Get containerInstanceArns
             boolean finished = false;
@@ -84,28 +81,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 }
             }
 
-            // Get asg instances
-            // We need these as there is potentially a disparity between instances with container instances registered
-            // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
-            // then terminate them, if the cluster still reports the instance as connected we might assign a task to
-            // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
-            // from both ECS and ASG
-            Set<String> instanceIds = new HashSet<>();
-            finished = false;
-            while(!finished) {
-                DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
-                List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
-                instanceIds.addAll(asgs.stream()
-                        .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
-                        .collect(Collectors.toList()));
-                String nextToken = asgResult.getNextToken();
-                if (nextToken == null) {
-                    finished = true;
-                } else {
-                    asgReq.setNextToken(nextToken);
-                }
-            }
-
             if (containerInstanceArns.isEmpty()) {
                 return Collections.emptyList();
             } else {
@@ -113,8 +88,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                         .withCluster(cluster)
                         .withContainerInstances(containerInstanceArns);
                 return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
-                        .filter(x -> instanceIds.contains(x.getEc2InstanceId()))
-                        .filter(ContainerInstance::isAgentConnected)
                         .collect(Collectors.toList());
             }
         } catch (Exception ex) {
@@ -123,12 +96,12 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public List<Instance> getInstances(List<ContainerInstance> containerInstances) throws ECSException {
+    public List<Instance> getInstances(Collection<String> instanceIds) throws ECSException {
         List<Instance> instances = new ArrayList<>();
-        if (!containerInstances.isEmpty()) try {
+        if (!instanceIds.isEmpty()) try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             DescribeInstancesRequest req = new DescribeInstancesRequest()
-                    .withInstanceIds(containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toList()));
+                    .withInstanceIds(instanceIds);
             boolean finished = false;
 
             while (!finished) {
@@ -162,7 +135,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateInstances(List<String> instanceIds, String asgName) throws ECSException {
+    public void terminateInstances(List<String> instanceIds, String asgName, boolean decrementSize) throws ECSException {
         try {
             AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
             logger.info("Detaching and terminating unused and stale instances: {}", instanceIds);
@@ -170,7 +143,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                   asClient.detachInstances(new DetachInstancesRequest()
                         .withAutoScalingGroupName(asgName)
                         .withInstanceIds(instanceIds)
-                        .withShouldDecrementDesiredCapacity(true));
+                        .withShouldDecrementDesiredCapacity(decrementSize));
             logger.info("Result of detachment: {}", result);
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds));
@@ -249,5 +222,38 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             }
         }
         
+    }
+
+    @Override
+    public Set<String> getAsgInstanceIds(String autoScalingGroup) throws ECSException {
+        // Get asg instances
+        // We need these as there is potentially a disparity between instances with container instances registered
+        // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
+        // then terminate them, if the cluster still reports the instance as connected we might assign a task to
+        // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
+        // from both ECS and ASG
+        AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
+        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
+                .withAutoScalingGroupNames(autoScalingGroup);
+        try {
+            Set<String> instanceIds = new HashSet<>();
+            boolean finished = false;
+            while (!finished) {
+                DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
+                List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
+                instanceIds.addAll(asgs.stream()
+                        .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
+                        .collect(Collectors.toList()));
+                String nextToken = asgResult.getNextToken();
+                if (nextToken == null) {
+                    finished = true;
+                } else {
+                    asgReq.setNextToken(nextToken);
+                }
+            }
+            return instanceIds;
+        } catch (Exception ex) {
+            throw new ECSException(ex);
+        }
     }
 }

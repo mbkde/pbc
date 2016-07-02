@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -53,44 +55,22 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         executor.submit(new EndlessPolling());
     }
 
-    // Get the instance models of the given instance ARNs    
-    List<DockerHost> getDockerHosts(List<ContainerInstance> containerInstances) throws ECSException {
-        List<Instance> instances = schedulerBackend.getInstances(containerInstances);
-        // Match up container instances and EC2 instances by instance id
-        instances.sort((o1, o2) -> o1.getInstanceId().compareTo(o2.getInstanceId()));
-        containerInstances.sort((o1, o2) -> o1.getEc2InstanceId().compareTo(o2.getEc2InstanceId()));
-
-        int iSize = instances.size();
-        int ciSize = containerInstances.size();
-
-        List<DockerHost> dockerHosts = new ArrayList<>();
-
-        if (iSize != ciSize) {
-            logger.warn(String.format("Scheduler got different lengths for instances (%d) and container instances (%d)", iSize, ciSize));
-        } else {
-            for (int i = 0; i < ciSize; i++) {
-                dockerHosts.add(new DockerHost(containerInstances.get(i), instances.get(i)));
-            }
-        }
-        return dockerHosts;
-    }
-
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    static Optional<DockerHost> selectHost(List<DockerHost> candidates, int requiredMemory, int requiredCpu) {
+    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, int requiredMemory, int requiredCpu) {
         return candidates.stream()
                 .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
                 .sorted(DockerHost.compareByResources())
                 .findFirst();
     }
 
-    private Map<Boolean, List<DockerHost>> partitionFreshness(List<DockerHost> dockerHosts, Duration stalePeriod) {
+    private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
         return dockerHosts.stream()
                 .collect(Collectors.partitioningBy(dockerHost -> dockerHost.ageMillis() < stalePeriod.toMillis()));
     }
 
-    Map<Boolean, List<DockerHost>> partitionFreshness(List<DockerHost> dockerHosts) {
+    Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts) {
         return partitionFreshness(dockerHosts, stalePeriod);
     }
 
@@ -188,13 +168,16 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         }
 
         //see if we need to scale up or down..
-        int currentSize = hosts.getSize();
+        int currentSize = hosts.getUsableSize();
+        //TODO substract because we currently keeping those that have some reservations, but is this just stale data or
+        // valid content?
+        int disconnectedSize = hosts.agentDisconnected().size() - terminateInstances(selectDisconnectedAgents(hosts), asgName, false);
         int desiredScaleSize = currentSize;
         //calculate usage from used fresh instances only
         if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
             // cpu and memory requirements in instances
-            long cpuRequirements = lackingCPU / computeInstanceCPULimits(hosts.all());
-            long memoryRequirements = lackingMemory / computeInstanceMemoryLimits(hosts.all());
+            long cpuRequirements = lackingCPU / computeInstanceCPULimits(hosts.allUsable());
+            long memoryRequirements = lackingMemory / computeInstanceMemoryLimits(hosts.allUsable());
             logger.info("Scaling w.r.t. this much cpu " + lackingCPU);
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
@@ -202,13 +185,18 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
             desiredScaleSize += extraRequired;
         }
-        int terminatedCount = scaleDown(hosts, asgName);
+        int terminatedCount = terminateInstances(selectToTerminate(hosts), asgName, true);
         desiredScaleSize = desiredScaleSize - terminatedCount;
         //we are reducing the currentSize by the terminated list because that's
         //what the terminateInstances method should reduce it to.
         currentSize = currentSize - terminatedCount;
         try {
-            if (desiredScaleSize > currentSize && desiredScaleSize > schedulerBackend.getCurrentASGDesiredCapacity(asgName)) {
+            int asgSize = schedulerBackend.getCurrentASGDesiredCapacity(asgName);
+            // we need to scale up while ignoring any broken containers, eg.
+            // if 3 instances are borked and 2 ok, we need to scale to 6 and not 3 as the desiredScaleSize is calculated 
+            // up to this point.
+            desiredScaleSize = desiredScaleSize + disconnectedSize;
+            if (desiredScaleSize > currentSize && desiredScaleSize > asgSize) {
                 //this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, asgName);
             }
@@ -217,17 +205,39 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         }
     }
     
-    private DockerHosts loadHosts(String cluster, String asgName) throws ECSException {
+    DockerHosts loadHosts(String cluster, String asgName) throws ECSException {
         //this can take time (network) and in the meantime other requests can accumulate.
-        List<ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster, asgName);
-        List<DockerHost> dockerHosts = getDockerHosts(containerInstances);
-        return  new DockerHosts(dockerHosts, this);
+        Map<String, ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster).stream().collect(Collectors.toMap(ContainerInstance::getEc2InstanceId, Function.identity()));
+        Set<String> asgInstances = schedulerBackend.getAsgInstanceIds(asgName);
+        Set<String> allIds = new HashSet<>();
+        allIds.addAll(asgInstances);
+        allIds.addAll(containerInstances.keySet());
+        Map<String, Instance> instances = schedulerBackend.getInstances(allIds).stream().collect(Collectors.toMap(Instance::getInstanceId, Function.identity()));
+       
+        Map<String, DockerHost> dockerHosts = new HashMap<>();
+        containerInstances.forEach((String t, ContainerInstance u) -> {
+            Instance ec2 = instances.get(t);
+            if (ec2 != null) {
+                try {
+                    dockerHosts.put(t, new DockerHost(u, ec2));
+                } catch (ECSException ex) {
+                    logger.error("Skipping incomplete docker host", ex);
+                }
+            }
+        });
+        
+        if (asgInstances.size() != containerInstances.size()) {
+            logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})", asgInstances.size(), containerInstances.size());
+        }
+        return new DockerHosts(dockerHosts.values(), this);
     }
     
     private void checkScaleDown() {
         try {
             String asg = globalConfiguration.getCurrentASG();
-            scaleDown(loadHosts(globalConfiguration.getCurrentCluster(), asg), asg);
+            DockerHosts hosts = loadHosts(globalConfiguration.getCurrentCluster(), asg);
+            terminateInstances(selectDisconnectedAgents(hosts), asg, false);
+            terminateInstances(selectToTerminate(hosts), asg, true);
         } catch (ECSException ex) {
             logger.error("Failed to scale down", ex);
         }
@@ -242,6 +252,15 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     public void destroy() throws Exception {
         shutdownExecutor();
     }
+    
+    private List<String> selectDisconnectedAgents(DockerHosts hosts) {
+        return hosts.agentDisconnected().stream()
+// container without agent still shows like it's running something but it's not true, all the things are doomed.
+// maybe reevaluate at some point when major ecs changes arrive.                
+//                .filter(t -> t.runningNothing()) 
+                .map(DockerHost::getInstanceId)
+                .collect(Collectors.toList());
+    }
 
     List<String> selectToTerminate(DockerHosts hosts) {
         List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
@@ -249,14 +268,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 .collect(Collectors.toList());
         // If we're terminating all of our hosts (and we have any) keep one
         // around
-        if (hosts.getSize() == toTerminate.size() && !toTerminate.isEmpty()) {
+        if (hosts.getUsableSize() == toTerminate.size() && !toTerminate.isEmpty()) {
             toTerminate.remove(0);
         }
         return toTerminate;
     }
 
-    private int scaleDown(DockerHosts hosts, String asgName) {
-        List<String> toTerminate = selectToTerminate(hosts);
+    private int terminateInstances(List<String> toTerminate, String asgName, boolean decrementAsgSize) {
         if (!toTerminate.isEmpty()) {
             if (toTerminate.size() > 15) {
                 //actual AWS limit is apparently 20
@@ -264,7 +282,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 toTerminate = toTerminate.subList(0, 14);
             }
             try {
-                schedulerBackend.terminateInstances(toTerminate, asgName);
+                schedulerBackend.terminateInstances(toTerminate, asgName, decrementAsgSize);
             } catch (ECSException ex) {
                 logger.error("Terminating instances failed", ex);
             }
@@ -278,7 +296,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
      * @param hosts known current hosts
      * @return number of CPU power available
      */
-    private int computeInstanceCPULimits(List<DockerHost> hosts) {
+    private int computeInstanceCPULimits(Collection<DockerHost> hosts) {
         //we settle on minimum as that's the safer option here, better to scale faster than slower.
         //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
@@ -295,7 +313,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
      * @param hosts known current hosts
      * @return number of memory available
      */
-    private int computeInstanceMemoryLimits(List<DockerHost> hosts) {
+    private int computeInstanceMemoryLimits(Collection<DockerHost> hosts) {
         //we settle on minimum as that's the safer option here, better to scale faster than slower.
         //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
