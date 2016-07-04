@@ -226,12 +226,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Override
     public Set<String> getAsgInstanceIds(String autoScalingGroup) throws ECSException {
-        // Get asg instances
-        // We need these as there is potentially a disparity between instances with container instances registered
-        // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
-        // then terminate them, if the cluster still reports the instance as connected we might assign a task to
-        // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
-        // from both ECS and ASG
         AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
         DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
                 .withAutoScalingGroupNames(autoScalingGroup);

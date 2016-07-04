@@ -180,6 +180,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     DockerHosts loadHosts(String cluster, String asgName) throws ECSException {
         //this can take time (network) and in the meantime other requests can accumulate.
         Map<String, ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster).stream().collect(Collectors.toMap(ContainerInstance::getEc2InstanceId, Function.identity()));
+        // We need these as there is potentially a disparity between instances with container instances registered
+        // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
+        // then terminate them, if the cluster still reports the instance as connected we might assign a task to
+        // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
+        // from both ECS and ASG
         Set<String> asgInstances = schedulerBackend.getAsgInstanceIds(asgName);
         Set<String> allIds = new HashSet<>();
         allIds.addAll(asgInstances);
