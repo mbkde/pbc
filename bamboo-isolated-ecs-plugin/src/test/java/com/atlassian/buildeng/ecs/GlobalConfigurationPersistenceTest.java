@@ -59,6 +59,10 @@ public class GlobalConfigurationPersistenceTest {
         Integer number2 = gc.findTaskRegistrationVersion(c);
         assertEquals(number, number2);
         Map<Configuration, Integer> map = gc.getAllRegistrations();
+        Configuration c2 = ConfigurationBuilder.create("image").withImageSize(Configuration.ContainerSize.SMALL).build();
+        
+        int notExisting = gc.findTaskRegistrationVersion(c2);
+        assertEquals(-1, notExisting);
         
     }
     
@@ -91,5 +95,19 @@ public class GlobalConfigurationPersistenceTest {
         Configuration conf = gc.load(persistedValue);
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());
+        assertEquals(Configuration.ContainerSize.REGULAR, conf.getSize());
+    }
+    
+    @Test
+    public void testVersion2() {
+        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
+        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
+        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
+        
+        String persistedValue = "{'image'='aaa','size'='SMALL'}";
+        Configuration conf = gc.load(persistedValue);
+        assertNotNull(conf);
+        assertEquals("aaa", conf.getDockerImage());
+        assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
     }
 }

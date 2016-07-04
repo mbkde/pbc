@@ -31,11 +31,15 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class Configuration {
-
     
+    //message to future me:
+    // never ever attempt nested values here. eg.
+    //custom.isolated.docker.image and custom.isolated.docker.image.size 
+    // the way bamboo serializes these will cause the parent to get additional trailing whitespace
+    // and you get mad trying to figure out why.
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
     public static final String DOCKER_IMAGE = "custom.isolated.docker.image"; 
-    public static final String DOCKER_IMAGE_SIZE = "custom.isolated.docker.image.size"; 
+    public static final String DOCKER_IMAGE_SIZE = "custom.isolated.docker.imageSize"; 
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
