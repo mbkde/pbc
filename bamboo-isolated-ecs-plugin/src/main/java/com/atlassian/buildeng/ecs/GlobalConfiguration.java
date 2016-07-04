@@ -17,23 +17,38 @@ package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
+import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
+import static com.atlassian.buildeng.ecs.Constants.AGENT_CONTAINER_NAME;
+import static com.atlassian.buildeng.ecs.Constants.ECS_CLUSTER_KEY;
+import static com.atlassian.buildeng.ecs.Constants.ECS_CLUSTER_VAL;
+import static com.atlassian.buildeng.ecs.Constants.LAAS_CONFIGURATION;
+import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_KEY;
+import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_VAL;
+import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_KEY;
+import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_VAL;
+import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
+import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
+import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,16 +86,31 @@ public class GlobalConfiguration {
     public String getTaskDefinitionName() {
         return admConfAccessor.getAdministrationConfiguration().getInstanceName() + Constants.TASK_DEFINITION_SUFFIX;
     }
+    
+    //TODO eventually separate that out to be optional
+    private ContainerDefinition withFluentDLogs(ContainerDefinition def) {
+        return def.withLogConfiguration(LAAS_CONFIGURATION)
+                .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
+                .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL))
+                .withEnvironment(new KeyValuePair().withName(ECS_CLUSTER_KEY).withValue(ECS_CLUSTER_VAL));
+
+    }
 
 
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
         return new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
-                        Constants.AGENT_BASE_DEFINITION
+                        withFluentDLogs(new ContainerDefinition()
+                            .withName(AGENT_CONTAINER_NAME)
+                            .withCpu(configuration.getSize().cpu())
+                            .withMemory(configuration.getSize().memory())
                             .withImage(configuration.getDockerImage())
+                            .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
+                            .withEntryPoint(RUN_SCRIPT)
+                            .withWorkingDirectory(WORK_DIR)
                             .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))),
                         Constants.SIDEKICK_DEFINITION
                             .withImage(sidekick))
                 .withFamily(getTaskDefinitionName());
@@ -283,7 +313,7 @@ public class GlobalConfiguration {
     private Map<Configuration, Integer> convertOld(ConcurrentHashMap<String, Integer> compat) {
         final HashMap<Configuration, Integer> newMap = new HashMap<>();
         compat.forEach((String t, Integer u) -> {
-            newMap.put(Configuration.of(t), u);
+            newMap.put(ConfigurationBuilder.create(t).build(), u);
         });
         return newMap;
     }
@@ -308,6 +338,7 @@ public class GlobalConfiguration {
     String persist(Configuration conf) {
         JsonObject el = new JsonObject();
         el.addProperty("image", conf.getDockerImage());
+        el.addProperty("size", conf.getSize().name());
         return el.toString();
     }
     
@@ -316,7 +347,18 @@ public class GlobalConfiguration {
         JsonParser p = new JsonParser();
         JsonElement obj = p.parse(source);
         if (obj.isJsonObject()) {
-            return Configuration.of(obj.getAsJsonObject().getAsJsonPrimitive("image").getAsString());
+            JsonObject jsonobj = obj.getAsJsonObject();
+            ConfigurationBuilder bld = ConfigurationBuilder.create(jsonobj.getAsJsonPrimitive("image").getAsString());
+            JsonPrimitive size = jsonobj.getAsJsonPrimitive("size");
+            if (size != null) {
+                try {
+                    bld.withImageSize(Configuration.ContainerSize.valueOf(size.getAsString()));
+                } catch (IllegalArgumentException x) {
+                    logger.error("Wrong size was persisted: {}", size);
+                    //ok to skip and do nothing, the default value is REGULAR
+                }
+            }
+            return bld.build();
         }
         return null;
     }

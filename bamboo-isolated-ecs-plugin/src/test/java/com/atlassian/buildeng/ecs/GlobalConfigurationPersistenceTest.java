@@ -23,6 +23,7 @@ import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.DefaultBandanaManager;
 import com.atlassian.bandana.impl.MemoryBandanaPersister;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -53,7 +54,7 @@ public class GlobalConfigurationPersistenceTest {
         GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
         when(gc.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         
-        Configuration c = Configuration.of("image");
+        Configuration c = ConfigurationBuilder.create("image").build();
         Integer number = gc.registerDockerImage(c);
         Integer number2 = gc.findTaskRegistrationVersion(c);
         assertEquals(number, number2);
@@ -76,7 +77,7 @@ public class GlobalConfigurationPersistenceTest {
 
         Map<Configuration, Integer> map = gc.getAllRegistrations();
         assertEquals(1, map.size());
-        Configuration c = Configuration.of("aaa");
+        Configuration c = ConfigurationBuilder.create("aaa").build();
         assertEquals(new Integer(4), map.get(c));
     }
     

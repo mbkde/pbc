@@ -2,9 +2,9 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,7 +161,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     lackingMemory = Math.max(0, lackingMemory - request.getMemory());
                     // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
                     // Clear everything out, we're probably fine
-                    if (lackingCPU < Constants.AGENT_CPU || lackingMemory < Constants.AGENT_MEMORY) {
+                    if (lackingCPU < Configuration.ContainerSize.SMALL.cpu() || lackingMemory < Configuration.ContainerSize.SMALL.memory()) {
                         consideredRequestIdentifiers.clear();
                         lackingCPU = 0;
                         lackingMemory = 0;

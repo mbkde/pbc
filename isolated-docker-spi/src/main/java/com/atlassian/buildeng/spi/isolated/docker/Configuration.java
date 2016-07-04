@@ -25,48 +25,40 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import java.io.Serializable;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Objects;
 
-public final class Configuration implements Serializable {
+public final class Configuration {
 
     
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
     public static final String DOCKER_IMAGE = "custom.isolated.docker.image"; 
+    public static final String DOCKER_IMAGE_SIZE = "custom.isolated.docker.image.size"; 
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
+    public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
     public static final String TASK_DOCKER_ENABLE = "enabled";
-
-    //TODO temporary for conversion
-    public static Configuration of(String image) {
-        return new Configuration(true, image);
-    }
-    
-    private Object readResolve() {
-        //this is where backwardcompatibility for Configuration deserialization lives.
-        //http://x-stream.github.io/faq.html#Serialization
-        return this;
-    }
-    
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private final String dockerImage;
+    private final ContainerSize size;
 
-    private Configuration(boolean enabled, String dockerImage) {
+    Configuration(boolean enabled, String dockerImage, ContainerSize size) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
+        this.size = size;
     }
 
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
         boolean enable = config.getBoolean(ENABLED_FOR_JOB);
         String image = config.getString(DOCKER_IMAGE);
-        return new Configuration(enable, image);
+        ContainerSize size = ContainerSize.valueOf(config.getString(DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
+        return new Configuration(enable, image, size);
     }
 
     public static Configuration forContext(@Nonnull CommonContext context) {
@@ -94,7 +86,7 @@ public final class Configuration implements Serializable {
                 return forTaskConfiguration(task);
             }
         }
-        return new Configuration(false, "");
+        return new Configuration(false, "", ContainerSize.REGULAR);
     }
     
     public static Configuration forDeploymentResult(DeploymentResult dr) {
@@ -107,7 +99,8 @@ public final class Configuration implements Serializable {
         Map<String, String> cc = taskDefinition.getConfiguration();
         String value = cc.getOrDefault(TASK_DOCKER_ENABLE, "false");
         String image = cc.getOrDefault(TASK_DOCKER_IMAGE, "");
-        return new Configuration(Boolean.parseBoolean(value), image);
+        ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(TASK_DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
+        return new Configuration(Boolean.parseBoolean(value), image, size);
     }
 
 
@@ -125,7 +118,8 @@ public final class Configuration implements Serializable {
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
         String value = cc.getOrDefault(ENABLED_FOR_JOB, "false");
         String image = cc.getOrDefault(DOCKER_IMAGE, "");
-        return new Configuration(Boolean.parseBoolean(value), image);
+        ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
+        return new Configuration(Boolean.parseBoolean(value), image, size);
     }
 
 
@@ -137,10 +131,15 @@ public final class Configuration implements Serializable {
         return dockerImage;
     }
 
+    public ContainerSize getSize() {
+        return size;
+    }
+    
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 59 * hash + Objects.hashCode(this.dockerImage);
+        hash = 23 * hash + Objects.hashCode(this.dockerImage);
+        hash = 23 * hash + Objects.hashCode(this.size);
         return hash;
     }
 
@@ -156,10 +155,34 @@ public final class Configuration implements Serializable {
             return false;
         }
         final Configuration other = (Configuration) obj;
-        return Objects.equals(this.dockerImage, other.dockerImage);
+        if (!Objects.equals(this.dockerImage, other.dockerImage)) {
+            return false;
+        }
+        return this.size == other.size;
     }
 
+    public static enum ContainerSize {
+        REGULAR(2000, 7800),
+        SMALL(1000,3900);
+        
+        private final int cpu;
+        private final int memory;
 
+        private ContainerSize(int cpu, int memory) {
+            this.cpu = cpu;
+            this.memory = memory;
+        }
+
+        public int cpu() {
+            return cpu;
+        }
+
+        public int memory() {
+            return memory;
+        }
+        
+    }
     
-    
+
+
 }

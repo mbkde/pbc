@@ -23,6 +23,7 @@ import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -63,13 +64,17 @@ public class GlobalConfigurationTest {
     
     public GlobalConfigurationTest() {
     }
+    
+    Configuration of(String name) {
+        return ConfigurationBuilder.create(name).build();
+    }
 
     @Test
     public void setSidekickHappyPath() {
         Map<String, Integer> map = new HashMap<>();
-        map.put(configuration.persist(Configuration.of("docker1")), 1);
-        map.put(configuration.persist(Configuration.of("docker2")), 2);
-        map.put(configuration.persist(Configuration.of("docker3")), 3);
+        map.put(configuration.persist(of("docker1")), 1);
+        map.put(configuration.persist(of("docker2")), 2);
+        map.put(configuration.persist(of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
@@ -84,9 +89,9 @@ public class GlobalConfigurationTest {
     @Test 
     public void setSidekickFailedDeregistrations() {
         Map<String, Integer> map = new HashMap<>();
-        map.put(configuration.persist(Configuration.of("docker1")), 1);
-        map.put(configuration.persist(Configuration.of("docker2")), 2);
-        map.put(configuration.persist(Configuration.of("docker3")), 3);
+        map.put(configuration.persist(of("docker1")), 1);
+        map.put(configuration.persist(of("docker2")), 2);
+        map.put(configuration.persist(of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
@@ -103,9 +108,9 @@ public class GlobalConfigurationTest {
    @Test 
     public void setSidekickFailedRegistrations() {
         Map<String, Integer> map = new HashMap<>();
-        map.put(configuration.persist(Configuration.of("docker1")), 1);
-        map.put(configuration.persist(Configuration.of("docker2")), 2);
-        map.put(configuration.persist(Configuration.of("docker3")), 3);
+        map.put(configuration.persist(of("docker1")), 1);
+        map.put(configuration.persist(of("docker2")), 2);
+        map.put(configuration.persist(of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
