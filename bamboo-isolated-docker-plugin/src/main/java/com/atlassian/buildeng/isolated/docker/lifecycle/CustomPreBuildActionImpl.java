@@ -99,7 +99,6 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
                     errs.addError(Configuration.DOCKER_EXTRA_CONTAINERS, "Extra containers json needs to be an array.");
                 } else {
                     JsonArray arr = obj.getAsJsonArray();
-                    SimpleErrorCollection err = new SimpleErrorCollection();
                     arr.forEach((JsonElement t) -> {
                         if (t.isJsonObject()) {
                             ExtraContainer v2 = Configuration.from(t.getAsJsonObject());
