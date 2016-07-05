@@ -21,6 +21,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -32,19 +33,20 @@ public interface SchedulerBackend {
      * Get all owned container instances on a cluster
      * 
      * @param cluster
-     * @param autoScalingGroup
      * @return 
      * @throws ECSException
      */
-    List<ContainerInstance> getClusterContainerInstances(String cluster, String autoScalingGroup) throws ECSException;
+    List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException;
     
     /**
-     * get EC2 Instances for the passed ContainerInstances
-     * @param containerInstances
+     * get EC2 Instances for the passed ids
+     * @param instanceIds
      * @return 
      * @throws ECSException
      */
-    List<Instance> getInstances(List<ContainerInstance> containerInstances) throws ECSException;
+    List<Instance> getInstances(Collection<String> instanceIds) throws ECSException;
+    
+    Set<String> getAsgInstanceIds(String autoScalingGroup) throws ECSException;
     
     /**
      * scale the ASG to desired capacity
@@ -58,9 +60,10 @@ public interface SchedulerBackend {
      * terminate the listed EC2 instances and reduce the size of ASG by the given amount
      * @param instanceIds 
      * @param autoScalingGroup 
+     * @param decrementSize 
      * @throws ECSException
      */
-    void terminateInstances(List<String> instanceIds, String autoScalingGroup) throws ECSException;
+    void terminateInstances(List<String> instanceIds, String autoScalingGroup, boolean decrementSize) throws ECSException;
 
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     
