@@ -45,6 +45,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -339,6 +340,7 @@ public class GlobalConfiguration {
         JsonObject el = new JsonObject();
         el.addProperty("image", conf.getDockerImage());
         el.addProperty("size", conf.getSize().name());
+        el.add("extraContainers", Configuration.toJson(conf.getExtraContainers()));
         return el.toString();
     }
     
@@ -357,6 +359,17 @@ public class GlobalConfiguration {
                     logger.error("Wrong size was persisted: {}", size);
                     //ok to skip and do nothing, the default value is REGULAR
                 }
+            }
+            JsonArray arr = jsonobj.getAsJsonArray("extraContainers");
+            if (arr != null) {
+                arr.forEach((JsonElement t) -> {
+                    if (t.isJsonObject()) {
+                        Configuration.ExtraContainer extra = Configuration.from(t.getAsJsonObject());
+                        if (extra != null) {
+                            bld.withExtraContainer(extra);
+                        }
+                    }
+                });
             }
             return bld.build();
         }
