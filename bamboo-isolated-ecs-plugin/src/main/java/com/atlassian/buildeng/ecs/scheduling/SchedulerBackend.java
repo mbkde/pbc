@@ -21,6 +21,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Collection;
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  *
@@ -64,7 +65,13 @@ public interface SchedulerBackend {
 
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     
-    int getCurrentASGDesiredCapacity(String autoScalingGroup) throws ECSException;
+    /**
+     * 
+     * @param autoScalingGroup
+     * @return pair of desired capacity and max size
+     * @throws ECSException 
+     */
+    Pair<Integer, Integer> getCurrentASGCapacity(String autoScalingGroup) throws ECSException;
     
     Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException;
 }

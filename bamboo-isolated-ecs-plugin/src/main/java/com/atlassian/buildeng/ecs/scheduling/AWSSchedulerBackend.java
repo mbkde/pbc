@@ -51,6 +51,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,8 +201,14 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         }
     }
 
+    /**
+     * 
+     * @param autoScalingGroup
+     * @return pair of desired/max capacity
+     * @throws ECSException 
+     */
     @Override
-    public int getCurrentASGDesiredCapacity(String autoScalingGroup) throws ECSException {
+    public Pair<Integer, Integer> getCurrentASGCapacity(String autoScalingGroup) throws ECSException {
         try {
             AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
             DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
@@ -213,7 +220,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             if (groups.isEmpty()) {
                 throw new ECSException("No auto scaling group with name:" + autoScalingGroup);
             }
-            return groups.get(0).getDesiredCapacity();
+            return Pair.of(groups.get(0).getDesiredCapacity(), groups.get(0).getMaxSize());
         } catch (Exception ex) {
             if (ex instanceof ECSException) {
                 throw ex;
