@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.percentageUtilized;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
+import java.time.Duration;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -53,7 +54,7 @@ public class CyclingECSSchedulerQuickTest {
 
     @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
         CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null));
-        DockerHosts hosts = new DockerHosts(allHosts,ecsScheduler);
+        DockerHosts hosts = new DockerHosts(allHosts,Duration.ofDays(1));
         List<String> selectedHosts = ecsScheduler.selectToTerminate(hosts);
         if (allHosts.isEmpty()) {
             // If we have nothing to potentially terminate, we shouldn't select anything

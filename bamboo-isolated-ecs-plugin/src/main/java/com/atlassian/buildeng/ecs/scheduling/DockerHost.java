@@ -63,9 +63,9 @@ public class DockerHost {
                 .map(Resource::getIntegerValue)
                 .filter(Objects::nonNull) // Apparently Resource::getIntegerValue can be null? but we want an int only.
                 .findFirst()
-                .orElseThrow(() -> new ECSException(new Exception(String.format(
+                .orElseThrow(() -> new ECSException(String.format(
                         "Container Instance %s missing '%s' resource", containerInstance.getContainerInstanceArn(), name
-                ))));
+                )));
     }
 
     public boolean canRun(int requiredMemory, int requiredCpu) {
