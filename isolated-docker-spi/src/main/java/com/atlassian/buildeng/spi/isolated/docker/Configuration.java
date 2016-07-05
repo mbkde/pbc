@@ -25,6 +25,8 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import java.util.Collections;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -40,21 +42,25 @@ public final class Configuration {
     public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
     public static final String DOCKER_IMAGE = "custom.isolated.docker.image"; 
     public static final String DOCKER_IMAGE_SIZE = "custom.isolated.docker.imageSize"; 
+    public static final String DOCKER_EXTRA_CONTAINERS = "custom.isolated.docker.extraContainers"; 
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
+    public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private final String dockerImage;
     private final ContainerSize size;
+    private final List<ExtraContainer> extraContainers;
 
-    Configuration(boolean enabled, String dockerImage, ContainerSize size) {
+    Configuration(boolean enabled, String dockerImage, ContainerSize size, List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
         this.size = size;
+        this.extraContainers = extraContainers;
     }
 
     @Nonnull
@@ -90,7 +96,7 @@ public final class Configuration {
                 return forTaskConfiguration(task);
             }
         }
-        return new Configuration(false, "", ContainerSize.REGULAR);
+        return new Configuration(false, "", ContainerSize.REGULAR, Collections.emptyList());
     }
     
     public static Configuration forDeploymentResult(DeploymentResult dr) {
@@ -138,12 +144,13 @@ public final class Configuration {
     public ContainerSize getSize() {
         return size;
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 23 * hash + Objects.hashCode(this.dockerImage);
-        hash = 23 * hash + Objects.hashCode(this.size);
+        hash = 79 * hash + Objects.hashCode(this.dockerImage);
+        hash = 79 * hash + Objects.hashCode(this.size);
+        hash = 79 * hash + Objects.hashCode(this.extraContainers);
         return hash;
     }
 
@@ -162,8 +169,13 @@ public final class Configuration {
         if (!Objects.equals(this.dockerImage, other.dockerImage)) {
             return false;
         }
-        return this.size == other.size;
+        if (this.size != other.size) {
+            return false;
+        }
+        return Objects.equals(this.extraContainers, other.extraContainers);
     }
+
+    
 
     public static enum ContainerSize {
         REGULAR(2000, 7800),
@@ -188,5 +200,69 @@ public final class Configuration {
     }
     
 
+    public static class ExtraContainer {
+        String name;
+        String image;
+        ExtraContainerSize extraSize;
+
+        public ExtraContainer(String name, String image, ExtraContainerSize extraSize) {
+            this.name = name;
+            this.image = image;
+            this.extraSize = extraSize;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 59 * hash + Objects.hashCode(this.name);
+            hash = 59 * hash + Objects.hashCode(this.image);
+            hash = 59 * hash + Objects.hashCode(this.extraSize);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final ExtraContainer other = (ExtraContainer) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.image, other.image)) {
+                return false;
+            }
+            return this.extraSize == other.extraSize;
+        }
+        
+    }
+    
+    public static enum ExtraContainerSize {
+        REGULAR(500, 2000),
+        SMALL(250,1000);
+        
+        private final int cpu;
+        private final int memory;
+
+        private ExtraContainerSize(int cpu, int memory) {
+            this.cpu = cpu;
+            this.memory = memory;
+        }
+
+        public int cpu() {
+            return cpu;
+        }
+
+        public int memory() {
+            return memory;
+        }
+        
+    }
 
 }
