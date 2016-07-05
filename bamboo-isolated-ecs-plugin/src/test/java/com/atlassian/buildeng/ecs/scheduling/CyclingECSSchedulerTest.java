@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.lang3.tuple.Pair;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -442,6 +443,7 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString(), anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
+        when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(containerInstances.size(), 50));
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);
