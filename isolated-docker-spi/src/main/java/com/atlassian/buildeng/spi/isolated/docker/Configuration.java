@@ -28,6 +28,7 @@ import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -224,19 +225,22 @@ public final class Configuration {
     }
     
     private static List<ExtraContainer> fromJsonString(String source) {
-        JsonParser p = new JsonParser();
         List<ExtraContainer> toRet = new ArrayList<>();
-        JsonElement obj = p.parse(source);
-        if (obj.isJsonArray()) {
-            JsonArray arr = obj.getAsJsonArray();
-            arr.forEach((JsonElement t) -> {
-                if (t.isJsonObject()) {
-                    ExtraContainer cont = from(t.getAsJsonObject());
-                    if (cont != null) {
-                        toRet.add(cont);
+        try {
+            JsonElement obj = new JsonParser().parse(source);
+            if (obj.isJsonArray()) {
+                JsonArray arr = obj.getAsJsonArray();
+                arr.forEach((JsonElement t) -> {
+                    if (t.isJsonObject()) {
+                        ExtraContainer cont = from(t.getAsJsonObject());
+                        if (cont != null) {
+                            toRet.add(cont);
+                        }
                     }
-                }
-            });
+                });
+            }
+        } catch (JsonParseException ex) {
+            
         }
         return toRet;
         

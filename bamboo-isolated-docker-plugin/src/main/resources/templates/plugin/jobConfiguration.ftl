@@ -7,5 +7,6 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
         [@ww.select labelKey='isolated.docker.size' name='custom.isolated.docker.imageSize'
             list=imageSizes listKey='first' listValue='second' cssClass="long-field"]
         [/@ww.select]
+        [@ww.textarea cssClass='long-field' labelKey='isolated.docker.extra' name='custom.isolated.docker.extraContainers' descriptionKey="isolated.docker.extra.description" /]
     [/@ui.bambooSection]
 [/@ui.bambooSection]
