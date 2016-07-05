@@ -55,6 +55,8 @@ public final class Configuration {
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
     
+    //TODO sort ecs specific but we should eventually get rid of if we
+    //introduce  generic support for custom container volumes.
     public static int SIDEKICK_CPU = 40;
     public static int SIDEKICK_MEMORY = 240;
     
