@@ -89,14 +89,12 @@ public class PreBuildQueuedEventListener {
         BuildContext buildContext = event.getContext();
         Configuration config = Configuration.forContext(buildContext);
         if (config.isEnabled()) {
-            buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
-            buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
+            config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config, buildContext));
         } else {
             //when a rerun happens and docker agents were disabled.
-            buildContext.getCurrentResult().getCustomBuildData().remove(Configuration.ENABLED_FOR_JOB);
-            buildContext.getCurrentResult().getCustomBuildData().remove(Configuration.DOCKER_IMAGE);
+            Configuration.removeFrom(buildContext.getCurrentResult().getCustomBuildData());
             clearResultCustomData(event.getContext());
         }
     }
@@ -203,8 +201,7 @@ public class PreBuildQueuedEventListener {
         DeploymentContext buildContext = event.getContext();
         Configuration config = Configuration.forContext(buildContext);
         if (config.isEnabled()) {
-            buildContext.getCurrentResult().getCustomBuildData().put(Configuration.ENABLED_FOR_JOB, "" + config.isEnabled());
-            buildContext.getCurrentResult().getCustomBuildData().put(Configuration.DOCKER_IMAGE, config.getDockerImage());
+            config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config, buildContext));
         }

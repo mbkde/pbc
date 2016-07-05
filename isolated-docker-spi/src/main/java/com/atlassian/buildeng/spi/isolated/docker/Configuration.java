@@ -165,6 +165,19 @@ public final class Configuration {
         return this.size == other.size;
     }
 
+    public void copyTo(Map<String, ? super String> storageMap) {
+        storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
+        storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
+        storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
+    }
+    
+    public static void removeFrom(Map<String, ? super String> storageMap) {
+        storageMap.remove(Configuration.ENABLED_FOR_JOB);
+        storageMap.remove(Configuration.DOCKER_IMAGE);
+        storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
+    }
+    
+
     public static enum ContainerSize {
         REGULAR(2000, 7800),
         SMALL(1000,3900);

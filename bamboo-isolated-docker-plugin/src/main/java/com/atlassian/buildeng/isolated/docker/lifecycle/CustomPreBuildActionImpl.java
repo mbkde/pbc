@@ -105,10 +105,8 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
-        context.put(Configuration.ENABLED_FOR_JOB, config.isEnabled());
-        context.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
+        config.copyTo(context);
         context.put("imageSizes", getImageSizes());
-        context.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
     }
 
     @Override
