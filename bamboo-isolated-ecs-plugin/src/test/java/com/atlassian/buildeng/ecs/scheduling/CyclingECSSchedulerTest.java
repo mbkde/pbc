@@ -22,6 +22,7 @@ import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.Pair;
+import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -37,6 +39,8 @@ import org.mockito.Matchers;
 
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -70,7 +74,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        List<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()).getDockerHosts(schedulerBackend.getClusterContainerInstances("", ""));
+        Collection<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()).loadHosts("", "").allUsable();
         //100 & 100 means all are viable candidates
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, 100, 100);
         assertTrue(candidate.isPresent());
@@ -123,7 +127,7 @@ public class CyclingECSSchedulerTest {
         });
         awaitProcessing(scheduler);
         assertTrue("Capacity overload", thrown.get());
-        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
     }
     
@@ -158,7 +162,7 @@ public class CyclingECSSchedulerTest {
         });
         awaitProcessing(scheduler);
         
-        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
@@ -196,7 +200,7 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
@@ -234,7 +238,7 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }    
@@ -274,7 +278,7 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
@@ -313,7 +317,7 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
         assertEquals("arn1", arn.get());
     }
@@ -356,14 +360,14 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler); //wait to have the other thread start the processing
         assertEquals("arn1", arn.get());
         assertTrue("Exception Thrown correctly", thrown.get());
-        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString());
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, times(1)).scaleTo(Matchers.anyInt(), anyString());
     }
     
     @Test
     public void scheduleBackendFailGetContainers() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
-        when(backend.getClusterContainerInstances(anyString(), anyString())).thenThrow(new ECSException("error1"));
+        when(backend.getClusterContainerInstances(anyString())).thenThrow(new ECSException("error1"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 199, 399), new SchedulingCallback() {
@@ -384,7 +388,7 @@ public class CyclingECSSchedulerTest {
     @Test
     public void scheduleBackendFailGetInstances() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
-        when(backend.getClusterContainerInstances(anyString(), anyString())).thenReturn(
+        when(backend.getClusterContainerInstances(anyString())).thenReturn(
                 Arrays.asList(
                     ci("id1", "arn1", true, 2000, 600, 2000, 600),
                     ci("id2", "arn2", true, 2000, 200, 2000, 400)
@@ -410,7 +414,7 @@ public class CyclingECSSchedulerTest {
     @Test
     public void scheduleBackendFailSchedule() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
-        when(backend.getClusterContainerInstances(anyString(), anyString())).thenReturn(
+        when(backend.getClusterContainerInstances(anyString())).thenReturn(
                 Arrays.asList(
                     ci("id1", "arn1", true, 2000, 600, 2000, 600),
                     ci("id2", "arn2", true, 2000, 200, 2000, 400)
@@ -439,11 +443,88 @@ public class CyclingECSSchedulerTest {
         
     }
     
+    
+    @Test
+    public void scheduleScaleUpWithDisconnected() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", false, 2000, 100, 2000, 500),
+                    ci("id2", "arn2", false, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", false, 2000, 800, 2000, 800),
+                    ci("id4", "arn4", false, 2000, 800, 2000, 800),
+                    ci("id5", "arn5", false, 2000, 800, 2000, 800)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        AtomicBoolean thrown = new AtomicBoolean(false);
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+                thrown.set(true);
+            }
+        });
+        awaitProcessing(scheduler);
+        assertTrue("Capacity overload", thrown.get());
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(false));
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
+        //we don't scale up, because the broken, reprovisioned instances are enough.
+        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+    }    
+    
+   @Test
+    public void scheduleScaleUpWithDisconnectedTerminationFailed() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", false, 2000, 100, 2000, 500),
+                    ci("id2", "arn2", false, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", false, 2000, 800, 2000, 800),
+                    ci("id4", "arn4", false, 2000, 800, 2000, 800),
+                    ci("id5", "arn5", false, 2000, 800, 2000, 800)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        Mockito.doThrow(new ECSException("error")).when(schedulerBackend).terminateInstances(anyList(), anyString(), eq(false));
+        AtomicBoolean thrown = new AtomicBoolean(false);
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+                thrown.set(true);
+            }
+        });
+        awaitProcessing(scheduler);
+        assertTrue("Capacity overload", thrown.get());
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(false));
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
+        //we have to scale up as we failed to terminate the disconnected agents in some way
+        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
+    }        
+    
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
-        when(mocked.getClusterContainerInstances(anyString(), anyString())).thenReturn(containerInstances);
+        when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
         when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(containerInstances.size(), 50));
+        when(mocked.getAsgInstanceIds(anyString())).thenReturn(ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);
@@ -451,7 +532,7 @@ public class CyclingECSSchedulerTest {
         return mocked;
     }
     
-    private ContainerInstance ci(String ec2Id, String arn, boolean connected, int regMem, int remMem, int regCpu, int remCpu) {
+    static ContainerInstance ci(String ec2Id, String arn, boolean connected, int regMem, int remMem, int regCpu, int remCpu) {
         return new ContainerInstance()
                 .withEc2InstanceId(ec2Id)
                 .withContainerInstanceArn(arn)
@@ -465,7 +546,7 @@ public class CyclingECSSchedulerTest {
         
     }
     
-    private Instance ec2(String ec2id, Date launchTime) {
+    static Instance ec2(String ec2id, Date launchTime) {
         return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime).withInstanceType("m4.4xlarge");
     }
     
