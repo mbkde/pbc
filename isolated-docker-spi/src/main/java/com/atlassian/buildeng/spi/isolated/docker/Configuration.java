@@ -333,10 +333,10 @@ public final class Configuration {
         if (obj.has("name") && obj.has("image") && obj.has("size")) {
             String name = obj.getAsJsonPrimitive("name").getAsString();
             String image = obj.getAsJsonPrimitive("image").getAsString();
-            String size = obj.getAsJsonObject("size").getAsString();
+            String size = obj.getAsJsonPrimitive("size").getAsString();
             ExtraContainerSize s;
             try {
-                s = ExtraContainerSize.valueOf(name);
+                s = ExtraContainerSize.valueOf(size);
             } catch (IllegalArgumentException x) {
                 s = ExtraContainerSize.REGULAR;
             }
