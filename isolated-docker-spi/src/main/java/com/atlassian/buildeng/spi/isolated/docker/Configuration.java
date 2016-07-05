@@ -54,6 +54,10 @@ public final class Configuration {
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
+    
+    public static int SIDEKICK_CPU = 40;
+    public static int SIDEKICK_MEMORY = 240;
+    
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
@@ -151,6 +155,14 @@ public final class Configuration {
 
     public ContainerSize getSize() {
         return size;
+    }
+    
+    public int getCPUTotal() {
+        return size.cpu() + SIDEKICK_CPU + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().cpu).sum();
+    }
+    
+    public int getMemoryTotal() {
+        return size.memory() + SIDEKICK_MEMORY + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().memory).sum();
     }
 
     public List<ExtraContainer> getExtraContainers() {
@@ -263,6 +275,20 @@ public final class Configuration {
             this.image = image;
             this.extraSize = extraSize;
         }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getImage() {
+            return image;
+        }
+
+        public ExtraContainerSize getExtraSize() {
+            return extraSize;
+        }
+        
+        
 
         @Override
         public int hashCode() {

@@ -100,21 +100,34 @@ public class GlobalConfiguration {
 
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
-        return new RegisterTaskDefinitionRequest()
+        ContainerDefinition main = withFluentDLogs(new ContainerDefinition()
+                .withName(AGENT_CONTAINER_NAME)
+                .withCpu(configuration.getSize().cpu())
+                .withMemory(configuration.getSize().memory())
+                .withImage(configuration.getDockerImage())
+                .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
+                .withEntryPoint(RUN_SCRIPT)
+                .withWorkingDirectory(WORK_DIR)
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())));
+        
+        RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
-                        withFluentDLogs(new ContainerDefinition()
-                            .withName(AGENT_CONTAINER_NAME)
-                            .withCpu(configuration.getSize().cpu())
-                            .withMemory(configuration.getSize().memory())
-                            .withImage(configuration.getDockerImage())
-                            .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
-                            .withEntryPoint(RUN_SCRIPT)
-                            .withWorkingDirectory(WORK_DIR)
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))),
+                        main,
                         Constants.SIDEKICK_DEFINITION
-                            .withImage(sidekick))
+                                .withImage(sidekick))
                 .withFamily(getTaskDefinitionName());
+        configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
+            ContainerDefinition d = new ContainerDefinition()
+                    .withName(t.getName())
+                    .withImage(t.getImage())
+                    .withCpu(t.getExtraSize().cpu())
+                    .withMemory(t.getExtraSize().memory())
+                    .withEssential(false);
+            req.withContainerDefinitions(d);
+            main.withLinks(t.getName());
+        });
+        return req;
     }
     
     // Constructs a standard de-register request for a standard generated task definition
