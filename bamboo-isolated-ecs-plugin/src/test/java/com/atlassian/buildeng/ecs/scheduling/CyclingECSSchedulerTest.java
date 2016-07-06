@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.lang3.tuple.Pair;
 import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -522,8 +523,8 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
+        when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(containerInstances.size(), 50));
         when(mocked.getAsgInstanceIds(anyString())).thenReturn(ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
-        when(mocked.getCurrentASGDesiredCapacity(anyString())).thenReturn(containerInstances.size());
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);

@@ -163,11 +163,14 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //what the terminateInstances method should reduce it to.
         currentSize = currentSize - terminatedCount;
         try {
-            int asgSize = schedulerBackend.getCurrentASGDesiredCapacity(asgName);
+            Pair<Integer, Integer> p = schedulerBackend.getCurrentASGCapacity(asgName);
             // we need to scale up while ignoring any broken containers, eg.
             // if 3 instances are borked and 2 ok, we need to scale to 6 and not 3 as the desiredScaleSize is calculated 
             // up to this point.
             desiredScaleSize = desiredScaleSize + disconnectedSize;
+            //never can scale beyond max capacity, will get an error then and not scale
+            desiredScaleSize = Math.min(desiredScaleSize, p.getRight());
+            int asgSize = p.getLeft();
             if (desiredScaleSize > currentSize && desiredScaleSize > asgSize) {
                 //this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, asgName);
