@@ -63,7 +63,6 @@ public interface Constants {
     String LAAS_ENVIRONMENT_VAL = "aws-us-east-1-ecs";
     // AWS info
     String ECS_CLUSTER_KEY                = "ecs_cluster";
-    String ECS_CLUSTER_VAL                = DEFAULT_CLUSTER;
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
     
@@ -106,6 +105,5 @@ public interface Constants {
                     .withWorkingDirectory(WORK_DIR)
                     .withLogConfiguration(LAAS_CONFIGURATION)
                     .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
-                    .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL))
-                    .withEnvironment(new KeyValuePair().withName(ECS_CLUSTER_KEY).withValue(ECS_CLUSTER_VAL));
+                    .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL));
 }

@@ -80,7 +80,8 @@ public class GlobalConfiguration {
                         Constants.AGENT_BASE_DEFINITION
                             .withImage(configuration.getDockerImage())
                             .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
+                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))
+                            .withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster())),
                         Constants.SIDEKICK_DEFINITION
                             .withImage(sidekick))
                 .withFamily(getTaskDefinitionName());
