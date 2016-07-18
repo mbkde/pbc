@@ -30,7 +30,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.lang3.tuple.Pair;
 import java.util.stream.Collectors;
+import javafx.util.Duration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -461,6 +463,8 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        
+        populateDisconnectedCacheWithRipeHosts(scheduler);
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
             @Override
@@ -480,6 +484,51 @@ public class CyclingECSSchedulerTest {
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
     }    
     
+    @Test
+    public void noTerminationOnFreshDisconnected() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", false, 2000, 100, 2000, 500),
+                    ci("id2", "arn2", false, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", false, 2000, 800, 2000, 800),
+                    ci("id4", "arn4", false, 2000, 800, 2000, 800),
+                    ci("id5", "arn5", false, 2000, 800, 2000, 800)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        AtomicBoolean thrown = new AtomicBoolean(false);
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+                thrown.set(true);
+            }
+        });
+        awaitProcessing(scheduler);
+        assertTrue("Capacity overload", thrown.get());
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(false));
+        verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
+        //we do scale up, because we have all disconnected agents that we cannot terminate yet. (might be a flake)
+        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
+    }    
+    
+
+    private void populateDisconnectedCacheWithRipeHosts(CyclingECSScheduler scheduler) throws ECSException {
+        DockerHosts hosts = scheduler.loadHosts("", "");
+        for (DockerHost disc : hosts.agentDisconnected()) {
+            scheduler.disconnectedAgentsCache.put(disc, new Date(new Date().getTime() - 1000 * 60 * 2));
+        }
+    }
+    
    @Test
     public void scheduleScaleUpWithDisconnectedTerminationFailed() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
@@ -498,6 +547,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id5", new Date())
                 ));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        populateDisconnectedCacheWithRipeHosts(scheduler);
         Mockito.doThrow(new ECSException("error")).when(schedulerBackend).terminateInstances(anyList(), anyString(), eq(false));
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 600, 100), new SchedulingCallback() {
@@ -522,8 +572,8 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
+        when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(containerInstances.size(), 50));
         when(mocked.getAsgInstanceIds(anyString())).thenReturn(ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
-        when(mocked.getCurrentASGDesiredCapacity(anyString())).thenReturn(containerInstances.size());
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);

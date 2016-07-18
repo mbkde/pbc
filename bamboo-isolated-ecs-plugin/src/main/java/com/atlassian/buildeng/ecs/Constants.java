@@ -55,7 +55,6 @@ public interface Constants {
     String LAAS_ENVIRONMENT_VAL = "aws-us-east-1-ecs";
     // AWS info
     String ECS_CLUSTER_KEY                = "ecs_cluster";
-    String ECS_CLUSTER_VAL                = DEFAULT_CLUSTER;
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
     
