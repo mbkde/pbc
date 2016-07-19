@@ -21,6 +21,7 @@ import com.atlassian.bamboo.build.CustomPreBuildAction;
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.plan.PlanKey;
+import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
@@ -31,6 +32,9 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.google.common.collect.Lists;
+import java.util.Arrays;
+import java.util.Collection;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -101,8 +105,8 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
         Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
-        context.put(Configuration.ENABLED_FOR_JOB, config.isEnabled());
-        context.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
+        config.copyTo(context);
+        context.put("imageSizes", getImageSizes());
     }
 
     @Override
@@ -110,6 +114,11 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         super.addDefaultValues(buildConfiguration);
         buildConfiguration.addProperty(Configuration.ENABLED_FOR_JOB, false);
         buildConfiguration.addProperty(Configuration.DOCKER_IMAGE, "docker:xxx");
+    }
+
+    public static Collection<Pair<String, String>> getImageSizes() {
+        return Lists.newArrayList(Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory)"),
+                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory)"));
     }
 
 }

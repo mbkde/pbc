@@ -1,10 +1,8 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
-import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.LogDriver;
-import com.amazonaws.services.ecs.model.VolumeFrom;
 
 public interface Constants {
 
@@ -48,14 +46,8 @@ public interface Constants {
 
     int SIDEKICK_CPU = 40;
     int SIDEKICK_MEMORY = 240;
-    int AGENT_CPU = 2000;
-    int AGENT_MEMORY = 7800;
-
-    int TASK_CPU = SIDEKICK_CPU + AGENT_CPU;
-    int TASK_MEMORY = SIDEKICK_MEMORY + AGENT_MEMORY;
 
     // fluentd config
-
     // LaaS requirements
     String LAAS_SERVICE_ID_KEY  = "serviceId";
     String LAAS_SERVICE_ID_VAL  = "ryzicKpx";
@@ -94,16 +86,4 @@ public interface Constants {
                     .withMemory(SIDEKICK_MEMORY)
                     .withEssential(false);
 
-    // The container definition of the standard spec build agent, sans docker image name
-    ContainerDefinition AGENT_BASE_DEFINITION =
-            new ContainerDefinition()
-                    .withName(AGENT_CONTAINER_NAME)
-                    .withCpu(AGENT_CPU)
-                    .withMemory(AGENT_MEMORY)
-                    .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
-                    .withEntryPoint(RUN_SCRIPT)
-                    .withWorkingDirectory(WORK_DIR)
-                    .withLogConfiguration(LAAS_CONFIGURATION)
-                    .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
-                    .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL));
 }
