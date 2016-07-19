@@ -12,6 +12,7 @@ import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
 import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
+import java.util.Arrays;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,7 +85,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         try {
             Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
         } catch (IllegalArgumentException e) {
-            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE_SIZE, "Wrong value selected");
+            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE_SIZE, "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
         }
     }
 
