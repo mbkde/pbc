@@ -34,10 +34,17 @@ import org.apache.commons.lang3.tuple.Pair;
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     private static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
-    
+    private static final double SMALL_HIGH_WATERMARK = 0.7;
+    // sort of dependent on size of actual EC2 instances in cluster and how many agents these host.
+    // for m4.4xlarge with 8 per instance we get 3x8 = 24 in total
+    // with watermark at 0.7 we spin up new instance when we reach 17 agents
+    // with watermark at 0.9 we spin up new instance when we reach 22 agents
+    // for m4.10xlarge with 20 per instance we get 3x20 = 60 in total
+    // with watermark at 0.7 we spin up new instance when we reach 42 agents
+    // with watermark at 0.9 we spin up new instance when we reach 54 agents
+    private static final int SMALL_CLUSTER_SIZE = 3; 
 
     private final Duration stalePeriod;
-    private final double highWatermark;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     private long lackingCPU = 0;
     private long lackingMemory = 0;
@@ -58,7 +65,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     public CyclingECSScheduler(SchedulerBackend schedulerBackend, GlobalConfiguration globalConfiguration) {
         stalePeriod = DEFAULT_STALE_PERIOD;
-        highWatermark = DEFAULT_HIGH_WATERMARK;
         this.schedulerBackend = schedulerBackend;
         this.globalConfiguration = globalConfiguration;
         executor.submit(new EndlessPolling());
@@ -74,15 +80,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
 
-    // Scale up if capacity is near full
     static double percentageUtilized(List<DockerHost> freshHosts) {
         double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
         double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
-        if (clusterRegisteredCPU == 0) {
-            return 1;
-        } else {
-            return 1 - clusterRemainingCPU / clusterRegisteredCPU;
-        }
+        return clusterRegisteredCPU == 0 ? 1 : 1 - clusterRemainingCPU / clusterRegisteredCPU;
+        
+    }
+    // Scale up if capacity is near full
+    static boolean hasReachedCapacityLimit(List<DockerHost> freshHosts) {
+        double watermark = freshHosts.size() <= SMALL_CLUSTER_SIZE ? SMALL_HIGH_WATERMARK : DEFAULT_HIGH_WATERMARK;
+        double percentageUtilized = percentageUtilized(freshHosts);
+        return percentageUtilized > watermark;
     }
 
     @Override
@@ -154,8 +162,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         int currentSize = hosts.getUsableSize();
         int disconnectedSize = hosts.agentDisconnected().size() - terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asgName, false);
         int desiredScaleSize = currentSize;
-        //calculate usage from used fresh instances only
-        if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
+        //calculate usage from fresh instances only
+        if (someDiscarded || hasReachedCapacityLimit(hosts.fresh())) {
             // cpu and memory requirements in instances
             long cpuRequirements = lackingCPU / computeInstanceCPULimits(hosts.allUsable());
             long memoryRequirements = lackingMemory / computeInstanceMemoryLimits(hosts.allUsable());
