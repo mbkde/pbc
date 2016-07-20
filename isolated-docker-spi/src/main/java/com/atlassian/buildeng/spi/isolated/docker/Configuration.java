@@ -101,10 +101,9 @@ public final class Configuration {
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
-        String value = cc.getOrDefault(TASK_DOCKER_ENABLE, "false");
         String image = cc.getOrDefault(TASK_DOCKER_IMAGE, "");
         ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(TASK_DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        return new Configuration(Boolean.parseBoolean(value), image, size);
+        return new Configuration(taskDefinition.isEnabled(), image, size);
     }
 
 
