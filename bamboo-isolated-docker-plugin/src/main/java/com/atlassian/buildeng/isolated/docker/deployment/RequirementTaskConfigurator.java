@@ -46,7 +46,6 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     {
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
         configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
-        configMap.put(Configuration.TASK_DOCKER_ENABLE, "" + !StringUtils.isBlank(params.getString(Configuration.TASK_DOCKER_IMAGE)));
         configMap.put(Configuration.TASK_DOCKER_IMAGE_SIZE, params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE));
         return configMap;
     }
