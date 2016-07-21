@@ -37,6 +37,8 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentTimeoutEvent;
 import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
@@ -46,6 +48,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventListener;
+import com.atlassian.event.api.EventPublisher;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,8 @@ public class PreBuildQueuedEventListener {
     private final DeploymentResultService deploymentResultService;
     private final AgentCommandSender agentCommandSender;
     private final AgentManager agentManager;
+    private final EventPublisher eventPublisher;
+ 
 
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                         ErrorUpdateHandler errorUpdateHandler,
@@ -73,6 +78,7 @@ public class PreBuildQueuedEventListener {
                                         JMXAgentsService jmx,
                                         DeploymentResultService deploymentResultService,
                                         AgentCommandSender agentCommandSender,
+                                        EventPublisher eventPublisher,
                                         AgentManager agentManager) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
@@ -82,6 +88,7 @@ public class PreBuildQueuedEventListener {
         this.deploymentResultService = deploymentResultService;
         this.agentManager = agentManager;
         this.agentCommandSender = agentCommandSender;
+        this.eventPublisher = eventPublisher;
     }
 
     @EventListener
@@ -120,15 +127,16 @@ public class PreBuildQueuedEventListener {
                                 return;
                             }
                             jmx.incrementTimedOut();
+                            eventPublisher.publish(new DockerAgentTimeoutEvent(event.getRetryCount(), event.getContext().getEntityKey()));
                         }
                         //custom items pushed by the implementation, we give it a unique prefix
                         result.getCustomResultData().entrySet().stream().forEach(ent -> {
                             event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
                         });
                         if (result.hasErrors()) {
-                            terminateBuild();
-                            errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + Joiner.on("\n").join(result.getErrors()));
-                            event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, Joiner.on("\n").join(result.getErrors()));
+                            String error = Joiner.on("\n").join(result.getErrors()); 
+                            terminateBuild(error);
+                            errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + error);
                         } else {
                             jmx.incrementScheduled();
                         }
@@ -136,13 +144,14 @@ public class PreBuildQueuedEventListener {
 
                     @Override
                     public void handle(IsolatedDockerAgentException exception) {
-                        terminateBuild();
+                        terminateBuild(exception.getLocalizedMessage());
                         errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", exception);
-                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, exception.getLocalizedMessage());
                     }
 
-                    private void terminateBuild() {
+                    private void terminateBuild(String errorMessage) {
+                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, errorMessage);
                         jmx.incrementFailed();
+                        eventPublisher.publish(new DockerAgentFailEvent(errorMessage, event.getContext().getEntityKey()));
                         if (event.getContext() instanceof BuildContext) { 
                             event.getContext().getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
                             buildQueueManager.removeBuildFromQueue(event.getContext().getResultKey());
