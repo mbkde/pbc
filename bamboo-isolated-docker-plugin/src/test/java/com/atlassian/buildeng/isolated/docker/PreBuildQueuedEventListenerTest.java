@@ -29,6 +29,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.event.api.EventPublisher;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
@@ -58,6 +59,8 @@ public class PreBuildQueuedEventListenerTest {
     private ErrorUpdateHandler errorUpdateHandler;
     @Mock
     private BuildQueueManager buildQueueManager;
+    @Mock
+    private EventPublisher eventPublisher;
     @Mock
     private JMXAgentsService jmx;
             
