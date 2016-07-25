@@ -28,8 +28,6 @@ import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
 import static com.atlassian.buildeng.ecs.Constants.AGENT_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.ECS_CLUSTER_KEY;
-import static com.atlassian.buildeng.ecs.Constants.ECS_CLUSTER_VAL;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_CONFIGURATION;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_KEY;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_VAL;
@@ -93,7 +91,7 @@ public class GlobalConfiguration {
         return def.withLogConfiguration(LAAS_CONFIGURATION)
                 .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
                 .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL))
-                .withEnvironment(new KeyValuePair().withName(ECS_CLUSTER_KEY).withValue(ECS_CLUSTER_VAL));
+                .withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster()));
 
     }
 

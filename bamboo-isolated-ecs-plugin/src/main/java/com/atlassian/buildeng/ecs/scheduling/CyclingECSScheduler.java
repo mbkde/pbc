@@ -12,6 +12,7 @@ import org.springframework.beans.factory.DisposableBean;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,9 +34,17 @@ import org.apache.commons.lang3.tuple.Pair;
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     private static final double DEFAULT_HIGH_WATERMARK = 0.9; // Scale when cluster is at 90% of maximum capacity
+    private static final double SMALL_HIGH_WATERMARK = 0.7;
+    // sort of dependent on size of actual EC2 instances in cluster and how many agents these host.
+    // for m4.4xlarge with 8 per instance we get 3x8 = 24 in total
+    // with watermark at 0.7 we spin up new instance when we reach 17 agents
+    // with watermark at 0.9 we spin up new instance when we reach 22 agents
+    // for m4.10xlarge with 20 per instance we get 3x20 = 60 in total
+    // with watermark at 0.7 we spin up new instance when we reach 42 agents
+    // with watermark at 0.9 we spin up new instance when we reach 54 agents
+    private static final int SMALL_CLUSTER_SIZE = 3; 
 
     private final Duration stalePeriod;
-    private final double highWatermark;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     private long lackingCPU = 0;
     private long lackingMemory = 0;
@@ -43,13 +52,19 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final BlockingQueue<Pair<SchedulingRequest, SchedulingCallback>> requests = new LinkedBlockingQueue<>();
+    
+    //under high load there are interminent reports of agents being disconnected
+    //but these recover very fast, only want to actively kill instances
+    // that have disconnected agent for at least the amount given.
+    private static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 1;
+    @VisibleForTesting
+    final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
     private final SchedulerBackend schedulerBackend;
     private final GlobalConfiguration globalConfiguration;
 
     public CyclingECSScheduler(SchedulerBackend schedulerBackend, GlobalConfiguration globalConfiguration) {
         stalePeriod = DEFAULT_STALE_PERIOD;
-        highWatermark = DEFAULT_HIGH_WATERMARK;
         this.schedulerBackend = schedulerBackend;
         this.globalConfiguration = globalConfiguration;
         executor.submit(new EndlessPolling());
@@ -65,15 +80,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
 
-    // Scale up if capacity is near full
     static double percentageUtilized(List<DockerHost> freshHosts) {
         double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
         double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
-        if (clusterRegisteredCPU == 0) {
-            return 1;
-        } else {
-            return 1 - clusterRemainingCPU / clusterRegisteredCPU;
-        }
+        return clusterRegisteredCPU == 0 ? 1 : 1 - clusterRemainingCPU / clusterRegisteredCPU;
+        
+    }
+    // Scale up if capacity is near full
+    static boolean hasReachedCapacityLimit(List<DockerHost> freshHosts) {
+        double watermark = freshHosts.size() <= SMALL_CLUSTER_SIZE ? SMALL_HIGH_WATERMARK : DEFAULT_HIGH_WATERMARK;
+        double percentageUtilized = percentageUtilized(freshHosts);
+        return percentageUtilized > watermark;
     }
 
     @Override
@@ -143,10 +160,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         //see if we need to scale up or down..
         int currentSize = hosts.getUsableSize();
-        int disconnectedSize = hosts.agentDisconnected().size() - terminateInstances(selectDisconnectedAgents(hosts), asgName, false);
+        int disconnectedSize = hosts.agentDisconnected().size() - terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asgName, false);
         int desiredScaleSize = currentSize;
-        //calculate usage from used fresh instances only
-        if (someDiscarded || percentageUtilized(hosts.usedFresh()) >= highWatermark) {
+        //calculate usage from fresh instances only
+        if (someDiscarded || hasReachedCapacityLimit(hosts.fresh())) {
             // cpu and memory requirements in instances
             long cpuRequirements = lackingCPU / computeInstanceCPULimits(hosts.allUsable());
             long memoryRequirements = lackingMemory / computeInstanceMemoryLimits(hosts.allUsable());
@@ -163,11 +180,14 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //what the terminateInstances method should reduce it to.
         currentSize = currentSize - terminatedCount;
         try {
-            int asgSize = schedulerBackend.getCurrentASGDesiredCapacity(asgName);
+            Pair<Integer, Integer> p = schedulerBackend.getCurrentASGCapacity(asgName);
             // we need to scale up while ignoring any broken containers, eg.
             // if 3 instances are borked and 2 ok, we need to scale to 6 and not 3 as the desiredScaleSize is calculated 
             // up to this point.
             desiredScaleSize = desiredScaleSize + disconnectedSize;
+            //never can scale beyond max capacity, will get an error then and not scale
+            desiredScaleSize = Math.min(desiredScaleSize, p.getRight());
+            int asgSize = p.getLeft();
             if (desiredScaleSize > currentSize && desiredScaleSize > asgSize) {
                 //this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, asgName);
@@ -213,7 +233,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         try {
             String asg = globalConfiguration.getCurrentASG();
             DockerHosts hosts = loadHosts(globalConfiguration.getCurrentCluster(), asg);
-            terminateInstances(selectDisconnectedAgents(hosts), asg, false);
+            terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asg, false);
             terminateInstances(selectToTerminate(hosts), asg, true);
         } catch (ECSException ex) {
             logger.error("Failed to scale down", ex);
@@ -230,11 +250,15 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         shutdownExecutor();
     }
     
-    private List<String> selectDisconnectedAgents(DockerHosts hosts) {
+    private List<String> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {
         return hosts.agentDisconnected().stream()
 // container without agent still shows like it's running something but it's not true, all the things are doomed.
 // maybe reevaluate at some point when major ecs changes arrive.                
 //                .filter(t -> t.runningNothing()) 
+                .filter((DockerHost t) -> {
+                    Date date = dates.get(t);
+                    return date != null && (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() > TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
+                })
                 .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
     }
@@ -299,6 +323,21 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
         return minMemory.orElse(DockerHost.DEFAULT_INSTANCE_MEMORY);
+    }
+
+    /**
+     *   update the cache with times of first report for disconnected agent. Remove those that recovered
+     * , add new incidents.
+     */
+    private Map<DockerHost, Date> updateDisconnectedCache(Map<DockerHost, Date> cache, DockerHosts hosts) {
+        cache.keySet().retainAll(hosts.agentDisconnected());
+        hosts.agentDisconnected().forEach((DockerHost t) -> {
+            Date date = cache.get(t);
+            if (date == null) {
+                cache.put(t, new Date());
+            }
+        });
+        return cache;
     }
 
     private class EndlessPolling implements Runnable {
