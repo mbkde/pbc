@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+
+/**
+ * expectations on side of the js code.
+ * <input> with class 'docker-container-autocomplete' to add autocomplete to
+ * <input> with class 'docker-extra-containers' to save and load the extra containers 
+ * 
+ */
 dockerExtraImageEdit = false;
 dockerExtraImageEditIndex = 0;
 
@@ -21,19 +28,12 @@ AJS.$(document).ready(function () {
     var knownImages = {};
     AJS.$.getJSON(AJS.contextPath() + "/rest/docker-ui/1.0/ui/knownImages", function (data) {
         knownImages = data;
-        AJS.$("input#updateMiscellaneous_custom_isolated_docker_image").autocomplete({
+        AJS.$(".docker-container-autocomplete").autocomplete({
             minLength: 0,
 //                    position: { my : "right top", at: "right bottom" },
             source: knownImages
         }
         );
-        AJS.$("input#dockerExtraImage-image").autocomplete({
-            minLength: 0,
-//                    position: { my : "right top", at: "right bottom" },
-            source: knownImages
-        }
-        );
-
     });
     generateExtraContainersForJson();
     AJS.$("button#docker_addExtraImage").click(function () {
@@ -65,7 +65,7 @@ AJS.$(document).ready(function () {
 });
 
 function getExtraContainersData() {
-    var text = AJS.$("input#updateMiscellaneous_custom_isolated_docker_extraContainers").val();
+    var text = AJS.$("input.docker-extra-containers").val();
     var json;
     try {
         json = JSON.parse(text);
@@ -81,7 +81,7 @@ function getExtraContainersData() {
 
 
 function updateExtraContainersData(json) {
-    AJS.$("input#updateMiscellaneous_custom_isolated_docker_extraContainers").val(JSON.stringify(json));
+    AJS.$("input.docker-extra-containers").val(JSON.stringify(json));
 }
 
 function generateExtraContainersForJson() {
