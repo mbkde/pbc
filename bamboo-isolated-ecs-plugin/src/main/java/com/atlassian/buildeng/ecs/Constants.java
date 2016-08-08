@@ -3,6 +3,7 @@ package com.atlassian.buildeng.ecs;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.LogDriver;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 
 public interface Constants {
 
@@ -44,9 +45,6 @@ public interface Constants {
     // The script which runs the bamboo agent jar appropriately
     String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
-    int SIDEKICK_CPU = 40;
-    int SIDEKICK_MEMORY = 240;
-
     // fluentd config
     // LaaS requirements
     String LAAS_SERVICE_ID_KEY  = "serviceId";
@@ -82,8 +80,8 @@ public interface Constants {
     ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
                     .withName(SIDEKICK_CONTAINER_NAME)
-                    .withCpu(SIDEKICK_CPU)
-                    .withMemory(SIDEKICK_MEMORY)
+                    .withCpu(Configuration.SIDEKICK_CPU)
+                    .withMemory(Configuration.SIDEKICK_MEMORY)
                     .withEssential(false);
 
 }

@@ -64,14 +64,15 @@
     </web-resource>
 
 
-    <web-resource key="docker-job-ui-js" name="JavaScript for misc panel.">
+    <web-resource key="docker-job-ui-js" name="JavaScript dependencies for editing isolated docker configuration">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+        <dependency>com.atlassian.auiplugin:dialog2</dependency>
         <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
         <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
 
-        <resource type="download" name="jobConfiguration.js" location="/templates/plugin/jobConfiguration.js"/>
-        <context>docker.jobConfiguration</context>
+        <!--resource type="download" name="jobConfiguration.js" location="/templates/plugin/jobConfiguration.js"/-->
+        <context>atl.general</context>
     </web-resource>
 
     <web-panel key="docker-build-summary-job" name="Isolated Docker info for job results panel."

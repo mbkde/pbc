@@ -32,8 +32,11 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration.ExtraContainer;
 import com.google.common.collect.Lists;
-import java.util.Arrays;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import java.util.Collection;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -87,6 +90,34 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     @NotNull
     @Override
     public ErrorCollection validate(@NotNull BuildConfiguration bc) {
+        String v = bc.getString(Configuration.DOCKER_EXTRA_CONTAINERS);
+        SimpleErrorCollection errs = new SimpleErrorCollection();
+        if (!StringUtils.isBlank(v)) {
+            try {
+                JsonElement obj = new JsonParser().parse(v);
+                if (!obj.isJsonArray()) {
+                    errs.addError(Configuration.DOCKER_EXTRA_CONTAINERS, "Extra containers json needs to be an array.");
+                } else {
+                    JsonArray arr = obj.getAsJsonArray();
+                    arr.forEach((JsonElement t) -> {
+                        if (t.isJsonObject()) {
+                            ExtraContainer v2 = Configuration.from(t.getAsJsonObject());
+                            if (v2 == null) {
+                                errs.addError(Configuration.DOCKER_EXTRA_CONTAINERS, "wrong format for extra containers");
+                            }
+                        } else {
+                            errs.addError(Configuration.DOCKER_EXTRA_CONTAINERS, "wrong format for extra containers");
+                        }
+                    });
+                }
+            } catch (RuntimeException e) {
+                LOG.error("a", e);
+                errs.addError(Configuration.DOCKER_EXTRA_CONTAINERS, "Extra containers field is not valid json.");
+            }
+        }
+        if (errs.hasAnyErrors()) {
+            return errs;
+        }
         Configuration config = Configuration.forBuildConfiguration(bc);
         if (config.isEnabled() && StringUtils.isBlank(config.getDockerImage())) {
             return new SimpleErrorCollection("Docker image cannot be blank.");

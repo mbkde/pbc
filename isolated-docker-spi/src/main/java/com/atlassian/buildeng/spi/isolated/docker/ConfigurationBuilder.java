@@ -15,6 +15,9 @@
  */
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author mkleint
@@ -28,6 +31,7 @@ public final class ConfigurationBuilder {
     private final String dockerImage;
     private Configuration.ContainerSize size = Configuration.ContainerSize.REGULAR;
     private boolean enabled = true;
+    private final List<Configuration.ExtraContainer> extras = new ArrayList<>();
 
     private ConfigurationBuilder(String dockerImage) {
         this.dockerImage = dockerImage;
@@ -43,8 +47,18 @@ public final class ConfigurationBuilder {
         return this;
     }
     
+    public ConfigurationBuilder withExtraContainer(String name, String image, Configuration.ExtraContainerSize size) {
+        this.extras.add(new Configuration.ExtraContainer(name, image, size));
+        return this;
+    }
+    
+    public ConfigurationBuilder withExtraContainer(Configuration.ExtraContainer ex) {
+        this.extras.add(ex);
+        return this;
+    }
+    
     public Configuration build() {
-        return new Configuration(enabled, dockerImage, size);
+        return new Configuration(enabled, dockerImage, size, extras);
     }
     
 }

@@ -24,6 +24,7 @@ import com.atlassian.bandana.DefaultBandanaManager;
 import com.atlassian.bandana.impl.MemoryBandanaPersister;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -96,6 +97,7 @@ public class GlobalConfigurationPersistenceTest {
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.REGULAR, conf.getSize());
+        assertEquals(Collections.emptyList(), conf.getExtraContainers());
     }
     
     @Test
@@ -109,5 +111,24 @@ public class GlobalConfigurationPersistenceTest {
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
+        assertEquals(Collections.emptyList(), conf.getExtraContainers());
+    }
+    
+    @Test
+    public void testVersion3() {
+        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
+        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
+        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
+        
+        String persistedValue = "{'image'='aaa','size'='SMALL','extraContainers':[{'name':'bbb','image':'bbb-image','size':'SMALL'}]}";
+        Configuration conf = gc.load(persistedValue);
+        assertNotNull(conf);
+        assertEquals("aaa", conf.getDockerImage());
+        assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
+        assertEquals(1, conf.getExtraContainers().size());
+        Configuration.ExtraContainer extra = conf.getExtraContainers().get(0);
+        assertEquals("bbb", extra.getName());
+        assertEquals("bbb-image", extra.getImage());
+        assertEquals(Configuration.ExtraContainerSize.SMALL, extra.getExtraSize());
     }
 }

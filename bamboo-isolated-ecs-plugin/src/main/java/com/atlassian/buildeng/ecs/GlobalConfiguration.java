@@ -43,6 +43,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -97,21 +98,34 @@ public class GlobalConfiguration {
 
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
-        return new RegisterTaskDefinitionRequest()
+        ContainerDefinition main = withFluentDLogs(new ContainerDefinition()
+                .withName(AGENT_CONTAINER_NAME)
+                .withCpu(configuration.getSize().cpu())
+                .withMemory(configuration.getSize().memory())
+                .withImage(configuration.getDockerImage())
+                .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
+                .withEntryPoint(RUN_SCRIPT)
+                .withWorkingDirectory(WORK_DIR)
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())));
+        
+        RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
-                        withFluentDLogs(new ContainerDefinition()
-                            .withName(AGENT_CONTAINER_NAME)
-                            .withCpu(configuration.getSize().cpu())
-                            .withMemory(configuration.getSize().memory())
-                            .withImage(configuration.getDockerImage())
-                            .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
-                            .withEntryPoint(RUN_SCRIPT)
-                            .withWorkingDirectory(WORK_DIR)
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                            .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))),
+                        main,
                         Constants.SIDEKICK_DEFINITION
-                            .withImage(sidekick))
+                                .withImage(sidekick))
                 .withFamily(getTaskDefinitionName());
+        configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
+            ContainerDefinition d = new ContainerDefinition()
+                    .withName(t.getName())
+                    .withImage(t.getImage())
+                    .withCpu(t.getExtraSize().cpu())
+                    .withMemory(t.getExtraSize().memory())
+                    .withEssential(false);
+            req.withContainerDefinitions(d);
+            main.withLinks(t.getName());
+        });
+        return req;
     }
     
     // Constructs a standard de-register request for a standard generated task definition
@@ -337,6 +351,7 @@ public class GlobalConfiguration {
         JsonObject el = new JsonObject();
         el.addProperty("image", conf.getDockerImage());
         el.addProperty("size", conf.getSize().name());
+        el.add("extraContainers", Configuration.toJson(conf.getExtraContainers()));
         return el.toString();
     }
     
@@ -355,6 +370,17 @@ public class GlobalConfiguration {
                     logger.error("Wrong size was persisted: {}", size);
                     //ok to skip and do nothing, the default value is REGULAR
                 }
+            }
+            JsonArray arr = jsonobj.getAsJsonArray("extraContainers");
+            if (arr != null) {
+                arr.forEach((JsonElement t) -> {
+                    if (t.isJsonObject()) {
+                        Configuration.ExtraContainer extra = Configuration.from(t.getAsJsonObject());
+                        if (extra != null) {
+                            bld.withExtraContainer(extra);
+                        }
+                    }
+                });
             }
             return bld.build();
         }

@@ -5,6 +5,7 @@ import com.atlassian.bamboo.task.AbstractTaskConfigurator;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.TaskRequirementSupport;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
+import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -12,6 +13,9 @@ import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
 import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import java.util.Arrays;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -47,6 +51,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
         configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
         configMap.put(Configuration.TASK_DOCKER_IMAGE_SIZE, params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE));
+        configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
         return configMap;
     }
 
@@ -58,7 +63,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.put(Configuration.TASK_DOCKER_IMAGE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE));
         context.put("imageSizes", CustomPreBuildActionImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        
+        context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
 
     @Override
@@ -71,6 +76,30 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void validate(@NotNull ActionParametersMap params, @NotNull ErrorCollection errorCollection)
     {
         super.validate(params, errorCollection);
+        
+        String v = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
+        if (!StringUtils.isBlank(v)) {
+            try {
+                JsonElement obj = new JsonParser().parse(v);
+                if (!obj.isJsonArray()) {
+                    errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "Extra containers json needs to be an array.");
+                } else {
+                    JsonArray arr = obj.getAsJsonArray();
+                    arr.forEach((JsonElement t) -> {
+                        if (t.isJsonObject()) {
+                            Configuration.ExtraContainer v2 = Configuration.from(t.getAsJsonObject());
+                            if (v2 == null) {
+                                errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "wrong format for extra containers");
+                            }
+                        } else {
+                            errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "wrong format for extra containers");
+                        }
+                    });
+                }
+            } catch (RuntimeException e) {
+                errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "Extra containers field is not valid json.");
+            }
+        }
 
         String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
 

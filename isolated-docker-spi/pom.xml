@@ -32,6 +32,7 @@
                             com.atlassian.bamboo.v2.build.*,
                             com.atlassian.bamboo.ww2.actions.build.admin.create.*,
                             com.google.common.collect.*,
+                            com.google.gson.*,
                             org.slf4j.*,
                             javax.annotation.*
                         </Import-Package>
