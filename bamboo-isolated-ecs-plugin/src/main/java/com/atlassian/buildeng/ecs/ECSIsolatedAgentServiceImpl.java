@@ -32,6 +32,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
@@ -124,11 +126,18 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     @Override
     public List<String> getKnownDockerImages() {
         List<String> toRet = globalConfiguration.getAllRegistrations().keySet().stream()
-                .map((Configuration t) -> t.getDockerImage())
+                .flatMap((Configuration t) -> getAllImages(t)) 
+                .distinct()
                 .collect(Collectors.toList());
         // sort for sake of UI/consistency?
         Collections.sort(toRet);
         return toRet;
+    }
+    
+    Stream<String> getAllImages(Configuration c) {
+        return Stream.concat(
+                Stream.of(c.getDockerImage()), 
+                c.getExtraContainers().stream().map(ec -> ec.getImage()));
     }
 
     private String mapRunTaskErrorToDescription(String reason) {
