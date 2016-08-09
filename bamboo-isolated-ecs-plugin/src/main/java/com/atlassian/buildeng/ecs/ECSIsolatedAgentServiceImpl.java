@@ -135,12 +135,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
     
     Stream<String> getAllImages(Configuration c) {
-        List<String> s = new ArrayList<>();
-        s.add(c.getDockerImage());
-        c.getExtraContainers().forEach((ec) -> {
-            s.add(ec.getImage());
-        });
-        return s.stream();
+        return Stream.concat(
+                Stream.of(c.getDockerImage()), 
+                c.getExtraContainers().stream().map(ec -> ec.getImage()));
     }
 
     private String mapRunTaskErrorToDescription(String reason) {
