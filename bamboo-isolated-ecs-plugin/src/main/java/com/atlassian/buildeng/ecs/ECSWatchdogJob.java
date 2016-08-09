@@ -18,18 +18,18 @@ package com.atlassian.buildeng.ecs;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.deployments.DeploymentResultKey;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
-import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
+import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
@@ -77,6 +77,12 @@ public class ECSWatchdogJob implements PluginJob {
             logger.info("no SchedulerBackend");
             throw new IllegalStateException();
         }
+        EventPublisher eventPublisher = (EventPublisher)ContainerManager.getComponent("eventPublisher");
+        if (eventPublisher == null) {
+            logger.info("no SchedulerBackend");
+            throw new IllegalStateException();
+        }
+        
         QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, new Function<BuildQueueManager.QueueItemView<CommonContext>, BuildQueueManager.QueueItemView<CommonContext>>() {
             @Override
             public BuildQueueManager.QueueItemView<CommonContext> apply(BuildQueueManager.QueueItemView<CommonContext> input) {
@@ -115,6 +121,7 @@ public class ECSWatchdogJob implements PluginJob {
                             logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                             errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(Constants.RESULT_ERROR, error);
+                            eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));
                             if (t.getView() instanceof BuildContext) {
                                 current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                                 buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
