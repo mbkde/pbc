@@ -1,7 +1,6 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
-import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.LogDriver;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -56,6 +55,7 @@ public interface Constants {
     String ECS_CLUSTER_KEY                = "ecs_cluster";
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
+    
     long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
     String PLUGIN_JOB_KEY = "ecs-watchdog";
     String RESULT_PART_TASKARN = "TaskARN";

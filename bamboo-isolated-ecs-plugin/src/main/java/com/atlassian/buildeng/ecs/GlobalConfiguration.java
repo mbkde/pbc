@@ -62,10 +62,6 @@ import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_KEY;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_VAL;
 import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
 import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.SWARM_API_VERSION;
-import static com.atlassian.buildeng.ecs.Constants.SWARM_CERT_PATH;
-import static com.atlassian.buildeng.ecs.Constants.SWARM_HOST_KEY;
-import static com.atlassian.buildeng.ecs.Constants.SWARM_TLS_VERIFY;
 import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
 
 /**
