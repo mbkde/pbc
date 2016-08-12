@@ -103,19 +103,8 @@ public class GlobalConfiguration {
 
     }
 
-    private String getSwarmUrl() {
-        String cluster = getCurrentCluster();
-        String environment = cluster.equals("staging_bamboo") ? "staging" : "production";
-        return "tcp://swarm." + cluster.replace('_','-') + "." + environment + ".aws.buildeng.atlassian.com";
-    }
-
     private ContainerDefinition withSwarm(ContainerDefinition def) {
-        return def
-                .withMountPoints(new MountPoint().withContainerPath("/buildeng-swarm").withSourceVolume("swarm").withReadOnly(true))
-                .withEnvironment(new KeyValuePair().withName(SWARM_HOST_KEY).withValue(getSwarmUrl()))
-                .withEnvironment(SWARM_TLS_VERIFY)
-                .withEnvironment(SWARM_CERT_PATH)
-                .withEnvironment(SWARM_API_VERSION);
+        return def.withMountPoints(new MountPoint().withContainerPath("/buildeng-swarm").withSourceVolume("swarm").withReadOnly(true));
     }
 
     private RegisterTaskDefinitionRequest withSwarm(RegisterTaskDefinitionRequest def) {
