@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
+import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.LogDriver;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -55,7 +56,12 @@ public interface Constants {
     String ECS_CLUSTER_KEY                = "ecs_cluster";
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
-    
+    //Swarm
+    String       SWARM_HOST_KEY    = "DOCKER_HOST";
+    KeyValuePair SWARM_TLS_VERIFY  = new KeyValuePair().withName("DOCKER_TLS_VERIFY").withValue("1");
+    KeyValuePair SWARM_CERT_PATH   = new KeyValuePair().withName("DOCKER_CERT_PATH").withValue("/buildeng-swarm");
+    KeyValuePair SWARM_API_VERSION = new KeyValuePair().withName("DOCKER_API_VERSION").withValue("1.22");
+
     long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
     String PLUGIN_JOB_KEY = "ecs-watchdog";
     String RESULT_PART_TASKARN = "TaskARN";
