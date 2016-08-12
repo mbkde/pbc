@@ -15,6 +15,9 @@
  */
 package com.atlassian.buildeng.ecs;
 
+import com.amazonaws.Request;
+import com.amazonaws.protocol.json.JsonClientMetadata;
+import com.amazonaws.protocol.json.SdkJsonProtocolFactory;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
@@ -24,6 +27,7 @@ import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.VolumeFrom;
+import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
@@ -42,22 +46,22 @@ import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Maps;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
+import org.apache.commons.fileupload.util.Streams;
 
 /**
  *
@@ -68,6 +72,7 @@ public class GlobalConfiguration {
     // Bandana access keys
     static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
     static String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.config2";
+    static String BANDANA_ECS_TASK_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.task.config";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
     
@@ -148,42 +153,20 @@ public class GlobalConfiguration {
      *
      * @param name The sidekick repository
      */
-    synchronized Collection<Exception> setSidekick(String name) {
-        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
-        Collection<Exception> exceptions = new ArrayList<>();
-        for (Entry<Configuration, Integer> entry: Maps.newHashMap(dockerMappings).entrySet()) {
-            Configuration configuration = entry.getKey();
-            Integer revision = entry.getValue();
-            try {
-                Integer newRev = registerDockerImageECS(configuration, name);
-                dockerMappings.put(configuration, newRev);
-            } catch (ECSException e) {
-                exceptions.add(e);
-                dockerMappings.remove(configuration);
-                logger.error("Error on re-registering image " + configuration.getDockerImage(), e);
-            } finally {
-                try {
-                    deregisterDockerImageECS(revision);
-                } catch (ECSException e) {
-                    exceptions.add(e);
-                    logger.error("Error on deregistering image " + configuration, e);
-                }
-            }
-        }
-        persistBandanaDockerMappingsConfiguration(dockerMappings);
+    synchronized void setSidekick(String name) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, name);
-        return exceptions;
     }
 
-    private void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings) {
+    private void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY, taskRequestMappings);
     }
 
     /**
      * Reset the agent sidekick to be used to the default
      */
-    Collection<Exception> resetSidekick() {
-        return setSidekick(Constants.DEFAULT_SIDEKICK_REPOSITORY);
+    void resetSidekick() {
+        setSidekick(Constants.DEFAULT_SIDEKICK_REPOSITORY);
     }
 
     // ECS Cluster management
@@ -230,14 +213,17 @@ public class GlobalConfiguration {
      * @return The internal identifier for the registered image.
      */
     synchronized int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
-        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
-        if (dockerMappings.containsKey(configuration)) {
+        Map<String, Integer> registrationMappings = getAllECSTaskRegistrations();
+        String newReg = createRegisterTaskDefinitionString(configuration);
+        if (registrationMappings.containsKey(newReg)) {
             throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
         }
         
+        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
         Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
         dockerMappings.put(configuration, revision);
-        persistBandanaDockerMappingsConfiguration(dockerMappings);
+        registrationMappings.put(newReg, revision);
+        persistBandanaDockerMappingsConfiguration(dockerMappings, registrationMappings);
         return revision;
     }
     
@@ -262,9 +248,10 @@ public class GlobalConfiguration {
             throw new RevisionNotActiveException(revision);
         }
         deregisterDockerImageECS(revision);
-        //TODO with configuration objects no longer viable solution to remoe just values.
-        dockerMappings.values().remove(revision);
-        persistBandanaDockerMappingsConfiguration(dockerMappings);
+        removeWithValue(revision, dockerMappings);
+        Map<String, Integer> taskRegMappings = getAllECSTaskRegistrations();
+        removeWithValue(revision, taskRegMappings);
+        persistBandanaDockerMappingsConfiguration(dockerMappings, taskRegMappings);
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {
@@ -275,22 +262,51 @@ public class GlobalConfiguration {
         }
     }
     
+    private <T> void removeWithValue(Integer value, Map<T, Integer> map) {
+        for (Iterator<Map.Entry<T, Integer>> iterator = map.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry<T, Integer> next = iterator.next();
+            if (value.equals(next.getValue())) {
+                iterator.remove();
+            }
+        }
+    }
+    
     /**
      * find task definition registration for given configuration
      * @param configuration
      * @return either the revision or -1 when not found
      */
     synchronized int findTaskRegistrationVersion(Configuration configuration) {
-        Integer val = getAllRegistrations().get(configuration);
+        String reg = createRegisterTaskDefinitionString(configuration);
+        
+        Integer val = getAllECSTaskRegistrations().get(reg);
         return val != null ? val : -1;
     }
 
+    private String createRegisterTaskDefinitionString(Configuration configuration) {
+        RegisterTaskDefinitionRequestMarshaller rtdm = new RegisterTaskDefinitionRequestMarshaller(new SdkJsonProtocolFactory(new JsonClientMetadata()) );
+        Request<RegisterTaskDefinitionRequest> rr = rtdm.marshall(taskDefinitionRequest(configuration, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), getCurrentSidekick()));
+        try {
+            return Streams.asString(rr.getContent(), "UTF-8");
+        } catch (IOException ex) {
+            logger.error("No way to turn Registration Task to string", ex);
+            return null;
+        }
+    }
+
     /**
+     * Returns a list of Configuration objects that were used to register the given
+     * task definition revision
      * @return All the docker image:identifier pairs this service has registered
      */
     synchronized Map<Configuration, Integer> getAllRegistrations() {
         Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         return values == null ? new HashMap<>() : convertFromPersisted(values);
+    }
+    
+    private synchronized Map<String, Integer> getAllECSTaskRegistrations() {
+        Map<String, Integer> ret = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY);
+        return ret == null ? new HashMap<>() : ret;
     }
     
     public synchronized String getCurrentASG() {
