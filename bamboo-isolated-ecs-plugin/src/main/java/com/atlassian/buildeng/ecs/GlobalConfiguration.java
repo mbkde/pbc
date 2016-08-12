@@ -57,7 +57,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -68,7 +67,6 @@ public class GlobalConfiguration {
     
     // Bandana access keys
     static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
-    static String BANDANA_DOCKER_MAPPING_KEY_OLD = "com.atlassian.buildeng.ecs.docker";
     static String BANDANA_DOCKER_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.config2";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
@@ -292,20 +290,7 @@ public class GlobalConfiguration {
      */
     synchronized Map<Configuration, Integer> getAllRegistrations() {
         Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
-        if (values == null) {
-            //check the old mappings. TODO remove
-            ConcurrentHashMap<String, Integer> compat = (ConcurrentHashMap<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
-            if (compat != null) {
-                Map<Configuration, Integer> newVals = convertOld(compat);
-                persistBandanaDockerMappingsConfiguration(newVals);
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY_OLD);
-                return newVals;
-            } else {
-                return new HashMap<>();
-            }
-        } else {
-            return convertFromPersisted(values);
-        }
+        return values == null ? new HashMap<>() : convertFromPersisted(values);
     }
     
     public synchronized String getCurrentASG() {
@@ -322,14 +307,6 @@ public class GlobalConfiguration {
         return new AmazonECSClient();
     }    
 
-    private Map<Configuration, Integer> convertOld(ConcurrentHashMap<String, Integer> compat) {
-        final HashMap<Configuration, Integer> newMap = new HashMap<>();
-        compat.forEach((String t, Integer u) -> {
-            newMap.put(ConfigurationBuilder.create(t).build(), u);
-        });
-        return newMap;
-    }
-    
     private Map<Configuration, Integer> convertFromPersisted(Map<String, Integer> persisted) {
         final HashMap<Configuration, Integer> newMap = new HashMap<>();
         persisted.forEach((String t, Integer u) -> {
