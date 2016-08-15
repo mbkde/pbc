@@ -36,18 +36,28 @@ AJS.$(document).ready(function () {
         );
     });
     generateExtraContainersForJson();
-    AJS.$("button#docker_addExtraImage").click(function () {
-        dockerExtraImageEdit = false;
-        dockerExtraImageEditIndex = 0;
-        AJS.$("input#dockerExtraImage-name").val("");
-        AJS.$("input#dockerExtraImage-image").val("");
-        AJS.dialog2("#dockerExtraImage-dialog").show();
-    });
+    extraContainersDialogButtons();
+
+});
+
+function extraContainersDialogButtons() {
+    AJS.$("#docker_addExtraImage").click(addExtraImage);
     AJS.$("button#dockerExtraImage-dialog-submit-button").click(function () {
         var newone = {};
         newone.name = AJS.$("input#dockerExtraImage-name").val();
         newone.image = AJS.$("input#dockerExtraImage-image").val();
         newone.size = AJS.$("select#dockerExtraImage-size").val();
+        newone.commands = [];
+        AJS.$("input.dockerExtraImage-command").each(function () {
+           newone.commands.push($(this).val()); 
+        });
+        newone.envVars = [];
+        AJS.$("div.dockerExtraImage-envVar").each(function () {
+           var env = {};
+           env.name = $(this).find(".dockerExtraImage-envkey").val();
+           env.value = $(this).find(".dockerExtraImage-envval").val();
+           newone.envVars.push(env); 
+        });
 
         AJS.dialog2("#dockerExtraImage-dialog").hide();
         var json = getExtraContainersData();
@@ -62,7 +72,27 @@ AJS.$(document).ready(function () {
     AJS.$("button#dockerExtraImage-dialog-close-button").click(function () {
         AJS.dialog2("#dockerExtraImage-dialog").hide();
     });
-});
+    AJS.$('#dockerExtraImage-commandsAdd').click(function() {
+        appendExtraContainerCommandToDialog('');
+    });
+    AJS.$('#dockerExtraImage-envAdd').click(function() {
+        appendExtraContainerEnvVarToDialog('', '');
+    });
+}
+
+function appendExtraContainerCommandToDialog(value) {
+    AJS.$('#dockerExtraImage-commands').append("<div><input class='text dockerExtraImage-command' type='input' value='" + value +  "' name='dockerExtraImage-image'/><a class='aui-link' onclick='removeLine(this)'>Remove</a><br/></div>");
+}
+
+function appendExtraContainerEnvVarToDialog(key, value) {
+    AJS.$('#dockerExtraImage-envVars').append("<div class='dockerExtraImage-envVar'><input class='text dockerExtraImage-envkey' type='input' name='dockerExtraImage-envkey' value='" + key + "'/>=<input class='text dockerExtraImage-envval' type='input' name='dockerExtraImage-envval' value='" + value + "'/><a class='aui-link' onclick='removeLine(this)'>Remove</a><br/></div>");
+}
+
+function removeLine(element) {
+    var par = element.parentElement;
+    par.parentElement.removeChild(par);
+}
+
 
 function getExtraContainersData() {
     var text = AJS.$("input.docker-extra-containers").val();
@@ -72,11 +102,14 @@ function getExtraContainersData() {
     } catch (e) {
         json = [];
     }
-    if ([].constructor === json.constructor) {
+    return toExtraContainerArray(json);
+}
+
+function toExtraContainerArray(json) {
+    if (json && [].constructor === json.constructor) {
         return json;
     }
     return [];
-
 }
 
 
@@ -101,7 +134,7 @@ function appendTableRow(parent, item, index) {
     parent.append('<tr id="row-revision-' + index + '">' +
             "<td>" + item.name + "</td>" +
             "<td>" + item.image + "</td>" +
-            "<td>" + extraImageSizeToUI(item.size) + "</td>" +
+            "<td>" + extraImageDetails(item) + "</td>" +
             '<td>' +
             '<button type="button" class="aui-button" onclick="editExtraImage(' + index + ')">Edit</button>' +
             '<button type="button" class="aui-button" onclick="deleteExtraImage(' + index + ')">Delete</button>' +
@@ -109,14 +142,34 @@ function appendTableRow(parent, item, index) {
             "</tr>");
 }
 
-function extraImageSizeToUI(size) {
+function extraImageDetails(item) {
+    var size = item.size;
+    var sizeUI;
     if (size.toUpperCase() === 'REGULAR') {
-        return "Regular (~ 2G)";
+        sizeUI = "<p>Regular size (~ 2G)</p>";
     }
     if (size.toUpperCase() === 'SMALL') {
-        return "Small (~ 1G)";
+        sizeUI = "<p>Small size (~ 1G)</p>";
     }
-    return size;
+    var envvarsUI = "";
+    var commandsUI = "";
+    var commands = toExtraContainerArray(item.commands);
+    if (commands.length > 0) {
+        commandsUI = "<p>Commands:";
+        AJS.$.each(commands, function(index, item) {
+            commandsUI = commandsUI + " " + item;
+        });
+        commandsUI = commandsUI + "</p>";
+    }
+    var envvars = toExtraContainerArray(item.envVars);
+    if (envvars.length > 0) {
+        envvarsUI = "<p>Environment Variables:<br/>";
+        AJS.$.each(envvars, function(index, item) {
+            envvarsUI = envvarsUI + item.name + "=" + item.value + "<br/>";
+        });
+        envvarsUI = envvarsUI + "</p>";
+    }
+    return sizeUI + commandsUI + envvarsUI;
 }
 
 function deleteExtraImage(index) {
@@ -132,9 +185,34 @@ function editExtraImage(index) {
     AJS.$("input#dockerExtraImage-name").val(val.name);
     AJS.$("input#dockerExtraImage-image").val(val.image);
     AJS.$("select#dockerExtraImage-size").val(val.size);
-
+    var commands = toExtraContainerArray(val.commands);
+    AJS.$("div#dockerExtraImage-commands").empty();
+    if (commands.length > 0) {
+        AJS.$.each(commands, function(index, item) {
+            appendExtraContainerCommandToDialog(item);
+        });
+    }
+    AJS.$("div#dockerExtraImage-envVars").empty();
+    var envvars = toExtraContainerArray(val.envVars);
+    if (envvars.length > 0) {
+        AJS.$.each(envvars, function(index, item) {
+            appendExtraContainerEnvVarToDialog(item.name, item.value);
+        });
+    }    
+    
     dockerExtraImageEdit = true;
     dockerExtraImageEditIndex = index;
+    AJS.dialog2("#dockerExtraImage-dialog").show();
+}
+
+function addExtraImage() {
+    AJS.$("input#dockerExtraImage-name").val("");
+    AJS.$("input#dockerExtraImage-image").val("");
+    AJS.$("div#dockerExtraImage-commands").empty();
+    AJS.$("div#dockerExtraImage-envVars").empty();
+    
+    dockerExtraImageEdit = false;
+    dockerExtraImageEditIndex = 0;
     AJS.dialog2("#dockerExtraImage-dialog").show();
 }
 

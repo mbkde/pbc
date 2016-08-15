@@ -43,6 +43,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -158,15 +159,29 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     public SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest request, String taskDefinition) throws ECSException {
         try {
             AmazonECSClient ecsClient = new AmazonECSClient();
+            TaskOverride overrides = new TaskOverride();
             ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
                 .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(containerArn))
                 .withName(Constants.AGENT_CONTAINER_NAME);
+            overrides.withContainerOverrides(buildResultOverride);
+            request.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
+                if (!t.getCommands().isEmpty() || !t.getEnvVariables().isEmpty()) {
+                    ContainerOverride ride = new ContainerOverride().withName(t.getName());
+                    t.getCommands().forEach((String t1) -> {
+                        ride.withCommand(t1);
+                    });
+                    t.getEnvVariables().forEach((Configuration.EnvVariable t1) -> {
+                        ride.withEnvironment(new KeyValuePair().withName(t1.getName()).withValue(t1.getValue()));
+                    });
+                    overrides.withContainerOverrides(ride);
+                }
+            });
             StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
                     .withCluster(cluster)
                     .withContainerInstances(containerArn)
                     .withTaskDefinition(taskDefinition + ":" + request.getRevision())
-                    .withOverrides(new TaskOverride().withContainerOverrides(buildResultOverride))
+                    .withOverrides(overrides)
             );
             return new SchedulingResult(startTaskResult, containerArn);
         } catch (Exception e) {

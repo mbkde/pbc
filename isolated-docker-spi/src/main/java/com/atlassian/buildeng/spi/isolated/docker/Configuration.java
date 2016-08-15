@@ -30,6 +30,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -242,10 +243,7 @@ public final class Configuration {
             
         }
         return toRet;
-        
     }
-    
-    
     
     public static enum ContainerSize {
         REGULAR(2000, 7800),
@@ -266,14 +264,14 @@ public final class Configuration {
         public int memory() {
             return memory;
         }
-        
     }
-    
 
     public static class ExtraContainer {
         String name;
         String image;
         ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
+        List<String> commands = Collections.emptyList();
+        List<EnvVariable> envVariables = Collections.emptyList();
 
         public ExtraContainer(String name, String image, ExtraContainerSize extraSize) {
             this.name = name;
@@ -292,8 +290,22 @@ public final class Configuration {
         public ExtraContainerSize getExtraSize() {
             return extraSize;
         }
-        
-        
+
+        public List<String> getCommands() {
+            return commands;
+        }
+
+        public void setCommands(List<String> commands) {
+            this.commands = commands;
+        }
+
+        public List<EnvVariable> getEnvVariables() {
+            return envVariables;
+        }
+
+        public void setEnvVariables(List<EnvVariable> envVariables) {
+            this.envVariables = envVariables;
+        }
 
         @Override
         public int hashCode() {
@@ -301,6 +313,8 @@ public final class Configuration {
             hash = 59 * hash + Objects.hashCode(this.name);
             hash = 59 * hash + Objects.hashCode(this.image);
             hash = 59 * hash + Objects.hashCode(this.extraSize);
+            hash = 59 * hash + Objects.hashCode(this.commands);
+            hash = 59 * hash + Objects.hashCode(this.envVariables);
             return hash;
         }
 
@@ -322,14 +336,39 @@ public final class Configuration {
             if (!Objects.equals(this.image, other.image)) {
                 return false;
             }
-            return this.extraSize == other.extraSize;
+            if (this.extraSize != other.extraSize) {
+                return false;
+            }
+            if (!Objects.equals(this.commands, other.commands)) {
+                return false;
+            }
+            return Objects.equals(this.envVariables, other.envVariables);
         }
+
+        
 
         private JsonObject toJson() {
             JsonObject el = new JsonObject();
             el.addProperty("name", name);
             el.addProperty("image", image);
             el.addProperty("size", extraSize.name());
+            if (!commands.isEmpty()) {
+                JsonArray arr = new JsonArray();
+                commands.forEach((String t) -> {
+                    arr.add(new JsonPrimitive(t));
+                });
+                el.add("commands", arr);
+            }
+            if (!envVariables.isEmpty()) {
+                JsonArray arr = new JsonArray();
+                envVariables.forEach((EnvVariable t) -> {
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("name", t.getName());
+                    obj.addProperty("value", t.getValue());
+                    arr.add(obj);
+                });
+                el.add("envVars", arr);
+            }
             return el;
         }
     }
@@ -345,7 +384,25 @@ public final class Configuration {
             } catch (IllegalArgumentException x) {
                 s = ExtraContainerSize.REGULAR;
             }
-            return new ExtraContainer(name, image, s);
+            ExtraContainer toRet = new ExtraContainer(name, image, s);
+            JsonArray commands = obj.getAsJsonArray("commands");
+            if (commands != null) {
+                List<String> comms = new ArrayList<>();
+                commands.forEach((JsonElement t) -> {
+                    comms.add(t.getAsString());
+                });
+                toRet.setCommands(comms);
+            }
+            JsonArray envvars = obj.getAsJsonArray("envVars");
+            if (envvars != null) {
+                List<EnvVariable> vars = new ArrayList<>();
+                envvars.forEach((JsonElement t) -> {
+                    JsonObject to = t.getAsJsonObject();
+                    vars.add(new EnvVariable(to.getAsJsonPrimitive("name").getAsString(), to.getAsJsonPrimitive("value").getAsString()));
+                });
+                toRet.setEnvVariables(vars);
+            }
+            return toRet;
         } 
         return null;
     }
@@ -369,6 +426,52 @@ public final class Configuration {
 
         public int memory() {
             return memory;
+        }
+        
+    }
+
+    public static final class EnvVariable {
+
+        private final String name;
+        private final String value;
+
+        public EnvVariable(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 41 * hash + Objects.hashCode(this.name);
+            hash = 41 * hash + Objects.hashCode(this.value);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final EnvVariable other = (EnvVariable) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            return Objects.equals(this.value, other.value);
         }
         
     }

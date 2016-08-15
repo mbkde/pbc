@@ -27,8 +27,19 @@
                                 <option value="SMALL">Small (~1G memory)</option>
                         </select>
                     </div>
+                    <div class="field-group">
+                        <label class="long-label" for="dockerExtraImage-commands" id="dockerExtraImage-commandsLabel">Commands</label>
+                        <a id='dockerExtraImage-commandsAdd' class='aui-link'>Add Command</a>
+                        <div id="dockerExtraImage-commands" name="dockerExtraImage-commands"/>
+                    </div>
+                    <div class="field-group">
+                        <label class="long-label" for="dockerExtraImage-env" id="dockerExtraImage-envLabel">Environment Variables</label>
+                        <a id='dockerExtraImage-envAdd' class='aui-link'>Add Env Var</a>
+                        <div id="dockerExtraImage-envVars" name="dockerExtraImage-envVars"/>
+                    </div>
             </div>
     </div>
+
     <!-- Dialog footer -->
     <footer class="aui-dialog2-footer">
         <!-- Actions to render on the right of the footer -->

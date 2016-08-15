@@ -80,8 +80,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 req.getUniqueIdentifier(),
                 resultId,
                 revision,
-                req.getConfiguration().getCPUTotal(),
-                req.getConfiguration().getMemoryTotal());
+                req.getConfiguration());
         ecsScheduler.schedule(schedulingRequest,
                 new SchedulingCallback() {
                     @Override

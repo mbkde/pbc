@@ -1,11 +1,11 @@
 <div id="isolatedDockerExtra" class="field-group">
-    <button id='docker_addExtraImage' class='aui-button' type='button'>Add Linked Docker Container</button>
+    <a id='docker_addExtraImage' class='aui-link'>Add Linked Docker Container</a>
     <label for="dockerImageTable" id="fieldLabelArea_updateMiscellaneous_dockerImageTable">Additional containers to run</label>
     <table id="dockerImageTable" class="aui">
         <tr>
             <th>Name</th>
             <th>Image</th>
-            <th>Size</th>
+            <th>Details</th>
             <th></th>
         </tr>
     </table>
