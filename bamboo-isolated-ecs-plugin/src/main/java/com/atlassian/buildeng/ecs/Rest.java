@@ -17,8 +17,6 @@
 package com.atlassian.buildeng.ecs;
 
 import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
@@ -30,6 +28,10 @@ import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.Consumes;
@@ -92,11 +94,15 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/cluster")
     public Response setCluster(String requestString) {
-        String cluster;
+        String cluster = null;
         try {
-            JSONObject o = new JSONObject(requestString);
-            cluster = o.getString("cluster");
-        } catch (JSONException e) {
+            JsonParser p = new JsonParser();
+            JsonElement e = p.parse(requestString);
+            if (e.isJsonObject()) {
+                JsonObject o = e.getAsJsonObject();
+                cluster = o.getAsJsonPrimitive("cluster") != null ? o.getAsJsonPrimitive("cluster").getAsString() : null;
+            }
+        } catch (JsonParseException e) {
             return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (cluster == null) {
@@ -118,22 +124,22 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sidekick")
     public Response setSidekick(String requestString) {
-        String sidekick;
+        String sidekick = null;
         try {
-            JSONObject o = new JSONObject(requestString);
-            sidekick = o.getString("sidekick");
-        } catch (JSONException e) {
+            JsonParser p = new JsonParser();
+            JsonElement e = p.parse(requestString);
+            if (e.isJsonObject()) {
+                JsonObject o = e.getAsJsonObject();
+                sidekick = o.getAsJsonPrimitive("sidekick") != null ? o.getAsJsonPrimitive("sidekick").getAsString() : null;
+            }
+        } catch (JsonParseException e) {
             return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (sidekick == null) {
             return Response.status(Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
         }
-        Collection<Exception> exceptions = configuration.setSidekick(sidekick);
-        if (exceptions.isEmpty()) {
-            return Response.noContent().build();
-        } else {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
-        }
+        configuration.setSidekick(sidekick);
+        return Response.noContent().build();
     }
 
     @POST
@@ -141,12 +147,8 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sidekick/reset")
     public Response resetSidekick() {
-        Collection<Exception> exceptions = configuration.resetSidekick();
-        if (exceptions.isEmpty()) {
-            return Response.noContent().build();
-        } else {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(exceptions.toString()).build();
-        }
+        configuration.resetSidekick();
+        return Response.noContent().build();
     }
 
 
@@ -170,11 +172,15 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/asg")
     public Response setASG(String requestString) {
-        String asg;
+        String asg = null;
         try {
-            JSONObject o = new JSONObject(requestString);
-            asg = o.getString("asg");
-        } catch (JSONException e) {
+            JsonParser p = new JsonParser();
+            JsonElement e = p.parse(requestString);
+            if (e.isJsonObject()) {
+                JsonObject o = e.getAsJsonObject();
+                asg = o.getAsJsonPrimitive("asg") != null ? o.getAsJsonPrimitive("asg").getAsString() : null;
+            }
+        } catch (JsonParseException e) {
             return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
         }
         if (asg == null) {

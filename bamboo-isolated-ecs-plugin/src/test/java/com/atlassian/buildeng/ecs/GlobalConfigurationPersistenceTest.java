@@ -68,25 +68,6 @@ public class GlobalConfigurationPersistenceTest {
     }
     
     @Test
-    public void conversionFromOldTest() throws Exception {
-        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
-        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
-        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        
-        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
-        when(gc.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
-        ConcurrentMap<String, Integer> old = new ConcurrentHashMap<>();
-        old.put("aaa", 4);
-        dbm.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY_OLD, old);
-
-        Map<Configuration, Integer> map = gc.getAllRegistrations();
-        assertEquals(1, map.size());
-        Configuration c = ConfigurationBuilder.create("aaa").build();
-        assertEquals(new Integer(4), map.get(c));
-    }
-    
-    @Test
     public void testVersion1() {
         DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
         AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);

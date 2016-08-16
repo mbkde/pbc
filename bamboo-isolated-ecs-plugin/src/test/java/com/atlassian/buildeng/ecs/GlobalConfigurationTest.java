@@ -22,29 +22,28 @@ import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import static org.mockito.Matchers.anyObject;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  *
@@ -71,59 +70,53 @@ public class GlobalConfigurationTest {
 
     @Test
     public void setSidekickHappyPath() {
-        Map<String, Integer> map = new HashMap<>();
-        map.put(configuration.persist(of("docker1")), 1);
-        map.put(configuration.persist(of("docker2")), 2);
-        map.put(configuration.persist(of("docker3")), 3);
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
-                .thenReturn(map);
-        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        configuration.setSidekick("newSidekick");
+        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY), eq("newSidekick"));
+    }
+    
+    @Test
+    public void registerTaskDefinition() {
+        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
+        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
+        Map<String, Integer> dock = new HashMap<>();
+        Map<String, Integer> task = new HashMap<>();
         
-        Collection<Exception> errors = configuration.setSidekick("newSidekick");
-        assertTrue(errors.isEmpty());
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
+                .thenReturn(dock);        
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_ECS_TASK_MAPPING_KEY))
+                .thenReturn(task);        
+        when(configuration.ecsClient.registerTaskDefinition(anyObject())).thenReturn(new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        Mockito.doAnswer((Answer<Object>) (InvocationOnMock invocation) -> {
+            Map dock2 = invocation.getArgumentAt(2, Map.class);
+            dock.clear();
+            dock.putAll(dock2);
+            return null;
+        }).when(bandanaManager).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), anyObject());
+        Configuration c = ConfigurationBuilder.create("aaa")
+                .withImageSize(Configuration.ContainerSize.SMALL)
+                .withExtraContainer("extra", "extra", Configuration.ExtraContainerSize.SMALL)
+                .build();
+        try {
+            int val = configuration.registerDockerImage(c);
+            Assert.assertEquals(4, val);
+            Assert.assertEquals(4, configuration.findTaskRegistrationVersion(c));
+        } catch (ImageAlreadyRegisteredException | ECSException ex) {
+            Assert.fail(ex.getMessage());
+        }
+        
+        //next time round we should not add anything.
+        try {
+            int val = configuration.registerDockerImage(c);
+            Assert.fail("Cannot add the same config twice");
+        } catch (ECSException ex) {
+            Assert.fail(ex.getMessage());
+        } catch (ImageAlreadyRegisteredException ex) {
+            //correct path
+        }
     }
     
-    @Test 
-    public void setSidekickFailedDeregistrations() {
-        Map<String, Integer> map = new HashMap<>();
-        map.put(configuration.persist(of("docker1")), 1);
-        map.put(configuration.persist(of("docker2")), 2);
-        map.put(configuration.persist(of("docker3")), 3);
-        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
-        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
-                .thenReturn(map);
-        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
-        when(configuration.ecsClient.deregisterTaskDefinition(anyObject())).then(invocation -> {
-            throw new Exception("Error on deregistering");
-        });
-        Collection<Exception> errors = configuration.setSidekick("newSidekick");
-        assertEquals(3, errors.size());
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new MapMatcher()));
-    }
-    
-   @Test 
-    public void setSidekickFailedRegistrations() {
-        Map<String, Integer> map = new HashMap<>();
-        map.put(configuration.persist(of("docker1")), 1);
-        map.put(configuration.persist(of("docker2")), 2);
-        map.put(configuration.persist(of("docker3")), 3);
-        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
-        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY))
-                .thenReturn(map);
-        when(configuration.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> {
-            throw new Exception("Error on registering");
-        });
-        Collection<Exception> errors = configuration.setSidekick("newSidekick");
-        assertEquals(3, errors.size());
-        //registrations unsuccessful, removed
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_DOCKER_MAPPING_KEY), Mockito.argThat(new EmptyMapMatcher()));
-    }    
-
     public static class GlobalConfigurationSubclass extends GlobalConfiguration {
         AmazonECS ecsClient = mock(AmazonECS.class);
         
@@ -137,36 +130,4 @@ public class GlobalConfigurationTest {
         }
         
     }
-    
-    private static class MapMatcher extends BaseMatcher<Map<String, Integer>> {
-        @Override
-            public boolean matches(Object item) {
-                Map<String, Integer> map = (Map<String, Integer>) item;
-                assertEquals(3, map.size());
-                for (Integer val : map.values()) {
-                    assertTrue("value greater than 3", val > 3);
-                }
-                return true;
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("map");
-            }
-    }
-    
-    private static class EmptyMapMatcher extends BaseMatcher<Map<String, Integer>> {
-        @Override
-            public boolean matches(Object item) {
-                Map<String, Integer> map = (Map<String, Integer>) item;
-                assertEquals(0, map.size());
-                return true;
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("map");
-            }
-    }
-    
 }
