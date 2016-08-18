@@ -148,7 +148,7 @@ function extraImageDetails(item) {
     if (size.toUpperCase() === 'REGULAR') {
         sizeUI = "<p>Regular size (~ 2G)</p>";
     }
-    if (size.toUpperCase() === 'SMALL') {
+    else if (size.toUpperCase() === 'SMALL') {
         sizeUI = "<p>Small size (~ 1G)</p>";
     }
     var envvarsUI = "";
@@ -185,20 +185,14 @@ function editExtraImage(index) {
     AJS.$("input#dockerExtraImage-name").val(val.name);
     AJS.$("input#dockerExtraImage-image").val(val.image);
     AJS.$("select#dockerExtraImage-size").val(val.size);
-    var commands = toExtraContainerArray(val.commands);
     AJS.$("div#dockerExtraImage-commands").empty();
-    if (commands.length > 0) {
-        AJS.$.each(commands, function(index, item) {
-            appendExtraContainerCommandToDialog(item);
-        });
-    }
+    AJS.$.each(toExtraContainerArray(val.commands), function(index, item) {
+        appendExtraContainerCommandToDialog(item);
+    });
     AJS.$("div#dockerExtraImage-envVars").empty();
-    var envvars = toExtraContainerArray(val.envVars);
-    if (envvars.length > 0) {
-        AJS.$.each(envvars, function(index, item) {
-            appendExtraContainerEnvVarToDialog(item.name, item.value);
-        });
-    }    
+    AJS.$.each(toExtraContainerArray(val.envVars), function(index, item) {
+        appendExtraContainerEnvVarToDialog(item.name, item.value);
+    });
     
     dockerExtraImageEdit = true;
     dockerExtraImageEditIndex = index;

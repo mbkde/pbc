@@ -267,11 +267,11 @@ public final class Configuration {
     }
 
     public static class ExtraContainer {
-        String name;
-        String image;
-        ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
-        List<String> commands = Collections.emptyList();
-        List<EnvVariable> envVariables = Collections.emptyList();
+        private final String name;
+        private final String image;
+        private ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
+        private List<String> commands = Collections.emptyList();
+        private List<EnvVariable> envVariables = Collections.emptyList();
 
         public ExtraContainer(String name, String image, ExtraContainerSize extraSize) {
             this.name = name;
@@ -295,16 +295,16 @@ public final class Configuration {
             return commands;
         }
 
-        public void setCommands(List<String> commands) {
-            this.commands = commands;
+        public void setCommands(@Nonnull List<String> commands) {
+            this.commands = Collections.unmodifiableList(commands);
         }
 
         public List<EnvVariable> getEnvVariables() {
             return envVariables;
         }
 
-        public void setEnvVariables(List<EnvVariable> envVariables) {
-            this.envVariables = envVariables;
+        public void setEnvVariables(@Nonnull List<EnvVariable> envVariables) {
+            this.envVariables = Collections.unmodifiableList(envVariables);
         }
 
         @Override
