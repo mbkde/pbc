@@ -18,11 +18,17 @@ public class PlanSummaryPanel implements WebPanel {
         for (ResultsSummary brs : summary.getOrderedJobResultSummaries()) {
             Configuration config = Configuration.forBuildResultSummary((BuildResultsSummary) brs);
             if (config.isEnabled()) {
+                String error = brs.getCustomBuildData().get(Constants.RESULT_ERROR);
                 ret.append("<dt>")
                    .append(brs.getImmutablePlan().getBuildName())
                    .append("</dt><dd>")
-                   .append(config.getDockerImage())
-                   .append("</dd>");
+                   .append(config.getDockerImage());
+                if (error != null) {
+                    ret.append("<br/><span class=\"errorText\">")
+                       .append(error)
+                       .append("</span>");
+                }
+                ret.append("</dd>");
             }
         }
         if (ret.length() > 0) {

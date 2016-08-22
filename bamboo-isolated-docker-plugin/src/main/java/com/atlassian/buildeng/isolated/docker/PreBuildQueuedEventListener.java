@@ -224,8 +224,7 @@ public class PreBuildQueuedEventListener {
         if (config.isEnabled()) {
             BuildAgent agent = dr != null ? dr.getAgent() : null;
             if (agent != null) {
-                DeleterGraveling dg = new DeleterGraveling(agentCommandSender, agentManager);
-                dg.visitRemote(agent);
+                DeleterGraveling.stopAgentRemotely(agent, agentManager, agentCommandSender);
             }
         }
     }

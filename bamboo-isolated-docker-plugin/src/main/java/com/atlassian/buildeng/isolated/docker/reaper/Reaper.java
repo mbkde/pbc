@@ -18,9 +18,10 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
+import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
-import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 
@@ -34,26 +35,45 @@ public class Reaper implements LifecycleAware {
     private final ExecutableAgentsHelper executableAgentsHelper;
     private final AgentManager agentManager;
     private final AgentCommandSender agentCommandSender;
+    private final BuildQueueManager buildQueueManager;
+    private final CachedPlanManager cachedPlanManager;
+    
+    static long   REAPER_THRESHOLD_MILLIS = 300000L; //Reap agents if they're older than 5 minutes
+    static long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
+    static String REAPER_KEY = "isolated-docker-reaper";
+    static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
+    static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
+    static String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
+    static String REAPER_DEATH_LIST = "reaper-death-list";
+    static String REAPER_CACHEDPLANMANAGER_KEY = "reaper-cached-plan-manager";
+    static String REAPER_BUILDQUEUEMANAGER_KEY = "reaper-build-queue-manager";
+    
 
-    public Reaper(PluginScheduler pluginScheduler, ExecutableAgentsHelper executableAgentsHelper, AgentManager agentManager, AgentCommandSender agentCommandSender) {
+    public Reaper(PluginScheduler pluginScheduler, ExecutableAgentsHelper executableAgentsHelper, 
+            AgentManager agentManager, AgentCommandSender agentCommandSender,
+            BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager) {
         this.pluginScheduler = pluginScheduler;
         this.executableAgentsHelper = executableAgentsHelper;
         this.agentManager = agentManager;
         this.agentCommandSender = agentCommandSender;
+        this.buildQueueManager = buildQueueManager;
+        this.cachedPlanManager = cachedPlanManager;
     }
 
     @Override
     public void onStart() {
         Map<String, Object> data = new HashMap<>();
-        data.put(Constants.REAPER_AGENT_MANAGER_KEY, agentManager);
-        data.put(Constants.REAPER_AGENTS_HELPER_KEY, executableAgentsHelper);
-        data.put(Constants.REAPER_COMMAND_SENDER_KEY, agentCommandSender);
-        data.put(Constants.REAPER_DEATH_LIST, new ArrayList<BuildAgent>());
-        pluginScheduler.scheduleJob(Constants.REAPER_KEY,ReaperJob.class, data, new Date(), Constants.REAPER_INTERVAL_MILLIS);
+        data.put(REAPER_AGENT_MANAGER_KEY, agentManager);
+        data.put(REAPER_AGENTS_HELPER_KEY, executableAgentsHelper);
+        data.put(REAPER_COMMAND_SENDER_KEY, agentCommandSender);
+        data.put(REAPER_BUILDQUEUEMANAGER_KEY, buildQueueManager);
+        data.put(REAPER_CACHEDPLANMANAGER_KEY, cachedPlanManager);
+        data.put(REAPER_DEATH_LIST, new ArrayList<BuildAgent>());
+        pluginScheduler.scheduleJob(REAPER_KEY,ReaperJob.class, data, new Date(), Reaper.REAPER_INTERVAL_MILLIS);
     }
 
     @Override
     public void onStop() {
-        pluginScheduler.unscheduleJob(Constants.REAPER_KEY);
+        pluginScheduler.unscheduleJob(REAPER_KEY);
     }
 }

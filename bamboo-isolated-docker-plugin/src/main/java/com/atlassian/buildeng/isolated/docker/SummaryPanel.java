@@ -21,7 +21,7 @@ public class SummaryPanel implements WebPanel {
                .append(configuration.getDockerImage()).append("</dd>");
             String error = summary.getCustomBuildData().get(Constants.RESULT_ERROR);
             if (error != null) {
-                ret.append("<dt>Error:</dt><dd>")
+                ret.append("<dt>Error:</dt><dd class=\"errorText\">")
                    .append(error)
                    .append("</dd>");
             }
