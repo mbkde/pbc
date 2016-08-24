@@ -74,7 +74,7 @@ public class PostJobActionImpl implements PostJobAction {
             }
             String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
             if (StringUtils.equals("true", properStopped)) {
-                //only remove the agent when the agent was stopped from iside by StopDockerAgentBuildProcessor.
+                //only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
                 try {
                     agentManager.removeAgent(agentId);
                 } catch (TimeoutException ex) {
