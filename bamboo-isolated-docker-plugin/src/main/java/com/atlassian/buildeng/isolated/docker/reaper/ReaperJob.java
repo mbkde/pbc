@@ -5,10 +5,12 @@ import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper.ExecutorQuery;
+import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
+import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.sal.api.scheduling.PluginJob;
 
@@ -22,14 +24,17 @@ public class ReaperJob implements PluginJob {
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
-        AgentManager agentManager = (AgentManager) jobDataMap.get(Constants.REAPER_AGENT_MANAGER_KEY);
-        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(Constants.REAPER_AGENTS_HELPER_KEY);
-        AgentCommandSender agentCommandSender = (AgentCommandSender) jobDataMap.get(Constants.REAPER_COMMAND_SENDER_KEY);
-        List<BuildAgent> deathList = (List<BuildAgent>) jobDataMap.get(Constants.REAPER_DEATH_LIST);
+        AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
+        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(Reaper.REAPER_AGENTS_HELPER_KEY);
+        AgentCommandSender agentCommandSender = (AgentCommandSender) jobDataMap.get(Reaper.REAPER_COMMAND_SENDER_KEY);
+        BuildQueueManager buildQueueManager = (BuildQueueManager) jobDataMap.get(Reaper.REAPER_BUILDQUEUEMANAGER_KEY);
+        CachedPlanManager cachedPlanManager = (CachedPlanManager) jobDataMap.get(Reaper.REAPER_CACHEDPLANMANAGER_KEY);
+        
+        List<BuildAgent> deathList = (List<BuildAgent>) jobDataMap.get(Reaper.REAPER_DEATH_LIST);
 
         // Stop and remove disabled agents
         for (BuildAgent agent : deathList) {
-            agent.accept(new DeleterGraveling(agentCommandSender, agentManager));
+            agent.accept(new DeleterGraveling(agentCommandSender, agentManager, buildQueueManager, cachedPlanManager));
         }
 
         deathList.clear();
@@ -47,7 +52,7 @@ public class ReaperJob implements PluginJob {
             if (agent.getType() == AgentType.REMOTE &&
                     agent.getAgentStatus().isIdle() &&
                     creationTime != null &&
-                    currentTime - creationTime.getTime() > Constants.REAPER_THRESHOLD_MILLIS) {
+                    currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS) {
                 relevantAgents.add(agent);
             }
         }
@@ -57,6 +62,6 @@ public class ReaperJob implements PluginJob {
             agent.accept(new SleeperGraveling(agentManager));
             deathList.add(agent);
         });
-        jobDataMap.put(Constants.REAPER_DEATH_LIST, deathList);
+        jobDataMap.put(Reaper.REAPER_DEATH_LIST, deathList);
     }
 }

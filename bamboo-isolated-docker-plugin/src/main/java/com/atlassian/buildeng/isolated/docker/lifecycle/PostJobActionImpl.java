@@ -36,6 +36,7 @@ import java.util.OptionalLong;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeoutException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 /**
@@ -71,10 +72,14 @@ public class PostJobActionImpl implements PostJobAction {
                     return;
                 }
             }
-            try {
-                agentManager.removeAgent(agentId);
-            } catch (TimeoutException ex) {
-                LOG.error("timeout on removing agent " + buildResultsSummary.getBuildAgentId(), ex);
+            String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
+            if (StringUtils.equals("true", properStopped)) {
+                //only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
+                try {
+                    agentManager.removeAgent(agentId);
+                } catch (TimeoutException ex) {
+                    LOG.error("timeout on removing agent " + buildResultsSummary.getBuildAgentId(), ex);
+                }
             }
         }
     }
