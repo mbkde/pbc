@@ -24,6 +24,7 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import java.time.Duration;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,7 +39,7 @@ public class Reaper implements LifecycleAware {
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;
     
-    static long   REAPER_THRESHOLD_MILLIS = 300000L; //Reap agents if they're older than 5 minutes
+    static long   REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(5).toMillis(); //Reap agents if they're older than 5 minutes
     static long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
     static String REAPER_KEY = "isolated-docker-reaper";
     static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";

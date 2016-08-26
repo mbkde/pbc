@@ -97,8 +97,12 @@ public class DeleterGraveling implements BuildAgentVisitor {
         }
     }
     
-    public static void stopAgentRemotely(BuildAgent buildAgent, AgentManager agentManager, AgentCommandSender agentCommandSender) {
+    public static void stopAndRemoveAgentRemotely(BuildAgent buildAgent, AgentManager agentManager, AgentCommandSender agentCommandSender) {
         stopAgentRemotely(buildAgent, true, agentManager, agentCommandSender);
+    }
+    
+    public static void stopAndKeepAgentRemotely(BuildAgent buildAgent, AgentManager agentManager, AgentCommandSender agentCommandSender) {
+        stopAgentRemotely(buildAgent, false, agentManager, agentCommandSender);
     }
     
     private boolean markAndStopTheBuild(BuildAgent buildAgent, RemoteAgentDefinition pipelineDefinition) {

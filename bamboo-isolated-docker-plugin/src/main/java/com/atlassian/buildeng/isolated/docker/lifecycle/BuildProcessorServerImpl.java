@@ -63,7 +63,7 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
         CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails
-        // and out plugin is not executed. absence of the marker property tells us that we didn't run on agent
+        // and our StopDockerAgentBuildProcessor is not executed. absence of the marker property tells us that we didn't run on agent
         if (conf.isEnabled() &&  null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF)) {
             CurrentlyBuilding building = buildExecutionManager.getCurrentlyBuildingByBuildResult(buildContext);
             Long agentId = null;
@@ -73,7 +73,7 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
             if (building != null && agentId != null) {
                 BuildAgent agent = agentManager.getAgent(agentId);
                 assert agent != null;
-                DeleterGraveling.stopAgentRemotely(agent, agentManager, agentCommandSender);
+                DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.", buildContext.getBuildResultKey(), agent.getName());
             } else {
                 LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getBuildResultKey());
