@@ -5,7 +5,6 @@ import com.atlassian.bamboo.task.AbstractTaskConfigurator;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.TaskRequirementSupport;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
-import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -78,33 +77,9 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         super.validate(params, errorCollection);
         
         String v = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
-        if (!StringUtils.isBlank(v)) {
-            try {
-                JsonElement obj = new JsonParser().parse(v);
-                if (!obj.isJsonArray()) {
-                    errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "Extra containers json needs to be an array.");
-                } else {
-                    JsonArray arr = obj.getAsJsonArray();
-                    arr.forEach((JsonElement t) -> {
-                        if (t.isJsonObject()) {
-                            Configuration.ExtraContainer v2 = Configuration.from(t.getAsJsonObject());
-                            if (v2 == null) {
-                                errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "wrong format for extra containers");
-                            }
-                        } else {
-                            errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "wrong format for extra containers");
-                        }
-                    });
-                }
-            } catch (RuntimeException e) {
-                errorCollection.addError(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "Extra containers field is not valid json.");
-            }
-        }
+        validateExtraContainers(v, errorCollection);
 
-        String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
-
-
-        if (StringUtils.isBlank(image))
+        if (StringUtils.isBlank(params.getString(Configuration.TASK_DOCKER_IMAGE)))
         {
             errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, textProvider.getText("requirement.error.emptyImage"));
         }
@@ -114,6 +89,45 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
             Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
         } catch (IllegalArgumentException e) {
             errorCollection.addError(Configuration.TASK_DOCKER_IMAGE_SIZE, "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
+        }
+    }
+
+    //TODO a bit unfortunate that the field associated with extra containers is hidden
+    // the field specific reporting is not showing at all then. So needs to be global.
+    public static void validateExtraContainers(String value, ErrorCollection errorCollection) {
+        if (!StringUtils.isBlank(value)) {
+            try {
+                JsonElement obj = new JsonParser().parse(value);
+                if (!obj.isJsonArray()) {
+                    errorCollection.addErrorMessage("Extra containers json needs to be an array.");
+                } else {
+                    JsonArray arr = obj.getAsJsonArray();
+                    arr.forEach((JsonElement t) -> {
+                        if (t.isJsonObject()) {
+                            Configuration.ExtraContainer v2 = Configuration.from(t.getAsJsonObject());
+                            if (v2 == null) {
+                                errorCollection.addErrorMessage("wrong format for extra containers");
+                            } else {
+                                if (StringUtils.isBlank(v2.getName())) {
+                                    errorCollection.addErrorMessage("Extra container requires a non empty name.");
+                                }
+                                if (StringUtils.isBlank(v2.getImage())) {
+                                    errorCollection.addErrorMessage("Extra container requires non empty image.");
+                                }
+                                for (Configuration.EnvVariable env : v2.getEnvVariables()) {
+                                    if (StringUtils.isBlank(env.getName())) {
+                                        errorCollection.addErrorMessage("Extra container requires non empty environment variable name.");
+                                    }
+                                }
+                            }
+                        } else {
+                            errorCollection.addErrorMessage("wrong format for extra containers");
+                        }
+                    });
+                }
+            } catch (RuntimeException e) {
+                errorCollection.addErrorMessage("Extra containers field is not valid json.");
+            }
         }
     }
 
