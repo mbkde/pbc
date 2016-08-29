@@ -10,6 +10,7 @@
 
     <component key="isolatedAgentService" class="com.atlassian.buildeng.simple.backend.IsolatedDockerImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
     
     <component-import key="pluginScheduler">

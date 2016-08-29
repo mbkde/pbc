@@ -22,13 +22,17 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.sal.api.lifecycle.LifecycleAware;
+import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +47,7 @@ import org.yaml.snakeyaml.Yaml;
  *
  * @author mkleint
  */
-public class IsolatedDockerImpl implements IsolatedAgentService {
+public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     /**
      * The environment variable to override on the agent per image
      */
@@ -60,9 +64,13 @@ public class IsolatedDockerImpl implements IsolatedAgentService {
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
     
     private final AdministrationConfigurationAccessor admConfAccessor;
+    private final PluginScheduler pluginScheduler;
+    private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
+    private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
 
-    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor) {
+    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, PluginScheduler pluginScheduler) {
         this.admConfAccessor = admConfAccessor;
+        this.pluginScheduler = pluginScheduler;
     }
     
     @Override
@@ -75,7 +83,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService {
         try {
             f = File.createTempFile("compose", ".yaml");
             Files.write(yaml, f, Charset.forName("UTF-8"));
-            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/docker-compose", "-f", f.getAbsolutePath(), "up");
+            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/docker-compose", "-p", request.getUniqueIdentifier().toString() ,"-f", f.getAbsolutePath(), "up");
             Process p = pb.inheritIO().start();
             p.waitFor();
             p.exitValue();
@@ -96,6 +104,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService {
     static String createComposeYaml(Configuration config, String rk, String baseUrl, UUID uuid) {
         Map<String, Object> sidekick = new HashMap<>();
         sidekick.put("image", "docker.atlassian.io/buildeng/bamboo-agent-sidekick");
+        sidekick.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
         
         Map<String, String> envs = new HashMap<>();
         envs.put(ENV_VAR_IMAGE, config.getDockerImage());
@@ -103,14 +112,15 @@ public class IsolatedDockerImpl implements IsolatedAgentService {
         envs.put(ENV_VAR_SERVER, baseUrl);
         Map<String, Object> agent = new HashMap<>();
         agent.put("image", config.getDockerImage());
-        agent.put("volumes_from", Collections.singletonList("bamboo-agent-sidekick_"+ uuid.toString()));
+        agent.put("volumes_from", Collections.singletonList("bamboo-agent-sidekick"));
         agent.put("working_dir", "/buildeng");
         agent.put("entrypoint", "/buildeng/run-agent.sh");
         agent.put("environment", envs);
+        agent.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
         
         final Map<String, Object> all = new HashMap<>();
-        all.put("bamboo-agent-sidekick_" + uuid.toString(), sidekick);
-        all.put("bamboo-agent_"+ uuid.toString(), agent);
+        all.put("bamboo-agent-sidekick", sidekick);
+        all.put("bamboo-agent", agent);
         
         final List<String> links = new ArrayList<>();
         
@@ -127,8 +137,9 @@ public class IsolatedDockerImpl implements IsolatedAgentService {
             if (!commands.isEmpty()) {
                 toRet.put("command", commands);
             }
-            all.put(t.getName() + "_"+ uuid.toString(), toRet);
-            links.add(t.getName() + "_"+ uuid.toString());
+            toRet.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
+            all.put(t.getName(), toRet);
+            links.add(t.getName());
         });
         if (!links.isEmpty()) {
             agent.put("links", links);
@@ -140,6 +151,17 @@ public class IsolatedDockerImpl implements IsolatedAgentService {
         options.setCanonical(false);
         Yaml yaml = new Yaml(options);
         return yaml.dump(all);
+    }
+
+    @Override
+    public void onStart() {
+        Map<String, Object> config = new HashMap<>();
+        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, DockerWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
+    }
+
+    @Override
+    public void onStop() {
+        pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
     }
     
 }
