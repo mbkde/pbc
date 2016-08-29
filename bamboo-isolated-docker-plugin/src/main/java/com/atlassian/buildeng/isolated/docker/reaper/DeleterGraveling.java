@@ -3,6 +3,7 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
+import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
@@ -128,6 +129,9 @@ public class DeleterGraveling implements BuildAgentVisitor {
                         current.getCustomBuildData().put(Constants.RESULT_ERROR, "Capabilities of agent don't match requirements. Check the <a href=\"/admin/agent/viewAgent.action?agentId=" +  buildAgent.getId() + "\">agent's capabilities.</a>");
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
+                        PipelineDefinition pd = buildAgent.getDefinition();
+                        pd.setEnabled(false);
+                        agentManager.savePipeline(pd);
                         buildQueueManager.removeBuildFromQueue(found.get().getView().getResultKey());
 //                        errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
 //                        eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));

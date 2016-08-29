@@ -60,7 +60,10 @@ public class BuildCancelledEventListener {
     @EventListener
     public void onOfflineAgent(AgentOfflineEvent event) {
         if (event.getBuildAgent() != null) {
-            if (isDockerAgent(event.getBuildAgent())) {
+            //only remove enabled ones, to cater for the capability-requirement mismatch ones
+            // that we want to keep. sort of ugly sorting criteria but there are little ways of
+            //adding custom data to agents at runtime.
+            if (isEnabledDockerAgent(event.getBuildAgent())) {
                 long agentId = event.getBuildAgent().getId();
                 try {
                     LOG.info("Removing offline docker agent {}:{}", event.getBuildAgent().getName(), agentId);
@@ -70,6 +73,13 @@ public class BuildCancelledEventListener {
                 }
             }
         }
+    }
+    
+    private boolean isEnabledDockerAgent(BuildAgent agent) {
+        if (agent == null || !agent.isEnabled()) {
+            return false;
+        }
+        return isDockerAgent(agent);
     }
 
     private boolean isDockerAgent(BuildAgent agent) {
