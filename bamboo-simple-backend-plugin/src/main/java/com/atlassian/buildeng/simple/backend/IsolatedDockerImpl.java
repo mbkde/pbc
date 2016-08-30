@@ -71,6 +71,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, PluginScheduler pluginScheduler) {
         this.admConfAccessor = admConfAccessor;
         this.pluginScheduler = pluginScheduler;
+        
     }
     
     @Override
@@ -81,19 +82,29 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         System.out.println("yaml:" + yaml);
         File f;
         try {
-            f = File.createTempFile("compose", ".yaml");
+            f = fileForUUID(request.getUniqueIdentifier().toString());
             Files.write(yaml, f, Charset.forName("UTF-8"));
-            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/docker-compose", "-p", request.getUniqueIdentifier().toString() ,"-f", f.getAbsolutePath(), "up");
+            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/docker-compose",  "up");
+            pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
+            pb.environment().put("COMPOSE_FILE", f.getAbsolutePath());
+            
             Process p = pb.inheritIO().start();
             p.waitFor();
-            p.exitValue();
-            callback.handle(new IsolatedDockerAgentResult());
+            if (p.exitValue() == 0) {
+                callback.handle(new IsolatedDockerAgentResult());
+            } else {
+                callback.handle(new IsolatedDockerAgentResult().withError("Failed to start, docker-compose exited with " + p.exitValue()));
+            }
         } catch (IOException ex) {
             Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, ex);
             callback.handle(new IsolatedDockerAgentException(ex));
         } catch (InterruptedException ex) {
             Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    static  File fileForUUID(String uuid) {
+        return new File(System.getProperty("java.io.tmpdir"), "docker-compose-" + uuid + ".yaml");
     }
 
     @Override

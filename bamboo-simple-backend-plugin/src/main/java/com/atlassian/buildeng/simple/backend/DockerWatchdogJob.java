@@ -22,13 +22,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.codehaus.plexus.util.StringUtils;
 
 /**
  *
@@ -51,19 +47,19 @@ public class DockerWatchdogJob implements PluginJob {
                             }
                             return null;
                         }).filter((PsItem t) -> t != null).collect(Collectors.toList());
-                final List<String> uuidsToRemove = all.stream()
+                all.stream()
                         .filter((PsItem t) -> t.isExited() && t.name.equals("bamboo-agent"))
                         .map((PsItem t) -> t.uuid)
-                        .collect(Collectors.toList());
-                List<String> containersToRemove = all.stream()
-                        .filter((PsItem t) -> uuidsToRemove.contains(t.uuid))
-                        .map((PsItem t) -> t.id)
-                        .collect(Collectors.toList());
-                if (!containersToRemove.isEmpty()) {
-                    ProcessBuilder rm = new ProcessBuilder(Stream.concat(Stream.of("/usr/local/bin/docker", "rm", "-f"), containersToRemove.stream()).collect(Collectors.toList()));
-                    Process p2 = rm.inheritIO().start();
-                    p2.waitFor();
-                }
+                        .forEach((String t) -> {
+                    try {
+                        ProcessBuilder rm = new ProcessBuilder("/usr/local/bin/docker-compose", "down", "-v");
+                        rm.environment().put("COMPOSE_PROJECT_NAME", t);
+                        rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
+                        Process p2 = rm.inheritIO().start();
+                    } catch (IOException ex) {
+                        Logger.getLogger(DockerWatchdogJob.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                });
             }        
         } catch (IOException ex) {
         } catch (InterruptedException ex) {
