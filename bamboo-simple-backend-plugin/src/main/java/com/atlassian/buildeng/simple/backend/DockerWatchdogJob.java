@@ -35,7 +35,7 @@ public class DockerWatchdogJob implements PluginJob {
     @Override
     public void execute(Map<String, Object> jobDataMap) {
         try {
-            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/docker", "ps", "-a", "--format",  "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
+            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(), "ps", "-a", "--format",  "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
             Process p = pb.start();
             p.waitFor();
             try (BufferedReader buffer = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
@@ -52,7 +52,9 @@ public class DockerWatchdogJob implements PluginJob {
                         .map((PsItem t) -> t.uuid)
                         .forEach((String t) -> {
                     try {
-                        ProcessBuilder rm = new ProcessBuilder("/usr/local/bin/docker-compose", "down", "-v");
+                        ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
+                        //yes. docker-compose up can pass -p and -f parameters but all other commands
+                        // rely on env variables to do the same (facepalm)
                         rm.environment().put("COMPOSE_PROJECT_NAME", t);
                         rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
                         Process p2 = rm.inheritIO().start();

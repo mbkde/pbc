@@ -84,7 +84,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         try {
             f = fileForUUID(request.getUniqueIdentifier().toString());
             Files.write(yaml, f, Charset.forName("UTF-8"));
-            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/docker-compose",  "up");
+            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),  "up");
             pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
             pb.environment().put("COMPOSE_FILE", f.getAbsolutePath());
             
