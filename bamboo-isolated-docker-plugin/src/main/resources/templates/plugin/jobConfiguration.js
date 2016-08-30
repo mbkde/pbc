@@ -49,13 +49,13 @@ function extraContainersDialogButtons() {
         newone.size = AJS.$("select#dockerExtraImage-size").val();
         newone.commands = [];
         AJS.$("input.dockerExtraImage-command").each(function () {
-           newone.commands.push($(this).val()); 
+           newone.commands.push(AJS.$(this).val()); 
         });
         newone.envVars = [];
         AJS.$("div.dockerExtraImage-envVar").each(function () {
            var env = {};
-           env.name = $(this).find(".dockerExtraImage-envkey").val();
-           env.value = $(this).find(".dockerExtraImage-envval").val();
+           env.name = AJS.$(this).find(".dockerExtraImage-envkey").val();
+           env.value = AJS.$(this).find(".dockerExtraImage-envval").val();
            newone.envVars.push(env); 
         });
 
