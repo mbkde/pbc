@@ -26,6 +26,11 @@
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
     
+    <bambooEventListener key="buildCancelledEventListener" name="Listens on Build Cancelled events"
+                         class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildCancelledEventListener">
+        <description>Listens to events of Bamboo.</description>
+    </bambooEventListener>
+    
     <component key="AgentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationRescheduler" public="true">
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
