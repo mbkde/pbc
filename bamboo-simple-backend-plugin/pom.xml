@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>1.26-SNAPSHOT</version>
+        <version>1.28-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-simple-backend-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -26,6 +26,11 @@
                             <groupId>${project.groupId}</groupId>
                             <artifactId>bamboo-isolated-docker-plugin</artifactId>
                             <version>${project.version}</version>
+                        </pluginArtifact>
+                        <pluginArtifact>
+                            <groupId>com.atlassian.buildeng</groupId>
+                            <artifactId>hung-build-killer</artifactId>
+                            <version>3.0.10</version>
                         </pluginArtifact>
                     </pluginArtifacts>
                 </configuration>
