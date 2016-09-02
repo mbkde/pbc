@@ -97,6 +97,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                             if (err.startsWith("RESOURCE")) {
                                 logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
                                 toRet.withRetryRecoverable("Not enough resources available now.");
+                            } else if ("AGENT".equals(err)) {
+                                logger.info("We've scheduled on AGENT disabled instance, should be just flaky AWS. Retrying.");
+                                toRet.withRetryRecoverable("AGENT - The container instance that you attempted to launch a task onto has an agent which is currently disconnected.");
                             } else {
                                 toRet.withError(mapRunTaskErrorToDescription(err));
                             }
