@@ -73,7 +73,9 @@ public interface Constants {
                             LAAS_SERVICE_ID_KEY,
                             LAAS_ENVIRONMENT_KEY,
                             ECS_CLUSTER_KEY,
-                            ECS_CONTAINER_INSTANCE_ARN_KEY))
+                            ECS_CONTAINER_INSTANCE_ARN_KEY,
+                            ENV_VAR_RESULT_ID,
+                            "HOSTNAME"))
                     .addOptionsEntry("fluentd-address", "fluentd.staging.aws.buildeng.atlassian.com:24224");
 
     // The container definition of the sidekick
