@@ -54,6 +54,7 @@ public interface Constants {
     // AWS info
     String ECS_CLUSTER_KEY                = "ecs_cluster";
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
+    String ENV_HOSTNAME = "HOSTNAME";
 
     
     long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
@@ -73,7 +74,9 @@ public interface Constants {
                             LAAS_SERVICE_ID_KEY,
                             LAAS_ENVIRONMENT_KEY,
                             ECS_CLUSTER_KEY,
-                            ECS_CONTAINER_INSTANCE_ARN_KEY))
+                            ECS_CONTAINER_INSTANCE_ARN_KEY,
+                            ENV_VAR_RESULT_ID, 
+                            ENV_HOSTNAME))
                     .addOptionsEntry("fluentd-address", "fluentd.staging.aws.buildeng.atlassian.com:24224");
 
     // The container definition of the sidekick
