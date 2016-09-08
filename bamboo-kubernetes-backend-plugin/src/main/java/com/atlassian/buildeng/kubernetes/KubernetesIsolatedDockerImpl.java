@@ -21,6 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import io.fabric8.kubernetes.api.model.DownwardAPIVolumeSource;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.Config;
@@ -29,6 +30,8 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Predicate;
 
 /**
  *
@@ -62,6 +65,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService {
                 .withMasterUrl("https://192.168.99.100:8443")
                 .build();
         KubernetesClient client = new DefaultKubernetesClient(config);
+        if (!client.namespaces().list().getItems().stream()
+                .filter((Namespace t) -> "bamboo".equals(t.getMetadata().getName()))
+                .findFirst().isPresent()) {
+            System.out.println("no bamboo namespace, creating");
+            client.namespaces().createNew().withNewMetadata().withName("bamboo").endMetadata().done();
+        }
         Pod pod = createPod(request);
         System.out.println("POD:" + pod.toString());
         client.pods().create(pod);
@@ -77,7 +86,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService {
         PodBuilder pb = new PodBuilder()
             .withNewMetadata()
                 .withNamespace("bamboo")
-                .withName(r.getResultKey() + "-" + r.getUniqueIdentifier().toString())
+                .withName(r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString())
                 .addToLabels("resultId", r.getResultKey())
             .endMetadata()
             .withNewSpec()
