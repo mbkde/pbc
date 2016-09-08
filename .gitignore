@@ -3,3 +3,4 @@
 /bamboo-isolated-ecs-plugin/target/
 /isolated-docker-spi/target/
 /bamboo-simple-backend-plugin/target/
+/bamboo-kubernetes-backend-plugin/target/

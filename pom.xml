@@ -97,6 +97,7 @@
         <module>bamboo-isolated-docker-plugin</module>
         <module>bamboo-isolated-ecs-plugin</module>
         <module>bamboo-simple-backend-plugin</module>
+        <module>bamboo-kubernetes-backend-plugin</module>
         <module>isolated-docker-spi</module>
     </modules>
 </project>
