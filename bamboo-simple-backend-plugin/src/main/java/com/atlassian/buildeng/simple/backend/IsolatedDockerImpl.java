@@ -65,12 +65,15 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final PluginScheduler pluginScheduler;
+    private final GlobalConfiguration globalConfiguration;
     private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
+    
 
-    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, PluginScheduler pluginScheduler) {
+    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, PluginScheduler pluginScheduler, GlobalConfiguration globalConfiguration) {
         this.admConfAccessor = admConfAccessor;
         this.pluginScheduler = pluginScheduler;
+        this.globalConfiguration = globalConfiguration;
         
     }
     
@@ -85,6 +88,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
             f = fileForUUID(request.getUniqueIdentifier().toString());
             Files.write(yaml, f, Charset.forName("UTF-8"));
             ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),  "up");
+            globalConfiguration.decorateCommands(pb);
             pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
             pb.environment().put("COMPOSE_FILE", f.getAbsolutePath());
             
@@ -167,6 +171,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     @Override
     public void onStart() {
         Map<String, Object> config = new HashMap<>();
+        config.put("globalConfiguration", globalConfiguration);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, DockerWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
 

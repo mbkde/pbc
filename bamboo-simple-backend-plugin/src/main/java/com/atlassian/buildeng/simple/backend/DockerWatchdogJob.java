@@ -34,8 +34,14 @@ public class DockerWatchdogJob implements PluginJob {
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
+        GlobalConfiguration globalConfiguration = (GlobalConfiguration) jobDataMap.get("globalConfiguration");
+        if (globalConfiguration == null) {
+            throw new IllegalStateException();
+        }
+        
         try {
             ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(), "ps", "-a", "--format",  "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
+            globalConfiguration.decorateCommands(pb);
             Process p = pb.start();
             p.waitFor();
             try (BufferedReader buffer = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
@@ -55,6 +61,7 @@ public class DockerWatchdogJob implements PluginJob {
                         ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
                         //yes. docker-compose up can pass -p and -f parameters but all other commands
                         // rely on env variables to do the same (facepalm)
+                        globalConfiguration.decorateCommands(pb);
                         rm.environment().put("COMPOSE_PROJECT_NAME", t);
                         rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
                         Process p2 = rm.inheritIO().start();
