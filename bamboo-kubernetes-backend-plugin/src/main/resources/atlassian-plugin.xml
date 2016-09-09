@@ -10,14 +10,14 @@
 
     <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
-        <!--interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface-->
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
     
-    <!--component-import key="pluginScheduler">
+    <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
     </component-import>
     
-    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/-->
+    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
 </atlassian-plugin>
