@@ -6,9 +6,11 @@
 
 <body>
     <h1>Per-build container Docker Backend</h1><br>
+<div id="errorMessage">
+</div>
+
     A simple backend scheduling jobs via docker-compose. Assumes docker cli + docker-compose
 is installed on the Bamboo Server to be able to run the jobs locally, in remote docker-machine or in Swarm
-
 
 <form id="configureDocker" class="aui">
     <fieldset>

@@ -30,16 +30,25 @@ function setSimpleDocker() {
             success: function () {
                 updateStatus("Saved.");
             },
-            error: function (err) {
-                updateStatus("Error.");
-                alert(err.responseText);
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                updateStatus("");
+                showError(textStatus + " " + errorThrown);
             }
         });
     }
     
     function updateStatus(message) {
+        hideError();
         AJS.$(".save-status").empty();
         AJS.$(".save-status").append(message);
+    }
+    
+    function showError(message) {
+        AJS.$("#errorMessage").append("<div class='aui-message aui-message-error error'>" + message + "</div>");
+    }
+    
+    function hideError() {
+        AJS.$("#errorMessage").empty();
     }
 
 AJS.$(document).ready(function() {
@@ -54,8 +63,8 @@ AJS.$(document).ready(function() {
                     updateStatus("");
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.error(textStatus);
-                    updateStatus("Error Loading...");
+                    updateStatus("");
+                    showError(textStatus + " " + errorThrown);
                 }
 
     });

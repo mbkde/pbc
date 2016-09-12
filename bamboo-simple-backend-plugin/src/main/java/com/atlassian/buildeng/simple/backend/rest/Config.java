@@ -15,13 +15,11 @@
  */
 package com.atlassian.buildeng.simple.backend.rest;
 
-import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  *
  * @author mkleint
  */
-@XmlRootElement
 public class Config {
     public String apiVersion;
     public String certPath;
