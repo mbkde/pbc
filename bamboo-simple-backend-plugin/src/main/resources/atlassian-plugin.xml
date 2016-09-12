@@ -12,12 +12,37 @@
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
+    <component key="globalConfiguration" class="com.atlassian.buildeng.simple.backend.GlobalConfiguration">
+    </component>
     
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
     </component-import>
-    
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+    
+    <!-- REST resources -->
+    <rest key="pbc-docker" path="/pbc-docker" version="1.0">
+        <description>Provides the REST resource</description>
+    </rest>    
 
+    <web-resource key="aui-stuff">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+        <resource type="download" name="adminSimpleDocker.js" location="/config/adminSimpleDocker.js"/>
+        <context>simpleDockerAdminPBC</context>
+    </web-resource>
+
+    <web-item key="docker-config" name="PBC Docker Backend" section="system.admin/plugins" weight="10">
+        <label key="admin.web-iterm.docker-config.label"/>
+        <link linkId="simple-docker-config-link">/admin/adminSimpleDocker.action</link>
+    </web-item>
+
+    <xwork key="simpleDockerAdminPBC" name="PBC Docker Backend Configuration">
+        <package name="adminSimpleDocker" extends="admin">
+            <action name="adminSimpleDocker" class="com.atlassian.buildeng.simple.backend.DockerConfigurationAction">
+                <result name="success" type="freemarker">/config/adminSimpleDocker.ftl</result>
+            </action>
+        </package>
+    </xwork>
 </atlassian-plugin>
