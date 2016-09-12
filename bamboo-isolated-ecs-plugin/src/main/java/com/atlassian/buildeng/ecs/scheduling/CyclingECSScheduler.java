@@ -216,7 +216,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             Instance ec2 = instances.get(t);
             if (ec2 != null) {
                 try {
-                    dockerHosts.put(t, new DockerHost(u, ec2));
+                    dockerHosts.put(t, new DockerHost(u, ec2, asgInstances.contains(t)));
                 } catch (ECSException ex) {
                     logger.error("Skipping incomplete docker host", ex);
                 }
@@ -250,7 +250,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         shutdownExecutor();
     }
     
-    private List<String> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {
+    private List<DockerHost> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {
         return hosts.agentDisconnected().stream()
 // container without agent still shows like it's running something but it's not true, all the things are doomed.
 // maybe reevaluate at some point when major ecs changes arrive.                
@@ -259,13 +259,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     Date date = dates.get(t);
                     return date != null && (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() > TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
                 })
-                .map(DockerHost::getInstanceId)
                 .collect(Collectors.toList());
     }
 
-    List<String> selectToTerminate(DockerHosts hosts) {
-        List<String> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
-                .map(DockerHost::getInstanceId)
+    List<DockerHost> selectToTerminate(DockerHosts hosts) {
+        List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .collect(Collectors.toList());
         // If we're terminating all of our hosts (and we have any) keep one
         // around
@@ -275,7 +273,12 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         return toTerminate;
     }
 
-    private int terminateInstances(List<String> toTerminate, String asgName, boolean decrementAsgSize) {
+    //the return value has 2 possible meanings.
+    // 1. how many instances we actually killed
+    // 2. by how much the ASG size decreaesed
+    // the current code is using it in both meanings, the asg drop is not calculated now and in case
+    // of errors the return value is a lie as well.
+    private int terminateInstances(List<DockerHost> toTerminate, String asgName, boolean decrementAsgSize) {
         if (!toTerminate.isEmpty()) {
             if (toTerminate.size() > 15) {
                 //actual AWS limit is apparently 20

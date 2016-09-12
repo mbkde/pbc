@@ -59,12 +59,12 @@ public interface SchedulerBackend {
     
     /**
      * terminate the listed EC2 instances and reduce the size of ASG by the given amount
-     * @param instanceIds 
+     * @param dockerHosts 
      * @param autoScalingGroup 
      * @param decrementSize 
      * @throws ECSException
      */
-    void terminateInstances(List<String> instanceIds, String autoScalingGroup, boolean decrementSize) throws ECSException;
+    void terminateInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize) throws ECSException;
 
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     

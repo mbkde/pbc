@@ -27,6 +27,7 @@ public class DockerHost {
     //how much memory has the instance available for docker containers
     private final int instanceCPU;
     private final int instanceMemory;
+    private boolean presentInASG = true;
     
 
     @TestOnly
@@ -43,7 +44,7 @@ public class DockerHost {
         this.instanceMemory = computeInstanceMemory(instanceType);
     }
 
-    public DockerHost(ContainerInstance containerInstance, Instance instance) throws ECSException {
+    public DockerHost(ContainerInstance containerInstance, Instance instance, boolean inASG) throws ECSException {
         remainingMemory  = getIntegralResource(containerInstance, true,  "MEMORY");
         remainingCpu     = getIntegralResource(containerInstance, true,  "CPU");
         registeredMemory = getIntegralResource(containerInstance, false, "MEMORY");
@@ -54,6 +55,7 @@ public class DockerHost {
         agentConnected = containerInstance.isAgentConnected();
         instanceCPU = computeInstanceCPU(instance.getInstanceType());
         instanceMemory = computeInstanceMemory(instance.getInstanceType());
+        presentInASG = inASG;
     }
 
     private static int getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
@@ -121,6 +123,10 @@ public class DockerHost {
         return containerInstanceArn;
     }
 
+    public boolean isPresentInASG() {
+        return presentInASG;
+    }
+    
     public boolean getAgentConnected() {
         return agentConnected;
     }

@@ -32,16 +32,16 @@ public class DockerHostsTest {
     public void someDisconnected() throws Exception {
         DockerHost dh1 = new DockerHost(
                 CyclingECSSchedulerTest.ci("id1", "arn1", true, 2000, 100, 2000, 500), 
-                CyclingECSSchedulerTest.ec2("id1", new Date()));
+                CyclingECSSchedulerTest.ec2("id1", new Date()), true);
         DockerHost dh2 = new DockerHost(
                 CyclingECSSchedulerTest.ci("id2", "arn2", false, 2000, 100, 2000, 500), 
-                CyclingECSSchedulerTest.ec2("id2", new Date()));
+                CyclingECSSchedulerTest.ec2("id2", new Date()), true);
         DockerHost dh3 = new DockerHost(
                 CyclingECSSchedulerTest.ci("id3", "arn3", true, 2000, 100, 2000, 500), 
-                CyclingECSSchedulerTest.ec2("id3", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())));
+                CyclingECSSchedulerTest.ec2("id3", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())), true);
         DockerHost dh4 = new DockerHost(
                 CyclingECSSchedulerTest.ci("id4", "arn4", false, 2000, 100, 2000, 500), 
-                CyclingECSSchedulerTest.ec2("id4", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())));
+                CyclingECSSchedulerTest.ec2("id4", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())), true);
         
         DockerHosts hosts = new DockerHosts(Lists.newArrayList(dh1, dh2, dh3, dh4), Duration.ofDays(1));
         assertFalse(hosts.agentDisconnected().contains(dh1));
@@ -61,4 +61,37 @@ public class DockerHostsTest {
         
     }
     
+    
+    @Test
+    public void someNotInASG() throws Exception {
+        // all are empty, they differ in staleness + ASG containment
+        DockerHost dh1 = new DockerHost(
+                CyclingECSSchedulerTest.ci("id1", "arn1", true, 2000, 2000, 2000, 2000), 
+                CyclingECSSchedulerTest.ec2("id1", new Date()), true);
+        DockerHost dh2 = new DockerHost(
+                CyclingECSSchedulerTest.ci("id2", "arn2", true, 2000, 2000, 2000, 2000), 
+                CyclingECSSchedulerTest.ec2("id2", new Date()), false);
+        DockerHost dh3 = new DockerHost(
+                CyclingECSSchedulerTest.ci("id3", "arn3", true, 2000, 2000, 2000, 2000), 
+                CyclingECSSchedulerTest.ec2("id3", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())), true);
+        DockerHost dh4 = new DockerHost(
+                CyclingECSSchedulerTest.ci("id4", "arn4", true, 2000, 2000, 2000, 2000), 
+                CyclingECSSchedulerTest.ec2("id4", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())), false);
+        DockerHosts hosts = new DockerHosts(Lists.newArrayList(dh1, dh2, dh3, dh4), Duration.ofDays(1));
+        
+        assertTrue(hosts.allUsable().contains(dh1));
+        assertTrue(hosts.allUsable().contains(dh2));
+        assertTrue(hosts.allUsable().contains(dh3));
+        assertTrue(hosts.allUsable().contains(dh4));
+
+        assertTrue(hosts.fresh().contains(dh1));
+        assertFalse(hosts.fresh().contains(dh2));
+        assertFalse(hosts.fresh().contains(dh3));
+        assertFalse(hosts.fresh().contains(dh4));
+        
+        assertFalse(hosts.unusedStale().contains(dh1));
+        assertTrue(hosts.unusedStale().contains(dh2));
+        assertTrue(hosts.unusedStale().contains(dh3));
+        assertTrue(hosts.unusedStale().contains(dh4));
+    }
 }

@@ -137,18 +137,23 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateInstances(List<String> instanceIds, String asgName, boolean decrementSize) throws ECSException {
+    public void terminateInstances(List<DockerHost> hosts, String asgName, boolean decrementSize) throws ECSException {
         try {
-            AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
-            logger.info("Detaching and terminating unused and stale instances: {}", instanceIds);
-            DetachInstancesResult result = 
-                  asClient.detachInstances(new DetachInstancesRequest()
-                        .withAutoScalingGroupName(asgName)
-                        .withInstanceIds(instanceIds)
-                        .withShouldDecrementDesiredCapacity(decrementSize));
-            logger.info("Result of detachment: {}", result);
+            logger.info("Detaching and terminating unused and stale instances: {}", hosts);
+            final List<String> asgInstances = hosts.stream().filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
+            if (!asgInstances.isEmpty()) {
+                AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
+                DetachInstancesResult result = 
+                      asClient.detachInstances(new DetachInstancesRequest()
+                            .withAutoScalingGroupName(asgName)
+                              //only detach instances that are actually in the ASG group
+                            .withInstanceIds(asgInstances)
+                            .withShouldDecrementDesiredCapacity(decrementSize));
+                logger.info("Result of detachment: {}", result);
+            }
             AmazonEC2Client ec2Client = new AmazonEC2Client();
-            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(new TerminateInstancesRequest(instanceIds));
+            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
+                    new TerminateInstancesRequest(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())));
             logger.info("Result of instance termination: {}" + ec2Result);
         } catch (Exception e) {
             throw new ECSException(e);

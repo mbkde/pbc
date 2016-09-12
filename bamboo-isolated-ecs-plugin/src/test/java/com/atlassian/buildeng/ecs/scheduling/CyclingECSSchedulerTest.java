@@ -21,18 +21,19 @@ import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.google.common.collect.Sets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.Pair;
 import java.util.stream.Collectors;
-import javafx.util.Duration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -566,14 +567,59 @@ public class CyclingECSSchedulerTest {
         verify(schedulerBackend, never()).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         //we have to scale up as we failed to terminate the disconnected agents in some way
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
-    }        
+    } 
+    
+    
+    @Test
+    public void scheduleTerminatingOfNonASGContainer() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 2000, 2000, 2000, 2000),
+                    ci("id2", "arn2", true, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", true, 2000, 300, 2000, 300),
+                    ci("id4", "arn4", true, 2000, 400, 2000, 200),
+                    ci("id5", "arn5", true, 2000, 2000, 2000, 2000) //unused stale only gets killed
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ),
+                //id5 is not in ASG
+                Sets.newHashSet("id1", "id2", "id3", "id4"));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig());
+        AtomicReference<String> arn = new AtomicReference<>();
+
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100, null), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+                arn.set(result.getContainerArn());
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+            }
+        });
+        awaitProcessing(scheduler);
+        
+        //TODO how to verify that it contained id5?
+        verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(true));
+        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        assertEquals("arn2", arn.get());
+    }    
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
+        return mockBackend(containerInstances, ec2Instances, ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
+    }
+    
+    private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances, Set<String> asgInstances) throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
-        when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(containerInstances.size(), 50));
-        when(mocked.getAsgInstanceIds(anyString())).thenReturn(ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
+        when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(asgInstances.size(), 50));
+        when(mocked.getAsgInstanceIds(anyString())).thenReturn(asgInstances);
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);

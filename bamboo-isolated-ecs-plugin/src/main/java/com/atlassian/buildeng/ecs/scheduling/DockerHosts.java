@@ -81,7 +81,7 @@ final class DockerHosts {
 
     private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
-        return dockerHosts.stream().collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.ageMillis() < stalePeriod.toMillis()));
+        return dockerHosts.stream().collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.isPresentInASG() && dockerHost.ageMillis() < stalePeriod.toMillis()));
     }
 
 }
