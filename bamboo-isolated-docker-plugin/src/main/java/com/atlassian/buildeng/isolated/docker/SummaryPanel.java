@@ -30,7 +30,7 @@ public class SummaryPanel implements WebPanel {
         Configuration configuration = buildcontext != null ? Configuration.forContext(buildcontext) : Configuration.forBuildResultSummary(summary);
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
-            ret.append("<h2>Built with Isolated Docker</h2>")
+            ret.append("<h2>Built with Per-build Container Agent</h2>")
                .append("<dl class=\"details-list\"><dt>Image used:</dt><dd>")
                .append(configuration.getDockerImage()).append("</dd>");
             String error = buildcontext != null 

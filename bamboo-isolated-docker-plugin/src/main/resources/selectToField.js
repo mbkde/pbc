@@ -46,7 +46,7 @@ AJS.$(document).ready(function () {
             var jq = $(element);
             var index = findTaskIndex();
             if (indexedData[index]) {
-                jq.after("<div class='description' id='dockerBuilderDesc'><b>With Isolated docker enabled, this field is freeform. Please enter the value that the docker based agent provides</b></div>");
+                jq.after("<div class='description' id='dockerBuilderDesc'><b>With Per-build Container enabled, this field is freeform. Please enter the value that the Docker based agent provides</b></div>");
                 jq.replaceWith("<input type='text' name='" + element.name + "' id='" + element.id + "' class='text long-field' value='" + indexedData[index].label + "'>");
                 $("form a.addSharedBuilderCapability").remove();
             }
@@ -56,7 +56,7 @@ AJS.$(document).ready(function () {
             var jq = $(element);
             var index = findTaskIndex();
             if (indexedData[index]) {
-                jq.after("<div class='description' id='dockerJdkDesc'><b>With Isolated docker enabled, this field is freeform. Please enter the value that the docker based agent provides</b></div>");
+                jq.after("<div class='description' id='dockerJdkDesc'><b>With Per-build Container enabled, this field is freeform. Please enter the value that the Docker based agent provides</b></div>");
                 jq.replaceWith("<input type='text' name='" + element.name + "' id='" + element.id + "' class='text long-field' value='" + indexedData[index].buildJdk + "'>");
                 $("form a.addSharedJdkCapability").remove();
             }

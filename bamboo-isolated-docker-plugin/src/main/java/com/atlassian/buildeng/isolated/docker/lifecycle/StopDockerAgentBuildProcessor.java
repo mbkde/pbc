@@ -56,7 +56,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
         BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
 
         if (buildAgent != null && config.isEnabled()) {
-            buildLogger.addBuildLogEntry(String.format("Agent %s (id: %s) is a docker agent and will be stopped after this build (reason: isolated docker feature enabled).", buildAgent.getName(), buildAgent.getId()));
+            buildLogger.addBuildLogEntry(String.format("Agent %s (id: %s) is a docker agent and will be stopped after this build (reason: Per-build Container feature enabled).", buildAgent.getName(), buildAgent.getId()));
             stopAgent(buildLogger, buildAgent);
         }
 

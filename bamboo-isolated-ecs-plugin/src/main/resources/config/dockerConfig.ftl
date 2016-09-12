@@ -1,11 +1,16 @@
 <head xmlns="http://www.w3.org/1999/html">
     <meta name="decorator" content="atl.admin">
-    <title>Configure Isolated Docker</title>
+    <title>Per-build Container ECS backend</title>
     ${webResourceManager.requireResourcesForContext("viewDockerConfiguration")}
 </head>
 
 <body>
-    <h1>ECS Isolated Docker Agents</h1><br>
+    <h1>Per-build Container ECS Backend</h1>
+<br>
+Global Configuration for running Per-build Container agents on AWS ECS cluster. The Bamboo plugin
+manages the scaling and scheduling of Bamboo agents on ECS.
+</br>
+<br>
         Only Docker images (and tags) registered with ECS can run in the cluster. Below is the list of images known to this Bamboo server/ECS cluster. 
 List is updated on running a plan the first time, not editing it.
 
