@@ -55,7 +55,7 @@ public class CyclingECSSchedulerQuickTest {
     @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
         CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null));
         DockerHosts hosts = new DockerHosts(allHosts,Duration.ofDays(1));
-        List<String> selectedHosts = ecsScheduler.selectToTerminate(hosts);
+        List<DockerHost> selectedHosts = ecsScheduler.selectToTerminate(hosts);
         if (allHosts.isEmpty()) {
             // If we have nothing to potentially terminate, we shouldn't select anything
             assertTrue(selectedHosts.isEmpty());
