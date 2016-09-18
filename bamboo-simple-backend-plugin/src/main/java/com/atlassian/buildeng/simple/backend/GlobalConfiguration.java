@@ -18,6 +18,7 @@ package com.atlassian.buildeng.simple.backend;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.simple.backend.rest.Config;
+import org.apache.commons.lang3.BooleanUtils;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
@@ -28,6 +29,8 @@ public class GlobalConfiguration {
     private static final String BANDANA_CERTPATH = "com.atlassian.buildeng.simple.backend.certPath";
     private static final String BANDANA_URL = "com.atlassian.buildeng.simple.backend.url";
     private static final String BANDANA_API_VERSION = "com.atlassian.buildeng.simple.backend.apiVersion";
+    private static final String BANDANA_SIDEKICK = "com.atlassian.buildeng.simple.backend.sidekick";
+    private static final String BANDANA_SIDEKICK_IMAGE = "com.atlassian.buildeng.simple.backend.sidekickImage";
  
     private final BandanaManager bandanaManager;
 
@@ -39,13 +42,17 @@ public class GlobalConfiguration {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL, config.url);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH, config.certPath);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION, config.apiVersion);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK, config.sidekick);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE, config.sidekickImage);
     }
     
     public Config getDockerConfig() {
         String api = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION), "");
         String url = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL), "");
         String certPath = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
-        return new Config(api, certPath, url);
+        String sidekick = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
+        boolean image = BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE), true);
+        return new Config(api, certPath, url, sidekick, image);
     }
     
     public ProcessBuilder decorateCommands(ProcessBuilder pb) {

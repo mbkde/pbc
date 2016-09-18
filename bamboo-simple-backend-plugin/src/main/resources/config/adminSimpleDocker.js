@@ -21,6 +21,9 @@ function setSimpleDocker() {
         payload.certPath = AJS.$("#docker-certs").val().trim();
         payload.apiVersion = AJS.$("#docker-api").val().trim();
         payload.url = AJS.$("#docker-url").val().trim();
+        payload.sidekick = AJS.$("#sidekick").val().trim();
+        payload.sidekickImage = AJS.$("#sidekick-sel").is(':checked');
+        
         updateStatus("Saving...");
         AJS.$.ajax({
             type: "POST",
@@ -60,6 +63,8 @@ AJS.$(document).ready(function() {
                     AJS.$("#docker-certs").val(response.certPath);
                     AJS.$("#docker-api").val(response.apiVersion);
                     AJS.$("#docker-url").val(response.url);
+                    AJS.$("#sidekick").val(response.sidekick);
+                    AJS.$("#sidekick-sel").prop("checked", response.sidekickImage);
                     updateStatus("");
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {

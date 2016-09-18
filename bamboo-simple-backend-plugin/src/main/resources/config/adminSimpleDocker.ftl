@@ -30,7 +30,21 @@ is installed on the Bamboo Server to be able to run the jobs locally, in remote 
             <input type="text" class="text long-field" id="docker-api"
                     placeholder=""></input>
         </div>
-        <button type="button" class="aui-button" onclick="setSimpleDocker()">Save</button>
+
+
+        <div class="field-group">
+            <label for="sidekick">Sidekick</label> 
+            <input type="text" class="text long-field" id="sidekick"
+                    placeholder=""></input>
+        </div>
+        <div class="field-group">
+            <div class="checkbox">
+                <input type="checkbox" id="sidekick-sel" value="true"/>
+                <label for="sidekick-sel">Sidekick is image (otherwise local folder assumed)</label> 
+            </div>
+        </div>
+
+        <button type="button" class="aui-button aui-button-primary" onclick="setSimpleDocker()">Save</button>
         <div class="save-status"/>
     </fieldset>
 </form>

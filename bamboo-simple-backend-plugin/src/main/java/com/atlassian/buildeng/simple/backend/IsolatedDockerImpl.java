@@ -16,6 +16,7 @@
 package com.atlassian.buildeng.simple.backend;
 
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.buildeng.simple.backend.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
@@ -40,6 +41,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -91,7 +93,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
             globalConfiguration.decorateCommands(pb);
             pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
             pb.environment().put("COMPOSE_FILE", f.getAbsolutePath());
-            
+
             Process p = pb.inheritIO().start();
             p.waitFor();
             if (p.exitValue() == 0) {
@@ -116,26 +118,33 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         return Collections.emptyList();
     }
 
-    static String createComposeYaml(Configuration config, String rk, String baseUrl, UUID uuid) {
-        Map<String, Object> sidekick = new HashMap<>();
-        sidekick.put("image", "docker.atlassian.io/buildeng/bamboo-agent-sidekick");
-        sidekick.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
-        
+    String createComposeYaml(Configuration config, String rk, String baseUrl, UUID uuid) {
+        final Map<String, Object> all = new HashMap<>();
         Map<String, String> envs = new HashMap<>();
         envs.put(ENV_VAR_IMAGE, config.getDockerImage());
         envs.put(ENV_VAR_RESULT_ID, rk);
         envs.put(ENV_VAR_SERVER, baseUrl);
         Map<String, Object> agent = new HashMap<>();
         agent.put("image", config.getDockerImage());
-        agent.put("volumes_from", Collections.singletonList("bamboo-agent-sidekick"));
         agent.put("working_dir", "/buildeng");
         agent.put("entrypoint", "/buildeng/run-agent.sh");
         agent.put("environment", envs);
         agent.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
-        
-        final Map<String, Object> all = new HashMap<>();
-        all.put("bamboo-agent-sidekick", sidekick);
         all.put("bamboo-agent", agent);
+        
+        Config gc = globalConfiguration.getDockerConfig();
+        if (gc.isSidekickImage()) {
+            Map<String, Object> sidekick = new HashMap<>();
+            String img = StringUtils.isNotBlank(gc.getSidekick()) ? gc.getSidekick().trim() : "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
+            sidekick.put("image", img);
+            all.put("bamboo-agent-sidekick", sidekick);
+            agent.put("volumes_from", Collections.singletonList("bamboo-agent-sidekick"));
+        } else {
+            if (gc.getSidekick() != null) {
+                String path = gc.getSidekick().trim();
+                agent.put("volumes", Collections.singletonList(path + ":/buildeng"));
+            }
+        }
         
         final List<String> links = new ArrayList<>();
         

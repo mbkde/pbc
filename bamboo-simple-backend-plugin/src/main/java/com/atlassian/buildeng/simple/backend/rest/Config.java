@@ -24,17 +24,20 @@ public class Config {
     public String apiVersion;
     public String certPath;
     public String url;
+    public boolean sidekickImage;
+    public String sidekick;
 
     public Config() {
     }
-
     
-    public Config(String apiVersion, String certPath, String url) {
-        this.apiVersion = apiVersion;
+    public Config(String api, String certPath, String url, String sidekick, boolean image) {
+        this.apiVersion = api;
         this.certPath = certPath;
         this.url = url;
+        this.sidekick = sidekick;
+        this.sidekickImage = image;
     }
-
+    
     public String getApiVersion() {
         return apiVersion;
     }
@@ -57,6 +60,22 @@ public class Config {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public boolean isSidekickImage() {
+        return sidekickImage;
+    }
+
+    public void setSidekickImage(boolean sidekickImage) {
+        this.sidekickImage = sidekickImage;
+    }
+
+    public String getSidekick() {
+        return sidekick;
+    }
+
+    public void setSidekick(String sidekick) {
+        this.sidekick = sidekick;
     }
     
     
