@@ -52,7 +52,7 @@ public class PlanSummaryPanel implements WebPanel {
             }
         }
         if (ret.length() > 0) {
-            ret.insert(0, "<h2>Jobs built by Isolated Docker</h2><dl class=\"details-list\">");
+            ret.insert(0, "<h2>Jobs built by Per-build Container agent</h2><dl class=\"details-list\">");
             ret.append("</dl>");
             return ret.toString();
         }
