@@ -138,6 +138,7 @@ public class GlobalConfiguration {
             if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
                 //TODO align storage driver with whatever we are using? (overlay)
+                //default is vfs safest but slowest option. 
                 d.setPrivileged(Boolean.TRUE);
                 main.withEnvironment(new KeyValuePair().withName("DOCKER_HOST").withValue("tcp://" + t.getName() + ":2375"));
             }
