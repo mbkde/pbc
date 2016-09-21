@@ -53,7 +53,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import org.apache.commons.fileupload.util.Streams;
 
@@ -136,6 +135,12 @@ public class GlobalConfiguration {
                     .withCpu(t.getExtraSize().cpu())
                     .withMemory(t.getExtraSize().memory())
                     .withEssential(false);
+            if (isDockerInDockerImage(t.getImage())) {
+                //https://hub.docker.com/_/docker/
+                //TODO align storage driver with whatever we are using? (overlay)
+                d.setPrivileged(Boolean.TRUE);
+                main.withEnvironment(new KeyValuePair().withName("DOCKER_HOST").withValue("tcp://" + t.getName() + ":2375"));
+            }
             req.withContainerDefinitions(d);
             main.withLinks(t.getName());
         });
@@ -390,6 +395,8 @@ public class GlobalConfiguration {
         }
         return null;
     }
-    
-    
+
+    private boolean isDockerInDockerImage(String image) {
+        return image.startsWith("docker:") && image.endsWith("dind");
+    }
 }

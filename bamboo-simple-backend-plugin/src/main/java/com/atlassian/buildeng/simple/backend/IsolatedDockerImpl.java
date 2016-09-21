@@ -164,6 +164,10 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
             toRet.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
             all.put(t.getName(), toRet);
             links.add(t.getName());
+            if (isDockerInDockerImage(t.getImage())) {
+                envs.put("DOCKER_HOST", "tcp://" + t.getName() + ":2375");
+                toRet.put("privileged", Boolean.TRUE);
+            }
         });
         if (!links.isEmpty()) {
             agent.put("links", links);
@@ -188,5 +192,10 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     public void onStop() {
         pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
     }
+    
+    private boolean isDockerInDockerImage(String image) {
+        return image.startsWith("docker:") && image.endsWith("dind");
+    }
+    
     
 }
