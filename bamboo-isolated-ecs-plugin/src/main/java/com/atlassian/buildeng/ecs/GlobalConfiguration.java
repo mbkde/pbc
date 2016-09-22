@@ -25,6 +25,7 @@ import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.HostVolumeProperties;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
+import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.MountPoint;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
@@ -57,7 +58,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.fileupload.util.Streams;
 
 import static com.atlassian.buildeng.ecs.Constants.AGENT_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.LAAS_CONFIGURATION;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_KEY;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_VAL;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_KEY;
@@ -96,12 +96,23 @@ public class GlobalConfiguration {
     }
     
     //TODO eventually separate that out to be optional
-    private ContainerDefinition withFluentDLogs(ContainerDefinition def) {
-        return def.withLogConfiguration(LAAS_CONFIGURATION)
+    private ContainerDefinition withGlobalEnvVars(ContainerDefinition def) {
+        return def
                 .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
                 .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL))
                 .withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster()));
 
+    }
+
+    private ContainerDefinition withLogDriver(ContainerDefinition def) {
+        String driver = getLoggingDriver();
+        if (driver != null) {
+            LogConfiguration ld = new LogConfiguration()
+                    .withLogDriver(driver)
+                    .withOptions(getLoggingDriverOpts());
+            return def.withLogConfiguration(ld);
+        }
+        return def;
     }
 
     private ContainerDefinition withSwarm(ContainerDefinition def) {
@@ -114,7 +125,7 @@ public class GlobalConfiguration {
 
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
-        ContainerDefinition main = withFluentDLogs(new ContainerDefinition()
+        ContainerDefinition main = withLogDriver(withGlobalEnvVars(new ContainerDefinition()
                 .withName(AGENT_CONTAINER_NAME)
                 .withCpu(configuration.getSize().cpu())
                 .withMemory(configuration.getSize().memory())
@@ -123,7 +134,8 @@ public class GlobalConfiguration {
                 .withEntryPoint(RUN_SCRIPT)
                 .withWorkingDirectory(WORK_DIR)
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())));
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))
+        ));
         
         RegisterTaskDefinitionRequest req = withSwarm(new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(

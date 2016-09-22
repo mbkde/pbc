@@ -45,7 +45,7 @@ public interface Constants {
     // The script which runs the bamboo agent jar appropriately
     String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
-    // fluentd config
+    // fluentd config TODO remove
     // LaaS requirements
     String LAAS_SERVICE_ID_KEY  = "serviceId";
     String LAAS_SERVICE_ID_VAL  = "ryzicKpx";
@@ -64,21 +64,7 @@ public interface Constants {
     //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";
-    
-    
-    LogConfiguration LAAS_CONFIGURATION =
-            new LogConfiguration()
-                    .withLogDriver(LogDriver.Fluentd)
-                    // LaaS requirements
-                    .addOptionsEntry("env", String.join(",",
-                            LAAS_SERVICE_ID_KEY,
-                            LAAS_ENVIRONMENT_KEY,
-                            ECS_CLUSTER_KEY,
-                            ECS_CONTAINER_INSTANCE_ARN_KEY,
-                            ENV_VAR_RESULT_ID, 
-                            ENV_HOSTNAME))
-                    .addOptionsEntry("fluentd-address", "fluentd.staging.aws.buildeng.atlassian.com:24224");
-
+       
     // The container definition of the sidekick
     ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
