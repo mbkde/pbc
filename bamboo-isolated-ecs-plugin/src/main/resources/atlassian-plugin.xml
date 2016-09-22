@@ -39,7 +39,6 @@
     <web-resource key="aui-stuff">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
-        <dependency>com.atlassian.auiplugin:jquery-ui-other</dependency>
         <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
         <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
 
