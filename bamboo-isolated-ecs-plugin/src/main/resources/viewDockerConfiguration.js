@@ -34,24 +34,18 @@
 
     function processValidClusters(blob) {
         var clusters = blob.clusters;
-        var l = clusters.length;
-        var clusterList = AJS.$("#clusterList");
-        for (var i = 0; i < l; i++) {
-            clusterList.append('<li><a href="javascript:setCluster(\'' + clusters[i] + '\')">' + clusters[i] + '</a></li>');
+        AJS.$(".docker-container-autocomplete").autocomplete({
+            minLength: 0,
+//                    position: { my : "right top", at: "right bottom" },
+            source: clusters
         }
-        return clusters;
+        );
     }
 
-    function processCurrentCluster(response) {
-        AJS.$("#currentCluster").append(response.cluster);
-    }
-
-    function processCurrentSidekick(response) {
-        AJS.$("#sidekickToUse").attr("placeholder", "Current: " + response.sidekick).val("").focus().blur();
-    }
-    
-    function processCurrentASG(response) {
-        AJS.$("#asgToUse").attr("placeholder", "Current: " + response.asg).val("").focus().blur();
+    function processConfig(response) {
+        AJS.$("#currentCluster").val(response.ecsClusterName);
+        AJS.$("#sidekickToUse").val(response.sidekickImage);
+        AJS.$("#asgToUse").val(response.autoScalingGroupName);
     }
 
     function drawTable(data) {
@@ -82,98 +76,30 @@
         });
     }
 
-    function registerImage() {
-        var dockerImage = AJS.$("#dockerImageToRegister");
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint,
-            contentType: 'application/json',
-            data: '{"dockerImage": "' + dockerImage.val().trim() + '" }',
-            success: function (response) {
-                var mapping = {};
-                mapping.revision = response.revision;
-                mapping.dockerImage = dockerImage.val().trim();
-                var table = AJS.$("#dockerImageTable tbody");
-                appendTableRow(table, mapping);
-                dockerImage.val("");
-                
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
-    }
+    function setEcsConfig() {
+        var config = {};
+        config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
+        config.autoScalingGroupName = AJS.$("#asgToUse").val().trim();
+        config.ecsClusterName = AJS.$("#currentCluster").val().trim();
 
-    function setCluster(cluster) {
         AJS.$.ajax({
             type: "POST",
-            url: restEndpoint + "cluster",
+            url: restEndpoint + "config",
             contentType: 'application/json',
-            data: '{"cluster": "' + cluster.trim() + '" }',
+            data: JSON.stringify(config),
             success: function () {
-                //no reload necessary
-//                location.reload(true);
-            },
-            error: function (err) {
-                alert(err.responseText);
-                processResource(processCurrentCluster, "cluster");
-            }
-        });
-    }
-
-    function setSidekick() {
-        var sidekick = AJS.$("#sidekickToUse").val();
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "sidekick",
-            contentType: 'application/json',
-            data: '{"sidekick": "' + sidekick.trim() + '" }',
-            success: function () {
-                processResource(processCurrentSidekick, "sidekick");
+                //processResource(processCurrentSidekick, "sidekick");
             },
             error: function (err) {
                 alert(err.responseText);
             }
         });
     }
-
-    function resetSidekick() {
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "sidekick/reset",
-            contentType: 'application/json',
-            data: '{}',
-            success: function () {
-                processResource(processCurrentSidekick, "sidekick");
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
-    }
-    
-    function setASG() {
-        var asg = AJS.$("#asgToUse").val();
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "asg",
-            contentType: 'application/json',
-            data: '{"asg": "' + asg.trim() + '" }',
-            success: function () {
-                processResource(processCurrentASG, "asg");
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
-    }    
 
 AJS.$(document).ready(function() {
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
-    processResource(processCurrentCluster, "cluster");
-    processResource(processCurrentSidekick, "sidekick");
-    processResource(processCurrentASG, "asg");
+    processResource(processConfig, "config");
 });
 
 

@@ -20,6 +20,7 @@ import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
+import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetCurrentASGResponse;
@@ -51,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @WebSudoRequired
 @Path("/")
@@ -85,6 +87,7 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster")
+    @Deprecated
     public Response getCurrentCluster() {
         return Response.ok(new GetCurrentClusterResponse(configuration.getCurrentCluster())).build();
     }
@@ -93,6 +96,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/cluster")
+    @Deprecated
     public Response setCluster(String requestString) {
         String cluster = null;
         try {
@@ -115,6 +119,7 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/sidekick")
+    @Deprecated
     public Response getCurrentSidekick() {
         return Response.ok(new GetCurrentSidekickResponse(configuration.getCurrentSidekick())).build();
     }
@@ -123,6 +128,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sidekick")
+    @Deprecated
     public Response setSidekick(String requestString) {
         String sidekick = null;
         try {
@@ -146,6 +152,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sidekick/reset")
+    @Deprecated
     public Response resetSidekick() {
         configuration.resetSidekick();
         return Response.noContent().build();
@@ -155,6 +162,7 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")
+    @Deprecated
     public Response getValidClusters() throws RestableIsolatedDockerException {
         List<String> clusters = configuration.getValidClusters();
         return Response.ok(new GetValidClustersResponse(clusters)).build();
@@ -163,6 +171,7 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/asg")
+    @Deprecated
     public Response getCurrentASG() {
         return Response.ok(new GetCurrentASGResponse(configuration.getCurrentASG())).build();
     }
@@ -171,6 +180,7 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/asg")
+    @Deprecated
     public Response setASG(String requestString) {
         String asg = null;
         try {
@@ -187,6 +197,32 @@ public class Rest {
             return Response.status(Status.BAD_REQUEST).entity("Missing 'asg' field").build();
         }
         configuration.setCurrentASG(asg);
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/config")
+    public Response getConfig() {
+        Config c = new Config();
+        c.setAutoScalingGroupName(configuration.getCurrentASG());
+        c.setEcsClusterName(configuration.getCurrentCluster());
+        c.setSidekickImage(configuration.getCurrentSidekick());
+        return Response.ok(c).build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/config")
+    public Response setConfig(Config config) {
+        configuration.setCluster(config.getEcsClusterName());
+        configuration.setCurrentASG(config.getAutoScalingGroupName());
+        if (StringUtils.isBlank(config.getSidekickImage())) {
+            configuration.resetSidekick();
+        } else {
+            configuration.setSidekick(config.getSidekickImage());
+        }
         return Response.noContent().build();
     }
     
