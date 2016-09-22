@@ -22,9 +22,8 @@
                     callback(text);
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.error(textStatus);
+                    showError(textStatus + " " + errorThrown);
                 }
-
             });
     }
 
@@ -46,6 +45,7 @@
         AJS.$("#currentCluster").val(response.ecsClusterName);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#asgToUse").val(response.autoScalingGroupName);
+        updateStatus("");
     }
 
     function drawTable(data) {
@@ -81,6 +81,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.autoScalingGroupName = AJS.$("#asgToUse").val().trim();
         config.ecsClusterName = AJS.$("#currentCluster").val().trim();
+        updateStatus("Saving...");
 
         AJS.$.ajax({
             type: "POST",
@@ -88,15 +89,32 @@
             contentType: 'application/json',
             data: JSON.stringify(config),
             success: function () {
-                //processResource(processCurrentSidekick, "sidekick");
+                updateStatus("Saved");
             },
-            error: function (err) {
-                alert(err.responseText);
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                updateStatus("");
+                showError(textStatus + " " + errorThrown);
             }
         });
     }
 
+    function updateStatus(message) {
+        hideError();
+        AJS.$(".save-status").empty();
+        AJS.$(".save-status").append(message);
+    }
+
+    function showError(message) {
+        AJS.$("#errorMessage").append("<div class='aui-message aui-message-error error'>" + message + "</div>");
+    }
+
+    function hideError() {
+        AJS.$("#errorMessage").empty();
+    }
+
+
 AJS.$(document).ready(function() {
+    updateStatus("Loading...");
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
     processResource(processConfig, "config");

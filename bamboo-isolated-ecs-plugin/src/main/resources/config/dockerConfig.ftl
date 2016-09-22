@@ -29,6 +29,8 @@ List is updated on running a plan the first time, not editing it.
 <h2>ECS cluster configuration</h2>
     Configure the ECS cluster associated with this Bamboo server.
 
+<div id="errorMessage">
+</div>
 
 <form id="setBambooSidekick" class="aui">
     <fieldset>
