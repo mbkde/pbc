@@ -33,7 +33,7 @@
 
     function processValidClusters(blob) {
         var clusters = blob.clusters;
-        AJS.$(".docker-container-autocomplete").autocomplete({
+        AJS.$("#currentCluster").autocomplete({
             minLength: 0,
 //                    position: { my : "right top", at: "right bottom" },
             source: clusters
@@ -45,6 +45,15 @@
         AJS.$("#currentCluster").val(response.ecsClusterName);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#asgToUse").val(response.autoScalingGroupName);
+        var log = response.logConfiguration;
+        var driver = "";
+        if (log != null) {
+            driver = log.driver;
+        }
+        AJS.$("#logDriver").val(driver);
+        AJS.$.each( log.options, function( key, value ) {
+            appendLogOption(key, value);
+        });
         updateStatus("");
     }
 
@@ -81,8 +90,17 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.autoScalingGroupName = AJS.$("#asgToUse").val().trim();
         config.ecsClusterName = AJS.$("#currentCluster").val().trim();
+        var log = {};
+        config.logConfiguration = log;
+        log.options = {};
+        AJS.$("#logOptionTable tr.logOption").each(function(index, element) {
+            var key = AJS.$(element).find(".logOption-key").val().trim();
+            var val = AJS.$(element).find(".logOption-value").val().trim();
+            log.options[key] = val;
+        });
+        log.driver = AJS.$("#logDriver").val().trim();
         updateStatus("Saving...");
-
+        
         AJS.$.ajax({
             type: "POST",
             url: restEndpoint + "config",
@@ -112,9 +130,32 @@
         AJS.$("#errorMessage").empty();
     }
 
+function removeLine(element) {
+    var par = element.parentElement.parentElement;
+    par.parentElement.removeChild(par);
+}
 
+function appendLogOption(name, value) {
+     AJS.$("#logOptionTable tbody").append(
+             "<tr class=\"logOption\"><td><input type=\"text\" class=\"logOption-key text long-field\" value=\"" + name + "\"></input></td>" +
+              "<td><input type=\"text\" class=\"logOption-value text long-field\" value=\"" + value +  "\"></input></td>" +
+              "<td><a class='aui-link' onclick='removeLine(this)'>Remove</a></td>" + 
+            "</tr>");
+}
 AJS.$(document).ready(function() {
+    AJS.$("#docker_addLogOption").click(function() {
+        appendLogOption("", "");
+    });
+    var drivers = [
+        "json-file", "syslog", "journald", "gelf", "fluentd", "awslogs"
+    ];
+    AJS.$("#logDriver").autocomplete({
+            minLength: 0,
+            source: drivers
+        });
+
     updateStatus("Loading...");
+
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
     processResource(processConfig, "config");

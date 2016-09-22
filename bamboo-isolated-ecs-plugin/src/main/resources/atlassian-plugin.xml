@@ -39,6 +39,10 @@
     <web-resource key="aui-stuff">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+        <dependency>com.atlassian.auiplugin:jquery-ui-other</dependency>
+        <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
+        <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
+
         <resource type="download" name="viewDockerConfiguration.js" location="/viewDockerConfiguration.js"/>
         <context>viewDockerConfiguration</context>
     </web-resource>
@@ -66,8 +70,6 @@
     <web-resource key="docker-usages-ui-js" name="JavaScript for usages panel.">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
-        <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
-        <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
 
         <resource type="download" name="usages.js" location="/templates/plugin/dockerUsages.js"/>
         <context>viewDockerUsages</context>

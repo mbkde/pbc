@@ -16,11 +16,14 @@
 
 package com.atlassian.buildeng.ecs.rest;
 
+import java.util.Map;
+
 public class Config {
 
     public String ecsClusterName;
     public String autoScalingGroupName;
     public String sidekickImage;
+    public LogConfiguration logConfiguration;
 
     public Config() {
     }
@@ -55,5 +58,42 @@ public class Config {
         this.sidekickImage = sidekickImage;
     }
 
+    public LogConfiguration getLogConfiguration() {
+        return logConfiguration;
+    }
 
+    public void setLogConfiguration(LogConfiguration logConfiguration) {
+        this.logConfiguration = logConfiguration;
+    }
+
+    public static class LogConfiguration {
+        public String driver;
+        public Map<String, String> options;
+
+        public LogConfiguration() {
+        }
+
+        public LogConfiguration(String driver, Map<String, String> options) {
+            this.driver = driver;
+            this.options = options;
+        }
+
+        public String getDriver() {
+            return driver;
+        }
+
+        public void setDriver(String driver) {
+            this.driver = driver;
+        }
+
+        public Map<String, String> getOptions() {
+            return options;
+        }
+
+        public void setOptions(Map<String, String> options) {
+            this.options = options;
+        }
+
+        
+    }
 }

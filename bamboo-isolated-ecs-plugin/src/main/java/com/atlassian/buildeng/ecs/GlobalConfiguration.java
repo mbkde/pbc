@@ -65,6 +65,7 @@ import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_VAL;
 import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
 import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
 import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
  *
@@ -78,6 +79,8 @@ public class GlobalConfiguration {
     static String BANDANA_ECS_TASK_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.task.config";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
+    static String BANDANA_LOGGING_DRIVER_KEY = "com.atlassian.buildeng.ecs.loggingDriver";
+    static String BANDANA_LOGGING_OPTS_KEY = "com.atlassian.buildeng.ecs.loggingOpts";
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
@@ -219,6 +222,46 @@ public class GlobalConfiguration {
         } catch (Exception e) {
             throw new ECSException(e);
         }
+    }
+
+    /**
+     * Get custom logging driver to use with job tasks
+     *
+     * @return the custom logging driver or null of none defined.
+     */
+    public synchronized String getLoggingDriver() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
+    }
+
+    /**
+     * Set custom logging driver to use with job tasks
+     *
+     * @param name The logging driver name, needs to be supported by ecs and configured on instances
+     */
+    synchronized void setLoggingDriver(String name) {
+        if (StringUtils.isBlank(name)) {
+            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
+        } else {
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, name);
+        }
+    }
+    /**
+     * Get custom logging driver options
+     *
+     * @return The current cluster nam
+     */
+    public synchronized Map<String, String> getLoggingDriverOpts() {
+        Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY);
+        return map != null ? map : new HashMap<>();
+    }
+
+    /**
+     * Set custom logging driver to use with job tasks
+     *
+     * @param name The logging driver opts to pass to the task
+     */
+    synchronized void setLoggingDriverOpts(Map<String, String> opts) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY, opts);
     }
 
     // Docker - ECS mapping management

@@ -44,12 +44,43 @@ List is updated on running a plan the first time, not editing it.
             <label for="currentCluster">ECS Cluster</label>
             <input type="text" class="text long-field" id="currentCluster"
                     placeholder="Autocomplete available clusters"></input>
+            <div class="description" id="desc-currentCluster">
+                Name of ECS cluster to run per-build container agents in
+            </div>
         </div>
         <div class="field-group">
             <label for="asgToUse">AutoScaling Group</label>
             <input type="text" class="text long-field" id="asgToUse"
                     placeholder=""></input>
+            <div class="description" id="desc-asgToUse">
+                Name of Auto Scaling Group that is backing the ECS Cluster used by this Bamboo server.
+            </div>
         </div>
+
+        <div class="field-group">
+            <label for="logDriver">Log Driver</label>
+            <input type="text" class="text long-field" id="logDriver"
+                    placeholder="Default if empty"></input>
+            <div class="description" id="desc_logDriver">
+                    Log Driver to use to log the Bamboo agent container output.
+            </div>
+        </div>
+
+        <div class="field-group">
+            <a id='docker_addLogOption' class='aui-link'>Add Log Driver Option</a>
+            <label for="logOptionTable" id="fieldLabelArea_logOption">Log Driver Options</label>
+            <table id="logOptionTable" class="aui">
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th></th>
+                </t>
+            </table>
+            <div class="description" id="desc_logOptionTable">
+                Log Configuration Options related to the selected Log Driver
+            </div>
+        </div>
+
         <button type="button" class="aui-button aui-button-primary" onclick="setEcsConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>

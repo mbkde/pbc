@@ -48,6 +48,7 @@ import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -208,6 +209,13 @@ public class Rest {
         c.setAutoScalingGroupName(configuration.getCurrentASG());
         c.setEcsClusterName(configuration.getCurrentCluster());
         c.setSidekickImage(configuration.getCurrentSidekick());
+        String driver = configuration.getLoggingDriver();
+        if (driver != null) {
+            Config.LogConfiguration lc = new Config.LogConfiguration();
+            lc.setDriver(driver);
+            lc.setOptions(configuration.getLoggingDriverOpts());
+            c.setLogConfiguration(lc);
+        }
         return Response.ok(c).build();
     }
 
@@ -223,6 +231,9 @@ public class Rest {
         } else {
             configuration.setSidekick(config.getSidekickImage());
         }
+        Config.LogConfiguration lc = config.getLogConfiguration();
+        configuration.setLoggingDriver(lc != null ? lc.getDriver() : null);
+        configuration.setLoggingDriverOpts(lc != null ? lc.getOptions() : Collections.emptyMap());
         return Response.noContent().build();
     }
     
