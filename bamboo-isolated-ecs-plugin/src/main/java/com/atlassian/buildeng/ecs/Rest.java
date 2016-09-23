@@ -87,81 +87,6 @@ public class Rest {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/cluster")
-    @Deprecated
-    public Response getCurrentCluster() {
-        return Response.ok(new GetCurrentClusterResponse(configuration.getCurrentCluster())).build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/cluster")
-    @Deprecated
-    public Response setCluster(String requestString) {
-        String cluster = null;
-        try {
-            JsonParser p = new JsonParser();
-            JsonElement e = p.parse(requestString);
-            if (e.isJsonObject()) {
-                JsonObject o = e.getAsJsonObject();
-                cluster = o.getAsJsonPrimitive("cluster") != null ? o.getAsJsonPrimitive("cluster").getAsString() : null;
-            }
-        } catch (JsonParseException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
-        }
-        if (cluster == null) {
-            return Response.status(Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
-        }
-        configuration.setCluster(cluster);
-        return Response.created(URI.create("/cluster")).build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/sidekick")
-    @Deprecated
-    public Response getCurrentSidekick() {
-        return Response.ok(new GetCurrentSidekickResponse(configuration.getCurrentSidekick())).build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/sidekick")
-    @Deprecated
-    public Response setSidekick(String requestString) {
-        String sidekick = null;
-        try {
-            JsonParser p = new JsonParser();
-            JsonElement e = p.parse(requestString);
-            if (e.isJsonObject()) {
-                JsonObject o = e.getAsJsonObject();
-                sidekick = o.getAsJsonPrimitive("sidekick") != null ? o.getAsJsonPrimitive("sidekick").getAsString() : null;
-            }
-        } catch (JsonParseException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
-        }
-        if (sidekick == null) {
-            return Response.status(Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
-        }
-        configuration.setSidekick(sidekick);
-        return Response.noContent().build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/sidekick/reset")
-    @Deprecated
-    public Response resetSidekick() {
-        configuration.resetSidekick();
-        return Response.noContent().build();
-    }
-
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")
     @Deprecated
     public Response getValidClusters() throws RestableIsolatedDockerException {
@@ -169,38 +94,6 @@ public class Rest {
         return Response.ok(new GetValidClustersResponse(clusters)).build();
     }
     
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/asg")
-    @Deprecated
-    public Response getCurrentASG() {
-        return Response.ok(new GetCurrentASGResponse(configuration.getCurrentASG())).build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/asg")
-    @Deprecated
-    public Response setASG(String requestString) {
-        String asg = null;
-        try {
-            JsonParser p = new JsonParser();
-            JsonElement e = p.parse(requestString);
-            if (e.isJsonObject()) {
-                JsonObject o = e.getAsJsonObject();
-                asg = o.getAsJsonPrimitive("asg") != null ? o.getAsJsonPrimitive("asg").getAsString() : null;
-            }
-        } catch (JsonParseException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
-        }
-        if (asg == null) {
-            return Response.status(Status.BAD_REQUEST).entity("Missing 'asg' field").build();
-        }
-        configuration.setCurrentASG(asg);
-        return Response.noContent().build();
-    }
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/config")
@@ -224,16 +117,7 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/config")
     public Response setConfig(Config config) {
-        configuration.setCluster(config.getEcsClusterName());
-        configuration.setCurrentASG(config.getAutoScalingGroupName());
-        if (StringUtils.isBlank(config.getSidekickImage())) {
-            configuration.resetSidekick();
-        } else {
-            configuration.setSidekick(config.getSidekickImage());
-        }
-        Config.LogConfiguration lc = config.getLogConfiguration();
-        configuration.setLoggingDriver(lc != null ? lc.getDriver() : null);
-        configuration.setLoggingDriverOpts(lc != null ? lc.getOptions() : Collections.emptyMap());
+        configuration.setConfig(config);
         return Response.noContent().build();
     }
     

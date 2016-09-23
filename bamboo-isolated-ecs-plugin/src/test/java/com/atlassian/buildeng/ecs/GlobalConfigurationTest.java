@@ -24,6 +24,7 @@ import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
+import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.HashMap;
@@ -72,7 +73,8 @@ public class GlobalConfigurationTest {
     public void setSidekickHappyPath() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        configuration.setSidekick("newSidekick");
+        Config config = new Config("", "", "newSidekick");
+        configuration.setConfig(config);
         verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY), eq("newSidekick"));
     }
     
