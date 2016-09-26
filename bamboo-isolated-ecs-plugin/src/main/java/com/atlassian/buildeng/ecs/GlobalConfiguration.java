@@ -78,7 +78,7 @@ public class GlobalConfiguration {
     static String BANDANA_ECS_TASK_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.task.config";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
-    
+
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -397,7 +397,7 @@ public class GlobalConfiguration {
         return null;
     }
 
-    private boolean isDockerInDockerImage(String image) {
+    public static boolean isDockerInDockerImage(String image) {
         return image.startsWith("docker:") && image.endsWith("dind");
     }
 }
