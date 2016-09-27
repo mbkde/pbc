@@ -404,7 +404,7 @@ public class GlobalConfiguration {
         return null;
     }
 
-    private boolean isDockerInDockerImage(String image) {
+    public static boolean isDockerInDockerImage(String image) {
         return image.startsWith("docker:") && image.endsWith("dind");
     }
 

@@ -42,6 +42,7 @@ import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.Constants;
+import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -171,9 +173,10 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 .withName(Constants.AGENT_CONTAINER_NAME);
             overrides.withContainerOverrides(buildResultOverride);
             request.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-                if (!t.getCommands().isEmpty() || !t.getEnvVariables().isEmpty()) {
+                List<String> adjustedCommands = adjustCommands(t);
+                if (!adjustedCommands.isEmpty() || !t.getEnvVariables().isEmpty()) {
                     ContainerOverride ride = new ContainerOverride().withName(t.getName());
-                    t.getCommands().forEach((String t1) -> {
+                    adjustedCommands.forEach((String t1) -> {
                         ride.withCommand(t1);
                     });
                     t.getEnvVariables().forEach((Configuration.EnvVariable t1) -> {
@@ -276,5 +279,31 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         } catch (Exception ex) {
             throw new ECSException(ex);
         }
+    }
+
+    /**
+     * adjust the list of commands if required, eg. in case of storage-driver switch for
+     * docker in docker images.
+     * @param t
+     * @return
+     */
+    static List<String> adjustCommands(Configuration.ExtraContainer t) {
+        if (GlobalConfiguration.isDockerInDockerImage(t.getImage())) {
+            List<String> cmds = new ArrayList<>(t.getCommands());
+            Iterator<String> it = cmds.iterator();
+            while (it.hasNext()) {
+                String s = it.next().trim();
+                if (s.startsWith("-s") || s.startsWith("--storage-driver") || s.startsWith("--storage-opt")) {
+                    it.remove();
+                    if (!s.contains("=") && it.hasNext()) {
+                        it.next();
+                        it.remove();
+                    }
+                }
+            }
+            cmds.add("--storage-driver=" + Constants.storage_driver);
+            return cmds;
+        }
+        return t.getCommands();
     }
 }

@@ -7,6 +7,12 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 
 public interface Constants {
 
+    /**
+     * the storage driver used with docker on the ec2 instances in ecs. For docker-in-docker to work
+     * we need to use this one in place of the default vfs that is terribly slow.
+     */
+    public static String storage_driver = System.getProperty("pbc.dind.storage.driver", "overlay");
+
     // ECS
 
     // The name of the sidekick docker image and sidekick container
