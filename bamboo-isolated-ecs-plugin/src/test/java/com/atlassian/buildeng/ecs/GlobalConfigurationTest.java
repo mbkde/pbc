@@ -73,7 +73,7 @@ public class GlobalConfigurationTest {
     public void setSidekickHappyPath() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        Config config = new Config("", "", "newSidekick");
+        Config config = new Config("x", "x", "newSidekick");
         configuration.setConfig(config);
         verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY), eq("newSidekick"));
     }

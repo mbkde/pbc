@@ -66,6 +66,7 @@ import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
 import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
 import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
 import com.atlassian.buildeng.ecs.rest.Config;
+import com.google.common.base.Preconditions;
 import java.util.Collections;
 import org.codehaus.plexus.util.StringUtils;
 
@@ -409,6 +410,8 @@ public class GlobalConfiguration {
     }
 
     synchronized void setConfig(Config config) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(config.getAutoScalingGroupName()));
+        Preconditions.checkArgument(StringUtils.isNotBlank(config.getEcsClusterName()));
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, config.getEcsClusterName());
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, config.getAutoScalingGroupName());
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, StringUtils.isBlank(config.getSidekickImage()) ? Constants.DEFAULT_SIDEKICK_REPOSITORY : config.getSidekickImage());

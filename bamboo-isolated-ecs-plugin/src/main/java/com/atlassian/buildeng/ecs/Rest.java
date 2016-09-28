@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @WebSudoRequired
 @Path("/")
@@ -105,6 +106,12 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/config")
     public Response setConfig(Config config) {
+        if (StringUtils.isBlank(config.getAutoScalingGroupName())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("autoScalingGroupName is mandatory").build();
+        }
+        if (StringUtils.isBlank(config.getEcsClusterName())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("ecsClusterName is mandatory").build();
+        }
         configuration.setConfig(config);
         return Response.noContent().build();
     }
