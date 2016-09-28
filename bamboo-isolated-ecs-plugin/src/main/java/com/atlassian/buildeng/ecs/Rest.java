@@ -23,16 +23,9 @@ import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
 import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
-import com.atlassian.buildeng.ecs.rest.GetCurrentASGResponse;
-import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
-import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.Consumes;
@@ -44,16 +37,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 
 @WebSudoRequired
 @Path("/")
