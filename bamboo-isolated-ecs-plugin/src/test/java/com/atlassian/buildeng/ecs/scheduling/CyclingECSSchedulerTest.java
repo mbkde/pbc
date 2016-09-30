@@ -369,6 +369,7 @@ public class CyclingECSSchedulerTest {
     @Test
     public void scheduleBackendFailGetContainers() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
+        mockASG(Sets.newHashSet("a1"), backend);
         when(backend.getClusterContainerInstances(anyString())).thenThrow(new ECSException("error1"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         AtomicBoolean thrown = new AtomicBoolean(false);

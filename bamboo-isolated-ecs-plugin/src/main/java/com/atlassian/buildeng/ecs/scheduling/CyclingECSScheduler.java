@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.SuspendedProcess;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
@@ -109,6 +110,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         AutoScalingGroup asg;
         try {
             asg  = schedulerBackend.describeAutoScalingGroup(asgName);
+            checkSuspendedProcesses(asg);
             hosts = loadHosts(cluster, asg);
         } catch (ECSException ex) {
             //mark all futures with exception.. and let the clients wait and retry..
@@ -343,6 +345,20 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             }
         });
         return cache;
+    }
+
+    //AZRebalance kills running agents, we need to suspend it.
+    //not possible to do via terraform now, let's do explicitly from the plugin.
+    private void checkSuspendedProcesses(AutoScalingGroup asg) throws ECSException {
+        if (asg.getSuspendedProcesses() == null ||
+            !asg.getSuspendedProcesses().stream()
+                    .map((SuspendedProcess t) -> t.getProcessName())
+                    //it's a pity aws lib doesn't have these as constants or enums
+                    .filter((String t) -> "AZRebalance".equals(t))
+                    .findAny().isPresent())
+        {
+            schedulerBackend.suspendProcess(asg.getAutoScalingGroupName(), "AZRebalance");
+        }
     }
 
     private class EndlessPolling implements Runnable {
