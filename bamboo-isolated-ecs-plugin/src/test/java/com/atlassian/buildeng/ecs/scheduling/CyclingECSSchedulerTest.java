@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
@@ -32,7 +33,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.commons.lang3.tuple.Pair;
 import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -76,7 +76,7 @@ public class CyclingECSSchedulerTest {
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
                 ));
-        Collection<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()).loadHosts("", "").allUsable();
+        Collection<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig()).loadHosts("", new AutoScalingGroup()).allUsable();
         //100 & 100 means all are viable candidates
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, 100, 100);
         assertTrue(candidate.isPresent());
@@ -396,6 +396,7 @@ public class CyclingECSSchedulerTest {
                     ci("id2", "arn2", true, 2000, 200, 2000, 400)
                 )
         );
+        mockASG(Sets.newHashSet("id1", "id2"), backend);
         when(backend.getInstances(anyList())).thenThrow(new ECSException("error2"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         AtomicBoolean thrown = new AtomicBoolean(false);
@@ -427,6 +428,7 @@ public class CyclingECSSchedulerTest {
                     ec2("id2", new Date())
                 )
         );
+        mockASG(Sets.newHashSet("id1", "id2"), backend);
         when(backend.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig());
         AtomicBoolean thrown = new AtomicBoolean(false);
@@ -524,7 +526,7 @@ public class CyclingECSSchedulerTest {
     
 
     private void populateDisconnectedCacheWithRipeHosts(CyclingECSScheduler scheduler) throws ECSException {
-        DockerHosts hosts = scheduler.loadHosts("", "");
+        DockerHosts hosts = scheduler.loadHosts("", new AutoScalingGroup());
         for (DockerHost disc : hosts.agentDisconnected()) {
             scheduler.disconnectedAgentsCache.put(disc, new Date(new Date().getTime() - 1000 * 60 * 2));
         }
@@ -618,13 +620,24 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
-        when(mocked.getCurrentASGCapacity(anyString())).thenReturn(Pair.of(asgInstances.size(), 50));
-        when(mocked.getAsgInstanceIds(anyString())).thenReturn(asgInstances);
+        mockASG(asgInstances, mocked);
         when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             String foo = (String) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo);
         });
         return mocked;
+    }
+
+    private void mockASG(Set<String> asgInstances, SchedulerBackend mocked) throws ECSException {
+        AutoScalingGroup asg = new AutoScalingGroup();
+        asg.setMaxSize(50);
+        asg.setDesiredCapacity(asgInstances.size());
+        asg.setInstances(asgInstances.stream().map((String t) -> {
+            com.amazonaws.services.autoscaling.model.Instance i = new com.amazonaws.services.autoscaling.model.Instance();
+            i.setInstanceId(t);
+            return i;
+        }).collect(Collectors.toList()));
+        when(mocked.describeAutoScalingGroup(anyString())).thenReturn(asg);
     }
     
     static ContainerInstance ci(String ec2Id, String arn, boolean connected, int regMem, int remMem, int regCpu, int remCpu) {

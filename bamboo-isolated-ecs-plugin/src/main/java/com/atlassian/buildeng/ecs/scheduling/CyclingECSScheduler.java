@@ -1,5 +1,6 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
@@ -105,8 +106,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         String asgName = globalConfiguration.getCurrentASG();
 
         DockerHosts hosts;
+        AutoScalingGroup asg;
         try {
-            hosts = loadHosts(cluster, asgName);
+            asg  = schedulerBackend.describeAutoScalingGroup(asgName);
+            hosts = loadHosts(cluster, asg);
         } catch (ECSException ex) {
             //mark all futures with exception.. and let the clients wait and retry..
             while (pair != null) {
@@ -180,15 +183,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //what the terminateInstances method should reduce it to.
         currentSize = currentSize - terminatedCount;
         try {
-            Pair<Integer, Integer> p = schedulerBackend.getCurrentASGCapacity(asgName);
             // we need to scale up while ignoring any broken containers, eg.
             // if 3 instances are borked and 2 ok, we need to scale to 6 and not 3 as the desiredScaleSize is calculated 
             // up to this point.
             desiredScaleSize = desiredScaleSize + disconnectedSize;
             //never can scale beyond max capacity, will get an error then and not scale
-            desiredScaleSize = Math.min(desiredScaleSize, p.getRight());
-            int asgSize = p.getLeft();
-            if (desiredScaleSize > currentSize && desiredScaleSize > asgSize) {
+            desiredScaleSize = Math.min(desiredScaleSize, asg.getMaxSize());
+            if (desiredScaleSize > currentSize && desiredScaleSize > asg.getDesiredCapacity()) {
                 //this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, asgName);
             }
@@ -197,7 +198,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         }
     }
     
-    DockerHosts loadHosts(String cluster, String asgName) throws ECSException {
+    DockerHosts loadHosts(String cluster, AutoScalingGroup asg) throws ECSException {
         //this can take time (network) and in the meantime other requests can accumulate.
         Map<String, ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster).stream().collect(Collectors.toMap(ContainerInstance::getEc2InstanceId, Function.identity()));
         // We need these as there is potentially a disparity between instances with container instances registered
@@ -205,7 +206,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         // then terminate them, if the cluster still reports the instance as connected we might assign a task to
         // the instance, which will soon terminate. This leads to sad builds, so we intersect the instances reported
         // from both ECS and ASG
-        Set<String> asgInstances = schedulerBackend.getAsgInstanceIds(asgName);
+        Set<String> asgInstances = asg.getInstances().stream().map(x -> x.getInstanceId()).collect(Collectors.toSet());
         Set<String> allIds = new HashSet<>();
         allIds.addAll(asgInstances);
         allIds.addAll(containerInstances.keySet());
@@ -231,10 +232,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     
     private void checkScaleDown() {
         try {
-            String asg = globalConfiguration.getCurrentASG();
+            String asgName = globalConfiguration.getCurrentASG();
+            AutoScalingGroup asg = schedulerBackend.describeAutoScalingGroup(asgName);
             DockerHosts hosts = loadHosts(globalConfiguration.getCurrentCluster(), asg);
-            terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asg, false);
-            terminateInstances(selectToTerminate(hosts), asg, true);
+            terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asgName, false);
+            terminateInstances(selectToTerminate(hosts), asgName, true);
         } catch (ECSException ex) {
             logger.error("Failed to scale down", ex);
         }

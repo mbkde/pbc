@@ -18,7 +18,6 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DetachInstancesRequest;
 import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
@@ -49,12 +48,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,12 +195,12 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     /**
      * 
-     * @param autoScalingGroup
-     * @return pair of desired/max capacity
+     * @param autoScalingGroup name
+     * @return described autoscaling group
      * @throws ECSException 
      */
     @Override
-    public Pair<Integer, Integer> getCurrentASGCapacity(String autoScalingGroup) throws ECSException {
+    public AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException {
         try {
             AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
             DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
@@ -216,7 +212,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             if (groups.isEmpty()) {
                 throw new ECSException("No auto scaling group with name:" + autoScalingGroup);
             }
-            return Pair.of(groups.get(0).getDesiredCapacity(), groups.get(0).getMaxSize());
+            return groups.get(0);
         } catch (Exception ex) {
             if (ex instanceof ECSException) {
                 throw ex;
@@ -252,33 +248,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             }
         }
         
-    }
-
-    @Override
-    public Set<String> getAsgInstanceIds(String autoScalingGroup) throws ECSException {
-        AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
-        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
-                .withAutoScalingGroupNames(autoScalingGroup);
-        try {
-            Set<String> instanceIds = new HashSet<>();
-            boolean finished = false;
-            while (!finished) {
-                DescribeAutoScalingGroupsResult asgResult = asgClient.describeAutoScalingGroups(asgReq);
-                List<AutoScalingGroup> asgs = asgResult.getAutoScalingGroups();
-                instanceIds.addAll(asgs.stream()
-                        .flatMap(asg -> asg.getInstances().stream().map(x -> x.getInstanceId()))
-                        .collect(Collectors.toList()));
-                String nextToken = asgResult.getNextToken();
-                if (nextToken == null) {
-                    finished = true;
-                } else {
-                    asgReq.setNextToken(nextToken);
-                }
-            }
-            return instanceIds;
-        } catch (Exception ex) {
-            throw new ECSException(ex);
-        }
     }
 
     /**

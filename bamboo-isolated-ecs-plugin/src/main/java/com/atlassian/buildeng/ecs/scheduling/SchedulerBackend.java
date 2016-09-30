@@ -15,14 +15,13 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Collection;
 import java.util.List;
-import org.apache.commons.lang3.tuple.Pair;
-import java.util.Set;
 
 /**
  *
@@ -45,9 +44,7 @@ public interface SchedulerBackend {
      * @return 
      * @throws ECSException
      */
-    List<Instance> getInstances(Collection<String> instanceIds) throws ECSException;
-    
-    Set<String> getAsgInstanceIds(String autoScalingGroup) throws ECSException;
+    List<Instance> getInstances(Collection<String> instanceIds) throws ECSException;    
     
     /**
      * scale the ASG to desired capacity
@@ -69,12 +66,12 @@ public interface SchedulerBackend {
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     
     /**
-     * 
+     * describe autoscaling group of given name
      * @param autoScalingGroup
-     * @return pair of desired capacity and max size
+     * @return get AutoscalingGroup
      * @throws ECSException 
      */
-    Pair<Integer, Integer> getCurrentASGCapacity(String autoScalingGroup) throws ECSException;
+    AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException;
     
     Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException;
 }
