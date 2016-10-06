@@ -189,8 +189,10 @@ public class DockerHost {
                 ", launchTime=" + launchTime +
                 ", agentConnected=" + agentConnected +
                 '}';
-    } 
-    
+    }
+
+    private static final int M4XLARGE_CPU = 4096;
+    private static final int M4XLARGE_MEMORY = 16050;
     private static final int M44XLARGE_CPU = 16384;
     private static final int M44XLARGE_MEMORY = 64419;
     private static final int M410XLARGE_MEMORY = 161186;
@@ -199,6 +201,7 @@ public class DockerHost {
     static int DEFAULT_INSTANCE_CPU = M44XLARGE_CPU;
     private static final String M410XLARGE = "m4.10xlarge";
     private static final String M44XLARGE = "m4.4xlarge";
+    private static final String M4XLARGE = "m4.large";
 
     private int computeInstanceCPU(String instanceType) {
         if (M44XLARGE.equals(instanceType)) {
@@ -206,6 +209,9 @@ public class DockerHost {
         }
         else if (M410XLARGE.equals(instanceType)) {
             return M410XLARGE_CPU;
+        }
+        else if (M4XLARGE.equals(instanceType)) {
+            return M4XLARGE_CPU;
         }
         logger.error("unknown instance type {}, cannot calculate instance CPU, falling back to {}", instanceType, DEFAULT_INSTANCE_CPU);
         return DEFAULT_INSTANCE_CPU;
@@ -217,6 +223,9 @@ public class DockerHost {
         }
         else if (M410XLARGE.equals(instanceType)) {
             return M410XLARGE_MEMORY;
+        }
+        else if (M4XLARGE.equals(instanceType)) {
+            return M4XLARGE_MEMORY;
         }
         logger.error("unknown instance type {}, cannot calculate instance memory, falling back to {}", instanceType, DEFAULT_INSTANCE_MEMORY);
         return DEFAULT_INSTANCE_MEMORY;
