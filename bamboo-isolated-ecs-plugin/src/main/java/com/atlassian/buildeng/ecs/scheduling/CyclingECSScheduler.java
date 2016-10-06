@@ -312,7 +312,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         OptionalInt minCpu = hosts.stream().mapToInt((DockerHost value) -> value.getInstanceCPU()).min();
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
-        return minCpu.orElse(DockerHost.DEFAULT_INSTANCE_CPU);
+        return minCpu.orElse(ECSInstance.DEFAULT_INSTANCE.getCpu());
     }
  
     
@@ -329,7 +329,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         OptionalInt minMemory = hosts.stream().mapToInt((DockerHost value) -> value.getInstanceMemory()).min();
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
-        return minMemory.orElse(DockerHost.DEFAULT_INSTANCE_MEMORY);
+        return minMemory.orElse(ECSInstance.DEFAULT_INSTANCE.getMemory());
     }
 
     /**
