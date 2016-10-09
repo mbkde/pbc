@@ -25,6 +25,7 @@ import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.HostVolumeProperties;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
+import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.MountPoint;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
@@ -57,7 +58,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.fileupload.util.Streams;
 
 import static com.atlassian.buildeng.ecs.Constants.AGENT_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.LAAS_CONFIGURATION;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_KEY;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_VAL;
 import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_KEY;
@@ -65,6 +65,10 @@ import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_VAL;
 import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
 import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
 import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
+import com.atlassian.buildeng.ecs.rest.Config;
+import com.google.common.base.Preconditions;
+import java.util.Collections;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
  *
@@ -78,7 +82,9 @@ public class GlobalConfiguration {
     static String BANDANA_ECS_TASK_MAPPING_KEY = "com.atlassian.buildeng.ecs.docker.task.config";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.sidekick";
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
-
+    static String BANDANA_LOGGING_DRIVER_KEY = "com.atlassian.buildeng.ecs.loggingDriver";
+    static String BANDANA_LOGGING_OPTS_KEY = "com.atlassian.buildeng.ecs.loggingOpts";
+    
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -93,12 +99,23 @@ public class GlobalConfiguration {
     }
     
     //TODO eventually separate that out to be optional
-    private ContainerDefinition withFluentDLogs(ContainerDefinition def) {
-        return def.withLogConfiguration(LAAS_CONFIGURATION)
+    private ContainerDefinition withGlobalEnvVars(ContainerDefinition def) {
+        return def
                 .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
                 .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL))
                 .withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster()));
 
+    }
+
+    private ContainerDefinition withLogDriver(ContainerDefinition def) {
+        String driver = getLoggingDriver();
+        if (driver != null) {
+            LogConfiguration ld = new LogConfiguration()
+                    .withLogDriver(driver)
+                    .withOptions(getLoggingDriverOpts());
+            return def.withLogConfiguration(ld);
+        }
+        return def;
     }
 
     private ContainerDefinition withSwarm(ContainerDefinition def) {
@@ -111,7 +128,7 @@ public class GlobalConfiguration {
 
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
-        ContainerDefinition main = withFluentDLogs(new ContainerDefinition()
+        ContainerDefinition main = withLogDriver(withGlobalEnvVars(new ContainerDefinition()
                 .withName(AGENT_CONTAINER_NAME)
                 .withCpu(configuration.getSize().cpu())
                 .withMemory(configuration.getSize().memory())
@@ -120,7 +137,8 @@ public class GlobalConfiguration {
                 .withEntryPoint(RUN_SCRIPT)
                 .withWorkingDirectory(WORK_DIR)
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())));
+                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))
+        ));
         
         RegisterTaskDefinitionRequest req = withSwarm(new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
@@ -165,25 +183,9 @@ public class GlobalConfiguration {
         return name == null ? Constants.DEFAULT_SIDEKICK_REPOSITORY : name;
     }
 
-    /**
-     *  Set the agent sidekick to be used with isolated docker
-     *
-     * @param name The sidekick repository
-     */
-    synchronized void setSidekick(String name) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, name);
-    }
-
     private void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY, taskRequestMappings);
-    }
-
-    /**
-     * Reset the agent sidekick to be used to the default
-     */
-    void resetSidekick() {
-        setSidekick(Constants.DEFAULT_SIDEKICK_REPOSITORY);
     }
 
     // ECS Cluster management
@@ -199,15 +201,6 @@ public class GlobalConfiguration {
     }
 
     /**
-     * Set the ECS cluster to run isolated docker agents on
-     *
-     * @param name The cluster name
-     */
-    synchronized void setCluster(String name) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, name);
-    }
-
-    /**
      * Get a collection of potential ECS clusters to use
      *
      * @return The collection of cluster names
@@ -219,6 +212,25 @@ public class GlobalConfiguration {
         } catch (Exception e) {
             throw new ECSException(e);
         }
+    }
+
+    /**
+     * Get custom logging driver to use with job tasks
+     *
+     * @return the custom logging driver or null of none defined.
+     */
+    public synchronized String getLoggingDriver() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
+    }
+
+    /**
+     * Get custom logging driver options
+     *
+     * @return The current cluster nam
+     */
+    public synchronized Map<String, String> getLoggingDriverOpts() {
+        Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY);
+        return map != null ? map : new HashMap<>();
     }
 
     // Docker - ECS mapping management
@@ -331,10 +343,6 @@ public class GlobalConfiguration {
         return name == null ? "" : name;
     }
     
-    synchronized void setCurrentASG(String name) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, name);
-    }    
-
     @VisibleForTesting
     AmazonECS createClient() {
         return new AmazonECSClient();
@@ -399,5 +407,21 @@ public class GlobalConfiguration {
 
     public static boolean isDockerInDockerImage(String image) {
         return image.startsWith("docker:") && image.endsWith("dind");
+    }
+
+    synchronized void setConfig(Config config) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(config.getAutoScalingGroupName()));
+        Preconditions.checkArgument(StringUtils.isNotBlank(config.getEcsClusterName()));
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, config.getEcsClusterName());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, config.getAutoScalingGroupName());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, StringUtils.isBlank(config.getSidekickImage()) ? Constants.DEFAULT_SIDEKICK_REPOSITORY : config.getSidekickImage());
+        Config.LogConfiguration lc = config.getLogConfiguration();
+        String driver = lc != null ? lc.getDriver() : null;
+        if (StringUtils.isBlank(driver)) {
+            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
+        } else {
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, driver);
+        }
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY, lc != null ? lc.getOptions() : Collections.emptyMap());
     }
 }

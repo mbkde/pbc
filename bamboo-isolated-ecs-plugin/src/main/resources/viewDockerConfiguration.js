@@ -22,9 +22,8 @@
                     callback(text);
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.error(textStatus);
+                    showError(textStatus + " " + errorThrown);
                 }
-
             });
     }
 
@@ -34,24 +33,28 @@
 
     function processValidClusters(blob) {
         var clusters = blob.clusters;
-        var l = clusters.length;
-        var clusterList = AJS.$("#clusterList");
-        for (var i = 0; i < l; i++) {
-            clusterList.append('<li><a href="javascript:setCluster(\'' + clusters[i] + '\')">' + clusters[i] + '</a></li>');
+        AJS.$("#currentCluster").autocomplete({
+            minLength: 0,
+//                    position: { my : "right top", at: "right bottom" },
+            source: clusters
         }
-        return clusters;
+        );
     }
 
-    function processCurrentCluster(response) {
-        AJS.$("#currentCluster").append(response.cluster);
-    }
-
-    function processCurrentSidekick(response) {
-        AJS.$("#sidekickToUse").attr("placeholder", "Current: " + response.sidekick).val("").focus().blur();
-    }
-    
-    function processCurrentASG(response) {
-        AJS.$("#asgToUse").attr("placeholder", "Current: " + response.asg).val("").focus().blur();
+    function processConfig(response) {
+        AJS.$("#currentCluster").val(response.ecsClusterName);
+        AJS.$("#sidekickToUse").val(response.sidekickImage);
+        AJS.$("#asgToUse").val(response.autoScalingGroupName);
+        var log = response.logConfiguration;
+        var driver = "";
+        if (log != null) {
+            driver = log.driver;
+        }
+        AJS.$("#logDriver").val(driver);
+        AJS.$.each( log.options, function( key, value ) {
+            appendLogOption(key, value);
+        });
+        updateStatus("");
     }
 
     function drawTable(data) {
@@ -82,98 +85,80 @@
         });
     }
 
-    function registerImage() {
-        var dockerImage = AJS.$("#dockerImageToRegister");
+    function setEcsConfig() {
+        var config = {};
+        config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
+        config.autoScalingGroupName = AJS.$("#asgToUse").val().trim();
+        config.ecsClusterName = AJS.$("#currentCluster").val().trim();
+        var log = {};
+        config.logConfiguration = log;
+        log.options = {};
+        AJS.$("#logOptionTable tr.logOption").each(function(index, element) {
+            var key = AJS.$(element).find(".logOption-key").val().trim();
+            var val = AJS.$(element).find(".logOption-value").val().trim();
+            log.options[key] = val;
+        });
+        log.driver = AJS.$("#logDriver").val().trim();
+        updateStatus("Saving...");
+        
         AJS.$.ajax({
             type: "POST",
-            url: restEndpoint,
+            url: restEndpoint + "config",
             contentType: 'application/json',
-            data: '{"dockerImage": "' + dockerImage.val().trim() + '" }',
-            success: function (response) {
-                var mapping = {};
-                mapping.revision = response.revision;
-                mapping.dockerImage = dockerImage.val().trim();
-                var table = AJS.$("#dockerImageTable tbody");
-                appendTableRow(table, mapping);
-                dockerImage.val("");
-                
+            data: JSON.stringify(config),
+            success: function () {
+                updateStatus("Saved");
             },
-            error: function (err) {
-                alert(err.responseText);
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                updateStatus("");
+                showError(textStatus + " " + errorThrown);
             }
         });
     }
 
-    function setCluster(cluster) {
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "cluster",
-            contentType: 'application/json',
-            data: '{"cluster": "' + cluster.trim() + '" }',
-            success: function () {
-                //no reload necessary
-//                location.reload(true);
-            },
-            error: function (err) {
-                alert(err.responseText);
-                processResource(processCurrentCluster, "cluster");
-            }
-        });
+    function updateStatus(message) {
+        hideError();
+        AJS.$(".save-status").empty();
+        AJS.$(".save-status").append(message);
     }
 
-    function setSidekick() {
-        var sidekick = AJS.$("#sidekickToUse").val();
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "sidekick",
-            contentType: 'application/json',
-            data: '{"sidekick": "' + sidekick.trim() + '" }',
-            success: function () {
-                processResource(processCurrentSidekick, "sidekick");
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
+    function showError(message) {
+        AJS.$("#errorMessage").append("<div class='aui-message aui-message-error error'>" + message + "</div>");
     }
 
-    function resetSidekick() {
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "sidekick/reset",
-            contentType: 'application/json',
-            data: '{}',
-            success: function () {
-                processResource(processCurrentSidekick, "sidekick");
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
+    function hideError() {
+        AJS.$("#errorMessage").empty();
     }
-    
-    function setASG() {
-        var asg = AJS.$("#asgToUse").val();
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "asg",
-            contentType: 'application/json',
-            data: '{"asg": "' + asg.trim() + '" }',
-            success: function () {
-                processResource(processCurrentASG, "asg");
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
-    }    
 
+function removeLine(element) {
+    var par = element.parentElement.parentElement;
+    par.parentElement.removeChild(par);
+}
+
+function appendLogOption(name, value) {
+     AJS.$("#logOptionTable tbody").append(
+             "<tr class=\"logOption\"><td><input type=\"text\" class=\"logOption-key text long-field\" value=\"" + name + "\"></input></td>" +
+              "<td><input type=\"text\" class=\"logOption-value text long-field\" value=\"" + value +  "\"></input></td>" +
+              "<td><a class='aui-link' onclick='removeLine(this)'>Remove</a></td>" + 
+            "</tr>");
+}
 AJS.$(document).ready(function() {
+    AJS.$("#docker_addLogOption").click(function() {
+        appendLogOption("", "");
+    });
+    var drivers = [
+        "json-file", "syslog", "journald", "gelf", "fluentd", "awslogs"
+    ];
+    AJS.$("#logDriver").autocomplete({
+            minLength: 0,
+            source: drivers
+        });
+
+    updateStatus("Loading...");
+
     processResource(processMappings, "");
     processResource(processValidClusters, "cluster/valid");
-    processResource(processCurrentCluster, "cluster");
-    processResource(processCurrentSidekick, "sidekick");
-    processResource(processCurrentASG, "asg");
+    processResource(processConfig, "config");
 });
 
 

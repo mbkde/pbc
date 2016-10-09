@@ -20,18 +20,12 @@ import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
+import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
-import com.atlassian.buildeng.ecs.rest.GetCurrentASGResponse;
-import com.atlassian.buildeng.ecs.rest.GetCurrentClusterResponse;
-import com.atlassian.buildeng.ecs.rest.GetCurrentSidekickResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.Consumes;
@@ -43,14 +37,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @WebSudoRequired
 @Path("/")
@@ -84,77 +76,8 @@ public class Rest {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/cluster")
-    public Response getCurrentCluster() {
-        return Response.ok(new GetCurrentClusterResponse(configuration.getCurrentCluster())).build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/cluster")
-    public Response setCluster(String requestString) {
-        String cluster = null;
-        try {
-            JsonParser p = new JsonParser();
-            JsonElement e = p.parse(requestString);
-            if (e.isJsonObject()) {
-                JsonObject o = e.getAsJsonObject();
-                cluster = o.getAsJsonPrimitive("cluster") != null ? o.getAsJsonPrimitive("cluster").getAsString() : null;
-            }
-        } catch (JsonParseException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
-        }
-        if (cluster == null) {
-            return Response.status(Status.BAD_REQUEST).entity("Missing 'cluster' field").build();
-        }
-        configuration.setCluster(cluster);
-        return Response.created(URI.create("/cluster")).build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/sidekick")
-    public Response getCurrentSidekick() {
-        return Response.ok(new GetCurrentSidekickResponse(configuration.getCurrentSidekick())).build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/sidekick")
-    public Response setSidekick(String requestString) {
-        String sidekick = null;
-        try {
-            JsonParser p = new JsonParser();
-            JsonElement e = p.parse(requestString);
-            if (e.isJsonObject()) {
-                JsonObject o = e.getAsJsonObject();
-                sidekick = o.getAsJsonPrimitive("sidekick") != null ? o.getAsJsonPrimitive("sidekick").getAsString() : null;
-            }
-        } catch (JsonParseException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
-        }
-        if (sidekick == null) {
-            return Response.status(Status.BAD_REQUEST).entity("Missing 'sidekick' field").build();
-        }
-        configuration.setSidekick(sidekick);
-        return Response.noContent().build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/sidekick/reset")
-    public Response resetSidekick() {
-        configuration.resetSidekick();
-        return Response.noContent().build();
-    }
-
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/cluster/valid")
+    @Deprecated
     public Response getValidClusters() throws RestableIsolatedDockerException {
         List<String> clusters = configuration.getValidClusters();
         return Response.ok(new GetValidClustersResponse(clusters)).build();
@@ -162,31 +85,34 @@ public class Rest {
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/asg")
-    public Response getCurrentASG() {
-        return Response.ok(new GetCurrentASGResponse(configuration.getCurrentASG())).build();
+    @Path("/config")
+    public Response getConfig() {
+        Config c = new Config();
+        c.setAutoScalingGroupName(configuration.getCurrentASG());
+        c.setEcsClusterName(configuration.getCurrentCluster());
+        c.setSidekickImage(configuration.getCurrentSidekick());
+        String driver = configuration.getLoggingDriver();
+        if (driver != null) {
+            Config.LogConfiguration lc = new Config.LogConfiguration();
+            lc.setDriver(driver);
+            lc.setOptions(configuration.getLoggingDriverOpts());
+            c.setLogConfiguration(lc);
+        }
+        return Response.ok(c).build();
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/asg")
-    public Response setASG(String requestString) {
-        String asg = null;
-        try {
-            JsonParser p = new JsonParser();
-            JsonElement e = p.parse(requestString);
-            if (e.isJsonObject()) {
-                JsonObject o = e.getAsJsonObject();
-                asg = o.getAsJsonPrimitive("asg") != null ? o.getAsJsonPrimitive("asg").getAsString() : null;
-            }
-        } catch (JsonParseException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
+    @Path("/config")
+    public Response setConfig(Config config) {
+        if (StringUtils.isBlank(config.getAutoScalingGroupName())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("autoScalingGroupName is mandatory").build();
         }
-        if (asg == null) {
-            return Response.status(Status.BAD_REQUEST).entity("Missing 'asg' field").build();
+        if (StringUtils.isBlank(config.getEcsClusterName())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("ecsClusterName is mandatory").build();
         }
-        configuration.setCurrentASG(asg);
+        configuration.setConfig(config);
         return Response.noContent().build();
     }
     

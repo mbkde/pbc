@@ -29,6 +29,8 @@ List is updated on running a plan the first time, not editing it.
 <h2>ECS cluster configuration</h2>
     Configure the ECS cluster associated with this Bamboo server.
 
+<div id="errorMessage">
+</div>
 
 <form id="setBambooSidekick" class="aui">
     <fieldset>
@@ -37,26 +39,50 @@ List is updated on running a plan the first time, not editing it.
             <label for="sidekickToUse">Bamboo Sidekick Image</label>
             <input type="text" class="text long-field" id="sidekickToUse"
                     placeholder=""></input>
-            <button type="button" class="aui-button" onclick="setSidekick()">Set</button>
-            <button type="button" class="aui-button" onclick="resetSidekick()">Reset</button>
         </div>
         <div class="field-group">
             <label for="currentCluster">ECS Cluster</label>
-            <a href="#clusters" aria-owns="clusters" aria-haspopup="true" id="currentCluster"
-               class="aui-button aui-style-default aui-dropdown2-trigger"></a>
-
-            <!-- Dropdown -->
-            <div id="clusters" class="aui-style-default aui-dropdown2">
-                <ul class="aui-list-truncate" id="clusterList">
-                </ul>
+            <input type="text" class="text long-field" id="currentCluster"
+                    placeholder="Autocomplete available clusters"></input>
+            <div class="description" id="desc-currentCluster">
+                Name of ECS cluster to run per-build container agents in
             </div>
         </div>
         <div class="field-group">
             <label for="asgToUse">AutoScaling Group</label>
             <input type="text" class="text long-field" id="asgToUse"
                     placeholder=""></input>
-            <button type="button" class="aui-button" onclick="setASG()">Set</button>
+            <div class="description" id="desc-asgToUse">
+                Name of Auto Scaling Group that is backing the ECS Cluster used by this Bamboo server.
+            </div>
         </div>
+
+        <div class="field-group">
+            <label for="logDriver">Log Driver</label>
+            <input type="text" class="text long-field" id="logDriver"
+                    placeholder="Default if empty"></input>
+            <div class="description" id="desc_logDriver">
+                    Log Driver to use to log the Bamboo agent container output.
+            </div>
+        </div>
+
+        <div class="field-group">
+            <a id='docker_addLogOption' class='aui-link'>Add Log Driver Option</a>
+            <label for="logOptionTable" id="fieldLabelArea_logOption">Log Driver Options</label>
+            <table id="logOptionTable" class="aui">
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th></th>
+                </t>
+            </table>
+            <div class="description" id="desc_logOptionTable">
+                Log Configuration Options related to the selected Log Driver
+            </div>
+        </div>
+
+        <button type="button" class="aui-button aui-button-primary" onclick="setEcsConfig()">Save</button>
+        <div class="save-status"/>
     </fieldset>
 </form>
 
