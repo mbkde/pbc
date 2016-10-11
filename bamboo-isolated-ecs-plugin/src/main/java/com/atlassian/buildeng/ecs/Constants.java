@@ -51,12 +51,6 @@ public interface Constants {
     // The script which runs the bamboo agent jar appropriately
     String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
-    // fluentd config TODO remove
-    // LaaS requirements
-    String LAAS_SERVICE_ID_KEY  = "serviceId";
-    String LAAS_SERVICE_ID_VAL  = "ryzicKpx";
-    String LAAS_ENVIRONMENT_KEY = "environment";
-    String LAAS_ENVIRONMENT_VAL = "aws-us-east-1-ecs";
     // AWS info
     String ECS_CLUSTER_KEY                = "ecs_cluster";
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";

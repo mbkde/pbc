@@ -91,6 +91,7 @@ public class Rest {
         c.setAutoScalingGroupName(configuration.getCurrentASG());
         c.setEcsClusterName(configuration.getCurrentCluster());
         c.setSidekickImage(configuration.getCurrentSidekick());
+        c.setEnvs(configuration.getEnvVars());
         String driver = configuration.getLoggingDriver();
         if (driver != null) {
             Config.LogConfiguration lc = new Config.LogConfiguration();

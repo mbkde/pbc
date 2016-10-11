@@ -42,19 +42,20 @@
     }
 
     function processConfig(response) {
+        updateStatus("");
         AJS.$("#currentCluster").val(response.ecsClusterName);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#asgToUse").val(response.autoScalingGroupName);
         var log = response.logConfiguration;
-        var driver = "";
-        if (log != null) {
-            driver = log.driver;
-        }
-        AJS.$("#logDriver").val(driver);
-        AJS.$.each( log.options, function( key, value ) {
-            appendLogOption(key, value);
+        AJS.$.each( response.envs, function( key, value ) {
+            appendEnvVar(key, value);
         });
-        updateStatus("");
+        if (log != null) {
+            AJS.$("#logDriver").val(log.driver);
+            AJS.$.each( log.options, function( key, value ) {
+                appendLogOption(key, value);
+            });
+        }
     }
 
     function drawTable(data) {
@@ -99,6 +100,13 @@
             log.options[key] = val;
         });
         log.driver = AJS.$("#logDriver").val().trim();
+        config.envs = {};
+        AJS.$("#envVarTable tr.envVar").each(function(index, element) {
+            var key = AJS.$(element).find(".envVar-key").val().trim();
+            var val = AJS.$(element).find(".envVar-value").val().trim();
+            config.envs[key] = val;
+        });
+
         updateStatus("Saving...");
         
         AJS.$.ajax({
@@ -142,9 +150,20 @@ function appendLogOption(name, value) {
               "<td><a class='aui-link' onclick='removeLine(this)'>Remove</a></td>" + 
             "</tr>");
 }
+function appendEnvVar(name, value) {
+     AJS.$("#envVarTable tbody").append(
+             "<tr class=\"envVar\"><td><input type=\"text\" class=\"envVar-key text long-field\" value=\"" + name + "\"></input></td>" +
+              "<td><input type=\"text\" class=\"envVar-value text long-field\" value=\"" + value +  "\"></input></td>" +
+              "<td><a class='aui-link' onclick='removeLine(this)'>Remove</a></td>" +
+            "</tr>");
+}
+
 AJS.$(document).ready(function() {
     AJS.$("#docker_addLogOption").click(function() {
         appendLogOption("", "");
+    });
+    AJS.$("#docker_addEnvVar").click(function() {
+        appendEnvVar("", "");
     });
     var drivers = [
         "json-file", "syslog", "journald", "gelf", "fluentd", "awslogs"

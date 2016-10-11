@@ -81,6 +81,21 @@ List is updated on running a plan the first time, not editing it.
             </div>
         </div>
 
+    <div class="field-group">
+            <a id='docker_addEnvVar' class='aui-link'>Add Environment Variable</a>
+            <label for="envVarTable" id="fieldLabelArea_levVar">Environment Variables</label>
+            <table id="envVarTable" class="aui">
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th></th>
+                </t>
+            </table>
+            <div class="description" id="desc_envVarTable">
+                Global Environment variables added to all ECS task definitions.
+            </div>
+        </div>
+
         <button type="button" class="aui-button aui-button-primary" onclick="setEcsConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>
