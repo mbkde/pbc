@@ -61,7 +61,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     //under high load there are interminent reports of agents being disconnected
     //but these recover very fast, only want to actively kill instances
     // that have disconnected agent for at least the amount given.
-    static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 10; //10 for us to be able to debug what's going on.
+    static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 20; //20 for us to be able to debug what's going on. (5 minutes only for datadog to report the event)
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
