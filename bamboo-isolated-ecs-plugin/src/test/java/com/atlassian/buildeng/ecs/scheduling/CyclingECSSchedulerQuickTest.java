@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.percentageUtilized;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
+import com.atlassian.event.api.EventPublisher;
 import java.time.Duration;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThan;
@@ -53,7 +54,23 @@ public class CyclingECSSchedulerQuickTest {
     }
 
     @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
-        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null));
+        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null), new EventPublisher() {
+            @Override
+            public void publish(Object event) {
+            }
+
+            @Override
+            public void register(Object listener) {
+            }
+
+            @Override
+            public void unregister(Object listener) {
+            }
+
+            @Override
+            public void unregisterAll() {
+            }
+        });
         DockerHosts hosts = new DockerHosts(allHosts,Duration.ofDays(1));
         List<DockerHost> selectedHosts = ecsScheduler.selectToTerminate(hosts);
         if (allHosts.isEmpty()) {

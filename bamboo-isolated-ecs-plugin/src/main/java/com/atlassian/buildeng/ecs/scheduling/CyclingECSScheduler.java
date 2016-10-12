@@ -6,7 +6,10 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.event.api.EventPublisher;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,17 +61,19 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     //under high load there are interminent reports of agents being disconnected
     //but these recover very fast, only want to actively kill instances
     // that have disconnected agent for at least the amount given.
-    private static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 1;
+    static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 10; //10 for us to be able to debug what's going on.
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
     private final SchedulerBackend schedulerBackend;
     private final GlobalConfiguration globalConfiguration;
+    private final EventPublisher eventPublisher;
 
-    public CyclingECSScheduler(SchedulerBackend schedulerBackend, GlobalConfiguration globalConfiguration) {
+    public CyclingECSScheduler(SchedulerBackend schedulerBackend, GlobalConfiguration globalConfiguration, EventPublisher eventPublisher) {
         stalePeriod = DEFAULT_STALE_PERIOD;
         this.schedulerBackend = schedulerBackend;
         this.globalConfiguration = globalConfiguration;
+        this.eventPublisher = eventPublisher;
         executor.submit(new EndlessPolling());
     }
 
@@ -165,7 +170,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         //see if we need to scale up or down..
         int currentSize = hosts.getUsableSize();
-        int disconnectedSize = hosts.agentDisconnected().size() - terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asgName, false);
+        int disconnectedSize = hosts.agentDisconnected().size() - terminateDisconnectedInstances(hosts, asgName);
         int desiredScaleSize = currentSize;
         //calculate usage from fresh instances only
         if (someDiscarded || hasReachedCapacityLimit(hosts.fresh())) {
@@ -237,7 +242,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             String asgName = globalConfiguration.getCurrentASG();
             AutoScalingGroup asg = schedulerBackend.describeAutoScalingGroup(asgName);
             DockerHosts hosts = loadHosts(globalConfiguration.getCurrentCluster(), asg);
-            terminateInstances(selectDisconnectedToKill(hosts, updateDisconnectedCache(disconnectedAgentsCache, hosts)), asgName, false);
+            terminateDisconnectedInstances(hosts, asgName);
             terminateInstances(selectToTerminate(hosts), asgName, true);
         } catch (ECSException ex) {
             logger.error("Failed to scale down", ex);
@@ -261,7 +266,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 //                .filter(t -> t.runningNothing()) 
                 .filter((DockerHost t) -> {
                     Date date = dates.get(t);
-                    return date != null && (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() > TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
+                    return date != null && (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() >= TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
                 })
                 .collect(Collectors.toList());
     }
@@ -359,6 +364,31 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         {
             schedulerBackend.suspendProcess(asg.getAutoScalingGroupName(), "AZRebalance");
         }
+    }
+
+    private int terminateDisconnectedInstances(DockerHosts hosts, String asgName) {
+        int oldSize = disconnectedAgentsCache.size();
+        final Map<DockerHost, Date> cache = updateDisconnectedCache(disconnectedAgentsCache, hosts);
+        if (!cache.isEmpty()) {
+            //debugging block
+            logger.warn("Hosts with disconnected agent:" + cache.size() + " " + cache.toString());
+            if (oldSize != cache.size()) {
+                eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
+            }
+        }
+        final List<DockerHost> selectedToKill = selectDisconnectedToKill(hosts, cache);
+
+        if (!selectedToKill.isEmpty()) {
+            //debugging block
+            logger.warn("Hosts to kill with disconnected agent:" + selectedToKill.size() + " " + selectedToKill.toString());
+            //TODO it's very hard to figure out what tasks were running on the instance.
+            // 1. you need to get a list of task arns for (single) instance (aws api call per instance or paged per cluster)
+            // 2. describe them (another aws api call)
+            // 3. in the task fine container override for bamboo-agent container and in there find the
+            //    environment variable value for RESULT_ID
+            eventPublisher.publish(new DockerAgentEcsDisconnectedPurgeEvent(selectedToKill));
+        }
+        return terminateInstances(selectedToKill, asgName, false);
     }
 
     private class EndlessPolling implements Runnable {
