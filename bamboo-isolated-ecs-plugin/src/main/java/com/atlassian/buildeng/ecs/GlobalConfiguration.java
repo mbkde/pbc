@@ -58,10 +58,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.fileupload.util.Streams;
 
 import static com.atlassian.buildeng.ecs.Constants.AGENT_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_KEY;
-import static com.atlassian.buildeng.ecs.Constants.LAAS_ENVIRONMENT_VAL;
-import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_KEY;
-import static com.atlassian.buildeng.ecs.Constants.LAAS_SERVICE_ID_VAL;
 import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
 import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
 import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
@@ -84,6 +80,7 @@ public class GlobalConfiguration {
     static String BANDANA_ASG_KEY = "com.atlassian.buildeng.ecs.asg";
     static String BANDANA_LOGGING_DRIVER_KEY = "com.atlassian.buildeng.ecs.loggingDriver";
     static String BANDANA_LOGGING_OPTS_KEY = "com.atlassian.buildeng.ecs.loggingOpts";
+    static String BANDANA_ENVS_KEY = "com.atlassian.buildeng.ecs.envVars";
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
@@ -98,12 +95,11 @@ public class GlobalConfiguration {
         return admConfAccessor.getAdministrationConfiguration().getInstanceName() + Constants.TASK_DEFINITION_SUFFIX;
     }
     
-    //TODO eventually separate that out to be optional
     private ContainerDefinition withGlobalEnvVars(ContainerDefinition def) {
-        return def
-                .withEnvironment(new KeyValuePair().withName(LAAS_SERVICE_ID_KEY).withValue(LAAS_SERVICE_ID_VAL))
-                .withEnvironment(new KeyValuePair().withName(LAAS_ENVIRONMENT_KEY).withValue(LAAS_ENVIRONMENT_VAL))
-                .withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster()));
+        getEnvVars().forEach((String key, String val) -> {
+            def.withEnvironment(new KeyValuePair().withName(key).withValue(val));
+        });
+        return def.withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster()));
 
     }
 
@@ -230,6 +226,11 @@ public class GlobalConfiguration {
      */
     public synchronized Map<String, String> getLoggingDriverOpts() {
         Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY);
+        return map != null ? map : new HashMap<>();
+    }
+
+    public synchronized Map<String, String> getEnvVars() {
+        Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENVS_KEY);
         return map != null ? map : new HashMap<>();
     }
 
@@ -423,5 +424,6 @@ public class GlobalConfiguration {
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, driver);
         }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY, lc != null ? lc.getOptions() : Collections.emptyMap());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENVS_KEY, config.getEnvs()  != null ? config.getEnvs() : Collections.emptyMap());
     }
 }

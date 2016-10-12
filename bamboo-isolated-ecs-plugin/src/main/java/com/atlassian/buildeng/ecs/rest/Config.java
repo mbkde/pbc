@@ -24,6 +24,7 @@ public class Config {
     public String autoScalingGroupName;
     public String sidekickImage;
     public LogConfiguration logConfiguration;
+    public Map<String, String> envs;
 
     public Config() {
     }
@@ -65,6 +66,15 @@ public class Config {
     public void setLogConfiguration(LogConfiguration logConfiguration) {
         this.logConfiguration = logConfiguration;
     }
+
+    public Map<String, String> getEnvs() {
+        return envs;
+    }
+
+    public void setEnvs(Map<String, String> envs) {
+        this.envs = envs;
+    }
+    
 
     public static class LogConfiguration {
         public String driver;
