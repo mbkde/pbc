@@ -660,9 +660,9 @@ public class CyclingECSSchedulerTest {
     }
     
     private void awaitProcessing(CyclingECSScheduler scheduler) throws InterruptedException {
-        Thread.sleep(50); //wait to have the other thread start the processing
+        Thread.sleep(100); //wait to have the other thread start the processing
         scheduler.shutdownExecutor();
-        scheduler.executor.awaitTermination(200, TimeUnit.MILLISECONDS); //make sure the background thread finishes
+        scheduler.executor.awaitTermination(500, TimeUnit.MILLISECONDS); //make sure the background thread finishes
     }
     
     
