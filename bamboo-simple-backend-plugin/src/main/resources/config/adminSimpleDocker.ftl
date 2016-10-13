@@ -10,7 +10,7 @@
 </div>
 
     A simple backend scheduling jobs via docker-compose. Assumes docker cli + docker-compose
-is installed on the Bamboo Server to be able to run the jobs locally, in remote docker-machine or in Swarm
+is installed on the Bamboo Server to be able to run the jobs locally, in remote docker-machine
 
 <form id="configureDocker" class="aui">
     <fieldset>
