@@ -114,14 +114,6 @@ public class GlobalConfiguration {
         return def;
     }
 
-    private ContainerDefinition withSwarm(ContainerDefinition def) {
-        return def.withMountPoints(new MountPoint().withContainerPath("/buildeng-swarm").withSourceVolume("swarm").withReadOnly(true));
-    }
-
-    private RegisterTaskDefinitionRequest withSwarm(RegisterTaskDefinitionRequest def) {
-        return def.withVolumes(new Volume().withName("swarm").withHost(new HostVolumeProperties().withSourcePath("/buildeng/docker")));
-    }
-
   // Constructs a standard build agent task definition request with sidekick and generated task definition family
     private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
         ContainerDefinition main = withLogDriver(withGlobalEnvVars(new ContainerDefinition()
@@ -136,12 +128,11 @@ public class GlobalConfiguration {
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))
         ));
         
-        RegisterTaskDefinitionRequest req = withSwarm(new RegisterTaskDefinitionRequest()
+        RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(
-                        withSwarm(main),
-                        Constants.SIDEKICK_DEFINITION
-                                .withImage(sidekick))
-                .withFamily(getTaskDefinitionName()));
+                        main,
+                        Constants.SIDEKICK_DEFINITION.withImage(sidekick))
+                .withFamily(getTaskDefinitionName());
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = new ContainerDefinition()
                     .withName(t.getName())
