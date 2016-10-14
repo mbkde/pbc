@@ -69,8 +69,7 @@ public interface Constants {
     ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
                     .withName(SIDEKICK_CONTAINER_NAME)
-                    .withCpu(Configuration.SIDEKICK_CPU)
-                    .withMemory(Configuration.SIDEKICK_MEMORY)
+                    .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
                     .withEssential(false);
 
 }

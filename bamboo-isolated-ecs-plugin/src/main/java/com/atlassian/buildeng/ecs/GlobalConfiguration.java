@@ -119,7 +119,7 @@ public class GlobalConfiguration {
         ContainerDefinition main = withLogDriver(withGlobalEnvVars(new ContainerDefinition()
                 .withName(AGENT_CONTAINER_NAME)
                 .withCpu(configuration.getSize().cpu())
-                .withMemory(configuration.getSize().memory())
+                .withMemoryReservation(configuration.getSize().memory())
                 .withImage(configuration.getDockerImage())
                 .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
                 .withEntryPoint(RUN_SCRIPT)
@@ -138,7 +138,7 @@ public class GlobalConfiguration {
                     .withName(t.getName())
                     .withImage(t.getImage())
                     .withCpu(t.getExtraSize().cpu())
-                    .withMemory(t.getExtraSize().memory())
+                    .withMemoryReservation(t.getExtraSize().memory())
                     .withEssential(false);
             if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
