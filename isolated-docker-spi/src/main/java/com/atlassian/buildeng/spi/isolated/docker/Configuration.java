@@ -56,12 +56,8 @@ public final class Configuration {
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
-    
-    //TODO sort ecs specific but we should eventually get rid of if we
-    //introduce  generic support for custom container volumes.
-    public static int SIDEKICK_CPU = 40;
-    public static int SIDEKICK_MEMORY = 240;
-    
+
+    public static int DOCKER_MINIMUM_MEMORY = 4;
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
@@ -161,11 +157,11 @@ public final class Configuration {
     }
     
     public int getCPUTotal() {
-        return size.cpu() + SIDEKICK_CPU + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().cpu).sum();
+        return size.cpu() + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().cpu).sum();
     }
     
     public int getMemoryTotal() {
-        return size.memory() + SIDEKICK_MEMORY + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().memory).sum();
+        return size.memory() + DOCKER_MINIMUM_MEMORY + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().memory).sum();
     }
 
     public List<ExtraContainer> getExtraContainers() {
@@ -246,8 +242,8 @@ public final class Configuration {
     }
     
     public static enum ContainerSize {
-        REGULAR(2000, 7800),
-        SMALL(1000,3900);
+        REGULAR(2048, 8000),
+        SMALL(1024, 4000);
         
         private final int cpu;
         private final int memory;
@@ -409,8 +405,8 @@ public final class Configuration {
     
     
     public static enum ExtraContainerSize {
-        REGULAR(500, 2000),
-        SMALL(250,1000);
+        REGULAR(512, 2000),
+        SMALL(256, 1000);
         
         private final int cpu;
         private final int memory;
