@@ -4,7 +4,6 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.SuspendedProcess;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
@@ -66,10 +65,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
     private final SchedulerBackend schedulerBackend;
-    private final GlobalConfiguration globalConfiguration;
+    private final ECSConfiguration globalConfiguration;
     private final EventPublisher eventPublisher;
 
-    public CyclingECSScheduler(SchedulerBackend schedulerBackend, GlobalConfiguration globalConfiguration, EventPublisher eventPublisher) {
+    public CyclingECSScheduler(SchedulerBackend schedulerBackend, ECSConfiguration globalConfiguration, EventPublisher eventPublisher) {
         stalePeriod = DEFAULT_STALE_PERIOD;
         this.schedulerBackend = schedulerBackend;
         this.globalConfiguration = globalConfiguration;

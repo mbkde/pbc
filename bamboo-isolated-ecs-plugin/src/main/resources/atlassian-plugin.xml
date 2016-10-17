@@ -19,6 +19,7 @@
     </component-import>
     
     <component key="globalConfiguration" class="com.atlassian.buildeng.ecs.GlobalConfiguration">
+        <interface>com.atlassian.buildeng.ecs.scheduling.ECSConfiguration</interface>
     </component>
 
     <component key="ecsScheduler" class="com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler">
