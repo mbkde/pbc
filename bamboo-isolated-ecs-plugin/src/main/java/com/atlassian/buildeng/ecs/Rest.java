@@ -24,6 +24,7 @@ import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
+import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,11 +50,14 @@ import org.apache.commons.lang3.StringUtils;
 public class Rest {
     private final GlobalConfiguration configuration;
     private final CachedPlanManager cachedPlanManager;
+    private final TaskDefinitionRegistrations taskDefRegistrations;
+
 
     @Autowired
-    public Rest(GlobalConfiguration configuration, CachedPlanManager cachedPlanManager) {
+    public Rest(GlobalConfiguration configuration, CachedPlanManager cachedPlanManager, TaskDefinitionRegistrations taskDefRegistrations) {
         this.configuration = configuration;
         this.cachedPlanManager = cachedPlanManager;
+        this.taskDefRegistrations = taskDefRegistrations;
     }
 
     // REST endpoints
@@ -128,7 +132,7 @@ public class Rest {
                 .forEach(job -> {
                     Configuration config = Configuration.forJob(job);
                     if (config.isEnabled()) {
-                        if (revision == configuration.findTaskRegistrationVersion(config)) {
+                        if (revision == taskDefRegistrations.findTaskRegistrationVersion(config)) {
                             toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
                         }
                     }

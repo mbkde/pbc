@@ -20,6 +20,10 @@
     
     <component key="globalConfiguration" class="com.atlassian.buildeng.ecs.GlobalConfiguration">
         <interface>com.atlassian.buildeng.ecs.scheduling.ECSConfiguration</interface>
+        <interface>com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations.Backend</interface>
+    </component>
+
+    <component key="taskDefRegistration" class="com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations">
     </component>
 
     <component key="ecsScheduler" class="com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler">
