@@ -162,7 +162,7 @@ public class GlobalConfiguration implements ECSConfiguration {
     /**
      * Synchronously register a docker image to be used with isolated docker builds
      *
-     * @param dockerImage The image to register
+     * @param configuration The configuration to register
      * @return The internal identifier for the registered image.
      */
     @Override
@@ -233,7 +233,7 @@ public class GlobalConfiguration implements ECSConfiguration {
     
     /**
      * find task definition registration for given configuration
-     * @param configuration
+     * @param configuration conf to use
      * @return either the revision or -1 when not found
      */
     @Override
