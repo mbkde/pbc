@@ -25,13 +25,7 @@ import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +37,7 @@ import java.util.stream.Collectors;
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.ecs.rest.Config;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
 import org.codehaus.plexus.util.StringUtils;
@@ -231,7 +226,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     private Map<Configuration, Integer> convertFromPersisted(Map<String, Integer> persisted) {
         final HashMap<Configuration, Integer> newMap = new HashMap<>();
         persisted.forEach((String t, Integer u) -> {
-            newMap.put(load(t), u);
+            newMap.put(ConfigurationPersistence.toConfiguration(t), u);
         });
         return newMap;
     }
@@ -239,50 +234,9 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     private Map<String, Integer> convertToPersisted(Map<Configuration, Integer> val) {
         final HashMap<String, Integer> newMap = new HashMap<>();
         val.forEach((Configuration t, Integer u) -> {
-            newMap.put(persist(t), u);
+            newMap.put(ConfigurationPersistence.toJson(t).toString(), u);
         });
         return newMap;
-    }
-
-    @VisibleForTesting
-    String persist(Configuration conf) {
-        JsonObject el = new JsonObject();
-        el.addProperty("image", conf.getDockerImage());
-        el.addProperty("size", conf.getSize().name());
-        el.add("extraContainers", Configuration.toJson(conf.getExtraContainers()));
-        return el.toString();
-    }
-
-    @VisibleForTesting
-    Configuration load(String source) {
-        JsonParser p = new JsonParser();
-        JsonElement obj = p.parse(source);
-        if (obj.isJsonObject()) {
-            JsonObject jsonobj = obj.getAsJsonObject();
-            ConfigurationBuilder bld = ConfigurationBuilder.create(jsonobj.getAsJsonPrimitive("image").getAsString());
-            JsonPrimitive size = jsonobj.getAsJsonPrimitive("size");
-            if (size != null) {
-                try {
-                    bld.withImageSize(Configuration.ContainerSize.valueOf(size.getAsString()));
-                } catch (IllegalArgumentException x) {
-                    logger.error("Wrong size was persisted: {}", size);
-                    //ok to skip and do nothing, the default value is REGULAR
-                }
-            }
-            JsonArray arr = jsonobj.getAsJsonArray("extraContainers");
-            if (arr != null) {
-                arr.forEach((JsonElement t) -> {
-                    if (t.isJsonObject()) {
-                        Configuration.ExtraContainer extra = Configuration.from(t.getAsJsonObject());
-                        if (extra != null) {
-                            bld.withExtraContainer(extra);
-                        }
-                    }
-                });
-            }
-            return bld.build();
-        }
-        return null;
     }
 
     public static boolean isDockerInDockerImage(String image) {

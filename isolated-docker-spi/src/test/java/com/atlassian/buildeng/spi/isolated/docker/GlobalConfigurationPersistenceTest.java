@@ -13,46 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.atlassian.buildeng.ecs;
+package com.atlassian.buildeng.spi.isolated.docker;
 
-import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
-import com.amazonaws.services.ecs.model.TaskDefinition;
-import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
-import com.atlassian.bamboo.configuration.AdministrationConfiguration;
-import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
-import com.atlassian.bandana.DefaultBandanaManager;
-import com.atlassian.bandana.impl.MemoryBandanaPersister;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  *
  * @author mkleint
  */
-@RunWith(MockitoJUnitRunner.class)
 public class GlobalConfigurationPersistenceTest {
      
     
     @Test
     public void testVersion1() {
-        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
-        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        GlobalConfiguration gc = new GlobalConfiguration(dbm, administrationAccessor);
-        
         String persistedValue = "{'image'='aaa'}";
-        Configuration conf = gc.load(persistedValue);
+        Configuration conf = ConfigurationPersistence.toConfiguration(persistedValue);
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.REGULAR, conf.getSize());
@@ -61,12 +39,8 @@ public class GlobalConfigurationPersistenceTest {
     
     @Test
     public void testVersion2() {
-        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
-        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        GlobalConfiguration  gc = new GlobalConfiguration(dbm, administrationAccessor);
-        
         String persistedValue = "{'image'='aaa','size'='SMALL'}";
-        Configuration conf = gc.load(persistedValue);
+        Configuration conf = ConfigurationPersistence.toConfiguration(persistedValue);
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
@@ -75,12 +49,8 @@ public class GlobalConfigurationPersistenceTest {
     
     @Test
     public void testVersion3() {
-        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
-        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        GlobalConfiguration gc = new GlobalConfiguration(dbm, administrationAccessor);
-        
         String persistedValue = "{'image'='aaa','size'='SMALL','extraContainers':[{'name':'bbb','image':'bbb-image','size':'SMALL'}]}";
-        Configuration conf = gc.load(persistedValue);
+        Configuration conf = ConfigurationPersistence.toConfiguration(persistedValue);
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());

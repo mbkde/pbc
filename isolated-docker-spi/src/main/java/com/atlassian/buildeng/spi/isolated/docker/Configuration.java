@@ -25,13 +25,6 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -77,7 +70,7 @@ public final class Configuration {
         boolean enable = config.getBoolean(ENABLED_FOR_JOB);
         String image = config.getString(DOCKER_IMAGE);
         ContainerSize size = ContainerSize.valueOf(config.getString(DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        List<ExtraContainer> extras = fromJsonString(config.getString(DOCKER_EXTRA_CONTAINERS, "[]"));
+        List<ExtraContainer> extras = ConfigurationPersistence.fromJsonString(config.getString(DOCKER_EXTRA_CONTAINERS, "[]"));
         return new Configuration(enable, image, size, extras);
     }
 
@@ -119,7 +112,7 @@ public final class Configuration {
         Map<String, String> cc = taskDefinition.getConfiguration();
         String image = cc.getOrDefault(TASK_DOCKER_IMAGE, "");
         ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(TASK_DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        List<ExtraContainer> extras = fromJsonString(cc.getOrDefault(TASK_DOCKER_EXTRA_CONTAINERS, "[]"));
+        List<ExtraContainer> extras = ConfigurationPersistence.fromJsonString(cc.getOrDefault(TASK_DOCKER_EXTRA_CONTAINERS, "[]"));
         return new Configuration(taskDefinition.isEnabled(), image, size, extras);
     }
 
@@ -139,7 +132,7 @@ public final class Configuration {
         String value = cc.getOrDefault(ENABLED_FOR_JOB, "false");
         String image = cc.getOrDefault(DOCKER_IMAGE, "");
         ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        List<ExtraContainer> extras = fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]"));
+        List<ExtraContainer> extras = ConfigurationPersistence.fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]"));
         return new Configuration(Boolean.parseBoolean(value), image, size, extras);
     }
 
@@ -202,7 +195,7 @@ public final class Configuration {
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
-        storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS, toJson(getExtraContainers()).toString());
+        storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS, ConfigurationPersistence.toJson(getExtraContainers()).toString());
     }
     
     public static void removeFrom(Map<String, ? super String> storageMap) {
@@ -212,34 +205,6 @@ public final class Configuration {
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
     }
 
-    public static JsonArray toJson(List<ExtraContainer> extraContainers) {
-        JsonArray arr = new JsonArray();
-        extraContainers.forEach((ExtraContainer t) -> {
-            arr.add(t.toJson());
-        });
-        return arr;
-    }
-    
-    private static List<ExtraContainer> fromJsonString(String source) {
-        List<ExtraContainer> toRet = new ArrayList<>();
-        try {
-            JsonElement obj = new JsonParser().parse(source);
-            if (obj.isJsonArray()) {
-                JsonArray arr = obj.getAsJsonArray();
-                arr.forEach((JsonElement t) -> {
-                    if (t.isJsonObject()) {
-                        ExtraContainer cont = from(t.getAsJsonObject());
-                        if (cont != null) {
-                            toRet.add(cont);
-                        }
-                    }
-                });
-            }
-        } catch (JsonParseException ex) {
-            
-        }
-        return toRet;
-    }
     
     public static enum ContainerSize {
         REGULAR(2048, 8000),
@@ -343,65 +308,9 @@ public final class Configuration {
 
         
 
-        private JsonObject toJson() {
-            JsonObject el = new JsonObject();
-            el.addProperty("name", name);
-            el.addProperty("image", image);
-            el.addProperty("size", extraSize.name());
-            if (!commands.isEmpty()) {
-                JsonArray arr = new JsonArray();
-                commands.forEach((String t) -> {
-                    arr.add(new JsonPrimitive(t));
-                });
-                el.add("commands", arr);
-            }
-            if (!envVariables.isEmpty()) {
-                JsonArray arr = new JsonArray();
-                envVariables.forEach((EnvVariable t) -> {
-                    JsonObject obj = new JsonObject();
-                    obj.addProperty("name", t.getName());
-                    obj.addProperty("value", t.getValue());
-                    arr.add(obj);
-                });
-                el.add("envVars", arr);
-            }
-            return el;
-        }
+        
     }
     
-    public static ExtraContainer from(JsonObject obj) {
-        if (obj.has("name") && obj.has("image") && obj.has("size")) {
-            String name = obj.getAsJsonPrimitive("name").getAsString();
-            String image = obj.getAsJsonPrimitive("image").getAsString();
-            String size = obj.getAsJsonPrimitive("size").getAsString();
-            ExtraContainerSize s;
-            try {
-                s = ExtraContainerSize.valueOf(size);
-            } catch (IllegalArgumentException x) {
-                s = ExtraContainerSize.REGULAR;
-            }
-            ExtraContainer toRet = new ExtraContainer(name, image, s);
-            JsonArray commands = obj.getAsJsonArray("commands");
-            if (commands != null) {
-                List<String> comms = new ArrayList<>();
-                commands.forEach((JsonElement t) -> {
-                    comms.add(t.getAsString());
-                });
-                toRet.setCommands(comms);
-            }
-            JsonArray envvars = obj.getAsJsonArray("envVars");
-            if (envvars != null) {
-                List<EnvVariable> vars = new ArrayList<>();
-                envvars.forEach((JsonElement t) -> {
-                    JsonObject to = t.getAsJsonObject();
-                    vars.add(new EnvVariable(to.getAsJsonPrimitive("name").getAsString(), to.getAsJsonPrimitive("value").getAsString()));
-                });
-                toRet.setEnvVariables(vars);
-            }
-            return toRet;
-        } 
-        return null;
-    }
     
     
     public static enum ExtraContainerSize {
