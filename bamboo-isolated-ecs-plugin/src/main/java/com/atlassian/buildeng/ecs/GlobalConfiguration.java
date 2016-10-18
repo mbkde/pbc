@@ -15,23 +15,12 @@
  */
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.Request;
-import com.amazonaws.protocol.json.JsonClientMetadata;
-import com.amazonaws.protocol.json.SdkJsonProtocolFactory;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
-import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
-import com.amazonaws.services.ecs.model.HostVolumeProperties;
-import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListClustersResult;
-import com.amazonaws.services.ecs.model.LogConfiguration;
-import com.amazonaws.services.ecs.model.MountPoint;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
-import com.amazonaws.services.ecs.model.Volume;
-import com.amazonaws.services.ecs.model.VolumeFrom;
-import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
@@ -46,7 +35,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,12 +43,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.fileupload.util.Streams;
-
-import static com.atlassian.buildeng.ecs.Constants.AGENT_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.RUN_SCRIPT;
-import static com.atlassian.buildeng.ecs.Constants.SIDEKICK_CONTAINER_NAME;
-import static com.atlassian.buildeng.ecs.Constants.WORK_DIR;
+import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
+import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.ecs.rest.Config;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
@@ -70,7 +54,7 @@ import org.codehaus.plexus.util.StringUtils;
  *
  * @author mkleint
  */
-public class GlobalConfiguration {
+public class GlobalConfiguration implements ECSConfiguration {
     
     // Bandana access keys
     static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
@@ -91,66 +75,9 @@ public class GlobalConfiguration {
         this.admConfAccessor = admConfAccessor;
     }
 
+    @Override
     public String getTaskDefinitionName() {
         return admConfAccessor.getAdministrationConfiguration().getInstanceName() + Constants.TASK_DEFINITION_SUFFIX;
-    }
-    
-    private ContainerDefinition withGlobalEnvVars(ContainerDefinition def) {
-        getEnvVars().forEach((String key, String val) -> {
-            def.withEnvironment(new KeyValuePair().withName(key).withValue(val));
-        });
-        return def.withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(getCurrentCluster()));
-
-    }
-
-    private ContainerDefinition withLogDriver(ContainerDefinition def) {
-        String driver = getLoggingDriver();
-        if (driver != null) {
-            LogConfiguration ld = new LogConfiguration()
-                    .withLogDriver(driver)
-                    .withOptions(getLoggingDriverOpts());
-            return def.withLogConfiguration(ld);
-        }
-        return def;
-    }
-
-  // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    private RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, String baseUrl, String sidekick) {
-        ContainerDefinition main = withLogDriver(withGlobalEnvVars(new ContainerDefinition()
-                .withName(AGENT_CONTAINER_NAME)
-                .withCpu(configuration.getSize().cpu())
-                .withMemoryReservation(configuration.getSize().memory())
-                .withImage(configuration.getDockerImage())
-                .withVolumesFrom(new VolumeFrom().withSourceContainer(SIDEKICK_CONTAINER_NAME))
-                .withEntryPoint(RUN_SCRIPT)
-                .withWorkingDirectory(WORK_DIR)
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(baseUrl))
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage()))
-        ));
-        
-        RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
-                .withContainerDefinitions(
-                        main,
-                        Constants.SIDEKICK_DEFINITION.withImage(sidekick))
-                .withFamily(getTaskDefinitionName());
-        configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-            ContainerDefinition d = new ContainerDefinition()
-                    .withName(t.getName())
-                    .withImage(t.getImage())
-                    .withCpu(t.getExtraSize().cpu())
-                    .withMemoryReservation(t.getExtraSize().memory())
-                    .withEssential(false);
-            if (isDockerInDockerImage(t.getImage())) {
-                //https://hub.docker.com/_/docker/
-                //TODO align storage driver with whatever we are using? (overlay)
-                //default is vfs safest but slowest option. 
-                d.setPrivileged(Boolean.TRUE);
-                main.withEnvironment(new KeyValuePair().withName("DOCKER_HOST").withValue("tcp://" + t.getName() + ":2375"));
-            }
-            req.withContainerDefinitions(d);
-            main.withLinks(t.getName());
-        });
-        return req;
     }
     
     // Constructs a standard de-register request for a standard generated task definition
@@ -165,7 +92,8 @@ public class GlobalConfiguration {
      *
      * @return The current sidekick repository
      */
-    synchronized String getCurrentSidekick() {
+    @Override
+    public synchronized String getCurrentSidekick() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
         return name == null ? Constants.DEFAULT_SIDEKICK_REPOSITORY : name;
     }
@@ -182,6 +110,7 @@ public class GlobalConfiguration {
      *
      * @return The current cluster name
      */
+    @Override
     public synchronized String getCurrentCluster() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY);
         return name == null ? Constants.DEFAULT_CLUSTER : name;
@@ -206,6 +135,7 @@ public class GlobalConfiguration {
      *
      * @return the custom logging driver or null of none defined.
      */
+    @Override
     public synchronized String getLoggingDriver() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
     }
@@ -215,11 +145,13 @@ public class GlobalConfiguration {
      *
      * @return The current cluster nam
      */
+    @Override
     public synchronized Map<String, String> getLoggingDriverOpts() {
         Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY);
         return map != null ? map : new HashMap<>();
     }
 
+    @Override
     public synchronized Map<String, String> getEnvVars() {
         Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENVS_KEY);
         return map != null ? map : new HashMap<>();
@@ -230,27 +162,34 @@ public class GlobalConfiguration {
     /**
      * Synchronously register a docker image to be used with isolated docker builds
      *
-     * @param dockerImage The image to register
+     * @param configuration The configuration to register
      * @return The internal identifier for the registered image.
      */
-    synchronized int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
+    @Override
+    public synchronized int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
         Map<String, Integer> registrationMappings = getAllECSTaskRegistrations();
-        String newReg = createRegisterTaskDefinitionString(configuration);
+        String newReg = TaskDefinitionRegistrations.createRegisterTaskDefinitionString(configuration, this);
         if (registrationMappings.containsKey(newReg)) {
             throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
         }
         
         Map<Configuration, Integer> dockerMappings = getAllRegistrations();
-        Integer revision = registerDockerImageECS(configuration, getCurrentSidekick());
+        Integer revision = registerDockerImageECS(configuration);
         dockerMappings.put(configuration, revision);
         registrationMappings.put(newReg, revision);
         persistBandanaDockerMappingsConfiguration(dockerMappings, registrationMappings);
         return revision;
     }
+
+    @Override
+    public String getBambooBaseUrl() {
+        return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
+    }
+
     
-    private Integer registerDockerImageECS(Configuration configuration, String sidekick) throws ECSException {
+    private Integer registerDockerImageECS(Configuration configuration) throws ECSException {
         try {
-            RegisterTaskDefinitionRequest req = taskDefinitionRequest(configuration, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), sidekick);
+            RegisterTaskDefinitionRequest req = TaskDefinitionRegistrations.taskDefinitionRequest(configuration, this);
             RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(req);
             return result.getTaskDefinition().getRevision();
         } catch (Exception e) {
@@ -294,26 +233,17 @@ public class GlobalConfiguration {
     
     /**
      * find task definition registration for given configuration
-     * @param configuration
+     * @param configuration conf to use
      * @return either the revision or -1 when not found
      */
-    synchronized int findTaskRegistrationVersion(Configuration configuration) {
-        String reg = createRegisterTaskDefinitionString(configuration);
+    @Override
+    public synchronized int findTaskRegistrationVersion(Configuration configuration) {
+        String reg = TaskDefinitionRegistrations.createRegisterTaskDefinitionString(configuration, this);
         
         Integer val = getAllECSTaskRegistrations().get(reg);
         return val != null ? val : -1;
     }
 
-    private String createRegisterTaskDefinitionString(Configuration configuration) {
-        RegisterTaskDefinitionRequestMarshaller rtdm = new RegisterTaskDefinitionRequestMarshaller(new SdkJsonProtocolFactory(new JsonClientMetadata()) );
-        Request<RegisterTaskDefinitionRequest> rr = rtdm.marshall(taskDefinitionRequest(configuration, admConfAccessor.getAdministrationConfiguration().getBaseUrl(), getCurrentSidekick()));
-        try {
-            return Streams.asString(rr.getContent(), "UTF-8");
-        } catch (IOException ex) {
-            logger.error("No way to turn Registration Task to string", ex);
-            return null;
-        }
-    }
 
     /**
      * Returns a list of Configuration objects that were used to register the given
@@ -324,12 +254,13 @@ public class GlobalConfiguration {
         Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         return values == null ? new HashMap<>() : convertFromPersisted(values);
     }
-    
+
     private synchronized Map<String, Integer> getAllECSTaskRegistrations() {
         Map<String, Integer> ret = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY);
         return ret == null ? new HashMap<>() : ret;
     }
     
+    @Override
     public synchronized String getCurrentASG() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY);
         return name == null ? "" : name;
