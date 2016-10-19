@@ -10,6 +10,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
 import com.google.gson.JsonArray;
@@ -104,7 +105,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
                     JsonArray arr = obj.getAsJsonArray();
                     arr.forEach((JsonElement t) -> {
                         if (t.isJsonObject()) {
-                            Configuration.ExtraContainer v2 = Configuration.from(t.getAsJsonObject());
+                            Configuration.ExtraContainer v2 = ConfigurationPersistence.from(t.getAsJsonObject());
                             if (v2 == null) {
                                 errorCollection.addErrorMessage("wrong format for extra containers");
                             } else {
