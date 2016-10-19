@@ -28,7 +28,6 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
-import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;

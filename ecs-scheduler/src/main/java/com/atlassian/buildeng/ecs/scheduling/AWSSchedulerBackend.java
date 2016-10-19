@@ -41,7 +41,6 @@ import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
-import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.ArrayList;
