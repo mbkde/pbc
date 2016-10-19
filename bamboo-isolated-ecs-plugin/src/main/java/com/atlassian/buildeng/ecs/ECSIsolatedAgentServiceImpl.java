@@ -16,20 +16,16 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.services.ecs.model.Failure;
-import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
-import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
-import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
@@ -41,7 +37,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -83,48 +78,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 resultId,
                 revision,
                 req.getConfiguration());
-        ecsScheduler.schedule(schedulingRequest,
-                new SchedulingCallback() {
-                    @Override
-                    public void handle(SchedulingResult schedulingResult) {
-                        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
-                        StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
-                        startTaskResult.getTasks().stream().findFirst().ifPresent(t -> {
-                            toRet.withCustomResultData(Constants.RESULT_PART_TASKARN, t.getTaskArn());
-                        });
-                        logger.info("ECS Returned: {}", startTaskResult);
-                        List<Failure> failures = startTaskResult.getFailures();
-                        if (failures.size() == 1) {
-                            String err = failures.get(0).getReason();
-                            if (err.startsWith("RESOURCE")) {
-                                logger.info("ECS cluster is overloaded, waiting for auto-scaling and retrying");
-                                toRet.withRetryRecoverable("Not enough resources available now.");
-                            } else if ("AGENT".equals(err)) {
-                                logger.info("We've scheduled on AGENT disabled instance, should be just flaky AWS. Retrying.");
-                                toRet.withRetryRecoverable("AGENT - The container instance that you attempted to launch a task onto has an agent which is currently disconnected.");
-                            } else {
-                                toRet.withError(mapRunTaskErrorToDescription(err));
-                            }
-                        } else {
-                            for (Failure err : startTaskResult.getFailures()) {
-                                toRet.withError(mapRunTaskErrorToDescription(err.getReason()));
-                            }
-                        }
-                        callback.handle(toRet);
-                    }
-
-                    @Override
-                    public void handle(ECSException exception) {
-                        IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
-                        logger.warn("Failed to schedule {}, treating as overload: {}", resultId, exception);
-                        if (exception.getCause() instanceof TimeoutException) {
-                            toRet.withRetryRecoverable("Request timed out without completing.");
-                        } else {
-                            toRet.withRetryRecoverable("No Container Instance currently available");
-                        }
-                        callback.handle(toRet);
-                    }
-        });
+        ecsScheduler.schedule(schedulingRequest, new DefaultSchedulingCallback(callback, resultId));
     }
     
     @Override
@@ -144,18 +98,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 c.getExtraContainers().stream().map(ec -> ec.getImage()));
     }
 
-    private String mapRunTaskErrorToDescription(String reason) {
-        //http://docs.aws.amazon.com/AmazonECS/latest/developerguide/troubleshooting.html#api_failures_messages
-        if ("AGENT".equals(reason)) {
-            return "AGENT - The container instance that you attempted to launch a task onto has an agent which is currently disconnected. In order to prevent extended wait times for task placement, the request was rejected.";
-        } else if ("ATTRIBUTE".equals(reason)) {
-            return "ATTRIBUTE - Your task definition contains a parameter that requires a specific container instance attribute that is not available on your container instances.";
-        } else if (reason.startsWith("RESOURCE")) {
-            return reason + " - The resource or resources requested by the task are unavailable on the given container instance. If the resource is CPU or memory, you may need to add container instances to your cluster.";
-        } else {
-            return "Unknown RunTask reason:" + reason;
-        }
-    }
 
     @Override
     public void onStart() {
@@ -169,5 +111,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     public void onStop() {
         pluginScheduler.unscheduleJob(Constants.PLUGIN_JOB_KEY);
     }
+
 
 }
