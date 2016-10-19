@@ -21,6 +21,7 @@ import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.agent.ExecutableBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.AgentContext;
+import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +52,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     @NotNull
     @Override
     public BuildContext call() {
-        Configuration config = Configuration.forContext(buildContext);
+        Configuration config = AccessConfiguration.forContext(buildContext);
         ExecutableBuildAgent buildAgent = agentContext.getBuildAgent();
         BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
 

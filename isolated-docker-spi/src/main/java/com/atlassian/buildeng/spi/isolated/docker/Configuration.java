@@ -16,15 +16,6 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import com.atlassian.bamboo.deployments.execution.DeploymentContext;
-import com.atlassian.bamboo.deployments.results.DeploymentResult;
-import com.atlassian.bamboo.plan.cache.ImmutableJob;
-import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
-import com.atlassian.bamboo.task.TaskDefinition;
-import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
-import com.atlassian.bamboo.v2.build.BuildContext;
-import com.atlassian.bamboo.v2.build.CommonContext;
-import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import java.util.Collections;
 import java.util.List;
 
@@ -64,78 +55,6 @@ public final class Configuration {
         this.size = size;
         this.extraContainers = extraContainers;
     }
-
-    @Nonnull
-    public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
-        boolean enable = config.getBoolean(ENABLED_FOR_JOB);
-        String image = config.getString(DOCKER_IMAGE);
-        ContainerSize size = ContainerSize.valueOf(config.getString(DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        List<ExtraContainer> extras = ConfigurationPersistence.fromJsonString(config.getString(DOCKER_EXTRA_CONTAINERS, "[]"));
-        return new Configuration(enable, image, size, extras);
-    }
-
-    public static Configuration forContext(@Nonnull CommonContext context) {
-        if (context instanceof BuildContext) {
-            return forBuildContext((BuildContext) context);
-        }
-        if (context instanceof DeploymentContext) {
-            return forDeploymentContext((DeploymentContext) context);
-        }
-        throw new IllegalStateException("Unknown Common Context subclass:" + context.getClass().getName());
-    }
-    
-    
-    @Nonnull
-    private static Configuration forBuildContext(@Nonnull BuildContext context) {
-        Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
-        return forMap(cc);
-    }
-    
-    @Nonnull
-    private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
-        for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
-            //XXX interplugin dependency
-            if ("com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockertask".equals(task.getPluginKey())) {
-                return forTaskConfiguration(task);
-            }
-        }
-        return new Configuration(false, "", ContainerSize.REGULAR, Collections.emptyList());
-    }
-    
-    public static Configuration forDeploymentResult(DeploymentResult dr) {
-        return forMap(dr.getCustomData());
-    }
-    
-    
-    @Nonnull
-    public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
-        Map<String, String> cc = taskDefinition.getConfiguration();
-        String image = cc.getOrDefault(TASK_DOCKER_IMAGE, "");
-        ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(TASK_DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        List<ExtraContainer> extras = ConfigurationPersistence.fromJsonString(cc.getOrDefault(TASK_DOCKER_EXTRA_CONTAINERS, "[]"));
-        return new Configuration(taskDefinition.isEnabled(), image, size, extras);
-    }
-
-
-    public static Configuration forJob(ImmutableJob job) {
-        Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
-        return forMap(cc);
-    }
-    
-    public static Configuration forBuildResultSummary(BuildResultsSummary summary) {
-        Map<String, String> cc = summary.getCustomBuildData();
-        return forMap(cc);
-    }
-
-    @Nonnull
-    private static Configuration forMap(@Nonnull Map<String, String> cc) {
-        String value = cc.getOrDefault(ENABLED_FOR_JOB, "false");
-        String image = cc.getOrDefault(DOCKER_IMAGE, "");
-        ContainerSize size = ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE, ContainerSize.REGULAR.name()));
-        List<ExtraContainer> extras = ConfigurationPersistence.fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]"));
-        return new Configuration(Boolean.parseBoolean(value), image, size, extras);
-    }
-
 
     public boolean isEnabled() {
         return enabled;

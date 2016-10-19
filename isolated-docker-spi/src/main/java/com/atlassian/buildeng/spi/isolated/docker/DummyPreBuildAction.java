@@ -26,7 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
 /**
- * just here to have the plugin included on agent classpath
+ * Just here to have the plugin included on agent classpath. Bamboo doesn't
+ * inclue transitive plugin dependencies on the agent classpath, only those with explicit
+ * extension point registration.
  */
 public class DummyPreBuildAction implements CustomPreBuildAction {
     private static final Logger LOG = LoggerFactory.getLogger(DummyPreBuildAction.class);

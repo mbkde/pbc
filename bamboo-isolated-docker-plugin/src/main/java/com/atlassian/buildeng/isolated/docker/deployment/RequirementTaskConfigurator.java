@@ -7,6 +7,7 @@ import com.atlassian.bamboo.task.TaskRequirementSupport;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
+import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
@@ -137,7 +138,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public Set<Requirement> calculateRequirements(@NotNull TaskDefinition taskDefinition)
     {
         Set<Requirement> requirementSet = Sets.newHashSet();
-        Configuration config = Configuration.forTaskConfiguration(taskDefinition);
+        Configuration config = AccessConfiguration.forTaskConfiguration(taskDefinition);
         if (config.isEnabled()) {
             requirementSet.add(new RequirementImpl(Constants.CAPABILITY, false, config.getDockerImage(), true));
         }

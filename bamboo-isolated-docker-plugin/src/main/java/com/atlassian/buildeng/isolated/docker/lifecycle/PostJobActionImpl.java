@@ -30,6 +30,7 @@ import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
+import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.OptionalLong;
@@ -53,7 +54,7 @@ public class PostJobActionImpl implements PostJobAction {
 
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
-        Configuration config = Configuration.forBuildResultSummary(buildResultsSummary);
+        Configuration config = AccessConfiguration.forBuildResultSummary(buildResultsSummary);
         if (config.isEnabled()) {
             Long agentId = buildResultsSummary.getBuildAgentId();
             if (agentId == null) {

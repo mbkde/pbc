@@ -21,16 +21,10 @@
                         <Export-Package>com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}"
                         </Export-Package>
                         <Import-Package>
-                            com.atlassian.bamboo.build.*,
-                            com.atlassian.bamboo.deployments.execution.*,
-                            com.atlassian.bamboo.deployments.results.*,
-                            com.atlassian.bamboo.plan.cache.*,
-                            com.atlassian.bamboo.resultsummary.*,
-                            com.atlassian.bamboo.task.*,
-                            com.atlassian.bamboo.task.runtime.*,
-                            com.atlassian.bamboo.utils.error.*,
-                            com.atlassian.bamboo.v2.build.*,
-                            com.atlassian.bamboo.ww2.actions.build.admin.create.*,
+                            com.atlassian.bamboo.build.*, <!--DummyPreBuildAction -->
+                            com.atlassian.bamboo.utils.error.*, <!--DummyPreBuildAction -->
+                            com.atlassian.bamboo.v2.build.*, <!--DummyPreBuildAction -->
+                            com.atlassian.bamboo.ww2.actions.build.admin.create.*, <!--DummyPreBuildAction -->
                             com.google.common.collect.*,
                             com.google.gson.*,
                             org.slf4j.*,
@@ -42,18 +36,7 @@
         </plugins>
     </build>
     <dependencies>
-        <dependency>
-            <groupId>com.atlassian.bamboo</groupId>
-            <artifactId>atlassian-bamboo-api</artifactId>
-            <version>${bamboo.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.bamboo</groupId>
-            <artifactId>atlassian-bamboo-deployments-api</artifactId>
-            <version>${bamboo.version}</version>
-            <scope>provided</scope>
-        </dependency>
+        <!--DummyPreBuildAction only -->
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>

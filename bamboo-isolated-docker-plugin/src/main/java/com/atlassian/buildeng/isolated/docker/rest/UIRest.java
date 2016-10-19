@@ -23,6 +23,7 @@ import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.util.Narrow;
+import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import org.json.JSONArray;
@@ -67,7 +68,7 @@ public class UIRest {
         if (jb == null) {
             return Response.status(Status.BAD_REQUEST).entity("Not a Job Key").build();
         }
-        Configuration conf = Configuration.forJob(jb);
+        Configuration conf = AccessConfiguration.forJob(jb);
         JSONObject toRet = new JSONObject();
         toRet.put("enabled", conf.isEnabled());
         JSONArray result = new JSONArray();

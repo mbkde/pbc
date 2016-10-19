@@ -26,6 +26,8 @@ import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 
 @WebSudoRequired
@@ -130,7 +133,7 @@ public class Rest {
         cachedPlanManager.getPlans(ImmutableJob.class).stream()
                 .filter(job -> !job.hasMaster())
                 .forEach(job -> {
-                    Configuration config = Configuration.forJob(job);
+                    Configuration config = forJob(job);
                     if (config.isEnabled()) {
                         if (revision == taskDefRegistrations.findTaskRegistrationVersion(config)) {
                             toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
@@ -140,4 +143,20 @@ public class Rest {
         return Response.ok(new JobsUsingImageResponse(toRet)).build();
     }
     
+    //copy of AccessConfiguration from the other plugin.
+    // it's a copy to make the isolated-docker-spi plugin lightweight without 
+    // significant refs to bamboo
+    public static Configuration forJob(ImmutableJob job) {
+        Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
+        return forMap(cc);
+    }
+    
+    @Nonnull
+    private static Configuration forMap(@Nonnull Map<String, String> cc) {
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
+                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
+                    .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                    .build();
+    }
 }
