@@ -25,6 +25,7 @@ import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingResult;
+import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -32,7 +33,6 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
-import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,23 +53,25 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final ECSScheduler ecsScheduler;
     private final PluginScheduler pluginScheduler;
     private final SchedulerBackend schedulerBackend;
+    private final TaskDefinitionRegistrations taskDefRegistrations;
 
     public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
-            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend) {
+            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
         this.pluginScheduler = pluginScheduler;
         this.schedulerBackend = schedulerBackend;
+        this.taskDefRegistrations = taskDefRegistrations;
     }
 
     // Isolated Agent Service methods
     @Override
     public void startAgent(IsolatedDockerAgentRequest req, IsolatedDockerRequestCallback callback) {
-        int revision = globalConfiguration.findTaskRegistrationVersion(req.getConfiguration());
+        int revision = taskDefRegistrations.findTaskRegistrationVersion(req.getConfiguration());
         String resultId = req.getResultKey();
         if (revision == -1) {
             try {
-                revision = globalConfiguration.registerDockerImage(req.getConfiguration());
+                revision = taskDefRegistrations.registerDockerImage(req.getConfiguration());
             } catch (ImageAlreadyRegisteredException | ECSException ex) {
                 callback.handle(ex);
                 return;

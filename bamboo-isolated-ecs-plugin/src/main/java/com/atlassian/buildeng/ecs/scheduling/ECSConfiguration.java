@@ -31,9 +31,6 @@ public interface ECSConfiguration {
     Map<String, String> getLoggingDriverOpts();
     Map<String, String> getEnvVars();
 
-    //TODO eventually should be moved out elsewhere
-    int findTaskRegistrationVersion(Configuration configuration);
-    int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException;
 
 
 }

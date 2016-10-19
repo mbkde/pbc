@@ -19,13 +19,10 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.ListClustersResult;
-import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
-import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
@@ -54,7 +51,7 @@ import org.codehaus.plexus.util.StringUtils;
  *
  * @author mkleint
  */
-public class GlobalConfiguration implements ECSConfiguration {
+public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegistrations.Backend {
     
     // Bandana access keys
     static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
@@ -98,7 +95,8 @@ public class GlobalConfiguration implements ECSConfiguration {
         return name == null ? Constants.DEFAULT_SIDEKICK_REPOSITORY : name;
     }
 
-    private void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
+    @Override
+    public void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY, taskRequestMappings);
     }
@@ -159,42 +157,11 @@ public class GlobalConfiguration implements ECSConfiguration {
 
     // Docker - ECS mapping management
 
-    /**
-     * Synchronously register a docker image to be used with isolated docker builds
-     *
-     * @param configuration The configuration to register
-     * @return The internal identifier for the registered image.
-     */
-    @Override
-    public synchronized int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
-        Map<String, Integer> registrationMappings = getAllECSTaskRegistrations();
-        String newReg = TaskDefinitionRegistrations.createRegisterTaskDefinitionString(configuration, this);
-        if (registrationMappings.containsKey(newReg)) {
-            throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
-        }
-        
-        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
-        Integer revision = registerDockerImageECS(configuration);
-        dockerMappings.put(configuration, revision);
-        registrationMappings.put(newReg, revision);
-        persistBandanaDockerMappingsConfiguration(dockerMappings, registrationMappings);
-        return revision;
-    }
+  
 
     @Override
     public String getBambooBaseUrl() {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
-    }
-
-    
-    private Integer registerDockerImageECS(Configuration configuration) throws ECSException {
-        try {
-            RegisterTaskDefinitionRequest req = TaskDefinitionRegistrations.taskDefinitionRequest(configuration, this);
-            RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(req);
-            return result.getTaskDefinition().getRevision();
-        } catch (Exception e) {
-            throw new ECSException(e);
-        }
     }
 
     /**
@@ -231,31 +198,21 @@ public class GlobalConfiguration implements ECSConfiguration {
         }
     }
     
-    /**
-     * find task definition registration for given configuration
-     * @param configuration conf to use
-     * @return either the revision or -1 when not found
-     */
-    @Override
-    public synchronized int findTaskRegistrationVersion(Configuration configuration) {
-        String reg = TaskDefinitionRegistrations.createRegisterTaskDefinitionString(configuration, this);
-        
-        Integer val = getAllECSTaskRegistrations().get(reg);
-        return val != null ? val : -1;
-    }
-
+   
 
     /**
      * Returns a list of Configuration objects that were used to register the given
      * task definition revision
      * @return All the docker image:identifier pairs this service has registered
      */
-    synchronized Map<Configuration, Integer> getAllRegistrations() {
+    @Override
+    public synchronized Map<Configuration, Integer> getAllRegistrations() {
         Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         return values == null ? new HashMap<>() : convertFromPersisted(values);
     }
 
-    private synchronized Map<String, Integer> getAllECSTaskRegistrations() {
+    @Override
+    public synchronized Map<String, Integer> getAllECSTaskRegistrations() {
         Map<String, Integer> ret = (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY);
         return ret == null ? new HashMap<>() : ret;
     }
@@ -277,8 +234,8 @@ public class GlobalConfiguration implements ECSConfiguration {
             newMap.put(load(t), u);
         });
         return newMap;
-    }    
-    
+    }
+
     private Map<String, Integer> convertToPersisted(Map<Configuration, Integer> val) {
         final HashMap<String, Integer> newMap = new HashMap<>();
         val.forEach((Configuration t, Integer u) -> {
@@ -286,7 +243,7 @@ public class GlobalConfiguration implements ECSConfiguration {
         });
         return newMap;
     }
-    
+
     @VisibleForTesting
     String persist(Configuration conf) {
         JsonObject el = new JsonObject();
@@ -295,7 +252,7 @@ public class GlobalConfiguration implements ECSConfiguration {
         el.add("extraContainers", Configuration.toJson(conf.getExtraContainers()));
         return el.toString();
     }
-    
+
     @VisibleForTesting
     Configuration load(String source) {
         JsonParser p = new JsonParser();

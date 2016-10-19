@@ -16,26 +16,47 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.amazonaws.Request;
 import com.amazonaws.protocol.json.JsonClientMetadata;
 import com.amazonaws.protocol.json.SdkJsonProtocolFactory;
+import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
+import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
 import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
+import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.util.Map;
 import org.apache.commons.fileupload.util.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TaskDefinitionRegistrations {
     private static final Logger logger = LoggerFactory.getLogger(TaskDefinitionRegistrations.class);
+    
+    public interface Backend {
+        Map<Configuration, Integer> getAllRegistrations();
+        Map<String, Integer> getAllECSTaskRegistrations();
+        void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings);
+    }
+
+    private final Backend backend;
+    private final ECSConfiguration ecsConfiguration;
+
+    public TaskDefinitionRegistrations(Backend backend, ECSConfiguration ecsConfiguration) {
+        this.backend = backend;
+        this.ecsConfiguration = ecsConfiguration;
+    }
+
 
     private static ContainerDefinition withGlobalEnvVars(ContainerDefinition def, ECSConfiguration configuration) {
         configuration.getEnvVars().forEach((String key, String val) -> {
@@ -90,7 +111,7 @@ public class TaskDefinitionRegistrations {
         return req;
     }
 
-    public static String createRegisterTaskDefinitionString(Configuration configuration, ECSConfiguration globalConfiguration) {
+    private static String createRegisterTaskDefinitionString(Configuration configuration, ECSConfiguration globalConfiguration) {
         RegisterTaskDefinitionRequestMarshaller rtdm = new RegisterTaskDefinitionRequestMarshaller(new SdkJsonProtocolFactory(new JsonClientMetadata()));
         Request<RegisterTaskDefinitionRequest> rr = rtdm.marshall(taskDefinitionRequest(configuration, globalConfiguration));
         try {
@@ -100,5 +121,50 @@ public class TaskDefinitionRegistrations {
             return null;
         }
     }
+  /**
+     * Synchronously register a docker image to be used with isolated docker builds
+     *
+     * @param configuration The configuration to register
+     * @return The internal identifier for the registered image.
+     */
+    public int registerDockerImage(Configuration configuration) throws ImageAlreadyRegisteredException, ECSException {
+        Map<String, Integer> registrationMappings = backend.getAllECSTaskRegistrations();
+        String newReg = createRegisterTaskDefinitionString(configuration, ecsConfiguration);
+        if (registrationMappings.containsKey(newReg)) {
+            throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
+        }
 
+        Map<Configuration, Integer> dockerMappings = backend.getAllRegistrations();
+        Integer revision = registerDockerImageECS(configuration);
+        dockerMappings.put(configuration, revision);
+        registrationMappings.put(newReg, revision);
+        backend.persistBandanaDockerMappingsConfiguration(dockerMappings, registrationMappings);
+        return revision;
+    }
+    
+    private Integer registerDockerImageECS(Configuration configuration) throws ECSException {
+        try {
+            RegisterTaskDefinitionRequest req = TaskDefinitionRegistrations.taskDefinitionRequest(configuration, ecsConfiguration);
+            RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(req);
+            return result.getTaskDefinition().getRevision();
+        } catch (Exception e) {
+            throw new ECSException(e);
+        }
+    }
+ /**
+     * find task definition registration for given configuration
+     * @param configuration conf to use
+     * @return either the revision or -1 when not found
+     */
+    public int findTaskRegistrationVersion(Configuration configuration) {
+        String reg = createRegisterTaskDefinitionString(configuration, ecsConfiguration);
+
+        Integer val = backend.getAllECSTaskRegistrations().get(reg);
+        return val != null ? val : -1;
+    }
+
+    @VisibleForTesting
+    AmazonECS createClient() {
+        return new AmazonECSClient();
+    }
 }

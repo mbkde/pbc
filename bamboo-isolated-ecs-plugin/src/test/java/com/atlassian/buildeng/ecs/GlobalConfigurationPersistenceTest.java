@@ -43,35 +43,13 @@ import org.mockito.runners.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class GlobalConfigurationPersistenceTest {
- 
-    
-    @Test
-    public void serializeTest() throws Exception {
-        DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
-        AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
-        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        
-        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
-        when(gc.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
-        
-        Configuration c = ConfigurationBuilder.create("image").build();
-        Integer number = gc.registerDockerImage(c);
-        Integer number2 = gc.findTaskRegistrationVersion(c);
-        assertEquals(number, number2);
-        Map<Configuration, Integer> map = gc.getAllRegistrations();
-        Configuration c2 = ConfigurationBuilder.create("image").withImageSize(Configuration.ContainerSize.SMALL).build();
-        
-        int notExisting = gc.findTaskRegistrationVersion(c2);
-        assertEquals(-1, notExisting);
-        
-    }
+     
     
     @Test
     public void testVersion1() {
         DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
         AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
+        GlobalConfiguration gc = new GlobalConfiguration(dbm, administrationAccessor);
         
         String persistedValue = "{'image'='aaa'}";
         Configuration conf = gc.load(persistedValue);
@@ -85,7 +63,7 @@ public class GlobalConfigurationPersistenceTest {
     public void testVersion2() {
         DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
         AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
+        GlobalConfiguration  gc = new GlobalConfiguration(dbm, administrationAccessor);
         
         String persistedValue = "{'image'='aaa','size'='SMALL'}";
         Configuration conf = gc.load(persistedValue);
@@ -99,7 +77,7 @@ public class GlobalConfigurationPersistenceTest {
     public void testVersion3() {
         DefaultBandanaManager dbm = new DefaultBandanaManager(new MemoryBandanaPersister());
         AdministrationConfigurationAccessor administrationAccessor = mock(AdministrationConfigurationAccessor.class);
-        GlobalConfigurationTest.GlobalConfigurationSubclass gc = new GlobalConfigurationTest.GlobalConfigurationSubclass(dbm, administrationAccessor);
+        GlobalConfiguration gc = new GlobalConfiguration(dbm, administrationAccessor);
         
         String persistedValue = "{'image'='aaa','size'='SMALL','extraContainers':[{'name':'bbb','image':'bbb-image','size':'SMALL'}]}";
         Configuration conf = gc.load(persistedValue);
