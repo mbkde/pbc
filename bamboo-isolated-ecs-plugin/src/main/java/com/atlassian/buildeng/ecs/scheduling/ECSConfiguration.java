@@ -16,9 +16,6 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.Map;
 
 public interface ECSConfiguration {

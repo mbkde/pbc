@@ -1,8 +1,6 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
-import com.amazonaws.services.ecs.model.LogConfiguration;
-import com.amazonaws.services.ecs.model.LogDriver;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 
 public interface Constants {

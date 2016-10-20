@@ -239,10 +239,6 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         return newMap;
     }
 
-    public static boolean isDockerInDockerImage(String image) {
-        return image.startsWith("docker:") && image.endsWith("dind");
-    }
-
     synchronized void setConfig(Config config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getAutoScalingGroupName()));
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getEcsClusterName()));

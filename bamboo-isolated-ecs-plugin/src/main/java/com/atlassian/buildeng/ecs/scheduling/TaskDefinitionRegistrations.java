@@ -29,7 +29,6 @@ import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
 import com.atlassian.buildeng.ecs.Constants;
-import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -42,6 +41,10 @@ import org.slf4j.LoggerFactory;
 
 public class TaskDefinitionRegistrations {
     private static final Logger logger = LoggerFactory.getLogger(TaskDefinitionRegistrations.class);
+
+    public static boolean isDockerInDockerImage(String image) {
+        return image.startsWith("docker:") && image.endsWith("dind");
+    }
     
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
@@ -98,7 +101,7 @@ public class TaskDefinitionRegistrations {
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
                     .withEssential(false);
-            if (GlobalConfiguration.isDockerInDockerImage(t.getImage())) {
+            if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
                 //TODO align storage driver with whatever we are using? (overlay)
                 //default is vfs safest but slowest option.

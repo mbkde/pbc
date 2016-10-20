@@ -42,7 +42,6 @@ import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.Constants;
-import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.ArrayList;
@@ -258,7 +257,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
      * @return
      */
     static List<String> adjustCommands(Configuration.ExtraContainer t) {
-        if (GlobalConfiguration.isDockerInDockerImage(t.getImage())) {
+        if (TaskDefinitionRegistrations.isDockerInDockerImage(t.getImage())) {
             List<String> cmds = new ArrayList<>(t.getCommands());
             Iterator<String> it = cmds.iterator();
             while (it.hasNext()) {
