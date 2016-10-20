@@ -16,16 +16,8 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import java.util.Map;
-
-public interface ECSConfiguration {
-    String getCurrentCluster();
-    String getCurrentASG();
-    String getTaskDefinitionName();
-    String getLoggingDriver();
-    Map<String, String> getLoggingDriverOpts();
-    Map<String, String> getEnvVars();
-
-
+public interface BambooServerEnvironment {
+    String getCurrentSidekick();
+    String getBambooBaseUrl();
 
 }
