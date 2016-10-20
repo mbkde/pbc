@@ -110,6 +110,9 @@ public class TaskDefinitionRegistrations {
             req.withContainerDefinitions(d);
             main.withLinks(t.getName());
         });
+        if (env.getECSTaskRoleARN() != null) {
+            req.withTaskRoleArn(env.getECSTaskRoleARN());
+        }
         return req;
     }
 

@@ -218,6 +218,11 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY);
         return name == null ? "" : name;
     }
+
+    @Override
+    public String getECSTaskRoleARN() {
+        return null;
+    }
     
     @VisibleForTesting
     AmazonECS createClient() {
