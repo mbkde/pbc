@@ -56,9 +56,14 @@ public final class ConfigurationBuilder {
         this.extras.add(ex);
         return this;
     }
+
+    public ConfigurationBuilder withExtraContainers(List<Configuration.ExtraContainer> extras) {
+        this.extras.addAll(extras);
+        return this;
+    }
     
     public Configuration build() {
         return new Configuration(enabled, dockerImage, size, extras);
     }
-    
+
 }

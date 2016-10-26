@@ -23,6 +23,7 @@ import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentlyBuilding;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
+import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
@@ -59,7 +60,7 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     @NotNull
     @Override
     public BuildContext call() throws Exception {
-        Configuration conf = Configuration.forContext(buildContext);
+        Configuration conf = AccessConfiguration.forContext(buildContext);
         CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails

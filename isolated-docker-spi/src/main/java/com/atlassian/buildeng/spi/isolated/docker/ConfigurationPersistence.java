@@ -103,7 +103,7 @@ public class ConfigurationPersistence {
         return null;
     }
 
-    static List<Configuration.ExtraContainer> fromJsonString(String source) {
+    public static List<Configuration.ExtraContainer> fromJsonString(String source) {
         List<Configuration.ExtraContainer> toRet = new ArrayList<>();
         try {
             JsonElement obj = new JsonParser().parse(source);

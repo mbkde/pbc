@@ -72,7 +72,7 @@ public class AgentCreationRescheduler implements LifecycleAware  {
         QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
         queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
             Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
-            Configuration c = Configuration.forContext(t.getView());
+            Configuration c = AccessConfiguration.forContext(t.getView());
             if (c.isEnabled()) {
                 String wasWaiting = bd.get(KEY);
                 if (wasWaiting != null) {

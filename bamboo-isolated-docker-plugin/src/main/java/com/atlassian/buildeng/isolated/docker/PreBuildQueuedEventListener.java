@@ -94,7 +94,7 @@ public class PreBuildQueuedEventListener {
     @EventListener
     public void call(BuildQueuedEvent event) {
         BuildContext buildContext = event.getContext();
-        Configuration config = Configuration.forContext(buildContext);
+        Configuration config = AccessConfiguration.forContext(buildContext);
         if (config.isEnabled()) {
             config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
@@ -208,7 +208,7 @@ public class PreBuildQueuedEventListener {
     public void deploymentTriggered(DeploymentTriggeredEvent event) {
         LOG.info("deployment triggered event:" + event);
         DeploymentContext buildContext = event.getContext();
-        Configuration config = Configuration.forContext(buildContext);
+        Configuration config = AccessConfiguration.forContext(buildContext);
         if (config.isEnabled()) {
             config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
@@ -220,7 +220,7 @@ public class PreBuildQueuedEventListener {
     public void deploymentFinished(DeploymentFinishedEvent event) {
         LOG.info("deployment finished event:" + event);
         DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
-        Configuration config = Configuration.forDeploymentResult(dr);
+        Configuration config = AccessConfiguration.forDeploymentResult(dr);
         if (config.isEnabled()) {
             BuildAgent agent = dr != null ? dr.getAgent() : null;
             if (agent != null) {

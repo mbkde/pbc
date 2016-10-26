@@ -23,8 +23,8 @@ import java.util.Map;
 
 public class IsolatedDockerAgentResult {
 
-    private final List<String> errors = new ArrayList<>();
-    private final Map<String, String> customData = new HashMap<>();
+    private List<String> errors = new ArrayList<>();
+    private Map<String, String> customData = new HashMap<>();
     private boolean retry = false;
 
     public IsolatedDockerAgentResult() {

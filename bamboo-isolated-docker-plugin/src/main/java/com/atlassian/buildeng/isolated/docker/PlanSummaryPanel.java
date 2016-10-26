@@ -33,7 +33,7 @@ public class PlanSummaryPanel implements WebPanel {
         for (ResultsSummary brs : summary.getOrderedJobResultSummaries()) {
             BuildContext buildcontext = map.get(brs.getPlanResultKey());
             //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-            Configuration config = buildcontext != null ? Configuration.forContext(buildcontext) : Configuration.forBuildResultSummary((BuildResultsSummary) brs);
+            Configuration config = buildcontext != null ? AccessConfiguration.forContext(buildcontext) : AccessConfiguration.forBuildResultSummary((BuildResultsSummary) brs);
             if (config.isEnabled()) {
                 String error = brs.getCustomBuildData().get(Constants.RESULT_ERROR);
                 if (buildcontext != null) {

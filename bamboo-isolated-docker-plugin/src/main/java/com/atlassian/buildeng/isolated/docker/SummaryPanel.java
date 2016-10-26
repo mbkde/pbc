@@ -27,7 +27,7 @@ public class SummaryPanel implements WebPanel {
         BuildContext buildcontext = map.get(summary.getPlanResultKey());
         
         //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-        Configuration configuration = buildcontext != null ? Configuration.forContext(buildcontext) : Configuration.forBuildResultSummary(summary);
+        Configuration configuration = buildcontext != null ? AccessConfiguration.forContext(buildcontext) : AccessConfiguration.forBuildResultSummary(summary);
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
             ret.append("<h2>Built with Per-build Container Agent</h2>")

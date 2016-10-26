@@ -30,6 +30,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
@@ -67,7 +68,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     @NotNull
     @Override
     public BuildContext call() throws Exception {
-        Configuration config = Configuration.forContext(buildContext);
+        Configuration config = AccessConfiguration.forContext(buildContext);
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
@@ -78,7 +79,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     @Override
     public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
-        Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
+        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
         if (config.isEnabled()) {
             requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getDockerImage(), true));
         }
@@ -90,7 +91,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         String v = bc.getString(Configuration.DOCKER_EXTRA_CONTAINERS);
         SimpleErrorCollection errs = new SimpleErrorCollection();
         RequirementTaskConfigurator.validateExtraContainers(v, errs);
-        Configuration config = Configuration.forBuildConfiguration(bc);
+        Configuration config = AccessConfiguration.forBuildConfiguration(bc);
         if (config.isEnabled() && StringUtils.isBlank(config.getDockerImage())) {
             errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot be blank.");
         }
@@ -110,7 +111,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
     @Override
     protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
         super.populateContextForEdit(context, buildConfiguration, plan);
-        Configuration config = Configuration.forBuildConfiguration(buildConfiguration);
+        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
         config.copyTo(context);
         context.put("imageSizes", getImageSizes());
     }
