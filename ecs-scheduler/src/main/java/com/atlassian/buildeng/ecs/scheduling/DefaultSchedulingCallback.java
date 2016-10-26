@@ -18,7 +18,6 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.StartTaskResult;
-import com.atlassian.buildeng.ecs.Constants;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;

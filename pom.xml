@@ -71,6 +71,16 @@
                 <artifactId>aws-java-sdk-autoscaling</artifactId>
                 <version>${aws-java.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-ec2</artifactId>
+                <version>${aws-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${aws-java.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -90,6 +100,11 @@
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>2.10</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -99,5 +114,6 @@
         <module>bamboo-simple-backend-plugin</module>
         <module>bamboo-kubernetes-backend-plugin</module>
         <module>isolated-docker-spi</module>
+        <module>ecs-scheduler</module>
     </modules>
 </project>

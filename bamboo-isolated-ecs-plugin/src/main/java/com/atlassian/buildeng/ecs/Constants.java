@@ -1,23 +1,6 @@
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.services.ecs.model.ContainerDefinition;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-
-public interface Constants {
-
-    /**
-     * the storage driver used with docker on the ec2 instances in ecs. For docker-in-docker to work
-     * we need to use this one in place of the default vfs that is terribly slow.
-     */
-    public static String storage_driver = System.getProperty("pbc.dind.storage.driver", "overlay");
-
-    // ECS
-
-    // The name of the sidekick docker image and sidekick container
-    String SIDEKICK_CONTAINER_NAME = "bamboo-agent-sidekick";
-
-    // The name of the agent container
-    String AGENT_CONTAINER_NAME = "bamboo-agent";
+public interface Constants extends com.atlassian.buildeng.ecs.scheduling.Constants {
 
     // The name used for the generated task definition (a.k.a. family)
     String TASK_DEFINITION_SUFFIX = "-generated";
@@ -28,46 +11,11 @@ public interface Constants {
     // The default cluster to use
     String DEFAULT_CLUSTER = "default";
 
-    /**
-     * The environment variable to override on the agent per image
-     */
-    String ENV_VAR_IMAGE = "IMAGE_ID";
-
-    /**
-     * The environment variable to override on the agent per server
-     */
-    String ENV_VAR_SERVER = "BAMBOO_SERVER";
-    
-    /**
-     * The environment variable to set the result spawning up the agent
-     */
-    String ENV_VAR_RESULT_ID = "RESULT_ID";
-
-    // The working directory of isolated agents
-    String WORK_DIR = "/buildeng";
-
-    // The script which runs the bamboo agent jar appropriately
-    String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
-
-    // AWS info
-    String ECS_CLUSTER_KEY                = "ecs_cluster";
-    String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
-    String ENV_HOSTNAME = "HOSTNAME";
-
-    
     long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
     String PLUGIN_JOB_KEY = "ecs-watchdog";
-    String RESULT_PART_TASKARN = "TaskARN";
     
     //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";
-       
-    // The container definition of the sidekick
-    ContainerDefinition SIDEKICK_DEFINITION =
-            new ContainerDefinition()
-                    .withName(SIDEKICK_CONTAINER_NAME)
-                    .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
-                    .withEssential(false);
 
 }

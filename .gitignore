@@ -4,3 +4,5 @@
 /isolated-docker-spi/target/
 /bamboo-simple-backend-plugin/target/
 /bamboo-kubernetes-backend-plugin/target/
+/ecs-scheduler-service/target/
+/ecs-scheduler/target/
