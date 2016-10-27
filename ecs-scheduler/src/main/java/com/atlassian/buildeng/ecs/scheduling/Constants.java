@@ -19,6 +19,9 @@ public interface Constants {
     // The name of the agent container
     String AGENT_CONTAINER_NAME = "bamboo-agent";
 
+    // The name of the build directory volume for dind
+    String BUILD_DIR_VOLUME_NAME = "build-dir";
+
     /**
      * The environment variable to override on the agent per image
      */
@@ -36,6 +39,9 @@ public interface Constants {
 
     // The working directory of isolated agents
     String WORK_DIR = "/buildeng";
+
+    // The working directory for builds
+    String BUILD_DIR = WORK_DIR + "/bamboo-agent-home/xml-data/build-dir";
 
     // The script which runs the bamboo agent jar appropriately
     String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
