@@ -16,16 +16,11 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
-public interface ECSConfiguration {
-    String getCurrentCluster();
-    String getCurrentASG();
-    String getTaskDefinitionName();
-    String getLoggingDriver();
-    Map<String, String> getLoggingDriverOpts();
-    Map<String, String> getEnvVars();
-
-
-
+public interface BambooServerEnvironment {
+    String getCurrentSidekick();
+    String getBambooBaseUrl();
+    @Nullable
+    String getECSTaskRoleARN();
 }

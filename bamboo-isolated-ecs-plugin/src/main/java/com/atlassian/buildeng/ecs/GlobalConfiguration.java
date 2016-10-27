@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.ecs.rest.Config;
+import com.atlassian.buildeng.ecs.scheduling.BambooServerEnvironment;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
@@ -46,7 +47,7 @@ import org.codehaus.plexus.util.StringUtils;
  *
  * @author mkleint
  */
-public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegistrations.Backend {
+public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegistrations.Backend, BambooServerEnvironment {
     
     // Bandana access keys
     static String BANDANA_CLUSTER_KEY = "com.atlassian.buildeng.ecs.cluster";
@@ -216,6 +217,11 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     public synchronized String getCurrentASG() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY);
         return name == null ? "" : name;
+    }
+
+    @Override
+    public String getECSTaskRoleARN() {
+        return null;
     }
     
     @VisibleForTesting

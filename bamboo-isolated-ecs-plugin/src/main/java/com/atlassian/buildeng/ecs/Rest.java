@@ -135,7 +135,7 @@ public class Rest {
                 .forEach(job -> {
                     Configuration config = forJob(job);
                     if (config.isEnabled()) {
-                        if (revision == taskDefRegistrations.findTaskRegistrationVersion(config)) {
+                        if (revision == taskDefRegistrations.findTaskRegistrationVersion(config, configuration)) {
                             toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
                         }
                     }

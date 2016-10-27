@@ -64,6 +64,7 @@ public class TaskDefinitionRegistrationsTest {
         Map<String, Integer> task = new HashMap<>();
         when(backend.getAllECSTaskRegistrations()).thenReturn(task);
         when(backend.getAllRegistrations()).thenReturn(dock);
+        BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 
         when(regs.ecsClient.registerTaskDefinition(anyObject())).thenReturn(new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         Configuration c = ConfigurationBuilder.create("aaa")
@@ -71,16 +72,16 @@ public class TaskDefinitionRegistrationsTest {
                 .withExtraContainer("extra", "extra", Configuration.ExtraContainerSize.SMALL)
                 .build();
         try {
-            int val = regs.registerDockerImage(c);
+            int val = regs.registerDockerImage(c, env);
             Assert.assertEquals(4, val);
-            Assert.assertEquals(4, regs.findTaskRegistrationVersion(c));
+            Assert.assertEquals(4, regs.findTaskRegistrationVersion(c, env));
         } catch (ImageAlreadyRegisteredException | ECSException ex) {
             Assert.fail(ex.getMessage());
         }
         
         //next time round we should not add anything.
         try {
-            int val = regs.registerDockerImage(c);
+            int val = regs.registerDockerImage(c, env);
             Assert.fail("Cannot add the same config twice");
         } catch (ECSException ex) {
             Assert.fail(ex.getMessage());
@@ -96,14 +97,15 @@ public class TaskDefinitionRegistrationsTest {
         when(backend.getAllECSTaskRegistrations()).thenReturn(task);
         when(backend.getAllRegistrations()).thenReturn(dock);
         when(regs.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 
         Configuration c = ConfigurationBuilder.create("image").build();
-        Integer number = regs.registerDockerImage(c);
-        Integer number2 = regs.findTaskRegistrationVersion(c);
+        Integer number = regs.registerDockerImage(c, env);
+        Integer number2 = regs.findTaskRegistrationVersion(c, env);
         assertEquals(number, number2);
         Configuration c2 = ConfigurationBuilder.create("image").withImageSize(Configuration.ContainerSize.SMALL).build();
 
-        int notExisting = regs.findTaskRegistrationVersion(c2);
+        int notExisting = regs.findTaskRegistrationVersion(c2, env);
         assertEquals(-1, notExisting);
 
     }
