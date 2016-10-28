@@ -24,8 +24,10 @@ import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LogConfiguration;
+import com.amazonaws.services.ecs.model.MountPoint;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
+import com.amazonaws.services.ecs.model.Volume;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -87,18 +89,22 @@ public class TaskDefinitionRegistrations {
                         .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
                         .withEntryPoint(Constants.RUN_SCRIPT)
                         .withWorkingDirectory(Constants.WORK_DIR)
+                        .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(env.getBambooBaseUrl()))
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
                 globalConfiguration), globalConfiguration);
         RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick()))
-                .withFamily(globalConfiguration.getTaskDefinitionName());
+                .withFamily(globalConfiguration.getTaskDefinitionName())
+                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME));
+
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = new ContainerDefinition()
                     .withName(t.getName())
                     .withImage(t.getImage())
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
+                    .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                     .withEssential(false);
             if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
