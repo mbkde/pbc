@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>closedsource-pom</artifactId>
-        <version>4.0.8</version>
+        <version>4.0.20</version>
         <relativePath/>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -115,5 +115,6 @@
         <module>bamboo-kubernetes-backend-plugin</module>
         <module>isolated-docker-spi</module>
         <module>ecs-scheduler</module>
+        <module>ecs-scheduler-service</module>
     </modules>
 </project>
