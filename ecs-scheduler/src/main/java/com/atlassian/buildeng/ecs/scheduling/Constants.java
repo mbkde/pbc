@@ -51,7 +51,10 @@ public interface Constants {
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
     String RESULT_PART_TASKARN = "TaskARN";
-       
+
+    // Ratio between soft and hard limits
+    Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
+
     // The container definition of the sidekick
     ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
