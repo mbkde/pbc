@@ -92,7 +92,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     }
 
     @Override
-    public void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
+    public void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY, taskRequestMappings);
     }
@@ -174,7 +174,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         removeWithValue(revision, dockerMappings);
         Map<String, Integer> taskRegMappings = getAllECSTaskRegistrations();
         removeWithValue(revision, taskRegMappings);
-        persistBandanaDockerMappingsConfiguration(dockerMappings, taskRegMappings);
+        persistDockerMappingsConfiguration(dockerMappings, taskRegMappings);
     }
     
     private void deregisterDockerImageECS(Integer revision) throws ECSException {

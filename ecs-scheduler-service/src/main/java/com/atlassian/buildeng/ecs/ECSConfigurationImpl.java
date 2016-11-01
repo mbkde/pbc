@@ -70,7 +70,7 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     }
 
     @Override
-    public void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
+    public void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
         this.configurationMapping = dockerMappings;
         this.ecsTaskMapping = taskRequestMappings;
     }

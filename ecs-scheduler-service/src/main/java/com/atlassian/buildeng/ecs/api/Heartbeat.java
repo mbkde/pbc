@@ -13,9 +13,9 @@ public class Heartbeat {
         // For Jackson
     }
 
-    public String Heartbeat() {
+    public String getHeartbeat() {
         // System.out.println("Running heartbeat");
-        return this.status;
+        return status;
     }
 
     @JsonProperty

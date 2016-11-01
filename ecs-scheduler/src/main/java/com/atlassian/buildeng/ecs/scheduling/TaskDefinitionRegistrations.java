@@ -50,7 +50,7 @@ public class TaskDefinitionRegistrations {
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
         Map<String, Integer> getAllECSTaskRegistrations();
-        void persistBandanaDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings);
+        void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings);
     }
 
     private final Backend backend;
@@ -149,7 +149,7 @@ public class TaskDefinitionRegistrations {
         Integer revision = registerDockerImageECS(configuration, env);
         dockerMappings.put(configuration, revision);
         registrationMappings.put(newReg, revision);
-        backend.persistBandanaDockerMappingsConfiguration(dockerMappings, registrationMappings);
+        backend.persistDockerMappingsConfiguration(dockerMappings, registrationMappings);
         return revision;
     }
     

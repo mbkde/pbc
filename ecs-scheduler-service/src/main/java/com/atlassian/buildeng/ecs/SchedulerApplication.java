@@ -15,21 +15,23 @@ import io.dropwizard.setup.Environment;
 
 public class SchedulerApplication extends io.dropwizard.Application<SchedulerConfiguration> {
 
-    public static CyclingECSScheduler scheduler;
-    public static AWSSchedulerBackend schedulerBackend;
-    public static ECSConfiguration configuration;
-    public static TaskDefinitionRegistrations.Backend regsBackend;
-    public static TaskDefinitionRegistrations regs;
+    public static final CyclingECSScheduler scheduler;
+    public static final AWSSchedulerBackend schedulerBackend;
+    public static final ECSConfiguration configuration;
+    public static final TaskDefinitionRegistrations.Backend regsBackend;
+    public static final TaskDefinitionRegistrations regs;
 
-    public static void main(String[] args) throws Exception {
+    static {
         ECSConfigurationImpl c = new ECSConfigurationImpl();
         configuration = c;
         regsBackend = c;
         schedulerBackend = new AWSSchedulerBackend();
         scheduler = new CyclingECSScheduler(schedulerBackend, configuration, new DummyEventPublisher());
         regs = new TaskDefinitionRegistrations(regsBackend, configuration);
-        new SchedulerApplication().run(new String[] {"server"});
+    }
 
+    public static void main(String[] args) throws Exception {
+        new SchedulerApplication().run(new String[] {"server"});
     }
 
     @Override

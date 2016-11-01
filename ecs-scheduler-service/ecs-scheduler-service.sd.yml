@@ -14,10 +14,9 @@ links:
   source:
     url: 'ssh://git@stash.atlassian.com:7997/buildeng/bamboo-isolated-docker.git'
 notifications:
-  email: ojongerius@atlassian.com
+  email: build-team@atlassian.com
 owners:
-  - ojongerius@atlassian.com
-  - mkleint@atlassian.com
+  - build-team@atlassian.com
 organization: Engineering Services
 config:
   commandArguments:
