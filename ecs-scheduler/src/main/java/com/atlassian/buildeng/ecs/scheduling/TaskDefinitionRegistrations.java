@@ -85,6 +85,7 @@ public class TaskDefinitionRegistrations {
                         .withName(Constants.AGENT_CONTAINER_NAME)
                         .withCpu(configuration.getSize().cpu())
                         .withMemoryReservation(configuration.getSize().memory())
+                        .withMemory((int) (configuration.getSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
                         .withImage(configuration.getDockerImage())
                         .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
                         .withEntryPoint(Constants.RUN_SCRIPT)
@@ -104,6 +105,7 @@ public class TaskDefinitionRegistrations {
                     .withImage(t.getImage())
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
+                    .withMemory((int) (t.getExtraSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
                     .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                     .withEssential(false);
             if (isDockerInDockerImage(t.getImage())) {
