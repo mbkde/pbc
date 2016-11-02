@@ -68,6 +68,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             try {
                 revision = taskDefRegistrations.registerDockerImage(req.getConfiguration(), globalConfiguration);
             } catch (ImageAlreadyRegisteredException | ECSException ex) {
+                logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
                 callback.handle(ex);
                 return;
             }
