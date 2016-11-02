@@ -96,6 +96,7 @@ public class PreBuildQueuedEventListener {
         BuildContext buildContext = event.getContext();
         Configuration config = AccessConfiguration.forContext(buildContext);
         if (config.isEnabled()) {
+            LOG.info("PBC job {} got queued.", event.getResultKey());
             config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config, buildContext));
