@@ -37,6 +37,9 @@
     
     <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService">
     </component>
+
+    <component key="dockerSoxService" class="com.atlassian.buildeng.isolated.docker.sox.DockerSoxService">
+    </component>
     
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
