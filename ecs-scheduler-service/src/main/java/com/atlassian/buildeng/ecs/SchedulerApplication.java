@@ -6,6 +6,7 @@ import com.atlassian.buildeng.ecs.resources.HeartBeatResource;
 import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
+import io.dropwizard.Configuration;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
@@ -13,7 +14,7 @@ import io.dropwizard.setup.Environment;
  * Created by ojongerius on 09/05/2016.
  */
 
-public class SchedulerApplication extends io.dropwizard.Application<SchedulerConfiguration> {
+public class SchedulerApplication extends io.dropwizard.Application<Configuration> {
 
     public static final CyclingECSScheduler scheduler;
     public static final AWSSchedulerBackend schedulerBackend;
@@ -35,12 +36,12 @@ public class SchedulerApplication extends io.dropwizard.Application<SchedulerCon
     }
 
     @Override
-    public void initialize(Bootstrap<SchedulerConfiguration> bootstrap) {
+    public void initialize(Bootstrap<Configuration> bootstrap) {
         // Nothing here yet
     }
 
     @Override
-    public void run(SchedulerConfiguration configuration,
+    public void run(Configuration configuration,
                     Environment environment) {
         final SchedulerResource schedulerResource = new SchedulerResource();
         final HeartBeatResource heartbeatResource = new HeartBeatResource();
