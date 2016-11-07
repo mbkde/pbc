@@ -7,6 +7,7 @@ import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.event.api.EventPublisher;
 import com.google.common.annotations.VisibleForTesting;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,7 +48,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     // for m4.10xlarge with 20 per instance we get 3x20 = 60 in total
     // with watermark at 0.7 we spin up new instance when we reach 42 agents
     // with watermark at 0.9 we spin up new instance when we reach 54 agents
-    private static final int SMALL_CLUSTER_SIZE = 3; 
+    private static final int SMALL_CLUSTER_SIZE = 3;
+    
+    //grace period in minutes since launch
+    private static final int ASG_MISSING_IN_CLUSTER_GRACE_PERIOD = 15;
 
     private final Duration stalePeriod;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
@@ -63,6 +68,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 20; //20 for us to be able to debug what's going on. (5 minutes only for datadog to report the event)
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
+    
+    //keep a list of asg instanceids that we reported as sad
+    final List<String> reportedLonelyAsgInstances = new ArrayList<>();
 
     private final SchedulerBackend schedulerBackend;
     private final ECSConfiguration globalConfiguration;
@@ -229,8 +237,26 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 }
             }
         });
-        
-        if (asgInstances.size() != containerInstances.size()) {
+        //sometimes asg instances get stuck on startup and never reach ecs, report on it.
+        Set<String> lonelyAsgInstances = new HashSet<>(asgInstances);
+        lonelyAsgInstances.removeAll(containerInstances.keySet());
+        if (!lonelyAsgInstances.isEmpty()) {
+            lonelyAsgInstances.stream()
+                    .filter((String t) -> {
+                        Instance ec2 = instances.get(t);
+                        if (ec2 != null) {
+                            return Duration.ofMinutes(ASG_MISSING_IN_CLUSTER_GRACE_PERIOD).toMillis() < (new Date().getTime() - ec2.getLaunchTime().getTime());
+                        }
+                        return false;
+                    })
+                    .filter((String t) -> !reportedLonelyAsgInstances.contains(t))
+                    .forEach((String t) -> {
+                        eventPublisher.publish(new DockerAgentEcsStaleAsgInstanceEvent(t));
+                        reportedLonelyAsgInstances.add(t);
+                        if (reportedLonelyAsgInstances.size() > 50) { //random number to keep the list from growing indefinitely
+                            reportedLonelyAsgInstances.remove(0);
+                        }
+                    });
             logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})", asgInstances.size(), containerInstances.size());
         }
         return new DockerHosts(dockerHosts.values(), stalePeriod);

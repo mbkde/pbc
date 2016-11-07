@@ -22,8 +22,10 @@ import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.google.common.collect.Sets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -40,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mockito.Matchers;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -613,7 +616,54 @@ public class CyclingECSSchedulerTest {
         verify(schedulerBackend, times(1)).terminateInstances(anyList(), anyString(), Matchers.eq(true));
         verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
         assertEquals("arn2", arn.get());
-    }    
+    }
+
+    @Test
+    public void asgIsLonely() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 2000, 2000, 2000, 2000),
+                    ci("id2", "arn2", true, 2000, 200, 2000, 400),
+                    ci("id3", "arn3", true, 2000, 300, 2000, 300),
+                    ci("id4", "arn4", true, 2000, 400, 2000, 200),
+                    ci("id5", "arn5", true, 2000, 2000, 2000, 2000) //unused stale only gets killed
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date()),
+                        ec2("id6", new Date(System.currentTimeMillis() - Duration.ofHours(1).toMillis()))
+                ),
+                //id5 is not in ASG
+                Sets.newHashSet("id1", "id2", "id3", "id4", "id5", "id6"));
+        final EventPublisher eventPublisher = mock(EventPublisher.class);
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), eventPublisher);
+
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100, null), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+            }
+        });
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, 100, 100, null), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+            }
+        });
+        awaitProcessing(scheduler);
+
+        verify(eventPublisher, times(1)).publish(any(DockerAgentEcsStaleAsgInstanceEvent.class));
+
+    }
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
         return mockBackend(containerInstances, ec2Instances, ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
