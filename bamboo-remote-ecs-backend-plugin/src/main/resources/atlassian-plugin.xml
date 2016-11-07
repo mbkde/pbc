@@ -1,0 +1,52 @@
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}"/>
+    </plugin-info>
+
+    <!-- add our i18n resource -->
+    <resource type="i18n" name="i18n" location="bamboo-remote-ecs-backend"/>
+
+    <component key="isolatedAgentService" class="com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl" public="true">
+        <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
+    </component>
+
+    <component-import key="pluginScheduler">
+        <description>SAL Scheduler</description>
+        <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
+    </component-import>
+
+    <component key="globalConfiguration" class="com.atlassian.buildeng.ecs.remote.GlobalConfiguration">
+    </component>
+
+    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+
+    <!-- REST resources -->
+    <rest key="pbc-ecs-remote" path="/pbc-ecs-remote" version="1.0">
+        <description>Provides the REST resource</description>
+    </rest>
+
+    <web-resource key="aui-stuff">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+
+        <resource type="download" name="viewRemoteEcsConfiguration.js" location="/viewRemoteEcsConfiguration.js"/>
+        <context>viewRemoteEcsConfiguration</context>
+    </web-resource>
+
+    <web-item key="docker-config" name="Configure ECS Remote Backend" section="system.admin/plugins" weight="10">
+        <description key="admin.web-iterm.docker-config.desc"/>
+        <label key="admin.web-iterm.docker-config.label"/>
+        <link linkId="docker-config-link">/admin/viewRemoteEcsConfiguration.action</link>
+    </web-item>
+
+    <xwork key="docker-configuration" name="Configure ECS Remote Backend">
+        <package name="remoteEcsConfiguration" extends="admin">
+            <action name="viewRemoteEcsConfiguration" class="com.atlassian.buildeng.ecs.remote.ConfigurationAction">
+                <result name="success" type="freemarker">/config/ecsRemoteConfig.ftl</result>
+            </action>
+        </package>
+    </xwork>
+</atlassian-plugin>
