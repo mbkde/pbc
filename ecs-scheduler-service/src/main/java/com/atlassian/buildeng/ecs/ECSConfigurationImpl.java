@@ -23,9 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionRegistrations.Backend {
-    private static final String cluster = "sandbox_bamboo";
-    private static final String asg = "Sandbox Bamboo ECS";
-    private static final String taskDefinitionName = "sandbox-bamboo-generated-test";
+    static final String ECS_TASK_DEF = "ECS_TASK_DEF";
+    static final String ECS_ASG = "ECS_ASG";
+    static final String ECS_CLUSTER = "ECS_CLUSTER";
+    private static final String cluster = System.getenv(ECS_CLUSTER);
+    private static final String asg = System.getenv(ECS_ASG);
+    private static final String taskDefinitionName = System.getenv(ECS_TASK_DEF);
     private Map<String, Integer> ecsTaskMapping = new HashMap<>();
     private Map<Configuration, Integer> configurationMapping = new HashMap<>();
 
