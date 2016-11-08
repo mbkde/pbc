@@ -20,7 +20,11 @@ import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
+import com.atlassian.bamboo.deployments.results.DeploymentResult;
+import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.security.ImpersonationHelper;
+import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
@@ -60,6 +64,11 @@ public class ECSWatchdogJob implements PluginJob {
         DeploymentExecutionService deploymentExecutionService = (DeploymentExecutionService) ContainerManager.getComponent("deploymentExecutionService");
         if (deploymentExecutionService == null) {
             logger.info("no deploymentExecutionService");
+            throw new IllegalStateException();
+        }
+        DeploymentResultService deploymentResultService = (DeploymentResultService) ContainerManager.getComponent("deploymentResultService");
+        if (deploymentResultService == null) {
+            logger.info("no deploymentResultService");
             throw new IllegalStateException();
         }
         ErrorUpdateHandler errorUpdateHandler = (ErrorUpdateHandler) ContainerManager.getComponent("errorUpdateHandler");
@@ -126,9 +135,14 @@ public class ECSWatchdogJob implements PluginJob {
                                 current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                                 buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
                             } else if (t.getView() instanceof DeploymentContext) {
-                                //TODO not sure how to deal with queued deployments
-//                                DeploymentContext dc = (DeploymentContext) t.getView();
-//                                deploymentExecutionService.stop(dc.getDeploymentResultId());
+                                DeploymentContext dc = (DeploymentContext) t.getView();
+                                ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+                                    //without runWithSystemAuthority() this call terminates execution with a log entry only
+                                    DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
+                                    if (deploymentResult != null) {
+                                        deploymentExecutionService.stop(deploymentResult, null);
+                                    }
+                                });
                             } else {
                                 logger.error("unknown type of CommonContext {}", t.getView().getClass());
                             }
