@@ -1,5 +1,5 @@
 FROM java:8
-ADD target/ecs-scheduler-service-*-SNAPSHOT.jar /service/EcsSchedulerService.jar
+ADD target/ecs-scheduler-service-*.jar /service/EcsSchedulerService.jar
 
 EXPOSE 8080
 
