@@ -26,10 +26,13 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
+import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.event.agent.AgentRegisteredEvent;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.security.ImpersonationHelper;
+import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
@@ -67,6 +70,7 @@ public class PreBuildQueuedEventListener {
     private final AgentCreationRescheduler rescheduler;
     private final JMXAgentsService jmx;
     private final DeploymentResultService deploymentResultService;
+    private final DeploymentExecutionService deploymentExecutionService;
     private final AgentCommandSender agentCommandSender;
     private final AgentManager agentManager;
     private final EventPublisher eventPublisher;
@@ -78,6 +82,7 @@ public class PreBuildQueuedEventListener {
                                         AgentCreationRescheduler rescheduler,
                                         JMXAgentsService jmx,
                                         DeploymentResultService deploymentResultService,
+                                        DeploymentExecutionService deploymentExecutionService,
                                         AgentCommandSender agentCommandSender,
                                         EventPublisher eventPublisher,
                                         AgentManager agentManager,
@@ -92,6 +97,7 @@ public class PreBuildQueuedEventListener {
         this.agentCommandSender = agentCommandSender;
         this.eventPublisher = eventPublisher;
         this.dockerSoxService = dockerSoxService;
+        this.deploymentExecutionService = deploymentExecutionService;
     }
 
     @EventListener
@@ -170,9 +176,14 @@ public class PreBuildQueuedEventListener {
             context.getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
             buildQueueManager.removeBuildFromQueue(context.getResultKey());
         } else if (context instanceof DeploymentContext) {
-            //TODO not sure how to deal with queued deployments
-//                            DeploymentContext dc = (DeploymentContext)event.getContext();
-//                            deploymentResultService.updateLifeCycleState(dc.getDeploymentResultId(), LifeCycleState.NOT_BUILT);
+            DeploymentContext dc = (DeploymentContext)context;
+            ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+                //without runWithSystemAuthority() this call terminates execution with a log entry only
+                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
+                if (deploymentResult != null) {
+                    deploymentExecutionService.stop(deploymentResult, null);
+                }
+            });
         }
     }
 
@@ -236,13 +247,17 @@ public class PreBuildQueuedEventListener {
     @EventListener
     public void deploymentFinished(DeploymentFinishedEvent event) {
         LOG.info("deployment finished event:" + event);
-        DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
-        Configuration config = AccessConfiguration.forDeploymentResult(dr);
-        if (config.isEnabled()) {
-            BuildAgent agent = dr != null ? dr.getAgent() : null;
-            if (agent != null) {
-                DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
+        ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+            DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
+            if (dr != null) {
+                Configuration config = AccessConfiguration.forDeploymentResult(dr);
+                if (config.isEnabled()) {
+                    BuildAgent agent = dr.getAgent();
+                    if (agent != null) {
+                        DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
+                    }
+                }
             }
-        }
+        });
     }
 }
