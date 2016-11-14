@@ -35,12 +35,22 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
 import com.google.common.collect.Lists;
+
+import java.io.File;
+import java.io.FileReader;
+import java.nio.file.Files;
 import java.util.Collection;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 
 public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
@@ -72,6 +82,21 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
+            File metadata = new File("/buildeng/bamboo-agent-home/xml-data/build-dir/metadata");
+            if (metadata.exists()) {
+                JsonElement topLevel = new Gson().fromJson(new FileReader(metadata.getPath()), JsonElement.class);
+                topLevel.getAsJsonArray().forEach(jsonElement -> {
+                    JsonObject curr = jsonElement.getAsJsonObject();
+                    String name = curr.get("name").getAsString();
+                    if (name != null && !name.equals(Constants.METADATA_CONTAINER_NAME) && !name.equals(Constants.AMAZON_MAGIC_VOLUME_NAME)) {
+                        String hash = curr.get("hash").getAsString();
+                        String tag  = curr.get("tag").getAsString();
+                        buildLogger.addBuildLogEntry(String.format("Docker image '%s' had hash: %s", tag, hash ));
+                    }
+                });
+            } else {
+                buildLogger.addBuildLogEntry("No metadata found");
+            }
         }
         return buildContext;
     }
