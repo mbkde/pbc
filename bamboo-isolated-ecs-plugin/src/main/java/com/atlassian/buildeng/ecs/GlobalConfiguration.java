@@ -21,6 +21,10 @@ import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.bamboo.persister.AuditLogEntry;
+import com.atlassian.bamboo.persister.AuditLogMessage;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.RevisionNotActiveException;
@@ -41,7 +45,9 @@ import com.atlassian.buildeng.ecs.scheduling.BambooServerEnvironment;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
-import org.codehaus.plexus.util.StringUtils;
+import java.util.Date;
+import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -62,10 +68,15 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
+    private final AuditLogService auditLogService;
+    private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
+    public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor,
+            AuditLogService auditLogService, BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
+        this.auditLogService = auditLogService;
+        this.authenticationContext = authenticationContext;
     }
 
     @Override
@@ -248,9 +259,19 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     synchronized void setConfig(Config config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getAutoScalingGroupName()));
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getEcsClusterName()));
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, config.getEcsClusterName());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, config.getAutoScalingGroupName());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, StringUtils.isBlank(config.getSidekickImage()) ? Constants.DEFAULT_SIDEKICK_REPOSITORY : config.getSidekickImage());
+        if (!StringUtils.equals(config.getEcsClusterName(), getCurrentCluster())) {
+            auditLogEntry("PBC Cluster", getCurrentCluster(), config.getEcsClusterName());
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, config.getEcsClusterName());
+        }
+        if (!StringUtils.equals(config.getAutoScalingGroupName(), getCurrentASG())) {
+            auditLogEntry("PBC Autoscaling Group", getCurrentASG(), config.getAutoScalingGroupName());
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, config.getAutoScalingGroupName());
+        }
+        String newSidekick = StringUtils.isBlank(config.getSidekickImage()) ? Constants.DEFAULT_SIDEKICK_REPOSITORY : config.getSidekickImage();
+        if (!StringUtils.equals(newSidekick, getCurrentSidekick())) {
+            auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), newSidekick);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, newSidekick);
+        }
         Config.LogConfiguration lc = config.getLogConfiguration();
         String driver = lc != null ? lc.getDriver() : null;
         if (StringUtils.isBlank(driver)) {
@@ -259,6 +280,15 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, driver);
         }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY, lc != null ? lc.getOptions() : Collections.emptyMap());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENVS_KEY, config.getEnvs()  != null ? config.getEnvs() : Collections.emptyMap());
+        Map<String, String> newMap = config.getEnvs()  != null ? config.getEnvs() : Collections.emptyMap();
+        if (!newMap.equals(getEnvVars())) {
+            auditLogEntry("PBC Env Variables", Objects.toString(getEnvVars()), Objects.toString(newMap));
+        }
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENVS_KEY, newMap);
+    }
+
+    private void auditLogEntry(String name, String oldValue, String newValue) {
+        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+        auditLogService.log(ent);
     }
 }
