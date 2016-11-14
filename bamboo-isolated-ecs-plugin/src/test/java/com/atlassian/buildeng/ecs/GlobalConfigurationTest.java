@@ -18,6 +18,8 @@ package com.atlassian.buildeng.ecs;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -46,6 +48,12 @@ public class GlobalConfigurationTest {
     
     @Mock
     private AdministrationConfigurationAccessor administrationAccessor;
+    
+    @Mock
+    private AuditLogService auditLogService;
+
+    @Mock
+    private BambooAuthenticationContext authenticationContext;
     
     @InjectMocks
     GlobalConfiguration configuration;
