@@ -31,26 +31,21 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Lists;
-
-import java.io.File;
-import java.io.FileReader;
-import java.nio.file.Files;
-import java.util.Collection;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.io.File;
+import java.io.FileReader;
+import java.util.Collection;
 import java.util.Map;
 
 public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
