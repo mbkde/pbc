@@ -77,7 +77,7 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
-            File metadata = new File("/buildeng/bamboo-agent-home/xml-data/build-dir/metadata");
+            File metadata = new File(Constants.METADATA_FILE_PATH);
             if (metadata.exists()) {
                 JsonElement topLevel = new Gson().fromJson(new FileReader(metadata.getPath()), JsonElement.class);
                 topLevel.getAsJsonArray().forEach(jsonElement -> {

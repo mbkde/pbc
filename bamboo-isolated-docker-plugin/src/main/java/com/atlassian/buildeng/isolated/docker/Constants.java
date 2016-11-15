@@ -37,4 +37,5 @@ public interface Constants {
     // ecs uses this for unnamed host volume mounts
     String AMAZON_MAGIC_VOLUME_NAME = "~internal~ecs-emptyvolume-source";
     String METADATA_CONTAINER_NAME = "bamboo-agent-metadata";
+    String METADATA_FILE_PATH = "/buildeng/bamboo-agent-home/xml-data/build-dir/metadata";
 }
