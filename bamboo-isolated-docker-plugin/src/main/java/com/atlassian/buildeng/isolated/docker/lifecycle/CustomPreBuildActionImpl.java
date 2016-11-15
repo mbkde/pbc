@@ -79,16 +79,18 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
             File metadata = new File(Constants.METADATA_FILE_PATH);
             if (metadata.exists()) {
-                JsonElement topLevel = new Gson().fromJson(new FileReader(metadata.getPath()), JsonElement.class);
-                topLevel.getAsJsonArray().forEach(jsonElement -> {
-                    JsonObject curr = jsonElement.getAsJsonObject();
-                    String name = curr.get("name").getAsString();
-                    if (name != null && !name.equals(Constants.METADATA_CONTAINER_NAME) && !name.equals(Constants.AMAZON_MAGIC_VOLUME_NAME)) {
-                        String hash = curr.get("hash").getAsString();
-                        String tag  = curr.get("tag").getAsString();
-                        buildLogger.addBuildLogEntry(String.format("Docker image '%s' had hash: %s", tag, hash ));
-                    }
-                });
+                try (FileReader r = new FileReader(metadata.getPath())) {
+                    JsonElement topLevel = new Gson().fromJson(r, JsonElement.class);
+                    topLevel.getAsJsonArray().forEach(jsonElement -> {
+                        JsonObject curr = jsonElement.getAsJsonObject();
+                        String name = curr.get("name").getAsString();
+                        if (name != null && !name.equals(Constants.METADATA_CONTAINER_NAME) && !name.equals(Constants.AMAZON_MAGIC_VOLUME_NAME)) {
+                            String hash = curr.get("hash").getAsString();
+                            String tag  = curr.get("tag").getAsString();
+                            buildLogger.addBuildLogEntry(String.format("Docker image '%s' had hash: %s", tag, hash ));
+                        }
+                    });
+                }
             } else {
                 buildLogger.addBuildLogEntry("No metadata found");
             }
