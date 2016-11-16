@@ -180,6 +180,9 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     overrides.withContainerOverrides(ride);
                 }
             });
+            // Pass RESULT_ID and friends into the metadata container
+            overrides.withContainerOverrides(new ContainerOverride().withName(Constants.METADATA_CONTAINER_NAME)
+                    .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId())));
             StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
                     .withCluster(cluster)
                     .withContainerInstances(containerArn)
