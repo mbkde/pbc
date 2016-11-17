@@ -20,12 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-/**
- *
- * @author mkleint
- */
 public class DockerHostTest {
 
     public DockerHostTest() {

@@ -5,10 +5,12 @@ import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,9 +86,9 @@ public class DockerHost {
 
     public boolean reachingEndOfBillingCycle() {
         // Mod by hour
-        long millisSinceStartOfCycle = ageMillis() % (1000 * 60 * 60);
-        // Are we in the last quarter of an hourly cycle
-        return millisSinceStartOfCycle >= 1000 * 60 * (60 - Constants.MINUTES_BEFORE_BILLING_CYCLE);
+        long millisSinceStartOfCycle = ageMillis() % Duration.ofMinutes(60).toMillis();
+        // Are we at the end of an hourly cycle?
+        return millisSinceStartOfCycle >= Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE).toMillis();
     }
 
     static Comparator<DockerHost> compareByResourcesAndAge() {
