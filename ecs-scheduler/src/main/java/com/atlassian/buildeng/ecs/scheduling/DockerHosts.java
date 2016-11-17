@@ -76,7 +76,7 @@ final class DockerHosts {
     }
 
     List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
-        return freshHosts.stream().filter((DockerHost dockerHost) -> !usedCandidates.contains(dockerHost)).filter(DockerHost::runningNothing).filter(DockerHost::inSecondHalfOfBillingCycle).collect(Collectors.toList());
+        return freshHosts.stream().filter((DockerHost dockerHost) -> !usedCandidates.contains(dockerHost)).filter(DockerHost::runningNothing).filter(DockerHost::reachingEndOfBillingCycle).collect(Collectors.toList());
     }
 
     private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {

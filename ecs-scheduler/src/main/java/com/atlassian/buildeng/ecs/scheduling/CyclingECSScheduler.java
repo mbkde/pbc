@@ -89,7 +89,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, int requiredMemory, int requiredCpu) {
         return candidates.stream()
                 .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
-                .sorted(DockerHost.compareByResources())
+                .sorted(DockerHost.compareByResourcesAndAge())
                 .findFirst();
     }
 
@@ -424,7 +424,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         @Override
         public void run() {
             try {
-                Pair<SchedulingRequest, SchedulingCallback> pair = requests.poll(30, TimeUnit.MINUTES);
+                Pair<SchedulingRequest, SchedulingCallback> pair = requests.poll(Constants.POLLING_INTERVAL, TimeUnit.MINUTES);
                 if (pair != null) {
                     processRequests(pair);
                 } else {
