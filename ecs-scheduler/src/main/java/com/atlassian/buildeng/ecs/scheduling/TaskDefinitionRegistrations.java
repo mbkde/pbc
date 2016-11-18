@@ -22,6 +22,7 @@ import com.amazonaws.protocol.json.SdkJsonProtocolFactory;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
+import com.amazonaws.services.ecs.model.HostVolumeProperties;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.MountPoint;
@@ -85,6 +86,7 @@ public class TaskDefinitionRegistrations {
                         .withName(Constants.AGENT_CONTAINER_NAME)
                         .withCpu(configuration.getSize().cpu())
                         .withMemoryReservation(configuration.getSize().memory())
+                        .withMemory((int) (configuration.getSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
                         .withImage(configuration.getDockerImage())
                         .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
                         .withEntryPoint(Constants.RUN_SCRIPT)
@@ -94,9 +96,10 @@ public class TaskDefinitionRegistrations {
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
                 globalConfiguration), globalConfiguration);
         RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
-                .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick()))
+                .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick()), Constants.METADATA_DEFINITION)
                 .withFamily(globalConfiguration.getTaskDefinitionName())
-                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME));
+                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME),
+                             new Volume().withName(Constants.DOCKER_SOCKET_VOLUME_NAME).withHost(new HostVolumeProperties().withSourcePath(Constants.DOCKER_SOCKET)));
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = new ContainerDefinition()
@@ -104,6 +107,7 @@ public class TaskDefinitionRegistrations {
                     .withImage(t.getImage())
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
+                    .withMemory((int) (t.getExtraSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
                     .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                     .withEssential(false);
             if (isDockerInDockerImage(t.getImage())) {

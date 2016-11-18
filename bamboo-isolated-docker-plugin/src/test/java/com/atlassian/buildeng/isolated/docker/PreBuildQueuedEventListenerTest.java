@@ -25,6 +25,7 @@ import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
+import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -36,9 +37,11 @@ import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -62,11 +65,18 @@ public class PreBuildQueuedEventListenerTest {
     @Mock
     private EventPublisher eventPublisher;
     @Mock
+    private DockerSoxService dockerSoxService;
+    @Mock
     private JMXAgentsService jmx;
             
     @InjectMocks
     private PreBuildQueuedEventListener listener;
-    
+
+    @Before
+    public void mockSox() {
+        when(dockerSoxService.checkSoxCompliance(any())).thenReturn(Boolean.TRUE);
+    }
+
     @Test
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);

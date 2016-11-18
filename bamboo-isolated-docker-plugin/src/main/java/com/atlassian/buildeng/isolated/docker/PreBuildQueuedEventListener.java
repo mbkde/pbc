@@ -26,10 +26,13 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
+import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.event.agent.AgentRegisteredEvent;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.security.ImpersonationHelper;
+import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
@@ -42,6 +45,7 @@ import com.atlassian.buildeng.isolated.docker.events.DockerAgentTimeoutEvent;
 import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
+import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -66,10 +70,11 @@ public class PreBuildQueuedEventListener {
     private final AgentCreationRescheduler rescheduler;
     private final JMXAgentsService jmx;
     private final DeploymentResultService deploymentResultService;
+    private final DeploymentExecutionService deploymentExecutionService;
     private final AgentCommandSender agentCommandSender;
     private final AgentManager agentManager;
     private final EventPublisher eventPublisher;
- 
+    private final DockerSoxService dockerSoxService;
 
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                         ErrorUpdateHandler errorUpdateHandler,
@@ -77,9 +82,11 @@ public class PreBuildQueuedEventListener {
                                         AgentCreationRescheduler rescheduler,
                                         JMXAgentsService jmx,
                                         DeploymentResultService deploymentResultService,
+                                        DeploymentExecutionService deploymentExecutionService,
                                         AgentCommandSender agentCommandSender,
                                         EventPublisher eventPublisher,
-                                        AgentManager agentManager) {
+                                        AgentManager agentManager,
+                                        DockerSoxService dockerSoxService) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -89,6 +96,8 @@ public class PreBuildQueuedEventListener {
         this.agentManager = agentManager;
         this.agentCommandSender = agentCommandSender;
         this.eventPublisher = eventPublisher;
+        this.dockerSoxService = dockerSoxService;
+        this.deploymentExecutionService = deploymentExecutionService;
     }
 
     @EventListener
@@ -96,6 +105,13 @@ public class PreBuildQueuedEventListener {
         BuildContext buildContext = event.getContext();
         Configuration config = AccessConfiguration.forContext(buildContext);
         if (config.isEnabled()) {
+            if (!dockerSoxService.checkSoxCompliance(config)) {
+                String message = "PBC Docker image(s) used by " + event.getContext().getResultKey() +  " not SOX compliant";
+                errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
+                terminateBuild(message, buildContext);
+                return;
+            }
+            LOG.info("PBC job {} got queued.", event.getResultKey());
             config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config, buildContext));
@@ -135,7 +151,7 @@ public class PreBuildQueuedEventListener {
                         });
                         if (result.hasErrors()) {
                             String error = Joiner.on("\n").join(result.getErrors()); 
-                            terminateBuild(error);
+                            terminateBuild(error, event.getContext());
                             errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + error);
                         } else {
                             jmx.incrementScheduled();
@@ -144,25 +160,31 @@ public class PreBuildQueuedEventListener {
 
                     @Override
                     public void handle(IsolatedDockerAgentException exception) {
-                        terminateBuild(exception.getLocalizedMessage());
+                        terminateBuild(exception.getLocalizedMessage(), event.getContext());
                         errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error", exception);
                     }
 
-                    private void terminateBuild(String errorMessage) {
-                        event.getContext().getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, errorMessage);
-                        jmx.incrementFailed();
-                        eventPublisher.publish(new DockerAgentFailEvent(errorMessage, event.getContext().getEntityKey()));
-                        if (event.getContext() instanceof BuildContext) { 
-                            event.getContext().getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
-                            buildQueueManager.removeBuildFromQueue(event.getContext().getResultKey());
-                        } else if (event.getContext() instanceof DeploymentContext) {
-                            //TODO not sure how to deal with queued deployments
-//                            DeploymentContext dc = (DeploymentContext)event.getContext();
-//                            deploymentResultService.updateLifeCycleState(dc.getDeploymentResultId(), LifeCycleState.NOT_BUILT);
-                        }
-                    }
                 });
 
+    }
+
+    private void terminateBuild(String errorMessage, CommonContext context) {
+        context.getCurrentResult().getCustomBuildData().put(Constants.RESULT_ERROR, errorMessage);
+        jmx.incrementFailed();
+        eventPublisher.publish(new DockerAgentFailEvent(errorMessage, context.getEntityKey()));
+        if (context instanceof BuildContext) {
+            context.getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
+            buildQueueManager.removeBuildFromQueue(context.getResultKey());
+        } else if (context instanceof DeploymentContext) {
+            DeploymentContext dc = (DeploymentContext)context;
+            ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+                //without runWithSystemAuthority() this call terminates execution with a log entry only
+                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
+                if (deploymentResult != null) {
+                    deploymentExecutionService.stop(deploymentResult, null);
+                }
+            });
+        }
     }
 
     private void clearResultCustomData(CommonContext context) {
@@ -207,25 +229,35 @@ public class PreBuildQueuedEventListener {
     @EventListener
     public void deploymentTriggered(DeploymentTriggeredEvent event) {
         LOG.info("deployment triggered event:" + event);
-        DeploymentContext buildContext = event.getContext();
-        Configuration config = AccessConfiguration.forContext(buildContext);
+        DeploymentContext context = event.getContext();
+        Configuration config = AccessConfiguration.forContext(context);
         if (config.isEnabled()) {
-            config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
+            if (!dockerSoxService.checkSoxCompliance(config)) {
+                String message = "PBC Docker image(s) used by " + event.getContext().getResultKey() +  " not SOX compliant";
+                errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
+                terminateBuild(message, context);
+                return;
+            }
+            config.copyTo(context.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
-            retry(new RetryAgentStartupEvent(config, buildContext));
+            retry(new RetryAgentStartupEvent(config, context));
         }
     }
     
     @EventListener
     public void deploymentFinished(DeploymentFinishedEvent event) {
         LOG.info("deployment finished event:" + event);
-        DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
-        Configuration config = AccessConfiguration.forDeploymentResult(dr);
-        if (config.isEnabled()) {
-            BuildAgent agent = dr != null ? dr.getAgent() : null;
-            if (agent != null) {
-                DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
+        ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+            DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
+            if (dr != null) {
+                Configuration config = AccessConfiguration.forDeploymentResult(dr);
+                if (config.isEnabled()) {
+                    BuildAgent agent = dr.getAgent();
+                    if (agent != null) {
+                        DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
+                    }
+                }
             }
-        }
+        });
     }
 }

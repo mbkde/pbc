@@ -6,14 +6,16 @@ import com.atlassian.buildeng.ecs.resources.HeartBeatResource;
 import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
+import io.dropwizard.Configuration;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by ojongerius on 09/05/2016.
  */
 
-public class SchedulerApplication extends io.dropwizard.Application<SchedulerConfiguration> {
+public class SchedulerApplication extends io.dropwizard.Application<Configuration> {
 
     public static final CyclingECSScheduler scheduler;
     public static final AWSSchedulerBackend schedulerBackend;
@@ -31,16 +33,28 @@ public class SchedulerApplication extends io.dropwizard.Application<SchedulerCon
     }
 
     public static void main(String[] args) throws Exception {
+        validate(configuration);
         new SchedulerApplication().run(new String[] {"server"});
     }
 
+    private static void validate(ECSConfiguration c) {
+        if (StringUtils.isBlank(c.getCurrentASG()) ||
+            StringUtils.isBlank(c.getCurrentCluster()) ||
+            StringUtils.isBlank(c.getTaskDefinitionName())) {
+            throw new IllegalStateException("Environment variables " +
+                    ECSConfigurationImpl.ECS_ASG + ", " +
+                    ECSConfigurationImpl.ECS_CLUSTER + ", " +
+                    ECSConfigurationImpl.ECS_TASK_DEF +  " are mandatory.");
+        }
+    }
+
     @Override
-    public void initialize(Bootstrap<SchedulerConfiguration> bootstrap) {
+    public void initialize(Bootstrap<Configuration> bootstrap) {
         // Nothing here yet
     }
 
     @Override
-    public void run(SchedulerConfiguration configuration,
+    public void run(Configuration configuration,
                     Environment environment) {
         final SchedulerResource schedulerResource = new SchedulerResource();
         final HeartBeatResource heartbeatResource = new HeartBeatResource();

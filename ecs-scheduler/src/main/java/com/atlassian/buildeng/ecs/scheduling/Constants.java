@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
+import com.amazonaws.services.ecs.model.MountPoint;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 
 public interface Constants {
@@ -19,8 +20,17 @@ public interface Constants {
     // The name of the agent container
     String AGENT_CONTAINER_NAME = "bamboo-agent";
 
+    // The name of the metadata container
+    String METADATA_CONTAINER_NAME = "bamboo-agent-metadata";
+
     // The name of the build directory volume for dind
     String BUILD_DIR_VOLUME_NAME = "build-dir";
+
+    String METADATA_IMAGE = "docker.atlassian.io/buildeng/ecs-docker-metadata";
+
+    String DOCKER_SOCKET = "/var/run/docker.sock";
+
+    String DOCKER_SOCKET_VOLUME_NAME = "docker_socket";
 
     /**
      * The environment variable to override on the agent per image
@@ -51,7 +61,10 @@ public interface Constants {
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
 
     String RESULT_PART_TASKARN = "TaskARN";
-       
+
+    // Ratio between soft and hard limits
+    Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
+
     // The container definition of the sidekick
     ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
@@ -59,4 +72,12 @@ public interface Constants {
                     .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
                     .withEssential(false);
 
+    ContainerDefinition METADATA_DEFINITION =
+            new ContainerDefinition()
+                    .withName(METADATA_CONTAINER_NAME)
+                    .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
+                    .withImage(METADATA_IMAGE)
+                    .withMountPoints(new MountPoint().withContainerPath(DOCKER_SOCKET).withSourceVolume(DOCKER_SOCKET_VOLUME_NAME),
+                                     new MountPoint().withContainerPath(BUILD_DIR).withSourceVolume(BUILD_DIR_VOLUME_NAME))
+                    .withEssential(false);
 }
