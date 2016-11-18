@@ -251,7 +251,7 @@ public class CyclingECSSchedulerTest {
     }    
     
     @Test
-    public void scheduleTerminatingOfIdleInSecondHalfOfBillingCycle() throws Exception {
+    public void scheduleTerminatingOfIdleInLastQuarterOfBillingCycle() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
                     ci("id1", "arn1", true, 2000, 2000, 2000, 2000),
@@ -261,10 +261,10 @@ public class CyclingECSSchedulerTest {
                     ci("id5", "arn5", true, 2000, 500, 2000, 100)
                     ),
                 Arrays.asList(
-                        // 40 minute old instance, i.e. in its second half of the billing cycle and should be terminated
-                        ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 40)),
-                        // 20 minute old instance i.e. in its first half of the billing cycle, should not be terminated
-                        ec2("id2", new Date(System.currentTimeMillis() - 1000 * 60 * 20)),
+                        // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
+                        ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
+                        // 45 minute old instance i.e. in its working stage of the billing cycle, should not be terminated
+                        ec2("id2", new Date(System.currentTimeMillis() - 1000 * 60 * 45)),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())
