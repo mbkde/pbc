@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.amazonaws.services.ecs.model.ClientException;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -74,8 +73,6 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
         logger.warn("Failed to schedule {}, treating as overload: {}", resultId, exception);
         if (exception.getCause() instanceof TimeoutException) {
             toRet.withRetryRecoverable("Request timed out without completing.");
-        } else if(exception.getCause() instanceof ClientException && exception.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
-            toRet.withRetryRecoverable("Hit Api limit for task revisions.");
         } else {
             toRet.withRetryRecoverable("No Container Instance currently available");
         }
