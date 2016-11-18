@@ -21,11 +21,10 @@ import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultSchedulingCallback implements SchedulingCallback {
     private final static Logger logger = LoggerFactory.getLogger(DefaultSchedulingCallback.class);
@@ -67,14 +66,13 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
     }
 
     @Override
-    public void handle(ECSException exception)
-    {
+    public void handle(ECSException exception) {
         IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
         logger.warn("Failed to schedule {}, treating as overload: {}", resultId, exception);
         if (exception.getCause() instanceof TimeoutException) {
             toRet.withRetryRecoverable("Request timed out without completing.");
         } else {
-            toRet.withError("No Container Instance currently available");
+            toRet.withError("No Container Instance currently available. Reason: " + exception.getLocalizedMessage());
         }
         callback.handle(toRet);
     }
