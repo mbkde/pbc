@@ -5,10 +5,12 @@ import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,17 +84,23 @@ public class DockerHost {
         return System.currentTimeMillis() - launchTime.getTime();
     }
 
-    public boolean inSecondHalfOfBillingCycle() {
+    public boolean reachingEndOfBillingCycle() {
         // Mod by hour
-        long millisSinceStartOfCycle = ageMillis() % (1000 * 60 * 60);
-        // Are we in the second half hour of an hourly cycle
-        return millisSinceStartOfCycle >= 1000 * 60 * 30;
+        long millisSinceStartOfCycle = ageMillis() % Duration.ofMinutes(60).toMillis();
+        // Are we at the end of an hourly cycle?
+        return millisSinceStartOfCycle >= Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE).toMillis();
     }
 
-    static Comparator<DockerHost> compareByResources() {
+    static Comparator<DockerHost> compareByResourcesAndAge() {
         return (o1, o2) -> {
             if (o1.remainingMemory == o2.remainingMemory) {
-                return Integer.compare(o1.remainingCpu, o2.remainingCpu);
+                if (o1.remainingCpu == o2.remainingCpu) {
+                    //for equals utilization we value older instances higher due to existing caches.
+                    // we want it to come first
+                    return o1.launchTime.compareTo(o2.launchTime);
+                } else {
+                    return Integer.compare(o1.remainingCpu, o2.remainingCpu);
+                }
             } else {
                 return Integer.compare(o1.remainingMemory, o2.remainingMemory);
             }

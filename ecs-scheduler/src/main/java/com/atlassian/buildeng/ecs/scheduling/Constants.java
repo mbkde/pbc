@@ -65,6 +65,18 @@ public interface Constants {
     // Ratio between soft and hard limits
     Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
 
+    /**
+     * the maximum interval in minutes in what the state instances in cluster will be checked and
+     * eventually killed. It should be a bit smaller than MINUTES_BEFORE_BILLING_CYCLE to allow
+     * graceful killing within current billing cycle.
+     */
+    int POLLING_INTERVAL = 8;
+    /**
+     * minutes before billing cycle is reached. it should be a bit bigger than POLLING_INTERVAL
+     * to let the service kill unused instances.
+     */
+    int MINUTES_BEFORE_BILLING_CYCLE = 10;
+
     // The container definition of the sidekick
     ContainerDefinition SIDEKICK_DEFINITION =
             new ContainerDefinition()
