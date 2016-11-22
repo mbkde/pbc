@@ -23,6 +23,7 @@ import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.autoscaling.model.SuspendProcessesRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
@@ -49,6 +50,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,9 +151,29 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 logger.info("Result of detachment: {}", result);
             }
             AmazonEC2Client ec2Client = new AmazonEC2Client();
-            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
-                    new TerminateInstancesRequest(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())));
-            logger.info("Result of instance termination: {}" + ec2Result);
+            try {
+                TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
+                        new TerminateInstancesRequest(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())));
+                logger.info("Result of successful instance termination: {}" + ec2Result);
+            } catch (AmazonEC2Exception e) {
+                //attempt to limit the scope of BUILDENG-12143
+                //according to docs when one instance in list is borked (not allowed to be killed), we might not be able to kill any.
+                //so try one by one, logging the error. If at least one throws exception,
+                // rethrow the original
+                AtomicBoolean failed  = new AtomicBoolean(false);
+                hosts.stream().map(DockerHost::getInstanceId).forEach((String t) -> {
+                    try {
+                        TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
+                                new TerminateInstancesRequest(Collections.singletonList(t)));
+                    } catch (AmazonEC2Exception e1) {
+                        failed.set(true);
+                        logger.error("Failed instance termination:" + t, e1);
+                    }
+                });
+                if (failed.get()) {
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             throw new ECSException(e);
         }
