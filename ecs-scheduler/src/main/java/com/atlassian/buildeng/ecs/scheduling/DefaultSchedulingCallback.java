@@ -72,7 +72,7 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
         if (exception.getCause() instanceof TimeoutException) {
             toRet.withRetryRecoverable("Request timed out without completing.");
         } else {
-            toRet.withRetryRecoverable("No Container Instance currently available");
+            toRet.withRetryRecoverable("No Container Instance currently available. Reason: " + exception.getLocalizedMessage());
         }
         callback.handle(toRet);
     }
