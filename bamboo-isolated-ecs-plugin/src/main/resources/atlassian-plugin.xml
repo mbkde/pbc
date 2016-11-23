@@ -1,6 +1,6 @@
-<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container ECS Backend" plugins-version="2">
     <plugin-info>
-        <description>${project.description}</description>
+        <description>The ECS Backend for per-build container docker agents, managed by the Bamboo server.</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
@@ -51,10 +51,10 @@
         <context>viewDockerConfiguration</context>
     </web-resource>
 
-    <web-item key="docker-config" name="Configure Isolated Docker" section="system.admin/plugins" weight="10">
-        <description key="admin.web-iterm.docker-config.desc"/>
-        <label key="admin.web-iterm.docker-config.label"/>
-        <link linkId="docker-config-link">/admin/viewDockerConfiguration.action</link>
+    <web-item key="docker-config" name="Configure Isolated Docker" section="system.admin/plugins" weight="297">
+        <description key="ecs-docker-config-link.desc"/>
+        <label key="ecs-docker-config-link.label"/>
+        <link linkId="ecs-docker-config-link">/admin/viewDockerConfiguration.action</link>
     </web-item>
 
     <xwork key="docker-configuration" name="Configure Isolated Docker">
