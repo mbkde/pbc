@@ -30,7 +30,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;

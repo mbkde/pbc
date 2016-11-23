@@ -7,7 +7,7 @@ import com.atlassian.bamboo.task.TaskRequirementSupport;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
-import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;

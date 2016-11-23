@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.atlassian.buildeng.isolated.docker.events;
+package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.v2.build.CommonContext;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.event.api.AsynchronousPreferred;
 
 import java.util.UUID;
@@ -46,6 +45,7 @@ public final class RetryAgentStartupEvent {
         retryCount = previousEvent.getRetryCount() + 1;
         uniqueIdentifier = previousEvent.uniqueIdentifier;
     }
+
 
     public int getRetryCount() {
         return retryCount;

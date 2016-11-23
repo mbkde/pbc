@@ -16,7 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.*;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
@@ -42,15 +42,9 @@ import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentTimeoutEvent;
-import com.atlassian.buildeng.isolated.docker.events.RetryAgentStartupEvent;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.google.common.base.Joiner;

@@ -33,6 +33,9 @@ import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
@@ -127,24 +130,30 @@ public class ECSWatchdogJob implements PluginJob {
                         Task tsk = stoppedTasksByArn.get(taskArn);
                         if (tsk != null) {
                             String error = getError(tsk);
-                            logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
-                            errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
-                            current.getCustomBuildData().put(Constants.RESULT_ERROR, error);
-                            eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));
-                            if (t.getView() instanceof BuildContext) {
-                                current.setLifeCycleState(LifeCycleState.NOT_BUILT);
-                                buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
-                            } else if (t.getView() instanceof DeploymentContext) {
-                                DeploymentContext dc = (DeploymentContext) t.getView();
-                                ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
-                                    //without runWithSystemAuthority() this call terminates execution with a log entry only
-                                    DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
-                                    if (deploymentResult != null) {
-                                        deploymentExecutionService.stop(deploymentResult, null);
-                                    }
-                                });
+                            if (error.contains("CannotCreateContainerError") || error.contains("HostConfigError")) {
+                                logger.info("Retrying job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
+                                Configuration config = AccessConfiguration.forContext(t.getView());
+                                eventPublisher.publish(new RetryAgentStartupEvent(config, t.getView()));
                             } else {
-                                logger.error("unknown type of CommonContext {}", t.getView().getClass());
+                                logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
+                                errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
+                                current.getCustomBuildData().put(Constants.RESULT_ERROR, error);
+                                eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));
+                                if (t.getView() instanceof BuildContext) {
+                                    current.setLifeCycleState(LifeCycleState.NOT_BUILT);
+                                    buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
+                                } else if (t.getView() instanceof DeploymentContext) {
+                                    DeploymentContext dc = (DeploymentContext) t.getView();
+                                    ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+                                        //without runWithSystemAuthority() this call terminates execution with a log entry only
+                                        DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
+                                        if (deploymentResult != null) {
+                                            deploymentExecutionService.stop(deploymentResult, null);
+                                        }
+                                    });
+                                } else {
+                                    logger.error("unknown type of CommonContext {}", t.getView().getClass());
+                                }
                             }
                         }
                     }
