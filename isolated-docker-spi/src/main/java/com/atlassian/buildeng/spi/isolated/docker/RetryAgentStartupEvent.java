@@ -45,8 +45,7 @@ public final class RetryAgentStartupEvent {
         retryCount = previousEvent.getRetryCount() + 1;
         uniqueIdentifier = previousEvent.uniqueIdentifier;
     }
-
-
+    
     public int getRetryCount() {
         return retryCount;
     }
