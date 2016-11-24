@@ -23,7 +23,7 @@ import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentlyBuilding;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
-import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;

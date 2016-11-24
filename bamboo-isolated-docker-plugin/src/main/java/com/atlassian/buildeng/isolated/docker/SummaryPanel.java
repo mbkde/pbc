@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.plan.PlanResultKey;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.isolated.docker;
+package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
