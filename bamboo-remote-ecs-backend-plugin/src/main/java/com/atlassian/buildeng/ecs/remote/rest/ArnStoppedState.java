@@ -20,6 +20,9 @@ public class ArnStoppedState {
     String arn;
     String reason;
 
+    public ArnStoppedState() {
+    }
+
     public ArnStoppedState(String arn, String reason) {
         this.arn = arn;
         this.reason = reason;

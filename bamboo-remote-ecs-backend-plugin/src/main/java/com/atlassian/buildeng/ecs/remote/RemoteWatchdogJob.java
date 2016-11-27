@@ -19,7 +19,11 @@ package com.atlassian.buildeng.ecs.remote;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
+import com.atlassian.bamboo.deployments.results.DeploymentResult;
+import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.security.ImpersonationHelper;
+import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
@@ -27,8 +31,6 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
 import com.atlassian.buildeng.ecs.remote.rest.ArnStoppedState;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
@@ -38,14 +40,11 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
-import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +66,11 @@ public class RemoteWatchdogJob implements PluginJob {
         DeploymentExecutionService deploymentExecutionService = (DeploymentExecutionService) ContainerManager.getComponent("deploymentExecutionService");
         if (deploymentExecutionService == null) {
             logger.info("no deploymentExecutionService");
+            throw new IllegalStateException();
+        }
+        DeploymentResultService deploymentResultService = (DeploymentResultService) ContainerManager.getComponent("deploymentResultService");
+        if (deploymentResultService == null) {
+            logger.info("no deploymentResultService");
             throw new IllegalStateException();
         }
         ErrorUpdateHandler errorUpdateHandler = (ErrorUpdateHandler) ContainerManager.getComponent("errorUpdateHandler");
@@ -114,7 +118,7 @@ public class RemoteWatchdogJob implements PluginJob {
                     resource
                         .accept(MediaType.APPLICATION_JSON_TYPE)
                         .type(MediaType.APPLICATION_JSON_TYPE)
-                        .method("GET", new GenericType<List<ArnStoppedState>>(){}, arns);
+                        .post(new GenericType<List<ArnStoppedState>>(){}, arns);
             final Map<String, ArnStoppedState> stoppedTasksByArn = new HashMap<>();
             result.stream().forEach((ArnStoppedState t) -> {
                 stoppedTasksByArn.put(t.getArn(), t);
@@ -139,9 +143,14 @@ public class RemoteWatchdogJob implements PluginJob {
                                 current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                                 buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
                             } else if (t.getView() instanceof DeploymentContext) {
-                                //TODO not sure how to deal with queued deployments
-//                                DeploymentContext dc = (DeploymentContext) t.getView();
-//                                deploymentExecutionService.stop(dc.getDeploymentResultId());
+                                DeploymentContext dc = (DeploymentContext) t.getView();
+                                ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+                                    //without runWithSystemAuthority() this call terminates execution with a log entry only
+                                    DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
+                                    if (deploymentResult != null) {
+                                        deploymentExecutionService.stop(deploymentResult, null);
+                                    }
+                                });
                             } else {
                                 logger.error("unknown type of CommonContext {}", t.getView().getClass());
                             }
@@ -154,11 +163,14 @@ public class RemoteWatchdogJob implements PluginJob {
         catch (UniformInterfaceException e)
         {
             int code = e.getResponse().getClientResponseStatus().getStatusCode();
+            String s = "";
             if (e.getResponse().hasEntity())
             {
-                String s = e.getResponse().getEntity(String.class);
+                s = e.getResponse().getEntity(String.class);
             }
-            logger.error("Error contacting ECS", e);
+            logger.error("Error contacting ECS:" + code + " " + s, e);
+        } catch (Throwable t) {
+            logger.error("error:", t);
         }
 
     }
