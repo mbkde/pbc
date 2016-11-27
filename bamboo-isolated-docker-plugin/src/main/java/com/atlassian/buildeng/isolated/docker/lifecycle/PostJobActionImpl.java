@@ -30,7 +30,7 @@ import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
-import com.atlassian.buildeng.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.OptionalLong;

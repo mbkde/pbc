@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>1.54-SNAPSHOT</version>
+        <version>1.58-SNAPSHOT</version>
     </parent>
     <artifactId>isolated-docker-spi</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -21,10 +21,16 @@
                         <Export-Package>com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}"
                         </Export-Package>
                         <Import-Package>
-                            com.atlassian.bamboo.build.*, <!--DummyPreBuildAction -->
-                            com.atlassian.bamboo.utils.error.*, <!--DummyPreBuildAction -->
-                            com.atlassian.bamboo.v2.build.*, <!--DummyPreBuildAction -->
-                            com.atlassian.bamboo.ww2.actions.build.admin.create.*, <!--DummyPreBuildAction -->
+                            com.atlassian.bamboo.build.*,
+                            com.atlassian.bamboo.deployments.execution.*,
+                            com.atlassian.bamboo.deployments.results.*,
+                            com.atlassian.bamboo.plan.cache.*,
+                            com.atlassian.bamboo.resultsummary.*,
+                            com.atlassian.bamboo.task.*,
+                            com.atlassian.bamboo.task.runtime.*,
+                            com.atlassian.bamboo.utils.error.*,
+                            com.atlassian.bamboo.v2.build.*,
+                            com.atlassian.bamboo.ww2.actions.build.admin.create.*,
                             com.google.common.collect.*,
                             com.google.gson.*,
                             org.slf4j.*,

@@ -1,6 +1,6 @@
-<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container Local Docker Backend" plugins-version="2">
     <plugin-info>
-        <description>${project.description}</description>
+        <description>Docker Compose based Backend for per-build container docker agents, running agents directly on Bamboo server instance.</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
@@ -33,8 +33,8 @@
         <context>simpleDockerAdminPBC</context>
     </web-resource>
 
-    <web-item key="docker-config" name="PBC Docker Backend" section="system.admin/plugins" weight="10">
-        <label key="admin.web-iterm.docker-config.label"/>
+    <web-item key="simple-docker-config" name="PBC Docker Backend" section="system.admin/plugins" weight="299">
+        <label key="simple-docker-config-link.label"/>
         <link linkId="simple-docker-config-link">/admin/adminSimpleDocker.action</link>
     </web-item>
 

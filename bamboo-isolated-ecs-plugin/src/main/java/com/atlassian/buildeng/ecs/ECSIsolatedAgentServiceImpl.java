@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.ecs;
 
+import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
@@ -26,6 +27,7 @@ import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
@@ -69,7 +71,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 revision = taskDefRegistrations.registerDockerImage(req.getConfiguration(), globalConfiguration);
             } catch (ImageAlreadyRegisteredException | ECSException ex) {
                 logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
-                callback.handle(ex);
+                //Have to catch some of the exceptions here instead of the callback to use retries.
+                if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                    IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
+                    toRet.withRetryRecoverable("Hit Api limit for task revisions.");
+                    callback.handle(toRet);
+                } else {
+                    callback.handle(ex);
+                }
                 return;
             }
         }
