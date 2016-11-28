@@ -63,8 +63,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler");
 //        resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
-        try
-        {
+        try {
             IsolatedDockerAgentResult result =
                     resource
                         .accept(MediaType.APPLICATION_JSON_TYPE)
@@ -73,12 +72,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             logger.info("result:" + result.isRetryRecoverable() + " " + result.getErrors() + " " + result.getCustomResultData());
             callback.handle(result);
         }
-        catch (UniformInterfaceException e)
-        {
+        catch (UniformInterfaceException e) {
             int code = e.getResponse().getClientResponseStatus().getStatusCode();
             String s = "";
-            if (e.getResponse().hasEntity())
-            {
+            if (e.getResponse().hasEntity()) {
                 s = e.getResponse().getEntity(String.class);
             }
             logger.info("error:" + code + " " + s, e);

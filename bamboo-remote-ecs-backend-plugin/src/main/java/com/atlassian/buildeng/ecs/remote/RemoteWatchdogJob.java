@@ -60,32 +60,32 @@ public class RemoteWatchdogJob implements PluginJob {
     public void execute(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = (BuildQueueManager) ContainerManager.getComponent("buildQueueManager");
         if (buildQueueManager == null) {
-            logger.info("no BuildQueueManager");
+            logger.error("no BuildQueueManager");
             throw new IllegalStateException();
         }
         DeploymentExecutionService deploymentExecutionService = (DeploymentExecutionService) ContainerManager.getComponent("deploymentExecutionService");
         if (deploymentExecutionService == null) {
-            logger.info("no deploymentExecutionService");
+            logger.error("no deploymentExecutionService");
             throw new IllegalStateException();
         }
         DeploymentResultService deploymentResultService = (DeploymentResultService) ContainerManager.getComponent("deploymentResultService");
         if (deploymentResultService == null) {
-            logger.info("no deploymentResultService");
+            logger.error("no deploymentResultService");
             throw new IllegalStateException();
         }
         ErrorUpdateHandler errorUpdateHandler = (ErrorUpdateHandler) ContainerManager.getComponent("errorUpdateHandler");
         if (errorUpdateHandler == null) {
-            logger.info("no ErrorUpdateHandler");
+            logger.error("no ErrorUpdateHandler");
             throw new IllegalStateException();
         }
         GlobalConfiguration globalConfig = (GlobalConfiguration) jobDataMap.get("globalConfiguration");
         if (globalConfig == null) {
-            logger.info("no GlobalConfiguration");
+            logger.error("no GlobalConfiguration");
             throw new IllegalStateException();
         }
         EventPublisher eventPublisher = (EventPublisher)ContainerManager.getComponent("eventPublisher");
         if (eventPublisher == null) {
-            logger.info("no SchedulerBackend");
+            logger.error("no SchedulerBackend");
             throw new IllegalStateException();
         }
 
@@ -112,8 +112,7 @@ public class RemoteWatchdogJob implements PluginJob {
         final WebResource resource = client.resource(globalConfig.getCurrentServer() + "/rest/scheduler/stopped");
 //        resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
-        try
-        {
+        try {
             List<ArnStoppedState> result =
                     resource
                         .accept(MediaType.APPLICATION_JSON_TYPE)
@@ -160,12 +159,10 @@ public class RemoteWatchdogJob implements PluginJob {
             }
 
         }
-        catch (UniformInterfaceException e)
-        {
+        catch (UniformInterfaceException e) {
             int code = e.getResponse().getClientResponseStatus().getStatusCode();
             String s = "";
-            if (e.getResponse().hasEntity())
-            {
+            if (e.getResponse().hasEntity()) {
                 s = e.getResponse().getEntity(String.class);
             }
             logger.error("Error contacting ECS:" + code + " " + s, e);
