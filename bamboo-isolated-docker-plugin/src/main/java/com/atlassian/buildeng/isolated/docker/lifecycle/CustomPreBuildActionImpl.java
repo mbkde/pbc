@@ -38,6 +38,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -78,18 +79,22 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
             buildLogger.addBuildLogEntry("Docker image " + config.getDockerImage() + " used to build this job");
             File metadata = new File(Constants.METADATA_FILE_PATH);
-            if (metadata.exists()) {
+            if (metadata.isFile()) {
                 try (FileReader r = new FileReader(metadata.getPath())) {
                     JsonElement topLevel = new Gson().fromJson(r, JsonElement.class);
-                    topLevel.getAsJsonArray().forEach(jsonElement -> {
-                        JsonObject curr = jsonElement.getAsJsonObject();
-                        String name = curr.get("name").getAsString();
-                        if (name != null && !name.equals(Constants.METADATA_CONTAINER_NAME) && !name.equals(Constants.AMAZON_MAGIC_VOLUME_NAME)) {
-                            String hash = curr.get("hash").getAsString();
-                            String tag  = curr.get("tag").getAsString();
-                            buildLogger.addBuildLogEntry(String.format("Docker image '%s' had hash: %s", tag, hash ));
-                        }
-                    });
+                    if (topLevel != null && topLevel.isJsonArray()) {
+                        topLevel.getAsJsonArray().forEach(jsonElement -> {
+                            JsonObject curr = jsonElement.getAsJsonObject();
+                            JsonElement nameObj = curr.get("name");
+                            if (nameObj != null && !nameObj.getAsString().equals(Constants.METADATA_CONTAINER_NAME) && !nameObj.getAsString().equals(Constants.AMAZON_MAGIC_VOLUME_NAME)) {
+                                String hash = curr.get("hash").getAsString();
+                                String tag  = curr.get("tag").getAsString();
+                                buildLogger.addBuildLogEntry(String.format("Docker image '%s' had hash: %s", tag, hash ));
+                            }
+                        });
+                    }
+                } catch (JsonSyntaxException ex) {
+                    buildLogger.addBuildLogEntry("Metadata found not proper json");
                 }
             } else {
                 buildLogger.addBuildLogEntry("No metadata found");
