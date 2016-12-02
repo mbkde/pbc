@@ -136,7 +136,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateInstances(List<DockerHost> hosts, String asgName, boolean decrementSize) throws ECSException {
+    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, boolean decrementSize) throws ECSException {
         try {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
             final List<String> asgInstances = hosts.stream().filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
@@ -149,29 +149,45 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                             .withInstanceIds(asgInstances)
                             .withShouldDecrementDesiredCapacity(decrementSize));
                 logger.info("Result of detachment: {}", result);
+                terminateInstances(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList()));
             }
+        } catch (ECSException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ECSException(e);
+        }
+    }
+
+
+    @Override
+    public void terminateInstances(List<String> instanceIds) throws ECSException {
+        try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             try {
                 TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
-                        new TerminateInstancesRequest(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())));
+                        new TerminateInstancesRequest(instanceIds));
                 logger.info("Result of successful instance termination: {}" + ec2Result);
             } catch (AmazonEC2Exception e) {
                 //attempt to limit the scope of BUILDENG-12143
                 //according to docs when one instance in list is borked (not allowed to be killed), we might not be able to kill any.
                 //so try one by one, logging the error. If at least one throws exception,
                 // rethrow the original
-                AtomicBoolean failed  = new AtomicBoolean(false);
-                hosts.stream().map(DockerHost::getInstanceId).forEach((String t) -> {
-                    try {
-                        TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
-                                new TerminateInstancesRequest(Collections.singletonList(t)));
-                    } catch (AmazonEC2Exception e1) {
-                        failed.set(true);
-                        logger.error("Failed instance termination:" + t, e1);
+                if (instanceIds.size() == 1) {
+                    throw e; //don't retry for single instance failure
+                } else {
+                    AtomicBoolean failed = new AtomicBoolean(false);
+                    instanceIds.forEach((String t) -> {
+                        try {
+                            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
+                                    new TerminateInstancesRequest(Collections.singletonList(t)));
+                        } catch (AmazonEC2Exception e1) {
+                            failed.set(true);
+                            logger.error("Failed instance termination:" + t, e1);
+                        }
+                    });
+                    if (failed.get()) {
+                        throw e;
                     }
-                });
-                if (failed.get()) {
-                    throw e;
                 }
             }
         } catch (Exception e) {

@@ -58,10 +58,17 @@ public interface SchedulerBackend {
      * terminate the listed EC2 instances and reduce the size of ASG by the given amount
      * @param dockerHosts 
      * @param autoScalingGroup 
-     * @param decrementSize 
+     * @param decrementSize should we decrease size of ASG or not? if not, new instance is started eventually.
      * @throws ECSException
      */
-    void terminateInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize) throws ECSException;
+    void terminateAndDetachInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize) throws ECSException;
+
+    /**
+     * terminate listed EC2 instances
+     * @param instanceIds
+     * @throws ECSException
+     */
+    void terminateInstances(List<String> instanceIds) throws ECSException;
 
     SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     

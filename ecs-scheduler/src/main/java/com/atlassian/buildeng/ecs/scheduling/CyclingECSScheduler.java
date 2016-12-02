@@ -18,6 +18,7 @@ import org.springframework.beans.factory.DisposableBean;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -256,12 +257,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                         if (reportedLonelyAsgInstances.size() > 50) { //random number to keep the list from growing indefinitely
                             reportedLonelyAsgInstances.remove(0);
                         }
+                        try {
+                            schedulerBackend.terminateInstances(Collections.<String>singletonList(t));
+                        } catch (ECSException e) {
+                            logger.warn("Failed to terminate instance " + t, e);
+                        }
                     });
             logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})", asgInstances.size(), containerInstances.size());
         }
         return new DockerHosts(dockerHosts.values(), stalePeriod);
     }
-    
+
     private void checkScaleDown() {
         try {
             String asgName = globalConfiguration.getCurrentASG();
@@ -320,7 +326,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 toTerminate = toTerminate.subList(0, 14);
             }
             try {
-                schedulerBackend.terminateInstances(toTerminate, asgName, decrementAsgSize);
+                schedulerBackend.terminateAndDetachInstances(toTerminate, asgName, decrementAsgSize);
             } catch (ECSException ex) {
                 logger.error("Terminating instances failed", ex);
                 return 0;
