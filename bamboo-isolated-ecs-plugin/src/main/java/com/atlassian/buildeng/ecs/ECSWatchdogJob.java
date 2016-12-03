@@ -59,39 +59,47 @@ public class ECSWatchdogJob implements PluginJob {
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
+        try {
+            executeImpl(jobDataMap);
+        } catch (Throwable t) {
+            logger.error("Throwable catched and swallowed to preserve rescheduling of the task", t);
+        }
+    }
+
+    private void executeImpl(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = (BuildQueueManager) ContainerManager.getComponent("buildQueueManager");
         if (buildQueueManager == null) {
-            logger.info("no BuildQueueManager");
+            logger.error("no BuildQueueManager");
             throw new IllegalStateException();
         }
         DeploymentExecutionService deploymentExecutionService = (DeploymentExecutionService) ContainerManager.getComponent("deploymentExecutionService");
         if (deploymentExecutionService == null) {
-            logger.info("no deploymentExecutionService");
+            logger.error("no deploymentExecutionService");
             throw new IllegalStateException();
         }
         DeploymentResultService deploymentResultService = (DeploymentResultService) ContainerManager.getComponent("deploymentResultService");
         if (deploymentResultService == null) {
-            logger.info("no deploymentResultService");
+            logger.error("no deploymentResultService");
             throw new IllegalStateException();
         }
         ErrorUpdateHandler errorUpdateHandler = (ErrorUpdateHandler) ContainerManager.getComponent("errorUpdateHandler");
         if (errorUpdateHandler == null) {
-            logger.info("no ErrorUpdateHandler");
+            logger.error("no ErrorUpdateHandler");
             throw new IllegalStateException();
         }
         GlobalConfiguration globalConfig = (GlobalConfiguration) jobDataMap.get("globalConfiguration");
         if (globalConfig == null) {
-            logger.info("no GlobalConfiguration");
+            logger.error("no GlobalConfiguration");
             throw new IllegalStateException();
         }
         SchedulerBackend backend = (SchedulerBackend) jobDataMap.get("schedulerBackend");
         if (backend == null) {
-            logger.info("no SchedulerBackend");
+            logger.error("no SchedulerBackend");
             throw new IllegalStateException();
         }
         EventPublisher eventPublisher = (EventPublisher)ContainerManager.getComponent("eventPublisher");
         if (eventPublisher == null) {
-            logger.info("no SchedulerBackend");
+            logger.error("no SchedulerBackend");
             throw new IllegalStateException();
         }
         

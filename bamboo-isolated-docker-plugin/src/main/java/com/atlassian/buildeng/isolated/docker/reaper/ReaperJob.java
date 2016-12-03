@@ -19,11 +19,23 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReaperJob implements PluginJob {
+    private final static Logger logger = LoggerFactory.getLogger(ReaperJob.class);
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
+        try {
+            executeImpl(jobDataMap);
+        } catch (Throwable t) {
+            logger.error("Throwable catched and swallowed to preserve rescheduling of the task", t);
+        }
+    }
+
+    public void executeImpl(Map<String, Object> jobDataMap) {
+
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
         ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(Reaper.REAPER_AGENTS_HELPER_KEY);
         AgentCommandSender agentCommandSender = (AgentCommandSender) jobDataMap.get(Reaper.REAPER_COMMAND_SENDER_KEY);
