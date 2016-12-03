@@ -58,6 +58,14 @@ public class RemoteWatchdogJob implements PluginJob {
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
+        try {
+            executeImpl(jobDataMap);
+        } catch (Throwable t) {
+            logger.error("Throwable catched and swallowed to preserve rescheduling of the task", t);
+        }
+    }
+
+    private void executeImpl(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = (BuildQueueManager) ContainerManager.getComponent("buildQueueManager");
         if (buildQueueManager == null) {
             logger.error("no BuildQueueManager");
@@ -166,9 +174,6 @@ public class RemoteWatchdogJob implements PluginJob {
                 s = e.getResponse().getEntity(String.class);
             }
             logger.error("Error contacting ECS:" + code + " " + s, e);
-        } catch (Throwable t) {
-            logger.error("error:", t);
         }
-
     }
 }
