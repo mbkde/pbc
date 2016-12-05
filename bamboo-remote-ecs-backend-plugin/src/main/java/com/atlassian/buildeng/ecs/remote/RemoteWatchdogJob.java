@@ -80,33 +80,14 @@ public class RemoteWatchdogJob implements PluginJob {
                 return input;
             }
         });
-        List<String> arns = new ArrayList<>();
-        queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
-            Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
-            String taskArn = bd.get(RESULT_PREFIX + RESULT_PART_TASKARN);
-            if (taskArn != null) {
-                arns.add(taskArn);
-            }
-        });
+        List<String> arns = getQueuedARNs(queue);
         if (arns.isEmpty()) {
             return;
         }
         logger.debug("Currently queued docker agent requests {}", arns.size());
-        Client client = createClient();
-
-        final WebResource resource = client.resource(globalConfig.getCurrentServer() + "/rest/scheduler/stopped");
-//        resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
         try {
-            List<ArnStoppedState> result =
-                    resource
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
-                        .type(MediaType.APPLICATION_JSON_TYPE)
-                        .post(new GenericType<List<ArnStoppedState>>(){}, arns);
-            final Map<String, ArnStoppedState> stoppedTasksByArn = new HashMap<>();
-            result.stream().forEach((ArnStoppedState t) -> {
-                stoppedTasksByArn.put(t.getArn(), t);
-            });
+            Map<String, ArnStoppedState> stoppedTasksByArn = retrieveStoppedTasksByArn(globalConfig, arns);
 
             if (!stoppedTasksByArn.isEmpty()) {
                 logger.info("Found stopped tasks: {}", stoppedTasksByArn.size());
@@ -152,6 +133,34 @@ public class RemoteWatchdogJob implements PluginJob {
             }
             logger.error("Error contacting ECS:" + code + " " + s, e);
         }
+    }
+
+    private List<String> getQueuedARNs(QueueManagerView<CommonContext, CommonContext> queue) {
+        List<String> arns = new ArrayList<>();
+        queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
+            Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
+            String taskArn = bd.get(RESULT_PREFIX + RESULT_PART_TASKARN);
+            if (taskArn != null) {
+                arns.add(taskArn);
+            }
+        });
+        return arns;
+    }
+
+    private Map<String, ArnStoppedState> retrieveStoppedTasksByArn(GlobalConfiguration globalConfig, List<String> arns) throws UniformInterfaceException {
+        Client client = createClient();
+        final WebResource resource = client.resource(globalConfig.getCurrentServer() + "/rest/scheduler/stopped");
+//        resource.addFilter(new HTTPBasicAuthFilter(username, password));
+        List<ArnStoppedState> result =
+                resource
+                        .accept(MediaType.APPLICATION_JSON_TYPE)
+                        .type(MediaType.APPLICATION_JSON_TYPE)
+                        .post(new GenericType<List<ArnStoppedState>>(){}, arns);
+        final Map<String, ArnStoppedState> stoppedTasksByArn = new HashMap<>();
+        result.stream().forEach((ArnStoppedState t) -> {
+            stoppedTasksByArn.put(t.getArn(), t);
+        });
+        return stoppedTasksByArn;
     }
 
     private <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
