@@ -36,6 +36,7 @@ import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
 import com.google.common.base.Function;
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -66,37 +67,13 @@ public class RemoteWatchdogJob implements PluginJob {
     }
 
     private void executeImpl(Map<String, Object> jobDataMap) {
-        BuildQueueManager buildQueueManager = (BuildQueueManager) ContainerManager.getComponent("buildQueueManager");
-        if (buildQueueManager == null) {
-            logger.error("no BuildQueueManager");
-            throw new IllegalStateException();
-        }
-        DeploymentExecutionService deploymentExecutionService = (DeploymentExecutionService) ContainerManager.getComponent("deploymentExecutionService");
-        if (deploymentExecutionService == null) {
-            logger.error("no deploymentExecutionService");
-            throw new IllegalStateException();
-        }
-        DeploymentResultService deploymentResultService = (DeploymentResultService) ContainerManager.getComponent("deploymentResultService");
-        if (deploymentResultService == null) {
-            logger.error("no deploymentResultService");
-            throw new IllegalStateException();
-        }
-        ErrorUpdateHandler errorUpdateHandler = (ErrorUpdateHandler) ContainerManager.getComponent("errorUpdateHandler");
-        if (errorUpdateHandler == null) {
-            logger.error("no ErrorUpdateHandler");
-            throw new IllegalStateException();
-        }
-        GlobalConfiguration globalConfig = (GlobalConfiguration) jobDataMap.get("globalConfiguration");
-        if (globalConfig == null) {
-            logger.error("no GlobalConfiguration");
-            throw new IllegalStateException();
-        }
-        EventPublisher eventPublisher = (EventPublisher)ContainerManager.getComponent("eventPublisher");
-        if (eventPublisher == null) {
-            logger.error("no SchedulerBackend");
-            throw new IllegalStateException();
-        }
-
+        BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
+        DeploymentExecutionService deploymentExecutionService = getService(DeploymentExecutionService.class, "deploymentExecutionService");
+        DeploymentResultService deploymentResultService = getService(DeploymentResultService.class, "deploymentResultService");
+        ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
+        GlobalConfiguration globalConfig = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
+        EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
+        
         QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, new Function<BuildQueueManager.QueueItemView<CommonContext>, BuildQueueManager.QueueItemView<CommonContext>>() {
             @Override
             public BuildQueueManager.QueueItemView<CommonContext> apply(BuildQueueManager.QueueItemView<CommonContext> input) {
@@ -176,4 +153,15 @@ public class RemoteWatchdogJob implements PluginJob {
             logger.error("Error contacting ECS:" + code + " " + s, e);
         }
     }
+
+    private <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
+        final Object obj = checkNotNull(jobDataMap.get(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
+        return type.cast(obj);
+    }
+
+    private <T> T getService(Class<T> type, String serviceKey) {
+        final Object obj = checkNotNull(ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
+        return type.cast(obj);
+    }
+
 }
