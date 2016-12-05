@@ -22,18 +22,27 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author mkleint
  */
 public class DockerWatchdogJob implements PluginJob {
+    private final static Logger logger = LoggerFactory.getLogger(DockerWatchdogJob.class);
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
+        try {
+            executeImpl(jobDataMap);
+        } catch (Throwable t) {
+            logger.error("Throwable catched and swallowed to preserve rescheduling of the task", t);
+        }
+    }
+
+    public void executeImpl(Map<String, Object> jobDataMap) {
         GlobalConfiguration globalConfiguration = (GlobalConfiguration) jobDataMap.get("globalConfiguration");
         if (globalConfiguration == null) {
             throw new IllegalStateException();
@@ -66,13 +75,14 @@ public class DockerWatchdogJob implements PluginJob {
                         rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
                         Process p2 = rm.inheritIO().start();
                     } catch (IOException ex) {
-                        Logger.getLogger(DockerWatchdogJob.class.getName()).log(Level.SEVERE, null, ex);
+                        logger.error("Failed to run docker-compose down", ex);
                     }
                 });
             }        
         } catch (IOException ex) {
+            logger.error("Failed to run docker commands", ex);
         } catch (InterruptedException ex) {
-            Logger.getLogger(DockerWatchdogJob.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("interrupted", ex);
         }
     }
     
