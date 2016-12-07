@@ -29,6 +29,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -93,7 +94,7 @@ public class SchedulerResource {
 
     @GET
     @Path("stopped")
-    public ArnStoppedState[] getStoppedTasks(String[] arns) throws ECSException {
+    public ArnStoppedState[] getStoppedTasks(@QueryParam("arn") String[] arns) throws ECSException {
         List<String> arnsList = Arrays.asList(arns);
         Collection<Task> tasks = SchedulerApplication.schedulerBackend.checkTasks(SchedulerApplication.configuration.getCurrentCluster(), arnsList);
         return tasks.stream()
