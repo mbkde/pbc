@@ -25,7 +25,7 @@ public class IsolatedDockerAgentResult {
 
     private List<String> errors = new ArrayList<>();
     private Map<String, String> customData = new HashMap<>();
-    private boolean retry = false;
+    private boolean retryRecoverable = false;
 
     public IsolatedDockerAgentResult() {
     }
@@ -42,7 +42,7 @@ public class IsolatedDockerAgentResult {
     }
     
     public IsolatedDockerAgentResult withRetryRecoverable(String errorMessage) {
-        retry = true;
+        retryRecoverable = true;
         withError(errorMessage);
         return this;
     }
@@ -66,7 +66,7 @@ public class IsolatedDockerAgentResult {
      * @return whether to retry
      */
     public boolean isRetryRecoverable() {
-        return retry;
+        return retryRecoverable;
     }
     
 }
