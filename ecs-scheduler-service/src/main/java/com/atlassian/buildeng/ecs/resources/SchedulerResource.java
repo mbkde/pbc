@@ -95,6 +95,9 @@ public class SchedulerResource {
     @GET
     @Path("stopped")
     public ArnStoppedState[] getStoppedTasks(@QueryParam("arn") List<String> arnsList) throws ECSException {
+        if (arnsList == null || arnsList.isEmpty()) {
+            return new ArnStoppedState[0];
+        }
         Collection<Task> tasks = SchedulerApplication.schedulerBackend.checkTasks(SchedulerApplication.configuration.getCurrentCluster(), arnsList);
         return tasks.stream()
                 .filter((Task t) -> "STOPPED".equals(t.getLastStatus()))
