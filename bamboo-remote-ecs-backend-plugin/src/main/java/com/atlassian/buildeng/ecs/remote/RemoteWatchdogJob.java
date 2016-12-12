@@ -150,9 +150,10 @@ public class RemoteWatchdogJob implements PluginJob {
     private Map<String, ArnStoppedState> retrieveStoppedTasksByArn(GlobalConfiguration globalConfig, List<String> arns) throws UniformInterfaceException {
         Client client = createClient();
         WebResource resource = client.resource(globalConfig.getCurrentServer() + "/rest/scheduler/stopped");
-        arns.forEach((String t) -> {
-            resource.queryParam("arn", t);
-        });
+        for (String arn : arns) {
+            //!! each call to resource returning WebResource is returning new instance
+            resource = resource.queryParam("arn", arn);
+        }
 //        resource.addFilter(new HTTPBasicAuthFilter(username, password));
         List<ArnStoppedState> result = resource
                 .accept(MediaType.APPLICATION_JSON_TYPE)
