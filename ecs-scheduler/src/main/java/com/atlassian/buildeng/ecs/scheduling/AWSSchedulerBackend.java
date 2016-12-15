@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +62,10 @@ import org.slf4j.LoggerFactory;
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
 
+    @Inject
+    public AWSSchedulerBackend() {
+    }
+    
     @Override
     public List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException {
         try {

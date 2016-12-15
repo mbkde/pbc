@@ -17,10 +17,16 @@
 package com.atlassian.buildeng.ecs;
 
 import com.atlassian.event.api.EventPublisher;
+import javax.inject.Inject;
 
 //TODO how do we do publishing, on bamboo server it's event being picked up
 // by monitoring plugin and the datadog plugin pushes it to datadog as event.
 public class DummyEventPublisher implements EventPublisher {
+
+    @Inject
+    public DummyEventPublisher() {
+    }
+
 
     @Override
     public void publish(Object event) {
