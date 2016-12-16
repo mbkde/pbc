@@ -71,6 +71,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put("imageSizes", CustomPreBuildActionImpl.getImageSizes());
+        context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 
     @Override

@@ -143,15 +143,12 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         context.put("imageSizes", getImageSizes());
     }
 
-    @Override
-    public void addDefaultValues(@NotNull BuildConfiguration buildConfiguration) {
-        super.addDefaultValues(buildConfiguration);
-        buildConfiguration.addProperty(Configuration.ENABLED_FOR_JOB, false);
-        buildConfiguration.addProperty(Configuration.DOCKER_IMAGE, "docker:xxx");
-    }
-
     public static Collection<Pair<String, String>> getImageSizes() {
-        return Lists.newArrayList(Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory)"),
+        return Lists.newArrayList(
+                //this is stupid ordering but we want to keep regular as default for new
+                //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
+                Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory)"),
+                Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory)"),
                 Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory)"));
     }
 

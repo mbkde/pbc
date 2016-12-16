@@ -25,13 +25,10 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_EXTRA_CONTAINERS;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.ENABLED_FOR_JOB;
-import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
