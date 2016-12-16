@@ -151,6 +151,9 @@ function extraImageDetails(item) {
     else if (size.toUpperCase() === 'SMALL') {
         sizeUI = "<p>Small size (~ 1G)</p>";
     }
+    else if (size.toUpperCase() === 'LARGE') {
+        sizeUI = "<p>Large size (~ 3G)</p>";
+    }
     var envvarsUI = "";
     var commandsUI = "";
     var commands = toExtraContainerArray(item.commands);
