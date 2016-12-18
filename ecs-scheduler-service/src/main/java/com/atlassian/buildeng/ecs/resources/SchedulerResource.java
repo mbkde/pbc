@@ -41,14 +41,14 @@ import org.apache.commons.lang3.StringUtils;
 @Produces(MediaType.APPLICATION_JSON)
 public class SchedulerResource {
 
-    private final TaskDefinitionRegistrations taskDefReistrations;
+    private final TaskDefinitionRegistrations taskDefRegistrations;
     private final ECSScheduler ecsScheduler;
     private final SchedulerBackend schedulerBackend;
     private final ECSConfiguration configuration;
 
     @Inject
     public SchedulerResource(TaskDefinitionRegistrations taskDefReistrations, ECSScheduler ecsScheduler, SchedulerBackend schedulerBackend, ECSConfiguration configuration) {
-        this.taskDefReistrations = taskDefReistrations;
+        this.taskDefRegistrations = taskDefReistrations;
         this.ecsScheduler = ecsScheduler;
         this.schedulerBackend = schedulerBackend;
         this.configuration = configuration;
@@ -75,10 +75,10 @@ public class SchedulerResource {
                 return s.getTaskARN();
             }
         };
-        int revision = taskDefReistrations.findTaskRegistrationVersion(s.getConfiguration(), env);
+        int revision = taskDefRegistrations.findTaskRegistrationVersion(s.getConfiguration(), env);
         if (revision == -1) {
             try {
-                revision = taskDefReistrations.registerDockerImage(s.getConfiguration(), env);
+                revision = taskDefRegistrations.registerDockerImage(s.getConfiguration(), env);
             } catch (ImageAlreadyRegisteredException | ECSException ex) {
                 response.resume(ex);
                 return;
