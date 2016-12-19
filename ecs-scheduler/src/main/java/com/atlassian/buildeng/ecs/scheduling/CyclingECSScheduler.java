@@ -42,7 +42,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
     
     //grace period in minutes since launch
-    private static final int ASG_MISSING_IN_CLUSTER_GRACE_PERIOD = 15;
+    // 5 might be too radical, but I haven't found any stats on what this the mean/average or 95percentile time for ec2 instance startup
+    // a random poke at a single instance suggests something above one minute for startup on staging-bamboo.
+    // but that can be significantly variable based on general state of AWS.
+    // AWS Console - EC2 Launch time - December 16, 2016 at 3:44:35 PM UTC+11
+    // AWS Console - ASG activity hisotry - Start 2016 December 16 15:44:36 UTC+11 -> End 2016 December 16 15:45:09 UTC+11
+    // Cloud-init v. 0.7.6 finished at Fri, 16 Dec 2016 04:45:49 +0000. Datasource DataSourceEc2.  Up 50.12 seconds
+    private static final int ASG_MISSING_IN_CLUSTER_GRACE_PERIOD = 5;
 
     private final Duration stalePeriod;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
