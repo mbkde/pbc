@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
@@ -67,6 +68,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private final ECSConfiguration globalConfiguration;
     private final EventPublisher eventPublisher;
 
+    @Inject
     public CyclingECSScheduler(SchedulerBackend schedulerBackend, ECSConfiguration globalConfiguration, EventPublisher eventPublisher) {
         stalePeriod = DEFAULT_STALE_PERIOD;
         this.schedulerBackend = schedulerBackend;

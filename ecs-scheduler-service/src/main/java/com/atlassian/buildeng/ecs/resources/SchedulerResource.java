@@ -3,18 +3,20 @@ package com.atlassian.buildeng.ecs.resources;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.api.ArnStoppedState;
-import com.atlassian.buildeng.ecs.SchedulerApplication;
 import com.atlassian.buildeng.ecs.api.Scheduler;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.scheduling.BambooServerEnvironment;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
+import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
+import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
+import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.codahale.metrics.annotation.Timed;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import org.glassfish.jersey.server.ManagedAsync;
@@ -24,6 +26,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -38,7 +41,17 @@ import org.apache.commons.lang3.StringUtils;
 @Produces(MediaType.APPLICATION_JSON)
 public class SchedulerResource {
 
-    public SchedulerResource() {
+    private final TaskDefinitionRegistrations taskDefRegistrations;
+    private final ECSScheduler ecsScheduler;
+    private final SchedulerBackend schedulerBackend;
+    private final ECSConfiguration configuration;
+
+    @Inject
+    public SchedulerResource(TaskDefinitionRegistrations taskDefReistrations, ECSScheduler ecsScheduler, SchedulerBackend schedulerBackend, ECSConfiguration configuration) {
+        this.taskDefRegistrations = taskDefReistrations;
+        this.ecsScheduler = ecsScheduler;
+        this.schedulerBackend = schedulerBackend;
+        this.configuration = configuration;
     }
 
     @ManagedAsync
@@ -62,10 +75,10 @@ public class SchedulerResource {
                 return s.getTaskARN();
             }
         };
-        int revision = SchedulerApplication.regs.findTaskRegistrationVersion(s.getConfiguration(), env);
+        int revision = taskDefRegistrations.findTaskRegistrationVersion(s.getConfiguration(), env);
         if (revision == -1) {
             try {
-                revision = SchedulerApplication.regs.registerDockerImage(s.getConfiguration(), env);
+                revision = taskDefRegistrations.registerDockerImage(s.getConfiguration(), env);
             } catch (ImageAlreadyRegisteredException | ECSException ex) {
                 response.resume(ex);
                 return;
@@ -83,7 +96,7 @@ public class SchedulerResource {
                 response.resume(exception);
             }
         }, s.getResultId());
-        SchedulerApplication.scheduler.schedule(request, dsc);
+        ecsScheduler.schedule(request, dsc);
         /* ^^ TODO: Dropwizard will :
         Once sayHello has returned, Jersey takes the Scheduler instance and looks for a provider class which can
         write Scheduler instances as application/json. Dropwizard has one such provider built in which allows for
@@ -98,7 +111,7 @@ public class SchedulerResource {
         if (arnsList == null || arnsList.isEmpty()) {
             return new ArnStoppedState[0];
         }
-        Collection<Task> tasks = SchedulerApplication.schedulerBackend.checkTasks(SchedulerApplication.configuration.getCurrentCluster(), arnsList);
+        Collection<Task> tasks = schedulerBackend.checkTasks(configuration.getCurrentCluster(), arnsList);
         return tasks.stream()
                 .filter((Task t) -> "STOPPED".equals(t.getLastStatus()))
                 .map((Task t) -> {

@@ -37,6 +37,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Map;
+import javax.inject.Inject;
 import org.apache.commons.fileupload.util.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,7 @@ public class TaskDefinitionRegistrations {
     private final Backend backend;
     private final ECSConfiguration ecsConfiguration;
 
+    @Inject
     public TaskDefinitionRegistrations(Backend backend, ECSConfiguration ecsConfiguration) {
         this.backend = backend;
         this.ecsConfiguration = ecsConfiguration;

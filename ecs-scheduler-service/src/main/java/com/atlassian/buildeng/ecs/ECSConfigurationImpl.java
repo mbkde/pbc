@@ -21,16 +21,29 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionRegistrations.Backend {
     static final String ECS_TASK_DEF = "ECS_TASK_DEF";
     static final String ECS_ASG = "ECS_ASG";
     static final String ECS_CLUSTER = "ECS_CLUSTER";
-    private static final String cluster = System.getenv(ECS_CLUSTER);
-    private static final String asg = System.getenv(ECS_ASG);
-    private static final String taskDefinitionName = System.getenv(ECS_TASK_DEF);
+    
+    private final String cluster;
+    private final String asg;
+    private final String taskDefinitionName;
     private Map<String, Integer> ecsTaskMapping = new HashMap<>();
     private Map<Configuration, Integer> configurationMapping = new HashMap<>();
+
+    @Inject
+    public ECSConfigurationImpl(@Named(ECS_ASG) String asg,
+                                @Named(ECS_CLUSTER) String cluster,
+                                @Named(ECS_TASK_DEF) String taskDef) {
+        this.asg = asg;
+        this.cluster = cluster;
+        this.taskDefinitionName = taskDef;
+    }
+
 
     @Override
     public String getCurrentCluster() {
