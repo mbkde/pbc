@@ -6,19 +6,22 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
-
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
     
     private final BuildQueueManager buildQueueManager;
+    private final IsolatedAgentService detail;
 
-    public SummaryPanel(BuildQueueManager buildQueueManager) {
+    public SummaryPanel(BuildQueueManager buildQueueManager, IsolatedAgentService detail) {
         this.buildQueueManager = buildQueueManager;
+        this.detail = detail;
     }
     
     @Override
@@ -32,8 +35,21 @@ public class SummaryPanel implements WebPanel {
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
             ret.append("<h2>Built with Per-build Container Agent</h2>")
-               .append("<dl class=\"details-list\"><dt>Image used:</dt><dd>")
-               .append(configuration.getDockerImage()).append("</dd>");
+               .append("<dl class=\"details-list\"><dt>Image(s) used:</dt><dd>")
+               .append(configuration.getDockerImage());
+            configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
+                ret.append("<br/>").append(t.getImage());
+            });
+            ret.append("</dd>");
+
+            Map<String, String> customData =
+                    createCustomDataMap(buildcontext, summary);
+
+            String rend = detail.renderContainerLogs(configuration, customData);
+            if (rend != null) {
+                ret.append("<dt>Container Logs</dt>")
+                   .append("<dd>").append(rend).append("</dd>");
+            }
             String error = buildcontext != null 
                     ? buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR) 
                     : summary.getCustomBuildData().get(Constants.RESULT_ERROR);
@@ -42,7 +58,7 @@ public class SummaryPanel implements WebPanel {
                    .append(error)
                    .append("</dd>");
             }
-            summary.getCustomBuildData().entrySet().stream()
+            customData.entrySet().stream()
                     .filter((Map.Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
                     .forEach((Map.Entry<String, String> entry) -> {
                         ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
@@ -54,6 +70,15 @@ public class SummaryPanel implements WebPanel {
 //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
         }
         return ret.toString();
+    }
+
+    static Map<String, String> createCustomDataMap(BuildContext buildcontext, BuildResultsSummary summary) {
+        Map<String, String> customData =
+                new HashMap<>(buildcontext != null
+                        ? buildcontext.getCurrentResult().getCustomBuildData()
+                        : summary.getCustomBuildData());
+        customData.entrySet().removeIf((Map.Entry<String, String> t) -> !t.getKey().startsWith(Constants.RESULT_PREFIX));
+        return customData;
     }
 
     @Override

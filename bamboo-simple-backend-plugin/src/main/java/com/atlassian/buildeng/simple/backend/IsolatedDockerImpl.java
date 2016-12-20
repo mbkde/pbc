@@ -113,11 +113,6 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         return new File(System.getProperty("java.io.tmpdir"), "docker-compose-" + uuid + ".yaml");
     }
 
-    @Override
-    public List<String> getKnownDockerImages() {
-        return Collections.emptyList();
-    }
-
     String createComposeYaml(Configuration config, String rk, String baseUrl, UUID uuid) {
         final Map<String, Object> all = new HashMap<>();
         Map<String, String> envs = new HashMap<>();
@@ -149,7 +144,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         final List<String> links = new ArrayList<>();
         
         config.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-            Map<String, Object> toRet = new HashMap();
+            Map<String, Object> toRet = new HashMap<>();
             toRet.put("image", t.getImage());
             Map<String, String> env = t.getEnvVariables().stream().collect(Collectors.toMap(
                     Configuration.EnvVariable::getName,

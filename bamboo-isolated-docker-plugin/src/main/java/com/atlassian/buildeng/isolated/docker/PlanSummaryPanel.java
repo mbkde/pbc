@@ -10,6 +10,7 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
 
 import java.io.IOException;
@@ -21,9 +22,11 @@ import java.util.Map;
 public class PlanSummaryPanel implements WebPanel {
     
     private final BuildQueueManager buildQueueManager;
+    private final IsolatedAgentService detail;
 
-    public PlanSummaryPanel(BuildQueueManager buildQueueManager) {
+    public PlanSummaryPanel(BuildQueueManager buildQueueManager, IsolatedAgentService detail) {
         this.buildQueueManager = buildQueueManager;
+        this.detail = detail;
     }
     
     @Override
@@ -44,6 +47,11 @@ public class PlanSummaryPanel implements WebPanel {
                    .append(brs.getImmutablePlan().getBuildName())
                    .append("</dt><dd>")
                    .append(config.getDockerImage());
+                Map<String, String> custom = SummaryPanel.createCustomDataMap(buildcontext, (BuildResultsSummary) brs);
+                String render = detail.renderContainerLogs(config, custom);
+                if (render != null) {
+                    ret.append("<br/>").append(render);
+                }
                 if (error != null) {
                     ret.append("<br/><span class=\"errorText\">")
                        .append(error)
