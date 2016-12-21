@@ -104,14 +104,14 @@ public class TaskDefinitionRegistrations {
                              new Volume().withName(Constants.DOCKER_SOCKET_VOLUME_NAME).withHost(new HostVolumeProperties().withSourcePath(Constants.DOCKER_SOCKET)));
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-            ContainerDefinition d = new ContainerDefinition()
+            ContainerDefinition d = withLogDriver(new ContainerDefinition()
                     .withName(t.getName())
                     .withImage(t.getImage())
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
                     .withMemory((int) (t.getExtraSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
                     .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
-                    .withEssential(false);
+                    .withEssential(false), globalConfiguration);
             if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
                 //TODO align storage driver with whatever we are using? (overlay)

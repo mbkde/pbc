@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.ecs;
 
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.logs.AWSLogsClient;
+import com.amazonaws.services.logs.model.GetLogEventsRequest;
+import com.amazonaws.services.logs.model.GetLogEventsResult;
+import com.amazonaws.services.logs.model.OutputLogEvent;
 import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
@@ -29,6 +34,10 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.Consumes;
@@ -46,6 +55,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.StringUtils;
 
 @WebSudoRequired
@@ -142,6 +154,57 @@ public class Rest {
                 });
         return Response.ok(new JobsUsingImageResponse(toRet)).build();
     }
+
+
+    //constants for /awslogs query params
+    static final String PARAM_TASK_ARN = "taskArn";
+    static final String PARAM_CONTAINER = "container";
+    static final String PARAM_PREFIX = "prefix";
+    static final String PARAM_GROUP = "group";
+    static final String PARAM_REGION = "region";
+
+    @GET
+    @Path("/awslogs")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getAwsLogs(@QueryParam(PARAM_GROUP) String logGroupName,
+                               @QueryParam(PARAM_REGION) String region,
+                               @QueryParam(PARAM_PREFIX) String prefix,
+                               @QueryParam(PARAM_CONTAINER) String containerName,
+                               @QueryParam(PARAM_TASK_ARN) String taskArn) {
+        if (region == null || logGroupName == null || prefix == null
+                || containerName == null || taskArn == null) {
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
+        StreamingOutput stream = (OutputStream os) -> {
+            AWSLogsClient logs = new AWSLogsClient().withRegion(Regions.fromName(region));
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)));
+            try {
+                String logStreamName = constructLogStream(prefix, containerName, taskArn);
+                GetLogEventsRequest request = new GetLogEventsRequest(logGroupName, logStreamName);
+                GetLogEventsResult response = logs.getLogEvents(request);
+                while (response != null) {
+                    response.getEvents().forEach((OutputLogEvent t) -> {
+                        writer.write(t.getMessage());
+                        writer.write("\n");
+                    });
+                    // why check the last token in request you ask.
+                    // if you don't sometimes aws will keep on sending you the same token and then trhottle you if you keep trying to get it.
+                    if (response.getNextForwardToken() != null && !response.getNextForwardToken().equals(request.getNextToken())) {
+                        request = request.withNextToken(response.getNextForwardToken());
+                        response = logs.getLogEvents(request);
+                    } else {
+                        response = null;
+                    }
+                    writer.flush();
+                }
+            } catch (RuntimeException ex) {
+                ex.printStackTrace(writer);
+            } finally {
+                writer.flush();
+            }
+        };
+        return Response.ok(stream).build();
+    }
     
     //copy of AccessConfiguration from the other plugin.
     // it's a copy to make the isolated-docker-spi plugin lightweight without 
@@ -158,5 +221,10 @@ public class Rest {
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
                     .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                     .build();
+    }
+
+    private String constructLogStream(String prefix, String containerName, String taskArn) {
+        String task = taskArn.substring(taskArn.indexOf("task/") + "task/".length());
+        return prefix + "/" + containerName + "/" + task;
     }
 }

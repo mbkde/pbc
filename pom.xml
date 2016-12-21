@@ -81,6 +81,11 @@
                 <artifactId>aws-java-sdk-core</artifactId>
                 <version>${aws-java.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-logs</artifactId>
+                <version>${aws-java.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
