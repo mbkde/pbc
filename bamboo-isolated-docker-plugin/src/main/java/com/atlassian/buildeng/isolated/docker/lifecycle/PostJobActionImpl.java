@@ -16,27 +16,20 @@
 
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
+import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.bamboo.build.Job;
-import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
-import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
-import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
-import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
-import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
-import com.atlassian.bamboo.v2.build.agent.capability.Capability;
-import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
+import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import java.util.OptionalLong;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
-import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
@@ -46,9 +39,11 @@ import org.slf4j.Logger;
 public class PostJobActionImpl implements PostJobAction {
     private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
 
+    private final AgentRemovals agentRemovals;
     private final AgentManager agentManager;
 
-    private PostJobActionImpl(AgentManager agentManager) {
+    private PostJobActionImpl(AgentRemovals agentRemovals, AgentManager agentManager) {
+        this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;
     }
 
@@ -56,61 +51,48 @@ public class PostJobActionImpl implements PostJobAction {
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
         Configuration config = AccessConfiguration.forBuildResultSummary(buildResultsSummary);
         if (config.isEnabled()) {
-            Long agentId = buildResultsSummary.getBuildAgentId();
-            if (agentId == null) {
-                //not sure why the build agent id is null sometimes. but because it is,
-                //our offline remote agents keep accumulating
-                OptionalLong found = agentManager.getAllRemoteAgents().stream()
-                        .filter((BuildAgent t) -> {
-                          return isDockerAgentForResult(t, buildResultsSummary.getPlanResultKey());
-                        })
-                        .mapToLong((BuildAgent value) -> value.getId()).findFirst();
-                if (found.isPresent()) {
-                    LOG.info("Found missing build agent for job " + job.getId());
-                    agentId = found.getAsLong();
-                } else {
-                    LOG.info("Unable to find build agent for job " + job.getId());
-                    return;
-                }
-            }
             String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
+            //only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
             if (StringUtils.equals("true", properStopped)) {
-                //only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
-                try {
-                    agentManager.removeAgent(agentId);
-                } catch (TimeoutException ex) {
-                    LOG.error("timeout on removing agent " + buildResultsSummary.getBuildAgentId(), ex);
+                BuildAgent agent = findAgent(job, buildResultsSummary);
+                if (agent != null) {
+                    agentRemovals.removeAgent(agent);
                 }
             }
         }
     }
 
-    private boolean isDockerAgentForResult(BuildAgent t, PlanResultKey key) {
-        final boolean[] b = new boolean[1];
-        b[0] = false;
-        t.getDefinition().accept(new PipelineDefinitionVisitor() {
-            @Override
-            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
+    private BuildAgent findAgent(Job job, BuildResultsSummary buildResultsSummary) {
+        Long agentId = buildResultsSummary.getBuildAgentId();
+        if (agentId == null) {
+            //not sure why the build agent id is null sometimes. but because it is,
+            //our offline remote agents keep accumulating
+            Optional<BuildAgent> found = agentManager.getAllRemoteAgents().stream()
+                    .filter((BuildAgent t) -> {
+                        return AgentQueries.isDockerAgentForResult(t, buildResultsSummary.getPlanResultKey());
+                    })
+                    .findFirst();
+            if (found.isPresent()) {
+                LOG.info("Found missing build agent for job " + job.getId());
+                return found.get();
+            } else {
+                LOG.error("Unable to find build agent for job " + job.getId());
+                return null;
             }
-            
-            @Override
-            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
+        } else {
+            BuildAgent test = agentManager.getAgent(agentId);
+            //BUILDENG-12398 very rare not exactly sure how these can happen
+            // log when that happens again to know for sure.
+            if (test == null) {
+                // on a rerun is the buildResultSummary still holding the old agentId sometimes?
+                LOG.error("Agent {} for job {} referenced from buildResultSummary but missing in db.", agentId, job.getId());
+                return null;
+            } else if (!AgentQueries.isDockerAgent(test)) {
+                //could it be an elastic/remote agent that was running the job while the plan was changed?
+                LOG.error("Agent {} for job {} referenced from buildResultSummary wa not PBC agent", agentId, job.getId());
+                return null;
             }
-            
-            @Override
-            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
-                final CapabilitySet capabilitySet = pipelineDefinition.getCapabilitySet();
-                if (capabilitySet != null) {
-                    Capability cap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
-                    if (cap != null) {
-                        if (key.equals(PlanKeys.getPlanResultKey(cap.getValue()))) {
-                            b[0] = true;
-                        }
-                    }
-                }
-            }
-        });
-        return b[0];
+            return test;
+        }
     }
-
 }

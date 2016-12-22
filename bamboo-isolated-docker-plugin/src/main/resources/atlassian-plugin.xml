@@ -60,6 +60,9 @@
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
 
+    <component key="agentRemovals" class="com.atlassian.buildeng.isolated.docker.AgentRemovals">
+    </component>
+
     <web-resource key="docker-ui-js" name="JavaScript to modify task panels.">
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
         <dependency>com.atlassian.auiplugin:ajs</dependency>
