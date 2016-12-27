@@ -106,4 +106,19 @@
       <resource type="freemarker" name="edit" location="/templates/plugin/editRequirementTask.ftl"/>
     </taskType>
     
+    <xwork key="local" name="Show Docker Compose for dev execution">
+        <package name="localExec" extends="admin">
+            <action name="viewLocalExec" class="com.atlassian.buildeng.isolated.docker.compose.LocalExecAction">
+                <result name="success" type="freemarker">/templates/plugin/localExec.ftl</result>
+            </action>
+        </package>
+    </xwork>
+    <web-resource key="docker-ulocal-exec-ui-js" name="JavaScript for local exec panel.">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+
+        <resource type="download" name="localExec.js" location="/templates/plugin/localExec.js"/>
+        <context>viewLocalExec</context>
+    </web-resource>
+    
 </atlassian-plugin>
