@@ -80,7 +80,7 @@ public interface SchedulerBackend {
      */
     AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException;
     
-    Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException;
+    Collection<Task> checkTasks(String cluster, List<String> taskArns) throws ECSException;
 
     void suspendProcess(String autoScalingGroupName, String azRebalance) throws ECSException;
 }

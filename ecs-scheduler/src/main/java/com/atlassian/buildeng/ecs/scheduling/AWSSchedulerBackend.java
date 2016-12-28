@@ -44,6 +44,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,6 +62,9 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
+
+    //there seems to be a limit of 100 to the tasks that can be described in a batch
+    private static final int MAXIMUM_TASKS_TO_DESCRIBE = 90;
 
     @Inject
     public AWSSchedulerBackend() {
@@ -269,19 +273,20 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     
 
     @Override
-    public Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException {
+    public Collection<Task> checkTasks(String cluster, List<String> taskArns) throws ECSException {
         AmazonECSClient ecsClient = new AmazonECSClient();
         try {
             final List<Task> toRet = new ArrayList<>();
-            DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(taskArns));
-            res.getTasks().forEach((Task t) -> {
-                toRet.add(t);
-            });
-            if (!res.getFailures().isEmpty()) {
-                if (toRet.isEmpty()) {
-                    throw new ECSException(Arrays.toString(res.getFailures().toArray()));
-                } else {
-                    logger.info("Error on retrieving tasks: {}",Arrays.toString(res.getFailures().toArray()));
+            List<List<String>> partitioned = Lists.partition(taskArns, MAXIMUM_TASKS_TO_DESCRIBE);
+            for (List<String> batch : partitioned) {
+                DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
+                toRet.addAll(res.getTasks());
+                if (!res.getFailures().isEmpty()) {
+                    if (toRet.isEmpty()) {
+                        throw new ECSException(Arrays.toString(res.getFailures().toArray()));
+                    } else {
+                        logger.info("Error on retrieving tasks: {}",Arrays.toString(res.getFailures().toArray()));
+                    }
                 }
             }
             return toRet;
