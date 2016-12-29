@@ -15,18 +15,15 @@
  */
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
+import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.bamboo.build.BuildExecutionManager;
 import com.atlassian.bamboo.build.CustomBuildProcessorServer;
-import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentlyBuilding;
-import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
-import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +39,11 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
     private final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
 
     private BuildContext buildContext;
-    private final AgentManager agentManager;
-    private final AgentCommandSender agentCommandSender;
+    private final AgentRemovals agentRemovals;
     private final BuildExecutionManager buildExecutionManager;
 
-    public BuildProcessorServerImpl(AgentManager agentManager, AgentCommandSender agentCommandSender, BuildExecutionManager buildExecutionManager) {
-        this.agentManager = agentManager;
-        this.agentCommandSender = agentCommandSender;
+    public BuildProcessorServerImpl(AgentRemovals agentRemovals, BuildExecutionManager buildExecutionManager) {
+        this.agentRemovals = agentRemovals;
         this.buildExecutionManager = buildExecutionManager;
     }
     
@@ -72,10 +67,9 @@ public class BuildProcessorServerImpl implements CustomBuildProcessorServer {
                 agentId = building.getBuildAgentId();
             }
             if (building != null && agentId != null) {
-                BuildAgent agent = agentManager.getAgent(agentId);
-                assert agent != null;
-                DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
-                LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.", buildContext.getBuildResultKey(), agent.getName());
+                agentRemovals.stopAgentRemotely(agentId);
+                agentRemovals.removeAgent(agentId);
+                LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.", buildContext.getBuildResultKey(), agentId);
             } else {
                 LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getBuildResultKey());
             }
