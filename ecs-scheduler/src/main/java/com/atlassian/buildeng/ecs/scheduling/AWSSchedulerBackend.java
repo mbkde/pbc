@@ -35,6 +35,7 @@ import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
+import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
@@ -44,8 +45,8 @@ import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -61,6 +62,9 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
+
+    //there seems to be a limit of 100 to the tasks that can be described in a batch
+    private static final int MAXIMUM_TASKS_TO_DESCRIBE = 90;
 
     @Inject
     public AWSSchedulerBackend() {
@@ -269,20 +273,21 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     
 
     @Override
-    public Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException {
+    public Collection<Task> checkTasks(String cluster, List<String> taskArns) throws ECSException {
         AmazonECSClient ecsClient = new AmazonECSClient();
         try {
             final List<Task> toRet = new ArrayList<>();
-            DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(taskArns));
-            res.getTasks().forEach((Task t) -> {
-                toRet.add(t);
-            });
-            if (!res.getFailures().isEmpty()) {
-                if (toRet.isEmpty()) {
-                    throw new ECSException(Arrays.toString(res.getFailures().toArray()));
-                } else {
-                    logger.info("Error on retrieving tasks: {}",Arrays.toString(res.getFailures().toArray()));
-                }
+            List<List<String>> partitioned = Lists.partition(taskArns, MAXIMUM_TASKS_TO_DESCRIBE);
+            List<Failure> failures = new ArrayList<>();
+            for (List<String> batch : partitioned) {
+                DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
+                toRet.addAll(res.getTasks());
+                failures.addAll(res.getFailures());
+            }
+            if (!failures.isEmpty()) {
+                //some taskIds were wrong but the response from aws was still 200,
+                //return the ones we got and log the failures only.
+                logger.info("Failures on retrieving tasks: {}", failures.toString());
             }
             return toRet;
         } catch (Exception ex) {
