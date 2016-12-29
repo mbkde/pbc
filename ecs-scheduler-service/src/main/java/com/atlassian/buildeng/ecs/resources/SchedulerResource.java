@@ -1,8 +1,6 @@
 package com.atlassian.buildeng.ecs.resources;
 
-import com.amazonaws.services.ecs.model.Container;
-import com.amazonaws.services.ecs.model.Task;
-import com.atlassian.buildeng.ecs.api.ArnStoppedState;
+import com.atlassian.buildeng.ecs.scheduling.ArnStoppedState;
 import com.atlassian.buildeng.ecs.api.Scheduler;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
@@ -25,7 +23,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -33,7 +30,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.apache.commons.lang3.StringUtils;
 
 
 @Path("/rest/scheduler")
@@ -111,26 +107,8 @@ public class SchedulerResource {
         if (arnsList == null || arnsList.isEmpty()) {
             return new ArnStoppedState[0];
         }
-        Collection<Task> tasks = schedulerBackend.checkTasks(configuration.getCurrentCluster(), arnsList);
-        return tasks.stream()
-                .filter((Task t) -> "STOPPED".equals(t.getLastStatus()))
-                .map((Task t) -> {
-                    String arn = t.getTaskArn();
-                    String reason = getError(t);
-                    return new ArnStoppedState(arn, reason);
-                })
-                .collect(Collectors.toList()).toArray(new ArnStoppedState[0]);
-    }
-
-    private String getError(Task tsk) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(tsk.getStoppedReason()).append(":");
-        tsk.getContainers().stream()
-                .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
-                .forEach((c) -> {
-                    sb.append(c.getName()).append("[").append(c.getReason()).append("],");
-        });
-        return sb.toString();
+        Collection<ArnStoppedState> tasks = schedulerBackend.checkStoppedTasks(configuration.getCurrentCluster(), arnsList);
+        return tasks.toArray(new ArnStoppedState[0]);
     }
 }
 

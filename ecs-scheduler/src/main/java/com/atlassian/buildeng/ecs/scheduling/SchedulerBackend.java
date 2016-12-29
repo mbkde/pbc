@@ -79,8 +79,16 @@ public interface SchedulerBackend {
      * @throws ECSException 
      */
     AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException;
-    
-    Collection<Task> checkTasks(String cluster, List<String> taskArns) throws ECSException;
+
+    /**
+     * for given taskArn strings return an ArnStoppedState object for every taskArn
+     * that is stopped or missing in the cluster.
+     * @param cluster
+     * @param taskArns
+     * @return
+     * @throws ECSException
+     */
+    Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException;
 
     void suspendProcess(String autoScalingGroupName, String azRebalance) throws ECSException;
 }

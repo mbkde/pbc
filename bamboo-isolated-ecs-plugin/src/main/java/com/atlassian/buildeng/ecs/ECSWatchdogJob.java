@@ -15,8 +15,6 @@
  */
 package com.atlassian.buildeng.ecs;
 
-import com.amazonaws.services.ecs.model.Container;
-import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
@@ -31,6 +29,7 @@ import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.scheduling.ArnStoppedState;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
@@ -46,7 +45,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,10 +120,10 @@ public class ECSWatchdogJob implements PluginJob {
         }
         logger.debug("Currently queued docker agent requests {}", arns.size());
         try {
-            Collection<Task> tasks = backend.checkTasks(globalConfig.getCurrentCluster(), arns);
-            final Map<String, Task> stoppedTasksByArn = new HashMap<>();
-            tasks.stream().filter((Task t) -> "STOPPED".equals(t.getLastStatus())).forEach((Task t) -> {
-                stoppedTasksByArn.put(t.getTaskArn(), t);
+            Collection<ArnStoppedState> tasks = backend.checkStoppedTasks(globalConfig.getCurrentCluster(), arns);
+            final Map<String, ArnStoppedState> stoppedTasksByArn = new HashMap<>();
+            tasks.stream().forEach((ArnStoppedState t) -> {
+                stoppedTasksByArn.put(t.getArn(), t);
             });
             if (!stoppedTasksByArn.isEmpty()) {
                 logger.info("Found stopped tasks: {}", stoppedTasksByArn.size());
@@ -135,9 +133,9 @@ public class ECSWatchdogJob implements PluginJob {
                     CurrentResult current = t.getView().getCurrentResult();
                     String taskArn = current.getCustomBuildData().get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
                     if (taskArn != null) {
-                        Task tsk = stoppedTasksByArn.get(taskArn);
+                        ArnStoppedState tsk = stoppedTasksByArn.get(taskArn);
                         if (tsk != null) {
-                            String error = getError(tsk);
+                            String error = tsk.getReason();
                             if (error.contains("CannotCreateContainerError") || error.contains("HostConfigError")) {
                                 logger.info("Retrying job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 Configuration config = AccessConfiguration.forContext(t.getView());
@@ -171,16 +169,4 @@ public class ECSWatchdogJob implements PluginJob {
             logger.error("Error contacting ECS", ex);
         }
     }
-
-    private String getError(Task tsk) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(tsk.getStoppedReason()).append(":");
-        tsk.getContainers().stream()
-                .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
-                .forEach((c) -> {
-                    sb.append(c.getName()).append("[").append(c.getReason()).append("],");
-        });
-        return sb.toString();
-    }
-    
 }
