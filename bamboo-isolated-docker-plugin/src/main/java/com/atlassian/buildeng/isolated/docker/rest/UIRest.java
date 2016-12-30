@@ -78,7 +78,9 @@ public class UIRest {
                 try {
                     JSONObject obj = new JSONObject();
                     obj.put("id", t.getId());
-                    obj.put("label", t.getConfiguration().get("label"));
+                    //runtime in nodejs, label evenrywhere else?
+                    String lbl = t.getConfiguration().getOrDefault("label", t.getConfiguration().get("runtime"));
+                    obj.put("label", lbl);
                     obj.put("buildJdk", t.getConfiguration().get("buildJdk"));
                     result.put(obj);
                 } catch (JSONException ex) {
