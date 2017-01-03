@@ -30,6 +30,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -273,21 +275,22 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     
 
     @Override
-    public Collection<Task> checkTasks(String cluster, List<String> taskArns) throws ECSException {
+    public Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException {
         AmazonECSClient ecsClient = new AmazonECSClient();
         try {
-            final List<Task> toRet = new ArrayList<>();
+            final List<ArnStoppedState> toRet = new ArrayList<>();
             List<List<String>> partitioned = Lists.partition(taskArns, MAXIMUM_TASKS_TO_DESCRIBE);
-            List<Failure> failures = new ArrayList<>();
             for (List<String> batch : partitioned) {
                 DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
-                toRet.addAll(res.getTasks());
-                failures.addAll(res.getFailures());
-            }
-            if (!failures.isEmpty()) {
-                //some taskIds were wrong but the response from aws was still 200,
-                //return the ones we got and log the failures only.
-                logger.info("Failures on retrieving tasks: {}", failures.toString());
+                res.getTasks().forEach((Task t) -> {
+                    if ("STOPPED".equals(t.getLastStatus())) {
+                        toRet.add(new ArnStoppedState(t.getTaskArn(), getError(t)));
+                    }
+                });
+                res.getFailures().forEach((Failure t) -> {
+                    //for missing items it's MISSING. do we convert to user level explanatory string?
+                    toRet.add(new ArnStoppedState(t.getArn(), t.getReason()));
+                });
             }
             return toRet;
         } catch (Exception ex) {
@@ -297,7 +300,17 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 throw new ECSException(ex);
             }
         }
-        
+    }
+
+    private String getError(Task tsk) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(tsk.getStoppedReason()).append(":");
+        tsk.getContainers().stream()
+                .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
+                .forEach((c) -> {
+                    sb.append(c.getName()).append("[").append(c.getReason()).append("],");
+        });
+        return sb.toString();
     }
 
     /**

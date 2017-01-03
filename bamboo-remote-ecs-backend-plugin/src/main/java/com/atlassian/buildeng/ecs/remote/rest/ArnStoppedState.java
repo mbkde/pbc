@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.ecs.remote.rest;
 
+//there is a copy of this class in com.atlassian.buildeng.ecs.scheduling package
 public class ArnStoppedState {
     String arn;
     String reason;
