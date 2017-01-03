@@ -32,6 +32,7 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
+import com.amazonaws.services.ecs.model.DeregisterContainerInstanceRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
@@ -145,9 +146,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, boolean decrementSize) throws ECSException {
+    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, boolean decrementSize, String clusterName) throws ECSException {
         try {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
+            //explicit deregister first BUILDENG-12397 for details
+            hosts.stream().forEach((DockerHost t) -> {
+                deregisterInstance(t.getContainerInstanceArn(), clusterName);
+            });
             final List<String> asgInstances = hosts.stream().filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
             if (!asgInstances.isEmpty()) {
                 AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
@@ -201,6 +206,20 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             }
         } catch (Exception e) {
             throw new ECSException(e);
+        }
+    }
+
+
+    private void deregisterInstance(String containerInstanceArn, String cluster) {
+        AmazonECSClient ecsClient = new AmazonECSClient();
+        try {
+            ecsClient.deregisterContainerInstance(new DeregisterContainerInstanceRequest()
+                    .withCluster(cluster)
+                    .withContainerInstance(containerInstanceArn));
+        } catch (RuntimeException e) {
+            //failure to deregister is recoverable in our usecase
+            //(it will be eventually deregistered as result ASG detachment)
+            logger.error("Failed to deregister container instance " + containerInstanceArn, e);
         }
     }
 
