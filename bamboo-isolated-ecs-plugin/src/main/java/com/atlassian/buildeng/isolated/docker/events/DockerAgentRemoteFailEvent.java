@@ -25,16 +25,20 @@ public final class DockerAgentRemoteFailEvent {
 
     private final String errorMessage;
     private final Key key;
+    private final String taskArn;
+    private final String containerArn;
 
 
-    public DockerAgentRemoteFailEvent(String errorMessage, Key key) {
+    public DockerAgentRemoteFailEvent(String errorMessage, Key key, String taskArn, String containerArn) {
         this.errorMessage = errorMessage;
         this.key = key;
+        this.taskArn = taskArn;
+        this.containerArn = containerArn;
     }
 
     @Override
     public String toString() {
-        return "DockerAgentRemoteFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + '}';
+        return "DockerAgentRemoteFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn + "}";
     }
 
     

@@ -144,7 +144,7 @@ public class ECSWatchdogJob implements PluginJob {
                                 logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                                 current.getCustomBuildData().put(Constants.RESULT_ERROR, error);
-                                eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));
+                                eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                                 if (t.getView() instanceof BuildContext) {
                                     current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                                     buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());

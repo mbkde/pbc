@@ -20,11 +20,13 @@ package com.atlassian.buildeng.ecs.scheduling;
 //any change to this class will have consequences to REST serialization/deserialization
 public class ArnStoppedState {
     String arn;
+    String containerArn;
     String reason;
 
-    public ArnStoppedState(String arn, String reason) {
+    public ArnStoppedState(String arn, String containerArn, String reason) {
         this.arn = arn;
         this.reason = reason;
+        this.containerArn = containerArn;
     }
 
     public String getArn() {
@@ -34,7 +36,9 @@ public class ArnStoppedState {
     public String getReason() {
         return reason;
     }
-    
 
+    public String getContainerArn() {
+        return containerArn;
+    }
 
 }

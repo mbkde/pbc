@@ -19,14 +19,16 @@ package com.atlassian.buildeng.ecs.remote.rest;
 //there is a copy of this class in com.atlassian.buildeng.ecs.scheduling package
 public class ArnStoppedState {
     String arn;
+    String containerArn;
     String reason;
 
     public ArnStoppedState() {
     }
 
-    public ArnStoppedState(String arn, String reason) {
+    public ArnStoppedState(String arn, String containerArn, String reason) {
         this.arn = arn;
         this.reason = reason;
+        this.containerArn = containerArn;
     }
 
     public String getArn() {
@@ -36,7 +38,8 @@ public class ArnStoppedState {
     public String getReason() {
         return reason;
     }
-    
 
-
+    public String getContainerArn() {
+        return containerArn;
+    }
 }
