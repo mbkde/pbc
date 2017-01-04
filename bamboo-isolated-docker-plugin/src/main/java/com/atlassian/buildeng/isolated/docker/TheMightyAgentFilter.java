@@ -40,7 +40,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
 
     @Override
     public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
-        log.debug("have {} agents for {}", agents.size(), context.getBuildKey());
+        log.debug("have {} agents for {}", agents.size(), context.getResultKey());
         if (hasIsolatedDockerRequirement(requirements)) {
             for (BuildAgent agent : agents) {
                 if (!AgentType.REMOTE.equals(agent.getType())) {
