@@ -303,12 +303,12 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
                 res.getTasks().forEach((Task t) -> {
                     if ("STOPPED".equals(t.getLastStatus())) {
-                        toRet.add(new ArnStoppedState(t.getTaskArn(), getError(t)));
+                        toRet.add(new ArnStoppedState(t.getTaskArn(), t.getContainerInstanceArn(), getError(t)));
                     }
                 });
                 res.getFailures().forEach((Failure t) -> {
                     //for missing items it's MISSING. do we convert to user level explanatory string?
-                    toRet.add(new ArnStoppedState(t.getArn(), t.getReason()));
+                    toRet.add(new ArnStoppedState(t.getArn(), "unknown", t.getReason()));
                 });
             }
             return toRet;
