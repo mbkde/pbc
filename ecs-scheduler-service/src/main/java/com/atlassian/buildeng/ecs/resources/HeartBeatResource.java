@@ -17,9 +17,6 @@ package com.atlassian.buildeng.ecs.resources;
 
 import com.atlassian.buildeng.ecs.api.Heartbeat;
 
-import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
-import com.atlassian.event.api.EventPublisher;
-import java.util.Collections;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

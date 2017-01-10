@@ -35,8 +35,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.component.LifeCycle;
@@ -79,10 +77,9 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
             protected void configure() {
                 //system environment mapped to @Named, sort of shortcut
                 Map<String, String> props = new HashMap<>(System.getenv());
-                String ddHost = System.getenv(DatadogEventPublisher.DATADOG_HOST);
-                if (ddHost != null) {
-                    String ddPort = StringUtils.defaultIfBlank(System.getenv(DatadogEventPublisher.DATADOG_PORT), "8125");
-                    props.put(DatadogEventPublisher.DATADOG_PORT, ddPort);
+                String ddApi = System.getenv(DatadogEventPublisher.DATADOG_API);
+                if (ddApi != null) {
+                    props.put(DatadogEventPublisher.DATADOG_API, ddApi);
                     bind(EventPublisher.class).to(DatadogEventPublisher.class);
                 } else {
                     bind(EventPublisher.class).to(DummyEventPublisher.class);
