@@ -80,6 +80,14 @@ public interface Constants {
     // Ratio between soft and hard limits
     Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
 
+
+    /**
+     * environment variable name for extra containers that when defined will be used
+     * to tweak the extra container's ulimits. The format is space separated list of key pairs.
+     * name=soft[:hard] where hard is optional and both soft and hard are expected to be numbers
+     */
+    String ENV_VAR_PBC_ULIMIT_OVERRIDE = "PBC_ULIMIT_OVERRIDE";
+
     /**
      * the maximum interval in minutes in what the state instances in cluster will be checked and
      * eventually killed. It should be a bit smaller than MINUTES_BEFORE_BILLING_CYCLE to allow

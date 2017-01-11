@@ -28,6 +28,8 @@ import com.amazonaws.services.ecs.model.LogConfiguration;
 import com.amazonaws.services.ecs.model.MountPoint;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
+import com.amazonaws.services.ecs.model.Ulimit;
+import com.amazonaws.services.ecs.model.UlimitName;
 import com.amazonaws.services.ecs.model.Volume;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
@@ -35,7 +37,11 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import org.apache.commons.fileupload.util.Streams;
@@ -48,7 +54,7 @@ public class TaskDefinitionRegistrations {
     public static boolean isDockerInDockerImage(String image) {
         return image.startsWith("docker:") && image.endsWith("dind");
     }
-    
+
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
         Map<String, Integer> getAllECSTaskRegistrations();
@@ -110,6 +116,7 @@ public class TaskDefinitionRegistrations {
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
                     .withMemory((int) (t.getExtraSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
+                    .withUlimits(generateUlimitList(t))
                     .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                     .withEssential(false), globalConfiguration);
             if (isDockerInDockerImage(t.getImage())) {
@@ -184,4 +191,54 @@ public class TaskDefinitionRegistrations {
     AmazonECS createClient() {
         return new AmazonECSClient();
     }
+
+    private static Collection<Ulimit> generateUlimitList(Configuration.ExtraContainer t) {
+        List<Ulimit> toRet = new ArrayList<>();
+        String ulimitsTweaks = getUlimitTweaksEnvVar(t);
+        if (ulimitsTweaks != null) {
+            Splitter.on(" ").split(ulimitsTweaks).forEach((String t2) -> {
+                String[] oneLimit = t2.split("=");
+                if (oneLimit.length == 2) {
+                    //name=val
+                    String name = oneLimit[0];
+                    String soft;
+                    String hard = null;
+                    if (oneLimit[1].contains(":")) {
+                        //name=soft:hard
+                        String[] vals = oneLimit[1].split(":");
+                        soft = vals[0];
+                        hard = vals[1];
+                    } else {
+                        soft = oneLimit[1];
+                    }
+                    try {
+                        Ulimit limit = new Ulimit();
+                        limit.setName(UlimitName.fromValue(name));
+                        limit.setSoftLimit(Integer.valueOf(soft));
+                        if (hard != null) {
+                            limit.setHardLimit(Integer.valueOf(hard));
+                        }
+                        toRet.add(limit);
+                    } catch (NumberFormatException x) {
+                        //wrong number
+                        logger.error("PBC_ULIMIT_OVERRIDE contains wrongly formatted ulimit values: {}", t2);
+                    } catch (IllegalArgumentException x) {
+                        //wrong limit name
+                        logger.error("PBC_ULIMIT_OVERRIDE contains wrongly ulimit names: {}", t2);
+                    }
+                }
+            });
+        }
+        return toRet;
+    }
+
+    private static String getUlimitTweaksEnvVar(Configuration.ExtraContainer t) {
+        return t.getEnvVariables().stream()
+                .filter((Configuration.EnvVariable t1) -> Constants.ENV_VAR_PBC_ULIMIT_OVERRIDE.equals(t1.getName()))
+                .findFirst()
+                .map((Configuration.EnvVariable t1) -> t1.getValue())
+                .orElse(null);
+    }
+
+
 }
