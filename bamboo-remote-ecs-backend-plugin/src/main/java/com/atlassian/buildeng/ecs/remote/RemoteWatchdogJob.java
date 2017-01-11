@@ -31,6 +31,7 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
 import com.atlassian.buildeng.ecs.remote.rest.ArnStoppedState;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
@@ -103,7 +104,7 @@ public class RemoteWatchdogJob implements PluginJob {
                             logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                             errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(RESULT_ERROR, error);
-//TODO                                eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));
+                            eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                             if (t.getView() instanceof BuildContext) {
                                 current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                                 buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
