@@ -117,6 +117,7 @@ public class TaskDefinitionRegistrations {
                     .withMemoryReservation(t.getExtraSize().memory())
                     .withMemory((int) (t.getExtraSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
                     .withUlimits(generateUlimitList(t))
+                    .withLinks(generateExtraContainerLinks(t))
                     .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                     .withEssential(false), globalConfiguration);
             if (isDockerInDockerImage(t.getImage())) {
@@ -192,6 +193,17 @@ public class TaskDefinitionRegistrations {
         return new AmazonECSClient();
     }
 
+    private static Collection<String> generateExtraContainerLinks(Configuration.ExtraContainer t) {
+        List<String> toRet = new ArrayList<>();
+        String extraLinks = getExtraLinksEnvVar(t);
+        if (extraLinks != null) {
+            Splitter.on(" ").split(extraLinks).forEach((String t2) -> {
+                toRet.add(t2);
+            });
+        }
+        return toRet;
+    }
+
     private static Collection<Ulimit> generateUlimitList(Configuration.ExtraContainer t) {
         List<Ulimit> toRet = new ArrayList<>();
         String ulimitsTweaks = getUlimitTweaksEnvVar(t);
@@ -233,11 +245,19 @@ public class TaskDefinitionRegistrations {
     }
 
     private static String getUlimitTweaksEnvVar(Configuration.ExtraContainer t) {
+        return getEnvVarValue(t, Constants.ENV_VAR_PBC_ULIMIT_OVERRIDE);
+    }
+
+    private static String getEnvVarValue(Configuration.ExtraContainer t, String envVarName) {
         return t.getEnvVariables().stream()
-                .filter((Configuration.EnvVariable t1) -> Constants.ENV_VAR_PBC_ULIMIT_OVERRIDE.equals(t1.getName()))
+                .filter((Configuration.EnvVariable t1) -> envVarName.equals(t1.getName()))
                 .findFirst()
                 .map((Configuration.EnvVariable t1) -> t1.getValue())
                 .orElse(null);
+    }
+
+    private static String getExtraLinksEnvVar(Configuration.ExtraContainer t) {
+        return getEnvVarValue(t, Constants.ENV_VAR_PBC_EXTRA_LINKS);
     }
 
 
