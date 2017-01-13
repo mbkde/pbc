@@ -40,9 +40,12 @@ import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
 import com.google.common.base.Function;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -52,8 +55,14 @@ import org.slf4j.LoggerFactory;
  *
  * @author mkleint
  */
+//this class is very similar to RemoteWatchDogJob
+//we currently don't have a place to put the shared code between these 2 plugins
+//but we eventually should, effectively we need another project/jar
 public class ECSWatchdogJob implements PluginJob {
     private final static Logger logger = LoggerFactory.getLogger(ECSWatchdogJob.class);
+    private static final int MISSING_TASK_GRACE_PERIOD_MINUTES = 5;
+    private static final int CACHE_CLEANUP_TIMEOUT_MINUTES = 30;
+    private static final String KEY_MISSING_ARNS_MAP = "MISSING_ARNS_MAP";
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
@@ -115,6 +124,7 @@ public class ECSWatchdogJob implements PluginJob {
                 arns.add(taskArn);
             }
         });
+        Map<String, Date> missingTaskArns = getMissingTasksArn(jobDataMap);
         if (arns.isEmpty()) {
             return;
         }
@@ -136,6 +146,19 @@ public class ECSWatchdogJob implements PluginJob {
                         ArnStoppedState tsk = stoppedTasksByArn.get(taskArn);
                         if (tsk != null) {
                             String error = tsk.getReason();
+                            //can be missing both right after being run or when long overdue and wiped from ecs history
+                            if ("MISSING".equals(error)) {
+                                //if there was a way of finding out when the bambo job was started, we could
+                                //have a simple grace period, we have to come up with our own somehow.
+                                Date firstTimeMissing = missingTaskArns.get(taskArn);
+                                if (firstTimeMissing == null || Duration.ofMillis(System.currentTimeMillis() - firstTimeMissing.getTime()).toMinutes() < MISSING_TASK_GRACE_PERIOD_MINUTES) {
+                                    if (firstTimeMissing == null) {
+                                        missingTaskArns.put(taskArn, new Date());
+                                    }
+                                    logger.debug("Task {} missing, still in grace period, not stopping the build.", taskArn);
+                                    return; //do not stop or retry, we could be just too fast on checking
+                                } 
+                            }
                             if (error.contains("CannotCreateContainerError") || error.contains("HostConfigError")) {
                                 logger.info("Retrying job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 Configuration config = AccessConfiguration.forContext(t.getView());
@@ -168,5 +191,22 @@ public class ECSWatchdogJob implements PluginJob {
         } catch (ECSException ex) {
             logger.error("Error contacting ECS", ex);
         }
+    }
+
+    private Map<String, Date> getMissingTasksArn(Map<String, Object> data) {
+        @SuppressWarnings("unchecked")
+        Map<String, Date> map = (Map<String, Date>) data.get(KEY_MISSING_ARNS_MAP);
+        if (map == null) {
+            map = new HashMap<>();
+            data.put(KEY_MISSING_ARNS_MAP, map);
+        }
+        // trim values that are too old to have
+        for (Iterator<Map.Entry<String, Date>> iterator = map.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry<String, Date> next = iterator.next();
+            if (Duration.ofMillis(System.currentTimeMillis() - next.getValue().getTime()).toMinutes() > CACHE_CLEANUP_TIMEOUT_MINUTES) {
+                iterator.remove();
+            }
+        }
+        return map;
     }
 }
