@@ -18,21 +18,24 @@ package com.atlassian.buildeng.ecs.remote;
 
 import com.atlassian.buildeng.ecs.remote.rest.Config;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import java.net.URISyntaxException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @WebSudoRequired
 @Path("/")
 public class Rest {
 
- private final GlobalConfiguration configuration;
+    private final GlobalConfiguration configuration;
 
 
     @Autowired
@@ -62,4 +65,33 @@ public class Rest {
         configuration.persist(config.getSidekickImage(), config.getAwsRole(), config.getServerUrl());
         return Response.noContent().build();
     }
+
+    static final String PARAM_CONTAINER = "containerName";
+    static final String PARAM_TASK_ARN = "taskArn";
+
+    @GET
+    @Path("/logs")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getAwsLogs(
+            @QueryParam(PARAM_CONTAINER) String containerName,
+            @QueryParam(PARAM_TASK_ARN) String taskArn)
+    {
+        if (containerName == null || taskArn == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(PARAM_CONTAINER + " and " + PARAM_TASK_ARN + " are mandatory").build();
+        }
+        String server = configuration.getCurrentServer();
+        if (server == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("remote pbc server not defined in global settings.").build();
+        }
+        try {
+            URIBuilder uriBuilder = new URIBuilder(configuration.getCurrentServer() + "/rest/logs")
+                    .addParameter(Rest.PARAM_CONTAINER, containerName)
+                    .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+            return Response.seeOther(uriBuilder.build()).build();
+        } catch (URISyntaxException ex) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Error constructing URI to pbc-service").build();
+        }
+    }
+
 }

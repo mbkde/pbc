@@ -18,6 +18,7 @@ package com.atlassian.buildeng.ecs;
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.resources.SchedulerResource;
 import com.atlassian.buildeng.ecs.resources.HeartBeatResource;
+import com.atlassian.buildeng.ecs.resources.LogsResource;
 import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
@@ -77,6 +78,12 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
             protected void configure() {
                 //system environment mapped to @Named, sort of shortcut
                 Map<String, String> props = new HashMap<>(System.getenv());
+                if (!props.containsKey(ECSConfigurationImpl.ECS_LOG_DRIVER)) {
+                    props.put(ECSConfigurationImpl.ECS_LOG_DRIVER, "");
+                }
+                if (!props.containsKey(ECSConfigurationImpl.ECS_LOG_OPTIONS)) {
+                    props.put(ECSConfigurationImpl.ECS_LOG_OPTIONS, "");
+                }
                 String ddApi = System.getenv(DatadogEventPublisher.DATADOG_API);
                 if (ddApi != null) {
                     props.put(DatadogEventPublisher.DATADOG_API, ddApi);
@@ -108,5 +115,6 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
 
         environment.jersey().register(injector.getInstance(SchedulerResource.class));
         environment.jersey().register(injector.getInstance(HeartBeatResource.class));
+        environment.jersey().register(injector.getInstance(LogsResource.class));
     }
 }

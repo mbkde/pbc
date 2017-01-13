@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
@@ -31,12 +32,16 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.core.MediaType;
+import org.apache.http.client.utils.URIBuilder;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +50,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     static String PLUGIN_JOB_KEY = "ecs-remote-watchdog";
     static long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; //Reap once every 60 seconds
+    
+    //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
+    static final String RESULT_PREFIX = "result.isolated.docker.";
+    static final String RESULT_PART_TASKARN = "TaskARN";
+    // The name of the agent container
+    static final String AGENT_CONTAINER_NAME = "bamboo-agent";
 
     private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
@@ -97,6 +108,32 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         Client client = Client.create(clientConfig);
         return client;
     }
+
+    @Override
+    public String renderContainerLogs(Configuration configuration, Map<String, String> customData) {
+        String taskArn = customData.get(RESULT_PREFIX + RESULT_PART_TASKARN);
+        if (taskArn == null) {
+            return null;
+        }
+        Stream<String> s = Stream.concat(
+                Stream.of(AGENT_CONTAINER_NAME),
+                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
+        String ss = s.map((String name) -> {
+            try {
+               URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
+                .addParameter(Rest.PARAM_CONTAINER, name)
+                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+                return "<a href=\"" + bb.build().toString() + "\">" + name + "</a>" + COMMA_SPACES;
+            } catch (URISyntaxException ex) {
+                return "";
+            }
+        }).collect(Collectors.joining());
+        return ss.substring(0, ss.length() - COMMA_SPACES.length());
+    }
+    private static final String COMMA_SPACES = ",&nbsp;&nbsp;";
+    
+
+
 
     @Override
     public List<String> getKnownDockerImages() {
