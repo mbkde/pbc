@@ -89,6 +89,14 @@ public interface Constants {
     String ENV_VAR_PBC_ULIMIT_OVERRIDE = "PBC_ULIMIT_OVERRIDE";
 
     /**
+     * a space separated list of container names that the extra container should link to.
+     *  makes no effort to sanitize the values in terms of circular dependencies between
+     * the extra containers. Can never point to the main container (that one links to extra containers already)
+     * 
+     */
+    String ENV_VAR_PBC_EXTRA_LINKS = "PBC_EXTRA_LINKS";
+
+    /**
      * the maximum interval in minutes in what the state instances in cluster will be checked and
      * eventually killed. It should be a bit smaller than MINUTES_BEFORE_BILLING_CYCLE to allow
      * graceful killing within current billing cycle.
