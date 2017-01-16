@@ -57,7 +57,7 @@ public class AwsLogs {
                 writer.flush();
             }
         } catch (RuntimeException ex) {
-            ex.printStackTrace(writer);
+            writer.println(ex.getLocalizedMessage());
         } finally {
             writer.flush();
         }
