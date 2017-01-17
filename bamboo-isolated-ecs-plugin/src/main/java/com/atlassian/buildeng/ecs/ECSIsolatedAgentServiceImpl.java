@@ -19,6 +19,7 @@ import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
+import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
@@ -106,7 +107,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     @Override
     public String renderContainerLogs(Configuration configuration, Map<String, String> customData) {
         String taskArn = customData.get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
-        if (taskArn == null || !"awslogs".equals(globalConfiguration.getLoggingDriver())) {
+        if (taskArn == null || AwsLogs.getAwsLogsDriver(globalConfiguration) == null) {
             return null;
         }
         Stream<String> s = Stream.concat(

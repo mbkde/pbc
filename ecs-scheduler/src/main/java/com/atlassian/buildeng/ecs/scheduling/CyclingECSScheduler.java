@@ -20,6 +20,7 @@ import com.amazonaws.services.autoscaling.model.SuspendedProcess;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
@@ -263,6 +264,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                         if (reportedLonelyAsgInstances.size() > 50) { //random number to keep the list from growing indefinitely
                             reportedLonelyAsgInstances.remove(0);
                         }
+                        AwsLogs.logEC2InstanceOutputToCloudwatch(t, globalConfiguration);
                         try {
                             schedulerBackend.terminateInstances(Collections.<String>singletonList(t));
                         } catch (ECSException e) {
