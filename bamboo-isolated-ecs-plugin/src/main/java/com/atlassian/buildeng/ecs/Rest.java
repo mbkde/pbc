@@ -161,18 +161,15 @@ public class Rest {
         if (containerName == null || taskArn == null) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
-        String driver = configuration.getLoggingDriver();
-        if ("awslogs".equals(driver)) {
-            String region = configuration.getLoggingDriverOpts().get("awslogs-region");
-            String logGroupName = configuration.getLoggingDriverOpts().get("awslogs-group");
-            String prefix = configuration.getLoggingDriverOpts().get("awslogs-stream-prefix");
-            if (region == null || logGroupName == null || prefix == null) {
+        AwsLogs.Driver driver = AwsLogs.getAwsLogsDriver(configuration);
+        if (driver != null) {
+            if (driver.getRegion() == null || driver.getLogGroupName() == null || driver.getStreamPrefix() == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.").build();
             }
 
             StreamingOutput stream = (OutputStream os) -> {
-                AwsLogs.writeTo(os, logGroupName, region, prefix, containerName, taskArn);
+                AwsLogs.writeTo(os, driver.getLogGroupName(), driver.getRegion(), driver.getStreamPrefix(), containerName, taskArn);
             };
             return Response.ok(stream).build();
         }
