@@ -21,6 +21,7 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.GetConsoleOutputRequest;
 import com.amazonaws.services.ec2.model.GetConsoleOutputResult;
 import com.amazonaws.services.logs.AWSLogsClient;
+import com.amazonaws.services.logs.model.CreateLogStreamRequest;
 import com.amazonaws.services.logs.model.GetLogEventsRequest;
 import com.amazonaws.services.logs.model.GetLogEventsResult;
 import com.amazonaws.services.logs.model.InputLogEvent;
@@ -97,7 +98,10 @@ public class AwsLogs {
                 AmazonEC2Client client = new AmazonEC2Client();
                 GetConsoleOutputResult result = client.getConsoleOutput(new GetConsoleOutputRequest(t));
                 AWSLogsClient logs = new AWSLogsClient().withRegion(Regions.fromName(driver.getRegion()));
-                logs.putLogEvents(new PutLogEventsRequest().withLogGroupName(driver.getLogGroupName()).withLogStreamName("pbc-ec2-instance-stale/" + t.substring(2)).withLogEvents(new InputLogEvent().withMessage(result.getDecodedOutput()).withTimestamp(System.currentTimeMillis())));
+                // t (ec2 instance id) should be unique within reason
+                final String logStreamName = "pbc-ec2-instance-stale/" + t;
+                logs.createLogStream(new CreateLogStreamRequest(driver.getLogGroupName(), logStreamName));
+                logs.putLogEvents(new PutLogEventsRequest().withLogGroupName(driver.getLogGroupName()).withLogStreamName(logStreamName).withLogEvents(new InputLogEvent().withMessage(result.getDecodedOutput()).withTimestamp(System.currentTimeMillis())));
             } catch (Throwable th) {
                 //we are fine swallowing any errors, has no direct influence on proper function.
                 logger.error("failed to retrieve ec2 instance logs or send them to cloudwatch", th);
