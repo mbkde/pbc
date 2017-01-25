@@ -32,6 +32,7 @@ import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
 import com.atlassian.buildeng.ecs.remote.rest.ArnStoppedState;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteSilentRetryEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
@@ -127,14 +128,19 @@ public class RemoteWatchdogJob implements PluginJob {
                                 }
                             }
 
-                            if (error.contains("CannotCreateContainerError") || error.contains("HostConfigError")) {
+                            if (error.contains("CannotStartContainerError") 
+                                    || error.contains("CannotCreateContainerError")
+                                    || error.contains("HostConfigError")) {
                                 logger.info("Retrying job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 Configuration config = AccessConfiguration.forContext(t.getView());
                                 eventPublisher.publish(new RetryAgentStartupEvent(config, t.getView()));
+                                //monitoring only
+                                eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                             } else {       
                                 logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                                 current.getCustomBuildData().put(RESULT_ERROR, error);
+                                //monitoring only
                                 eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                                 if (t.getView() instanceof BuildContext) {
                                     current.setLifeCycleState(LifeCycleState.NOT_BUILT);
