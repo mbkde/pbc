@@ -32,6 +32,7 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.scheduling.ArnStoppedState;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteSilentRetryEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
@@ -159,10 +160,14 @@ public class ECSWatchdogJob implements PluginJob {
                                     return; //do not stop or retry, we could be just too fast on checking
                                 } 
                             }
-                            if (error.contains("CannotCreateContainerError") || error.contains("HostConfigError")) {
+                            if (error.contains("CannotStartContainerError") 
+                                    || error.contains("CannotCreateContainerError")
+                                    || error.contains("HostConfigError")) {
                                 logger.info("Retrying job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 Configuration config = AccessConfiguration.forContext(t.getView());
                                 eventPublisher.publish(new RetryAgentStartupEvent(config, t.getView()));
+                                //monitoring only
+                                eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                             } else {
                                 logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                                 errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
