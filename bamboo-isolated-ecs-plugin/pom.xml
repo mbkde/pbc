@@ -102,5 +102,10 @@ limitations under the License.
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ecs-shared</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
