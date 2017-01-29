@@ -1,8 +1,24 @@
+/*
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.atlassian.buildeng.ecs;
 
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.resources.SchedulerResource;
 import com.atlassian.buildeng.ecs.resources.HeartBeatResource;
+import com.atlassian.buildeng.ecs.resources.LogsResource;
 import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
@@ -20,8 +36,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.component.LifeCycle;
@@ -64,10 +78,15 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
             protected void configure() {
                 //system environment mapped to @Named, sort of shortcut
                 Map<String, String> props = new HashMap<>(System.getenv());
-                String ddHost = System.getenv(DatadogEventPublisher.DATADOG_HOST);
-                if (ddHost != null) {
-                    String ddPort = StringUtils.defaultIfBlank(System.getenv(DatadogEventPublisher.DATADOG_PORT), "8125");
-                    props.put(DatadogEventPublisher.DATADOG_PORT, ddPort);
+                if (!props.containsKey(ECSConfigurationImpl.ECS_LOG_DRIVER)) {
+                    props.put(ECSConfigurationImpl.ECS_LOG_DRIVER, "");
+                }
+                if (!props.containsKey(ECSConfigurationImpl.ECS_LOG_OPTIONS)) {
+                    props.put(ECSConfigurationImpl.ECS_LOG_OPTIONS, "");
+                }
+                String ddApi = System.getenv(DatadogEventPublisher.DATADOG_API);
+                if (ddApi != null) {
+                    props.put(DatadogEventPublisher.DATADOG_API, ddApi);
                     bind(EventPublisher.class).to(DatadogEventPublisher.class);
                 } else {
                     bind(EventPublisher.class).to(DummyEventPublisher.class);
@@ -96,5 +115,6 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
 
         environment.jersey().register(injector.getInstance(SchedulerResource.class));
         environment.jersey().register(injector.getInstance(HeartBeatResource.class));
+        environment.jersey().register(injector.getInstance(LogsResource.class));
     }
 }

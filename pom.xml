@@ -10,12 +10,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.atlassian.buildeng</groupId>
     <artifactId>bamboo-isolated-docker</artifactId>
-    <version>1.69-SNAPSHOT</version>
+    <version>1.86-SNAPSHOT</version>
     <name>Bamboo plugins for ECS based docker agents...</name>
     <description>more relevant text here</description>
     <packaging>pom</packaging>
     <organization>
-        <name>Atlassian</name>
+        <name>Atlassian Pty Ltd</name>
         <url>http://www.atlassian.com/</url>
     </organization>
     <licenses>
@@ -90,6 +90,30 @@
     </dependencyManagement>
 
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-license</id>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <!-- copy-license execution in superpom but not
+                                         the right directory -->
+                                    <directory>${session.executionRootDirectory}</directory>
+                                    <includes>
+                                        <include>LICENSE.txt</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -122,5 +146,6 @@
         <module>ecs-scheduler</module>
         <module>ecs-scheduler-service</module>
         <module>bamboo-remote-ecs-backend-plugin</module>
+        <module>ecs-shared</module>
     </modules>
 </project>

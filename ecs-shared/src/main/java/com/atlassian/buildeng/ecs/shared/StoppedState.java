@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.ecs.api;
+package com.atlassian.buildeng.ecs.shared;
 
-public class ArnStoppedState {
-    String arn;
-    String reason;
+public final class StoppedState {
 
-    public ArnStoppedState(String arn, String reason) {
-        this.arn = arn;
+    private final String containerArn;
+    private final String reason;
+    private final String arn;
+
+    public StoppedState(String arn, String containerArn, String reason ) {
+        this.containerArn = containerArn;
         this.reason = reason;
+        this.arn = arn;
     }
+
+
 
     public String getArn() {
         return arn;
@@ -32,7 +37,9 @@ public class ArnStoppedState {
     public String getReason() {
         return reason;
     }
-    
 
+    public String getContainerArn() {
+        return containerArn;
+    }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * this beast requires restart on each deployment.
@@ -34,8 +36,11 @@ import java.util.Collections;
  */
 public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(TheMightyAgentFilter.class);
+
     @Override
     public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
+        log.debug("have {} agents for {}", agents.size(), context.getResultKey());
         if (hasIsolatedDockerRequirement(requirements)) {
             for (BuildAgent agent : agents) {
                 if (!AgentType.REMOTE.equals(agent.getType())) {
@@ -47,6 +52,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
                     if (cap != null) {
                         String resultKey = cap.getValue();
                         if (context.getResultKey().toString().equals(resultKey)) {
+                            log.debug("returned agent: {} id={}", agent.getName(), agent.getId());
                             return Collections.singletonList(agent);
                         }
                     }

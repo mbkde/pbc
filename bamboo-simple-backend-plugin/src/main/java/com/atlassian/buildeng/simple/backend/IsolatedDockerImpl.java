@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,10 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
      * The environment variable to set the result spawning up the agent
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
-    
+
+    private static final String BUILD_DIR = "/buildeng/bamboo-agent-home/xml-data/build-dir";
+    private static final String BUILD_DIR_VOLUME_NAME = "build-dir";
+
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final PluginScheduler pluginScheduler;
     private final GlobalConfiguration globalConfiguration;
@@ -114,7 +117,17 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     }
 
     String createComposeYaml(Configuration config, String rk, String baseUrl, UUID uuid) {
-        final Map<String, Object> all = new HashMap<>();
+        final Map<String, Object> root = new HashMap<>();
+        final Map<String, Object> services = new HashMap<>();
+        final Map<String, Object> volumes = new HashMap<>();
+        root.put("volumes", volumes);
+        root.put("services", services);
+        root.put("version", "2");
+        
+        Map<String, Object> buildDirVolume = new HashMap<>();
+        buildDirVolume.put("driver", "local");
+        volumes.put(BUILD_DIR_VOLUME_NAME, buildDirVolume);
+
         Map<String, String> envs = new HashMap<>();
         envs.put(ENV_VAR_IMAGE, config.getDockerImage());
         envs.put(ENV_VAR_RESULT_ID, rk);
@@ -125,14 +138,15 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         agent.put("entrypoint", "/buildeng/run-agent.sh");
         agent.put("environment", envs);
         agent.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
-        all.put("bamboo-agent", agent);
+        agent.put("volumes", Collections.singletonList(BUILD_DIR_VOLUME_NAME + ":" + BUILD_DIR));
+        services.put("bamboo-agent", agent);
         
         Config gc = globalConfiguration.getDockerConfig();
         if (gc.isSidekickImage()) {
             Map<String, Object> sidekick = new HashMap<>();
             String img = StringUtils.isNotBlank(gc.getSidekick()) ? gc.getSidekick().trim() : "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
             sidekick.put("image", img);
-            all.put("bamboo-agent-sidekick", sidekick);
+            services.put("bamboo-agent-sidekick", sidekick);
             agent.put("volumes_from", Collections.singletonList("bamboo-agent-sidekick"));
         } else {
             if (gc.getSidekick() != null) {
@@ -157,7 +171,8 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
                 toRet.put("command", commands);
             }
             toRet.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
-            all.put(t.getName(), toRet);
+            toRet.put("volumes", Collections.singletonList(BUILD_DIR_VOLUME_NAME + ":" + BUILD_DIR));
+            services.put(t.getName(), toRet);
             links.add(t.getName());
             if (isDockerInDockerImage(t.getImage())) {
                 envs.put("DOCKER_HOST", "tcp://" + t.getName() + ":2375");
@@ -173,7 +188,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         options.setIndent(4);
         options.setCanonical(false);
         Yaml yaml = new Yaml(options);
-        return yaml.dump(all);
+        return yaml.dump(root);
     }
 
     @Override

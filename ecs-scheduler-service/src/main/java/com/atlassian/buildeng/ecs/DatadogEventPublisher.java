@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,35 +17,42 @@
 package com.atlassian.buildeng.ecs;
 
 import com.atlassian.event.api.EventPublisher;
-import com.timgroup.statsd.Event;
-import com.timgroup.statsd.NonBlockingStatsDClient;
-import java.io.Closeable;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Named;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class DatadogEventPublisher implements EventPublisher, Closeable {
-    static final String DATADOG_HOST = "DATADOG_HOST";
-    static final String DATADOG_PORT = "DATADOG_PORT";
-    //TODO what is the prefix good for
-    private static final String PREFIX = "prefix";
-
-    private final com.timgroup.statsd.NonBlockingStatsDClient client;
+public class DatadogEventPublisher implements EventPublisher{
+    static final String DATADOG_API = "DATADOG_API_KEY";
+    private static final Logger logger = LoggerFactory.getLogger(DatadogEventPublisher.class);
+    CloseableHttpClient httpclient = HttpClients.createDefault();
+    private final String token;
 
     @Inject
-    public DatadogEventPublisher(@Named(DATADOG_HOST) String hostname, @Named(DATADOG_PORT) int port) {
-        this.client = new NonBlockingStatsDClient(PREFIX, hostname, port);
+    public DatadogEventPublisher(@Named(DATADOG_API) String apiToken) {
+        this.token = apiToken;
     }
 
     @Override
     public void publish(Object event) {
-        Event e = Event.builder()
-                .withTitle(event.getClass().getName())
-                .withText(event.toString())
-                .withPriority(Event.Priority.LOW)
-                .withAlertType(Event.AlertType.WARNING)
-                .build();
-        client.recordEvent(e, "pbc");
+        HttpPost httpPost = new HttpPost("https://app.datadoghq.com/api/v1/events?api_key=" + token);
+        httpPost.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        httpPost.setEntity(new StringEntity(createDDEvent(event), "UTF-8"));
+        try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+            logger.info("Sent Datadog event, response: {}", response.getStatusLine().getStatusCode());
+        } catch (IOException ex) {
+            logger.error("Error while sending datadog event", ex);
+        }
     }
 
     @Override
@@ -60,9 +67,18 @@ public class DatadogEventPublisher implements EventPublisher, Closeable {
     public void unregisterAll() {
     }
 
-    @Override
-    public void close() throws IOException {
-        client.stop();
+    private String createDDEvent(Object event) {
+        // a copy of what is in the monitoring + datadog plugin
+        JsonObject body = new JsonObject();
+        body.addProperty("title", "bamboo.server." + event.getClass().getSimpleName());
+        body.addProperty("text", event.toString());
+        body.addProperty("priority", "normal");
+        body.addProperty("alert_type", "info");
+        JsonArray tags = new JsonArray();
+        tags.add(new JsonPrimitive("pbc"));
+        tags.add(new JsonPrimitive("service_type:pbc_scheduler"));
+        tags.add(new JsonPrimitive("service_name:pbc_scheduler"));
+        body.add("tags", tags);
+        return body.toString();
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
@@ -21,7 +20,6 @@ import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
-import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
@@ -34,7 +32,6 @@ import com.atlassian.bamboo.security.ImpersonationHelper;
 import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
-import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
@@ -42,7 +39,6 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentTimeoutEvent;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
-import com.atlassian.buildeng.isolated.docker.reaper.DeleterGraveling;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -72,8 +68,7 @@ public class PreBuildQueuedEventListener {
     private final JMXAgentsService jmx;
     private final DeploymentResultService deploymentResultService;
     private final DeploymentExecutionService deploymentExecutionService;
-    private final AgentCommandSender agentCommandSender;
-    private final AgentManager agentManager;
+    private final AgentRemovals agentRemovals;
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
 
@@ -84,9 +79,8 @@ public class PreBuildQueuedEventListener {
                                         JMXAgentsService jmx,
                                         DeploymentResultService deploymentResultService,
                                         DeploymentExecutionService deploymentExecutionService,
-                                        AgentCommandSender agentCommandSender,
                                         EventPublisher eventPublisher,
-                                        AgentManager agentManager,
+                                        AgentRemovals agentRemovals,
                                         DockerSoxService dockerSoxService) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
@@ -94,8 +88,7 @@ public class PreBuildQueuedEventListener {
         this.rescheduler = rescheduler;
         this.jmx = jmx;
         this.deploymentResultService = deploymentResultService;
-        this.agentManager = agentManager;
-        this.agentCommandSender = agentCommandSender;
+        this.agentRemovals = agentRemovals;
         this.eventPublisher = eventPublisher;
         this.dockerSoxService = dockerSoxService;
         this.deploymentExecutionService = deploymentExecutionService;
@@ -255,7 +248,8 @@ public class PreBuildQueuedEventListener {
                 if (config.isEnabled()) {
                     BuildAgent agent = dr.getAgent();
                     if (agent != null) {
-                        DeleterGraveling.stopAndRemoveAgentRemotely(agent, agentManager, agentCommandSender);
+                        agentRemovals.stopAgentRemotely(agent);
+                        agentRemovals.removeAgent(agent);
                     }
                 }
             }

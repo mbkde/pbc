@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,14 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
+import com.amazonaws.services.ecs.model.DeregisterContainerInstanceRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
+import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
@@ -44,8 +47,8 @@ import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -53,6 +56,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +65,9 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
+
+    //there seems to be a limit of 100 to the tasks that can be described in a batch
+    private static final int MAXIMUM_TASKS_TO_DESCRIBE = 90;
 
     @Inject
     public AWSSchedulerBackend() {
@@ -141,9 +148,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, boolean decrementSize) throws ECSException {
+    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, boolean decrementSize, String clusterName) throws ECSException {
         try {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
+            //explicit deregister first BUILDENG-12397 for details
+            hosts.stream().forEach((DockerHost t) -> {
+                deregisterInstance(t.getContainerInstanceArn(), clusterName);
+            });
             final List<String> asgInstances = hosts.stream().filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
             if (!asgInstances.isEmpty()) {
                 AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
@@ -197,6 +208,20 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             }
         } catch (Exception e) {
             throw new ECSException(e);
+        }
+    }
+
+
+    private void deregisterInstance(String containerInstanceArn, String cluster) {
+        AmazonECSClient ecsClient = new AmazonECSClient();
+        try {
+            ecsClient.deregisterContainerInstance(new DeregisterContainerInstanceRequest()
+                    .withCluster(cluster)
+                    .withContainerInstance(containerInstanceArn));
+        } catch (RuntimeException e) {
+            //failure to deregister is recoverable in our usecase
+            //(it will be eventually deregistered as result ASG detachment)
+            logger.error("Failed to deregister container instance " + containerInstanceArn, e);
         }
     }
 
@@ -269,20 +294,22 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     
 
     @Override
-    public Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException {
+    public Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException {
         AmazonECSClient ecsClient = new AmazonECSClient();
         try {
-            final List<Task> toRet = new ArrayList<>();
-            DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(taskArns));
-            res.getTasks().forEach((Task t) -> {
-                toRet.add(t);
-            });
-            if (!res.getFailures().isEmpty()) {
-                if (toRet.isEmpty()) {
-                    throw new ECSException(Arrays.toString(res.getFailures().toArray()));
-                } else {
-                    logger.info("Error on retrieving tasks: {}",Arrays.toString(res.getFailures().toArray()));
-                }
+            final List<ArnStoppedState> toRet = new ArrayList<>();
+            List<List<String>> partitioned = Lists.partition(taskArns, MAXIMUM_TASKS_TO_DESCRIBE);
+            for (List<String> batch : partitioned) {
+                DescribeTasksResult res = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
+                res.getTasks().forEach((Task t) -> {
+                    if ("STOPPED".equals(t.getLastStatus())) {
+                        toRet.add(new ArnStoppedState(t.getTaskArn(), t.getContainerInstanceArn(), getError(t)));
+                    }
+                });
+                res.getFailures().forEach((Failure t) -> {
+                    //for missing items it's MISSING. do we convert to user level explanatory string?
+                    toRet.add(new ArnStoppedState(t.getArn(), "unknown", t.getReason()));
+                });
             }
             return toRet;
         } catch (Exception ex) {
@@ -292,7 +319,17 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 throw new ECSException(ex);
             }
         }
-        
+    }
+
+    private String getError(Task tsk) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(tsk.getStoppedReason()).append(":");
+        tsk.getContainers().stream()
+                .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
+                .forEach((c) -> {
+                    sb.append(c.getName()).append("[").append(c.getReason()).append("],");
+        });
+        return sb.toString();
     }
 
     /**

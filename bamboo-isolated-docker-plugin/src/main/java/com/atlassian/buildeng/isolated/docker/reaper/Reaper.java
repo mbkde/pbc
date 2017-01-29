@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
-import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.time.Duration;
@@ -35,7 +35,7 @@ public class Reaper implements LifecycleAware {
     private final PluginScheduler pluginScheduler;
     private final ExecutableAgentsHelper executableAgentsHelper;
     private final AgentManager agentManager;
-    private final AgentCommandSender agentCommandSender;
+    private final AgentRemovals agentRemovals;
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;
     
@@ -44,19 +44,19 @@ public class Reaper implements LifecycleAware {
     static String REAPER_KEY = "isolated-docker-reaper";
     static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
     static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
-    static String REAPER_COMMAND_SENDER_KEY = "reaper-command-sender";
+    static String REAPER_REMOVALS_KEY = "reaper-agent-removals";
     static String REAPER_DEATH_LIST = "reaper-death-list";
     static String REAPER_CACHEDPLANMANAGER_KEY = "reaper-cached-plan-manager";
     static String REAPER_BUILDQUEUEMANAGER_KEY = "reaper-build-queue-manager";
     
 
     public Reaper(PluginScheduler pluginScheduler, ExecutableAgentsHelper executableAgentsHelper, 
-            AgentManager agentManager, AgentCommandSender agentCommandSender,
+            AgentManager agentManager, AgentRemovals agentRemovals,
             BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager) {
         this.pluginScheduler = pluginScheduler;
         this.executableAgentsHelper = executableAgentsHelper;
         this.agentManager = agentManager;
-        this.agentCommandSender = agentCommandSender;
+        this.agentRemovals = agentRemovals;
         this.buildQueueManager = buildQueueManager;
         this.cachedPlanManager = cachedPlanManager;
     }
@@ -66,7 +66,7 @@ public class Reaper implements LifecycleAware {
         Map<String, Object> data = new HashMap<>();
         data.put(REAPER_AGENT_MANAGER_KEY, agentManager);
         data.put(REAPER_AGENTS_HELPER_KEY, executableAgentsHelper);
-        data.put(REAPER_COMMAND_SENDER_KEY, agentCommandSender);
+        data.put(REAPER_REMOVALS_KEY, agentRemovals);
         data.put(REAPER_BUILDQUEUEMANAGER_KEY, buildQueueManager);
         data.put(REAPER_CACHEDPLANMANAGER_KEY, cachedPlanManager);
         data.put(REAPER_DEATH_LIST, new ArrayList<BuildAgent>());

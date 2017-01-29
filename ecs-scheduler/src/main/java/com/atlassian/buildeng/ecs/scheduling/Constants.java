@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
@@ -64,6 +79,22 @@ public interface Constants {
 
     // Ratio between soft and hard limits
     Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
+
+
+    /**
+     * environment variable name for extra containers that when defined will be used
+     * to tweak the extra container's ulimits. The format is space separated list of key pairs.
+     * name=soft[:hard] where hard is optional and both soft and hard are expected to be numbers
+     */
+    String ENV_VAR_PBC_ULIMIT_OVERRIDE = "PBC_ULIMIT_OVERRIDE";
+
+    /**
+     * a space separated list of container names that the extra container should link to.
+     *  makes no effort to sanitize the values in terms of circular dependencies between
+     * the extra containers. Can never point to the main container (that one links to extra containers already)
+     * 
+     */
+    String ENV_VAR_PBC_EXTRA_LINKS = "PBC_EXTRA_LINKS";
 
     /**
      * the maximum interval in minutes in what the state instances in cluster will be checked and

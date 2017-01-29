@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package com.atlassian.buildeng.ecs.remote.rest;
 
+//there is a copy of this class in com.atlassian.buildeng.ecs.scheduling package
 public class ArnStoppedState {
     String arn;
+    String containerArn;
     String reason;
 
     public ArnStoppedState() {
     }
 
-    public ArnStoppedState(String arn, String reason) {
+    public ArnStoppedState(String arn, String containerArn, String reason) {
         this.arn = arn;
         this.reason = reason;
+        this.containerArn = containerArn;
     }
 
     public String getArn() {
@@ -35,7 +38,8 @@ public class ArnStoppedState {
     public String getReason() {
         return reason;
     }
-    
 
-
+    public String getContainerArn() {
+        return containerArn;
+    }
 }

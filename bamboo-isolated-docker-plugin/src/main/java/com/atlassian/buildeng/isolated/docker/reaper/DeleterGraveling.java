@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
@@ -15,7 +30,6 @@ import com.atlassian.bamboo.plan.cache.ImmutableBuildable;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
-import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent.BuildAgentVisitor;
 import com.atlassian.bamboo.v2.build.agent.LocalBuildAgent;
@@ -24,20 +38,19 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatc
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcherImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
-import com.atlassian.bamboo.v2.build.agent.messages.StopAgentNicelyMessage;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.fugue.Iterables;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeoutException;
 import java.util.stream.StreamSupport;
 
 public class DeleterGraveling implements BuildAgentVisitor {
-    private final AgentCommandSender agentCommandSender;
+    private final AgentRemovals agentRemovals;
     private final AgentManager agentManager;
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;
@@ -45,9 +58,9 @@ public class DeleterGraveling implements BuildAgentVisitor {
 
     private final static Logger LOG = LoggerFactory.getLogger(DeleterGraveling.class);
 
-    public DeleterGraveling(AgentCommandSender agentCommandSender, AgentManager agentManager, 
+    public DeleterGraveling(AgentRemovals agentRemovals, AgentManager agentManager,
             BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager) {
-        this.agentCommandSender = agentCommandSender;
+        this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;
         this.buildQueueManager = buildQueueManager;
         this.cachedPlanManager = cachedPlanManager;
@@ -76,35 +89,14 @@ public class DeleterGraveling implements BuildAgentVisitor {
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
                 boolean remove = markAndStopTheBuild(buildAgent, pipelineDefinition);
-                stopAgentRemotely(buildAgent, remove, agentManager, agentCommandSender);
+                agentRemovals.stopAgentRemotely(buildAgent);
+                if (remove) {
+                    agentRemovals.removeAgent(buildAgent);
+                }
             }
-
         });
     }
 
-    private static void stopAgentRemotely(BuildAgent buildAgent, boolean remove, AgentManager agentManager, AgentCommandSender agentCommandSender) {
-        // Stop the agent
-        Long agentId = buildAgent.getId();
-        String agentName = buildAgent.getName();
-        try {
-            buildAgent.setRequestedToBeStopped(true); // Set status correctly
-            agentCommandSender.send(new StopAgentNicelyMessage(), agentId);
-            if (remove) {
-                agentManager.removeAgent(agentId);        // Remove agent from the UI/server side
-            }
-            LOG.info("Successfully reaped agent {} (id: {})", agentName, agentId);
-        } catch (TimeoutException e) {
-            LOG.error(String.format("timeout on removing agent %s (id: %s)", agentName, agentId), e);
-        }
-    }
-    
-    public static void stopAndRemoveAgentRemotely(BuildAgent buildAgent, AgentManager agentManager, AgentCommandSender agentCommandSender) {
-        stopAgentRemotely(buildAgent, true, agentManager, agentCommandSender);
-    }
-    
-    public static void stopAndKeepAgentRemotely(BuildAgent buildAgent, AgentManager agentManager, AgentCommandSender agentCommandSender) {
-        stopAgentRemotely(buildAgent, false, agentManager, agentCommandSender);
-    }
     
     private boolean markAndStopTheBuild(BuildAgent buildAgent, RemoteAgentDefinition pipelineDefinition) {
         final CapabilitySet capabilitySet = pipelineDefinition.getCapabilitySet();

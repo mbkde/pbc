@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
+import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
@@ -106,10 +106,24 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public String renderContainerLogs(Configuration configuration, Map<String, String> customData) {
-        if ("awslogs".equals(globalConfiguration.getLoggingDriver())) {
-            return awsLogsRender(configuration, customData);
+        String taskArn = customData.get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
+        if (taskArn == null || AwsLogs.getAwsLogsDriver(globalConfiguration) == null) {
+            return null;
         }
-        return null;
+        Stream<String> s = Stream.concat(
+                Stream.of(Constants.AGENT_CONTAINER_NAME),
+                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
+        String ss = s.map((String name) -> {
+            try {
+               URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/docker/latest/logs")
+                .addParameter(Rest.PARAM_CONTAINER, name)
+                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+                return "<a href=\"" + bb.build().toString() + "\">" + name + "</a>" + COMMA_SPACES;
+            } catch (URISyntaxException ex) {
+                return "";
+            }
+        }).collect(Collectors.joining());
+        return ss.substring(0, ss.length() - COMMA_SPACES.length());
     }
 
     
@@ -133,33 +147,5 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         pluginScheduler.unscheduleJob(Constants.PLUGIN_JOB_KEY);
     }
 
-    private String awsLogsRender(Configuration configuration, Map<String, String> customData) {
-        String region = globalConfiguration.getLoggingDriverOpts().get("awslogs-region");
-        String group = globalConfiguration.getLoggingDriverOpts().get("awslogs-group");
-        String prefix = globalConfiguration.getLoggingDriverOpts().get("awslogs-stream-prefix");
-        String taskArn = customData.get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
-        if (taskArn == null || group == null || prefix == null || region == null) {
-            return null;
-        }
-        Stream<String> s = Stream.concat(
-                Stream.of(Constants.AGENT_CONTAINER_NAME),
-                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
-        String ss = s.map((String name) -> {
-            try {
-               URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/docker/latest/awslogs")
-                .addParameter(Rest.PARAM_REGION, region)
-                .addParameter(Rest.PARAM_GROUP, group)
-                .addParameter(Rest.PARAM_PREFIX, prefix)
-                .addParameter(Rest.PARAM_CONTAINER, name)
-                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
-                return "<a href=\"" + bb.build().toString() + "\">" + name + "</a>" + COMMA_SPACES;
-            } catch (URISyntaxException ex) {
-                return "";
-            }
-        }).collect(Collectors.joining());
-        return ss.substring(0, ss.length() - COMMA_SPACES.length());
-    }
     private static final String COMMA_SPACES = ",&nbsp;&nbsp;";
-
-
 }

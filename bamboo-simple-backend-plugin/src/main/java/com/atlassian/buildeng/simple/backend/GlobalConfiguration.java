@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.simple.backend.rest.Config;
 import org.apache.commons.lang3.BooleanUtils;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -47,10 +47,10 @@ public class GlobalConfiguration {
     }
     
     public Config getDockerConfig() {
-        String api = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION), "");
-        String url = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL), "");
-        String certPath = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
-        String sidekick = StringUtils.defaultString(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
+        String api = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION), "");
+        String url = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL), "");
+        String certPath = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
+        String sidekick = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
         boolean image = BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE), true);
         return new Config(api, certPath, url, sidekick, image);
     }

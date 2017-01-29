@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,20 @@ public final class DockerAgentRemoteFailEvent {
 
     private final String errorMessage;
     private final Key key;
+    private final String taskArn;
+    private final String containerArn;
 
 
-    public DockerAgentRemoteFailEvent(String errorMessage, Key key) {
+    public DockerAgentRemoteFailEvent(String errorMessage, Key key, String taskArn, String containerArn) {
         this.errorMessage = errorMessage;
         this.key = key;
+        this.taskArn = taskArn;
+        this.containerArn = containerArn;
     }
 
     @Override
     public String toString() {
-        return "DockerAgentRemoteFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + '}';
+        return "DockerAgentRemoteFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn + "}";
     }
 
     

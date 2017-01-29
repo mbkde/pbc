@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -5,6 +20,7 @@ import com.amazonaws.services.autoscaling.model.SuspendedProcess;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
@@ -170,7 +186,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
         //see if we need to scale up or down..
         int currentSize = hosts.getUsableSize();
-        int disconnectedSize = hosts.agentDisconnected().size() - terminateDisconnectedInstances(hosts, asgName);
+        int disconnectedSize = hosts.agentDisconnected().size() - terminateDisconnectedInstances(hosts, asgName, cluster);
         int desiredScaleSize = currentSize;
         if (someDiscarded) {
             // cpu and memory requirements in instances
@@ -183,7 +199,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
             desiredScaleSize += extraRequired;
         }
-        int terminatedCount = terminateInstances(selectToTerminate(hosts), asgName, true);
+        int terminatedCount = terminateInstances(selectToTerminate(hosts), asgName, true, cluster);
         desiredScaleSize = desiredScaleSize - terminatedCount;
         //we are reducing the currentSize by the terminated list because that's
         //what the terminateInstances method should reduce it to.
@@ -248,6 +264,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                         if (reportedLonelyAsgInstances.size() > 50) { //random number to keep the list from growing indefinitely
                             reportedLonelyAsgInstances.remove(0);
                         }
+                        AwsLogs.logEC2InstanceOutputToCloudwatch(t, globalConfiguration);
                         try {
                             schedulerBackend.terminateInstances(Collections.<String>singletonList(t));
                         } catch (ECSException e) {
@@ -262,10 +279,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private void checkScaleDown() {
         try {
             String asgName = globalConfiguration.getCurrentASG();
+            String cluster = globalConfiguration.getCurrentCluster();
             AutoScalingGroup asg = schedulerBackend.describeAutoScalingGroup(asgName);
             DockerHosts hosts = loadHosts(globalConfiguration.getCurrentCluster(), asg);
-            terminateDisconnectedInstances(hosts, asgName);
-            terminateInstances(selectToTerminate(hosts), asgName, true);
+            terminateDisconnectedInstances(hosts, asgName, cluster);
+            terminateInstances(selectToTerminate(hosts), asgName, true, cluster);
         } catch (ECSException ex) {
             logger.error("Failed to scale down", ex);
         }
@@ -309,7 +327,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     // 2. by how much the ASG size decreaesed
     // the current code is using it in both meanings, the asg drop is not calculated now and in case
     // of errors the return value is a lie as well.
-    private int terminateInstances(List<DockerHost> toTerminate, String asgName, boolean decrementAsgSize) {
+    private int terminateInstances(List<DockerHost> toTerminate, String asgName, boolean decrementAsgSize, String clusterName) {
         if (!toTerminate.isEmpty()) {
             if (toTerminate.size() > 15) {
                 //actual AWS limit is apparently 20
@@ -317,7 +335,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 toTerminate = toTerminate.subList(0, 14);
             }
             try {
-                schedulerBackend.terminateAndDetachInstances(toTerminate, asgName, decrementAsgSize);
+                schedulerBackend.terminateAndDetachInstances(toTerminate, asgName, decrementAsgSize, clusterName);
             } catch (ECSException ex) {
                 logger.error("Terminating instances failed", ex);
                 return 0;
@@ -388,7 +406,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         }
     }
 
-    private int terminateDisconnectedInstances(DockerHosts hosts, String asgName) {
+    private int terminateDisconnectedInstances(DockerHosts hosts, String asgName, String clusterName) {
         int oldSize = disconnectedAgentsCache.size();
         final Map<DockerHost, Date> cache = updateDisconnectedCache(disconnectedAgentsCache, hosts);
         if (!cache.isEmpty()) {
@@ -410,7 +428,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             //    environment variable value for RESULT_ID
             eventPublisher.publish(new DockerAgentEcsDisconnectedPurgeEvent(selectedToKill));
         }
-        return terminateInstances(selectedToKill, asgName, false);
+        return terminateInstances(selectedToKill, asgName, false, clusterName);
     }
 
     private class EndlessPolling implements Runnable {

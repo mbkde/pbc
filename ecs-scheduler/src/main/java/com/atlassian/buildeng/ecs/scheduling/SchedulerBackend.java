@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,10 @@ public interface SchedulerBackend {
      * @param dockerHosts 
      * @param autoScalingGroup 
      * @param decrementSize should we decrease size of ASG or not? if not, new instance is started eventually.
+     * @param ecsClusterName
      * @throws ECSException
      */
-    void terminateAndDetachInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize) throws ECSException;
+    void terminateAndDetachInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize, String ecsClusterName) throws ECSException;
 
     /**
      * terminate listed EC2 instances
@@ -79,8 +80,16 @@ public interface SchedulerBackend {
      * @throws ECSException 
      */
     AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException;
-    
-    Collection<Task> checkTasks(String cluster, Collection<String> taskArns) throws ECSException;
+
+    /**
+     * for given taskArn strings return an ArnStoppedState object for every taskArn
+     * that is stopped or missing in the cluster.
+     * @param cluster
+     * @param taskArns
+     * @return
+     * @throws ECSException
+     */
+    Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException;
 
     void suspendProcess(String autoScalingGroupName, String azRebalance) throws ECSException;
 }

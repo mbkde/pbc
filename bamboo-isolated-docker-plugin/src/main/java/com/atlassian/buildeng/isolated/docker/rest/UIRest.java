@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Atlassian.
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,9 @@ public class UIRest {
                 try {
                     JSONObject obj = new JSONObject();
                     obj.put("id", t.getId());
-                    obj.put("label", t.getConfiguration().get("label"));
+                    //runtime in nodejs, label evenrywhere else?
+                    String lbl = t.getConfiguration().getOrDefault("label", t.getConfiguration().get("runtime"));
+                    obj.put("label", lbl);
                     obj.put("buildJdk", t.getConfiguration().get("buildJdk"));
                     result.put(obj);
                 } catch (JSONException ex) {
