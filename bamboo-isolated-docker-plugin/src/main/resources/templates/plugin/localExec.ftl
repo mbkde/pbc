@@ -31,22 +31,33 @@ services:
         - ${extra.name}
         </#list>
       </#if>
+      environment:
+      <#if dockerIncluded >
+         - DOCKER_HOST=tcp://${dockerImageName}:2375
+      </#if>
+
 #     environment:
 #        - SSH_AUTH_SOCK=$\{SSH_AUTH_SOCK}
       volumes:
+         #alternatively do the checkout inside the docker container ex post.
          - .:/buildeng/bamboo-agent-home/xml-data/build-dir
          - ~/.m2/settings.xml:/root/.m2/settings.xml
+         - ~/.m2/settings-security.xml:/root/.m2/settings-security.xml
          - ~/.docker/config.json:/root/.docker/config.json
          - ~/.ssh:/root/.ssh
          - ~/.gradle/gradle.properties:/root/.gradle/gradle.properties
          - ~/.gnupg/:/root/.gnupg/
          - ~/.npmrc:/root/.npmrc
+         - ~/.netrc:/root/.netrc
 #         - $\{SSH_AUTH_SOCK}:$\{SSH_AUTH_SOCK}
 
 <#if configuration.extraContainers?size != 0>
   <#list configuration.extraContainers as extra>
   ${extra.name}:
      image: ${extra.image}
+     <#if extra.image?starts_with("docker:") && extra.image?ends_with("dind") >
+     privileged: true
+     </#if>
      <#if extra.commands?size != 0>
      command:
      <#list extra.commands as cmd>
