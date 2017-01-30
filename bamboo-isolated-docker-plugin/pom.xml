@@ -186,6 +186,12 @@ limitations under the License.
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <scope>test</scope>
-        </dependency>        
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.16</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 </project>

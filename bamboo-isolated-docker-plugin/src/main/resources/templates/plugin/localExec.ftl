@@ -2,6 +2,7 @@
     <meta name="decorator" content="atl.result">
     <title>How to reproduce build locally?</title>
     ${webResourceManager.requireResourcesForContext("viewLocalExec")}
+    <meta name="jobKey" content="${jobKey}">
 </head>
 
 <body>
@@ -15,70 +16,27 @@
 
 <h2>Docker-compose file</h2>
 Copy paste this generated docker-compose.yaml file. and store it at the root directory of the git checkout.
+<br/>
+<br/>
+<form>
+  <input type="checkbox" id="reservation" name="reservation" value="true">Generate memory and CPU reservations<br>
+  <input type="checkbox" id="localRepo" name="localRepo" value="true">Share Maven local repository (unchecked only settings files are shared)<br>
+  <#if dockerIncluded >
+  <input type="checkbox" id="dind" name="dind" value="true">Use Docker in Docker (unchecked uses side by side Docker)<br>
+  </#if>
+  <input type="button" id="generate" value="Generate">
+</form>
 
-<div id="docker-compose"</div>
-<textarea>
-version: '2'
-services:
-  bamboo-agent:
-      image: ${configuration.dockerImage}
-      working_dir: /buildeng/bamboo-agent-home/xml-data/build-dir
-      entrypoint: /usr/bin/tail
-      command: -f /dev/null
-      <#if configuration.extraContainers?size != 0>
-      links:
-        <#list configuration.extraContainers as extra>
-        - ${extra.name}
-        </#list>
-      </#if>
-      environment:
-      <#if dockerIncluded >
-         - DOCKER_HOST=tcp://${dockerImageName}:2375
-      </#if>
+<div id="docker-compose"></div>
 
-#     environment:
-#        - SSH_AUTH_SOCK=$\{SSH_AUTH_SOCK}
-      volumes:
-         #alternatively do the checkout inside the docker container ex post.
-         - .:/buildeng/bamboo-agent-home/xml-data/build-dir
-         - ~/.m2/settings.xml:/root/.m2/settings.xml
-         - ~/.m2/settings-security.xml:/root/.m2/settings-security.xml
-         - ~/.docker/config.json:/root/.docker/config.json
-         - ~/.ssh:/root/.ssh
-         - ~/.gradle/gradle.properties:/root/.gradle/gradle.properties
-         - ~/.gnupg/:/root/.gnupg/
-         - ~/.npmrc:/root/.npmrc
-         - ~/.netrc:/root/.netrc
-#         - $\{SSH_AUTH_SOCK}:$\{SSH_AUTH_SOCK}
-
-<#if configuration.extraContainers?size != 0>
-  <#list configuration.extraContainers as extra>
-  ${extra.name}:
-     image: ${extra.image}
-     <#if extra.image?starts_with("docker:") && extra.image?ends_with("dind") >
-     privileged: true
-     </#if>
-     <#if extra.commands?size != 0>
-     command:
-     <#list extra.commands as cmd>
-       - ${cmd}
-     </#list>
-     </#if>
-     <#if extra.envVariables?size != 0>
-     environment:
-     <#list extra.envVariables as env>
-       - ${env.name}=${env.value}
-     </#list>
-     </#if>
-     volumes:
-         - .:/buildeng/bamboo-agent-home/xml-data/build-dir
-  </#list>
-
-</#if>
-</textarea>
+<h2>Start up docker containers</h2>
+<pre>docker-compose exec up</pre> at the directory where you stored the docker-compose.yaml file (the root of the git checkout)
+This will start all the containers for you.
 
 <h2>Execute the builds</h2>
-<pre>docker-compose exec bamboo-agent /bin/bash</pre> for interactive shell.
+Open new terminal and run:
+<p/>
+<pre>docker-compose exec bamboo-agent /bin/bash -l</pre> for interactive shell.
 <p/>
 <pre>docker-compose exec bamboo-agent npm install</pre> for specific commands only.
 

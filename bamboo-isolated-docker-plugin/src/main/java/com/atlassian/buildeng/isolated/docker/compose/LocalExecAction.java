@@ -33,7 +33,6 @@ public class LocalExecAction extends ActionSupport implements Preparable {
     private boolean dockerIncluded = false;
 
     private Configuration configuration;
-    private String dockerImageName;
 
     public LocalExecAction(JobService jobService) {
         this.jobService = jobService;
@@ -55,11 +54,6 @@ public class LocalExecAction extends ActionSupport implements Preparable {
         return dockerIncluded;
     }
 
-    public String getDockerImageName() {
-        return dockerImageName;
-    }
-    
-
     @Override
     public void prepare() throws Exception {
         System.out.println("preparing");
@@ -70,7 +64,6 @@ public class LocalExecAction extends ActionSupport implements Preparable {
                 for (Configuration.ExtraContainer extra : configuration.getExtraContainers()) {
                     if (isDockerInDockerImage(extra.getImage())) {
                         dockerIncluded = true;
-                        dockerImageName = extra.getName();
                     }
                 }
             }

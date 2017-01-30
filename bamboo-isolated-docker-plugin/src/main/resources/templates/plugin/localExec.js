@@ -17,29 +17,24 @@
 /* global AJS */
 
 AJS.$(document).ready(function () {
-    var paramByName = function(name, url) {
-        if (!url) url = window.location.href;
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-            results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    };
-    var jobKey = paramByName('jobKey', window.location.search);
-    if (jobKey === null) {
-        //TODO show text field to enter image name
-        AJS.$("#docker-compose").append("<p>Missing ?jobKey query in url.</p>");
-    } else {
-        AJS.$("#docker-compose").append("<p>Loading...</p>");
-        AJS.$.get(AJS.contextPath() + "/rest/docker/1.0/compose/" + jobKey, function( data ) {
-            var div = AJS.$("#docker-compose");
+    var jobKey = AJS.$('meta[name=jobKey]').attr("content");
+    AJS.$("#generate").click(function() {
+        var div = AJS.$("#docker-compose");
+        div.empty();
+        div.append("<p>Loading...</p>");
+        var query = "";
+        if (AJS.$('#dind').is(":checked"))
+        {
+            query = query + '?dind=' +  AJS.$('#dind').val();
+        }
+        AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + jobKey + query, function( data ) {
             div.empty();
-            div.html(data);
+            div.append("<textarea>" + data +"</textarea>");
         }, "text")
         .fail(function() {
+            div.empty();
             AJS.$("#docker-compose").append("<p>Error while loading usages.</p>");
         });
-    }
-    
+
+    });
 });
