@@ -25,9 +25,17 @@ AJS.$(document).ready(function () {
         var query = "";
         if (AJS.$('#dind').is(":checked"))
         {
-            query = query + '?dind=' +  AJS.$('#dind').val();
+            query = query + '&dind=' +  AJS.$('#dind').val();
         }
-        AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + jobKey + query, function( data ) {
+        if (AJS.$('#mavenLocal').is(":checked"))
+        {
+            query = query + '&mavenLocal=' +  AJS.$('#mavenLocal').val();
+        }
+        if (AJS.$('#reservations').is(":checked"))
+        {
+            query = query + '&reservations=' +  AJS.$('#reservations').val();
+        }
+        AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + jobKey + query.replace("&", "?"), function( data ) {
             div.empty();
             div.append("<textarea>" + data +"</textarea>");
         }, "text")

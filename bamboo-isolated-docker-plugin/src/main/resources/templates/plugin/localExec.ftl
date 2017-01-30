@@ -19,8 +19,8 @@ Copy paste this generated docker-compose.yaml file. and store it at the root dir
 <br/>
 <br/>
 <form>
-  <input type="checkbox" id="reservation" name="reservation" value="true">Generate memory and CPU reservations<br>
-  <input type="checkbox" id="localRepo" name="localRepo" value="true">Share Maven local repository (unchecked only settings files are shared)<br>
+  <input type="checkbox" id="reservations" name="reservations" value="true">Generate memory and CPU reservations<br>
+  <input type="checkbox" id="mavenLocal" name="mavenLocal" value="true">Share Maven local repository (unchecked only settings files are shared)<br>
   <#if dockerIncluded >
   <input type="checkbox" id="dind" name="dind" value="true">Use Docker in Docker (unchecked uses side by side Docker)<br>
   </#if>
@@ -30,7 +30,7 @@ Copy paste this generated docker-compose.yaml file. and store it at the root dir
 <div id="docker-compose"></div>
 
 <h2>Start up docker containers</h2>
-<pre>docker-compose exec up</pre> at the directory where you stored the docker-compose.yaml file (the root of the git checkout)
+<pre>docker-compose up</pre> at the directory where you stored the docker-compose.yaml file (the root of the git checkout)
 This will start all the containers for you.
 
 <h2>Execute the builds</h2>

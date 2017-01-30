@@ -21,17 +21,13 @@ import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.util.Narrow;
-import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -57,7 +53,10 @@ public class LocalExecRest {
     @Path("{jobKey}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getDockerCompose(@PathParam("jobKey") String jobKey,
-            @DefaultValue("false") @QueryParam("dind") boolean useDockerInDocker) {
+            @DefaultValue("false") @QueryParam("dind") boolean useDockerInDocker,
+            @DefaultValue("false") @QueryParam("mavenLocal") boolean mavenLocalRepo,
+            @DefaultValue("false") @QueryParam("reservations") boolean reservations)
+    {
         if (jobKey == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("jobKey query parameter not defined").build();
         }
@@ -72,13 +71,15 @@ public class LocalExecRest {
         }
         Configuration conf = AccessConfiguration.forJob(jb);
         if (conf != null) {
-            return Response.ok(createLocalExecDockerCompose(conf, useDockerInDocker, jobKey)).build();
+            return Response.ok(createLocalExecDockerCompose(conf, useDockerInDocker, 
+                    mavenLocalRepo, reservations, jobKey)).build();
         }
         return Response.status(Response.Status.NO_CONTENT).build();
 
     }
 
-    private String createLocalExecDockerCompose(Configuration conf, boolean useDockerInDocker, String jobKey) {
+    private String createLocalExecDockerCompose(Configuration conf, boolean useDockerInDocker,
+            boolean mavenLocalRepo, boolean reservations, String jobKey) {
         final Map<String, Object> root = new LinkedHashMap<>();
         final Map<String, Object> services = new LinkedHashMap<>();
 //        final Map<String, Object> volumes = new LinkedHashMap<>();
@@ -98,8 +99,15 @@ public class LocalExecRest {
         List<String> bambooAgentLinks = new ArrayList<>();
         bambooAgent.put("volumes", bambooAgentVolumes);
         bambooAgentVolumes.add(".:" + workingDir);
-        bambooAgentVolumes.add("~/.m2/settings.xml:/root/.m2/settings.xml");
-        bambooAgentVolumes.add("~/.m2/settings-security.xml:/root/.m2/settings-security.xml");
+        if (reservations) {
+            bambooAgent.put("mem_limit", "" + conf.getSize().memory() + "m");
+        }
+        if (mavenLocalRepo) {
+            bambooAgentVolumes.add("~/.m2/:/root/.m2/");
+        } else {
+            bambooAgentVolumes.add("~/.m2/settings.xml:/root/.m2/settings.xml");
+            bambooAgentVolumes.add("~/.m2/settings-security.xml:/root/.m2/settings-security.xml");
+        }
         bambooAgentVolumes.add("~/.docker/config.json:/root/.docker/config.json");
         bambooAgentVolumes.add("~/.ssh:/root/.ssh");
         bambooAgentVolumes.add("~/.gradle/gradle.properties:/root/.gradle/gradle.properties");
@@ -108,23 +116,27 @@ public class LocalExecRest {
         bambooAgentVolumes.add("~/.netrc:/root/.netrc");
 
         bambooAgent.put("labels", Collections.singletonMap("bamboo.job", jobKey));
-        //TODO encode sizing
 
 
         conf.getExtraContainers().stream().forEach((Configuration.ExtraContainer t) -> {
+            Map<String, Object> extra = new LinkedHashMap<>();
+            extra.put("image", t.getImage());
             if (isDockerInDockerImage(t.getImage())) {
                 if (useDockerInDocker) {
                     bambooAgentEnvVars.add("DOCKER_HOST=tcp://" + t.getName() + ":2375");
+                    extra.put("privileged", "true");
                 } else {
                     bambooAgentVolumes.add("/var/run/docker.sock:/var/run/docker.sock");
                     return;
                 }
             }
-            Map<String, Object> extra = new LinkedHashMap<>();
+            if (reservations) {
+                //is there a point in cpu reservation?
+                extra.put("mem_limit", "" + t.getExtraSize().memory() + "m");
+            }
+
             services.put(t.getName(), extra);
             bambooAgentLinks.add(t.getName());
-            extra.put("image", t.getImage());
-            //TODO sizing
             if (!t.getCommands().isEmpty()) {
                 extra.put("command", t.getCommands());
             }
