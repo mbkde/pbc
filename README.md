@@ -1,34 +1,54 @@
 Project Name
 ==============
 
-At the top of the file there should be a short introduction and/ or overview that explains **what** the project is. This description should match descriptions added for package managers (Gemspec, package.json, etc.). To ensure that the project properly displays on
-the [open source project listing](http://atlassian.bitbucket.org/), you should also do the following:
+Set of plugins for [Atlassian Bamboo](https://www.atlassian.com/software/bamboo). Allows running builds and deployments
+on Bamboo agents in Docker clusters like Docker Swarm, [Kubernetes](https://kubernetes.io/) and [AWS ECS](https://aws.amazon.com/ecs/). Tools and services for the build defined
+as Docker images.
 
-1. the project description that is displayed is pulled from the *Repository details: Description* within the repo *Settings*
-2. the *Repository details: Language* should be specified within the repo *Settings*
-
-Optionally, include a short description of the motivation behind the creation and maintenance of the project. This should explain **why** the project exists.
+Each execution of a Bamboo job or deployment environment will run on a newly created remote agent
+that will contain exactly the tools needed for the job, run it and then destroy itself. Services as Selenium, databases or Docker
+can be defined as extra containers that the build can interact with.
 
 Usage
 ======
 
-Show what the library does as concisely as possible, developers should be able to figure out **how** your project solves their problem by looking at the code example. Make sure the API you are showing off is obvious, and that your code is short and concise.
+You would typically install a subset of Bamboo plugins depending on what infrastructure backend you going to use.
+The most battle hardened are the ones backed by AWS ECS.
+
+* bamboo-isolated-docker-plugin - the general UI and bamboo lifecycle management. Mandatory plugin.
+* isolated-docker-spi - the plugin with API for the various backends. Mandatory plugin.
+* bamboo-isolated-ecs-plugin - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. Implies one ECS cluster per Bamboo Server.
+* bamboo-remote-ecs-backend-plugin - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster.
+* bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
+* bamboo-kubernetes-backend-plugin - Experimental backend that schedules agents on Kubernetes cluster.
+
+In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use.
+
+You will also require a 'sidekick' image. That's an issue with just a volume defined containing JRE + Bamboo agent jars.
 
 
 Installation
 ============
 
-Provide instructions on how to install and configure the project.
+First and foremost, you need an existing Bamboo installation.
+Then you need to decide what Docker clustering solution to use (where your builds will be running).
+Then install the appropriate Bamboo plugins and configure them.
+
+To run individual jobs on per-build-container agents, go to Job's Miscellaneous tab, enable it and select a Docker image to use.
+
 
 Documentation
 =============
 
-Depending on the size of the project, if it is small and simple enough the reference docs can be added to the README. For medium size to larger projects it is important to at least provide a link to where the docs or API reference live.
+* ECS setup tutorial - TBD
+* creating Docker images for builds, Bamboo capabilities - TBD
+* monitoring considerations - TBD
+* customized, optimized sidekick creation - TBD
+* secrets management considerations - TBD
 
 Tests
 =====
 
-Describe and show how to run the tests with code examples.
 
 Contributors
 ============
