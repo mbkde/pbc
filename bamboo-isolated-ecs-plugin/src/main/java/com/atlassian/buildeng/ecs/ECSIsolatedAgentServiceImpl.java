@@ -29,6 +29,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.event.api.EventPublisher;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.net.URISyntaxException;
@@ -53,14 +54,21 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final PluginScheduler pluginScheduler;
     private final SchedulerBackend schedulerBackend;
     private final TaskDefinitionRegistrations taskDefRegistrations;
+    //not used in the class but in the bundled library and apparently in that case for
+    // REASONS the class is not found and used at injection time.
+    //so I presume bytecode of bundled libs is not scanned while the sources of the plugin are in some way.
+    // and some spring related metadata is created for them.
+    private final EventPublisher eventPublisher;
 
     public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
-            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations) {
+            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
+            EventPublisher eventPublisher) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
         this.pluginScheduler = pluginScheduler;
         this.schedulerBackend = schedulerBackend;
         this.taskDefRegistrations = taskDefRegistrations;
+        this.eventPublisher = eventPublisher;
     }
 
     // Isolated Agent Service methods
