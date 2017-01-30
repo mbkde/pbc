@@ -234,6 +234,9 @@ public final class Configuration {
     
     
     public static enum ExtraContainerSize {
+        XXXLARGE(1536, 6000),
+        XXLARGE(1280, 5000),
+        XLARGE(1024, 4000),
         LARGE(768, 3000),
         REGULAR(512, 2000),
         SMALL(256, 1000);
