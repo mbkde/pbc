@@ -153,7 +153,16 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
             //explicit deregister first BUILDENG-12397 for details
             hosts.stream().forEach((DockerHost t) -> {
-                deregisterInstance(t.getContainerInstanceArn(), clusterName);
+                try { 
+                    // BUILDENG-12585 - when an instance with disconnected agent is attempted to be deregistered,
+                    // the deregister will fail because the ecs infra remembers the state of last
+                    // ecs agent report and thinks there are things running on the instance.
+                    if (t.getAgentConnected()) {
+                        deregisterInstance(t.getContainerInstanceArn(), clusterName);
+                    }
+                } catch (Throwable th) {
+                    logger.error("Failed deregistering ecs container instance, we survive but suspicious", th);
+                }
             });
             final List<String> asgInstances = hosts.stream().filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
             if (!asgInstances.isEmpty()) {
