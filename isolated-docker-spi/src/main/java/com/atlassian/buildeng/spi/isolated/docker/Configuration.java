@@ -225,19 +225,11 @@ public final class Configuration {
             }
             return Objects.equals(this.envVariables, other.envVariables);
         }
-
-        
-
-        
     }
     
-    
-    
     public static enum ExtraContainerSize {
-        XXXLARGE(1536, 6000),
-        XXLARGE(1280, 5000),
-        XLARGE(1024, 4000),
-        LARGE(768, 3000),
+        XLARGE(2048, 8000),
+        LARGE(1024, 4000),
         REGULAR(512, 2000),
         SMALL(256, 1000);
         
