@@ -155,6 +155,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private String createBody(IsolatedDockerAgentRequest request, GlobalConfiguration globalConfiguration) {
         JsonObject root = new JsonObject();
         root.addProperty("uuid", request.getUniqueIdentifier().toString());
+        root.addProperty("queueTimestamp", request.getQueueTimestamp());
         root.addProperty("resultId", request.getResultKey());
         root.addProperty("bambooServer", globalConfiguration.getBambooBaseUrl());
         root.addProperty("sidekick", globalConfiguration.getCurrentSidekick());

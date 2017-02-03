@@ -242,6 +242,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
                 .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(containerArn))
+                .withEnvironment(new KeyValuePair().withName("QUEUE_TIMESTAMP").withValue("" + request.getQueueTimeStamp()))
+                .withEnvironment(new KeyValuePair().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()))
                 .withName(Constants.AGENT_CONTAINER_NAME);
             overrides.withContainerOverrides(buildResultOverride);
             request.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {

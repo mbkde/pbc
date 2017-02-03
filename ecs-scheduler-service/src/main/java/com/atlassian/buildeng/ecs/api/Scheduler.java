@@ -49,6 +49,10 @@ public class Scheduler {
             if (taskArn != null) {
                 scheduler.setTaskARN(taskArn.getAsString());
             }
+            JsonPrimitive queueTimestamp = oo.getAsJsonPrimitive("queueTimestamp");
+            if (queueTimestamp != null) {
+                scheduler.setQueueTimestamp(queueTimestamp.getAsLong());
+            }
             return scheduler;
         }
         throw new IllegalArgumentException("Wrong format!");
@@ -59,6 +63,7 @@ public class Scheduler {
     private final String sidekick;
     private String taskARN;
     private final Configuration configuration;
+    private long queueTimestamp = -1;
 
     public Scheduler(String uuid, String resultId, String server, String sidekick, Configuration configuration) {
         this.uuid = uuid;
@@ -97,4 +102,11 @@ public class Scheduler {
         this.taskARN = taskARN;
     }
 
+    public long getQueueTimestamp() {
+        return queueTimestamp;
+    }
+
+    public void setQueueTimestamp(long queueTimestamp) {
+        this.queueTimestamp = queueTimestamp;
+    }
 }
