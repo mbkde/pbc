@@ -147,9 +147,9 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         return Lists.newArrayList(
                 //this is stupid ordering but we want to keep regular as default for new
                 //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
-                Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory)"),
-                Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory)"),
-                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory)"));
+                Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
+                Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
+                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"));
     }
 
 }

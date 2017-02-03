@@ -23,9 +23,10 @@
                     <div class="field-group long-label">
                         <label class="long-label" for="dockerExtraImage-size" id="dockerExtraImage-sizeLabel">Size</label>
                         <select name="dockerExtraImage-size" id="dockerExtraImage-size" class="select">
-                                <option value="LARGE" selected="selected">Large (~3G memory)</option>
-                                <option value="REGULAR" selected="selected">Regular (~2G memory)</option>
-                                <option value="SMALL">Small (~1G memory)</option>
+                                <option value="XLARGE" selected="selected">XLarge (~8G memory, 2 vCPU)</option>
+                                <option value="LARGE" selected="selected">Large (~4G memory, 1 vCPU)</option>
+                                <option value="REGULAR" selected="selected">Regular (~2G memory, 0.5 vCPU)</option>
+                                <option value="SMALL">Small (~1G memory, 0.25 vCPU)</option>
                         </select>
                     </div>
                     <div class="field-group">
