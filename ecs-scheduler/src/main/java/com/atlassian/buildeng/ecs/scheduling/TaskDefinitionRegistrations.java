@@ -106,8 +106,7 @@ public class TaskDefinitionRegistrations {
         RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick())) //, Constants.METADATA_DEFINITION)
                 .withFamily(globalConfiguration.getTaskDefinitionName())
-                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME),
-                             new Volume().withName(Constants.DOCKER_SOCKET_VOLUME_NAME).withHost(new HostVolumeProperties().withSourcePath(Constants.DOCKER_SOCKET)));
+                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME));
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()
