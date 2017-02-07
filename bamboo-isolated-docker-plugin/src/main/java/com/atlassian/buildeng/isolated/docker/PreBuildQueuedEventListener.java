@@ -71,6 +71,7 @@ public class PreBuildQueuedEventListener {
     private final AgentRemovals agentRemovals;
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
+    private final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                         ErrorUpdateHandler errorUpdateHandler,
@@ -108,6 +109,7 @@ public class PreBuildQueuedEventListener {
             LOG.info("PBC job {} got queued.", event.getResultKey());
             config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
+            setQueueTimestamp(buildContext);
             retry(new RetryAgentStartupEvent(config, buildContext));
         } else {
             //when a rerun happens and docker agents were disabled.
@@ -125,9 +127,8 @@ public class PreBuildQueuedEventListener {
             return;
         }
         clearResultCustomData(event.getContext());
-        
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier()),
+                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier(), getQueueTimestamp(event.getContext())),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
@@ -254,5 +255,16 @@ public class PreBuildQueuedEventListener {
                 }
             }
         });
+    }
+
+    private long getQueueTimestamp(CommonContext context) {
+        String val = context.getCurrentResult().getCustomBuildData().get(QUEUE_TIMESTAMP);
+        if (val != null) {
+            return Long.parseLong(val);
+        }
+        return -1;
+    }
+    private void setQueueTimestamp(CommonContext context) {
+        context.getCurrentResult().getCustomBuildData().put(QUEUE_TIMESTAMP, "" + System.currentTimeMillis());
     }
 }

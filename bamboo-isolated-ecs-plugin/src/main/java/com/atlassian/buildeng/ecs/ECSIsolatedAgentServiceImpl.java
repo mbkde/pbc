@@ -97,7 +97,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 req.getUniqueIdentifier(),
                 resultId,
                 revision,
-                req.getConfiguration());
+                req.getConfiguration(),
+                req.getQueueTimestamp());
         ecsScheduler.schedule(schedulingRequest, new DefaultSchedulingCallback(callback, resultId));
     }
     
