@@ -253,7 +253,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     .filter((String t) -> {
                         Instance ec2 = instances.get(t);
                         if (ec2 != null) {
-                            return Duration.ofMinutes(ASG_MISSING_IN_CLUSTER_GRACE_PERIOD).toMillis() < (new Date().getTime() - ec2.getLaunchTime().getTime());
+                            final long lifespan = new Date().getTime() - ec2.getLaunchTime().getTime();
+                            return Duration.ofMinutes(ASG_MISSING_IN_CLUSTER_GRACE_PERIOD).toMillis() < lifespan
+                                    && Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE).toMillis() > lifespan;
                         }
                         return false;
                     })
