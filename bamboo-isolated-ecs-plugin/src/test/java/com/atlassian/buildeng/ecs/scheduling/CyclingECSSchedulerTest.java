@@ -633,10 +633,11 @@ public class CyclingECSSchedulerTest {
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date()),
-                        ec2("id6", new Date(System.currentTimeMillis() - Duration.ofHours(1).toMillis()))
+                        ec2("id6", new Date(System.currentTimeMillis() - Duration.ofMinutes(20).toMillis())),
+                        ec2("id7", new Date(System.currentTimeMillis() - Duration.ofDays(1).toMillis()))
                 ),
                 //id5 is not in ASG
-                Sets.newHashSet("id1", "id2", "id3", "id4", "id5", "id6"));
+                Sets.newHashSet("id1", "id2", "id3", "id4", "id5", "id6", "id7"));
         final EventPublisher eventPublisher = mock(EventPublisher.class);
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), eventPublisher);
 
@@ -659,7 +660,7 @@ public class CyclingECSSchedulerTest {
             }
         });
         awaitProcessing(scheduler);
-
+        //only id6 should be marked as stale, id7 is just transiently in asg and not in ecs
         verify(eventPublisher, times(1)).publish(any(DockerAgentEcsStaleAsgInstanceEvent.class));
 
     }
