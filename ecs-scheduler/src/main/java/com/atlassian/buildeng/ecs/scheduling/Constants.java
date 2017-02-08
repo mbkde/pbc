@@ -73,7 +73,7 @@ public interface Constants {
 
     // AWS info
     String ECS_CLUSTER_KEY                = "ecs_cluster";
-    String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs-container-arn";
+    String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs_container_arn";
 
     String RESULT_PART_TASKARN = "TaskARN";
 
