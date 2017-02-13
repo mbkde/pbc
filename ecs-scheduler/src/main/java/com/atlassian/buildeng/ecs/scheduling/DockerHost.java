@@ -25,7 +25,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +40,7 @@ public class DockerHost {
     private final String instanceId;
     private final Date launchTime;
     private final boolean agentConnected;
-    //how much memory has the instance available for docker containers
-    private final int instanceCPU;
-    private final int instanceMemory;
     private boolean presentInASG = true;
-    
 
     @TestOnly
     DockerHost(int remainingMemory, int remainingCpu, int registeredMemory, int registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, boolean agentConnected, String instanceType) {
@@ -57,8 +52,6 @@ public class DockerHost {
         this.instanceId = instanceId;
         this.launchTime = launchTime;
         this.agentConnected = agentConnected;
-        this.instanceCPU = ECSInstance.fromName(instanceType).getCpu();
-        this.instanceMemory = ECSInstance.fromName(instanceType).getMemory();
     }
 
     public DockerHost(ContainerInstance containerInstance, Instance instance, boolean inASG) throws ECSException {
@@ -70,8 +63,6 @@ public class DockerHost {
         instanceId = containerInstance.getEc2InstanceId();
         launchTime = instance.getLaunchTime();
         agentConnected = containerInstance.isAgentConnected();
-        instanceCPU = ECSInstance.fromName(instance.getInstanceType()).getCpu();
-        instanceMemory = ECSInstance.fromName(instance.getInstanceType()).getMemory();
         presentInASG = inASG;
     }
 
@@ -138,8 +129,20 @@ public class DockerHost {
         remainingMemory = remainingMemory - memory;
     }
 
+    /**
+     * the total amount of cpu available for docker containers on the instance
+     * @return
+     */
     public int getRegisteredCpu() {
         return registeredCpu;
+    }
+
+    /**
+     * the amount of memory available for docker containers on the instance
+     * @return
+     */
+    public int getRegisteredMemory() {
+        return registeredMemory;
     }
 
     public String getContainerInstanceArn() {
@@ -156,22 +159,6 @@ public class DockerHost {
 
     public String getInstanceId() {
         return instanceId;
-    }
-
-    /**
-     * the total cpu available for docker containers on the instance.
-     * @return 
-     */
-    public int getInstanceCPU() {
-        return instanceCPU;
-    }
-
-    /**
-     * the total memory available for docker containers on the instance.
-     * @return 
-     */
-    public int getInstanceMemory() {
-        return instanceMemory;
     }
 
     @Override
@@ -205,8 +192,6 @@ public class DockerHost {
                 ", remainingCpu=" + remainingCpu +
                 ", registeredMemory=" + registeredMemory +
                 ", registeredCpu=" + registeredCpu +
-                ", instanceMemory=" + instanceMemory + 
-                ", instanceCpu=" + instanceCPU + 
                 ", containerInstanceArn='" + containerInstanceArn + '\'' +
                 ", instanceId='" + instanceId + '\'' +
                 ", launchTime=" + launchTime +

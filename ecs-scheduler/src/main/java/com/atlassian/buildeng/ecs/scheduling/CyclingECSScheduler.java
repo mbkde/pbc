@@ -66,6 +66,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     // AWS Console - ASG activity hisotry - Start 2016 December 16 15:44:36 UTC+11 -> End 2016 December 16 15:45:09 UTC+11
     // Cloud-init v. 0.7.6 finished at Fri, 16 Dec 2016 04:45:49 +0000. Datasource DataSourceEc2.  Up 50.12 seconds
     private static final int ASG_MISSING_IN_CLUSTER_GRACE_PERIOD = 5;
+    // when scaling down make sure this acount of free capacity ratio is not dropped below.
+    // it should smooth out waves of scale up and down, increasing caching and effeciency/performance
+    // of course somewhat bigger bill ensues
+    private static final double SCALE_DOWN_FREE_CAP_MIN = 0.30;
 
     private final Duration stalePeriod;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
@@ -108,13 +112,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 .findFirst();
     }
 
-
-    static double percentageUtilized(List<DockerHost> freshHosts) {
-        double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
-        double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
-        return clusterRegisteredCPU == 0 ? 1 : 1 - clusterRemainingCPU / clusterRegisteredCPU;
-        
-    }
 
     @Override
     public void schedule(SchedulingRequest request, SchedulingCallback callback) {
@@ -314,14 +311,30 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     List<DockerHost> selectToTerminate(DockerHosts hosts) {
         List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .collect(Collectors.toList());
+        if (toTerminate.isEmpty()) {
+            return toTerminate;
+        }
         // If we're terminating all of our hosts (and we have any) keep one
         // around
         if (hosts.getUsableSize() == toTerminate.size() && !toTerminate.isEmpty()) {
             toTerminate.remove(0);
+            return toTerminate;
+        }
+        //keep certain overcapacity around
+        List<DockerHost> notTerminating = new ArrayList<>(hosts.allUsable());
+        notTerminating.removeAll(toTerminate);
+        long free = computeFreeCapacityMemory(notTerminating);
+        long cap = computeMaxCapacityMemory(notTerminating);
+        double freeRatio = (double)free / cap;
+        while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
+            DockerHost host = toTerminate.remove(0);
+            free = free + host.getRegisteredMemory();
+            cap = cap + host.getRegisteredMemory();
+            freeRatio = (double)free / cap;
         }
         return toTerminate;
     }
-
+    
     //the return value has 2 possible meanings.
     // 1. how many instances we actually killed
     // 2. by how much the ASG size decreaesed
@@ -354,7 +367,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //we settle on minimum as that's the safer option here, better to scale faster than slower.
         //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
-        OptionalInt minCpu = hosts.stream().mapToInt((DockerHost value) -> value.getInstanceCPU()).min();
+        OptionalInt minCpu = hosts.stream().mapToInt((DockerHost value) -> value.getRegisteredCpu()).min();
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
         return minCpu.orElse(ECSInstance.DEFAULT_INSTANCE.getCpu());
@@ -371,10 +384,18 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         //we settle on minimum as that's the safer option here, better to scale faster than slower.
         //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
-        OptionalInt minMemory = hosts.stream().mapToInt((DockerHost value) -> value.getInstanceMemory()).min();
+        OptionalInt minMemory = hosts.stream().mapToInt((DockerHost value) -> value.getRegisteredMemory()).min();
         //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         //current arbitrary values based on "m4.4xlarge"
         return minMemory.orElse(ECSInstance.DEFAULT_INSTANCE.getMemory());
+    }
+
+    private long computeMaxCapacityMemory(Collection<DockerHost> hosts) {
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredMemory()).sum();
+    }
+
+    private long computeFreeCapacityMemory(Collection<DockerHost> hosts) {
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingMemory()).sum();
     }
 
     /**

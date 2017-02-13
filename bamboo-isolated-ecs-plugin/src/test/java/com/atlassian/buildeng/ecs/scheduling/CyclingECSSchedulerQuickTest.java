@@ -25,7 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.percentageUtilized;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
 import com.atlassian.event.api.EventPublisher;
 import java.time.Duration;
@@ -42,6 +41,13 @@ import static org.junit.Assume.assumeThat;
 
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerQuickTest {
+    static double percentageUtilized(List<DockerHost> freshHosts) {
+        double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
+        double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
+        return clusterRegisteredCPU == 0 ? 1 : 1 - clusterRemainingCPU / clusterRegisteredCPU;
+
+    }
+
     @Property public void percentageUtilizedValidBounds(LinkedList<@From(DockerHostGenerator.class)DockerHost> testHosts) {
         double result = percentageUtilized(testHosts);
         assertThat(result, is(both(greaterThanOrEqualTo(0.0)).and(lessThanOrEqualTo(1.0))));
