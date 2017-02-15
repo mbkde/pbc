@@ -1,0 +1,32 @@
+#!/bin/sh
+#copied and adjusted from https://bitbucket.org/atlassian/bamboo-update-capability
+displayUsage() { 
+	echo "\nScript to upgrade bamboo agent capabilities directly in properties file"
+	echo "Will remove from file old property with given name and write a new one"
+	echo "\nUsage: $(basename "$0") capability value [file.properties]"
+	echo "\n  capability - capability name"
+	echo "  value - value of capability"
+} 
+
+if [  $# -le 1 ]; then 
+	displayUsage
+	exit 1
+fi 
+
+propertiesFilePath=/buildeng/bamboo-capabilities.properties
+
+#create file if missing
+if [ ! -f $propertiesFilePath ]; then
+  dir=$(dirname ${propertiesFilePath})
+  mkdir -p ${dir}
+  touch $propertiesFilePath
+fi
+
+#escaping ' ', '=' and '\'
+name=$(echo $1 | sed -e 's/\\/\\\\\\\\/g' -e 's/ /\\ /g' -e 's/=/\\=/g' )
+value=$(echo $2 | sed -e 's/\\/\\\\\\\\/g' -e 's/ /\\ /g' -e 's/=/\\=/g')
+#remove previous values of this key
+nameToRemove=$(echo $name | sed -e 's/\\/\\\\/g')
+sed -e "/^$nameToRemove=/d" -i $propertiesFilePath
+#add new value of this key
+echo $name=$value >> $propertiesFilePath

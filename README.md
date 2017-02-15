@@ -24,7 +24,10 @@ The most battle hardened are the ones backed by AWS ECS.
 
 In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use.
 
+Important:
 You will also require a 'sidekick' image. That's an issue with just a volume defined containing JRE + Bamboo agent jars.
+You will need to build the image yourself and push it to your docker registry. We cannot publish it to Dockerhub as it
+contains Oracle JRE to run the Bamboo agent. Check sidekick/README.md for details
 
 
 Installation
