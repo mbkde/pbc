@@ -38,9 +38,6 @@ public final class DockerAgentRemoteFailEvent {
 
     @Override
     public String toString() {
-        return "DockerAgentRemoteFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn + "}";
+        return "DockerAgentRemoteFailEvent{task=" + taskArn +  ", container=" + containerArn + ",message=" + errorMessage + ", key=" + key  + "}";
     }
-
-    
-    
 }
