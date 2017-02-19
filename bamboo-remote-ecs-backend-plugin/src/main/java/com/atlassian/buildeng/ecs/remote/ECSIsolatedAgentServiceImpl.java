@@ -90,7 +90,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 s = e.getResponse().getEntity(String.class);
             }
             logger.error("Error contacting ECS:" + code + " " + s, e);
-            callback.handle(new IsolatedDockerAgentException(e));
+            if (code == 504) { //gateway timeout
+                callback.handle(new IsolatedDockerAgentResult().withRetryRecoverable(s));
+            } else {
+                callback.handle(new IsolatedDockerAgentException(e));
+            }
         } catch (Throwable t) {
             logger.error("unknown error", t);
             callback.handle(new IsolatedDockerAgentException(t));
