@@ -84,24 +84,61 @@ public class CyclingECSSchedulerTest {
                 ));
         Collection<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class)).loadHosts("", new AutoScalingGroup()).allUsable();
         //5 cpu & 5 mem means all are viable candidates
-        Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5));
+        Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5), false);
         assertTrue(candidate.isPresent());
         assertEquals("id1", candidate.get().getInstanceId()); //most utilized
         
         //65 cpu && 65 mem means only id3,4,5 are viable
-        candidate = CyclingECSScheduler.selectHost(candidates, mem(65), cpu(65));
+        candidate = CyclingECSScheduler.selectHost(candidates, mem(65), cpu(65), false);
         assertTrue(candidate.isPresent());
         assertEquals("id3", candidate.get().getInstanceId()); //most utilized
         
         //75 cpu && 75 mem means only id4,5 are viable
-        candidate = CyclingECSScheduler.selectHost(candidates, mem(75), cpu(75));
+        candidate = CyclingECSScheduler.selectHost(candidates, mem(75), cpu(75), false);
         assertTrue(candidate.isPresent());
         assertEquals("id4", candidate.get().getInstanceId()); //most utilized
         
-        candidate = CyclingECSScheduler.selectHost(candidates, mem(85), cpu(85));
+        candidate = CyclingECSScheduler.selectHost(candidates, mem(85), cpu(85), false);
         assertTrue(candidate.isPresent());
         assertEquals("id5", candidate.get().getInstanceId());
     }
+    @Test
+    public void testSelectHostWithDemandOverflow() throws ECSException {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 50, 50),
+                    ci("id2", "arn2", true, 40, 40),
+                    ci("id3", "arn3", true, 30, 30),
+                    ci("id4", "arn4", true, 20, 20),
+                    ci("id5", "arn5", true, 10, 10)
+                    ),
+                Arrays.asList(
+                        ec2("id1", new Date()),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())
+                ));
+        Collection<DockerHost> candidates = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class)).loadHosts("", new AutoScalingGroup()).allUsable();
+        //5 cpu & 5 mem means all are viable candidates, id5 is the less full one.
+        Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5), true);
+        assertTrue(candidate.isPresent());
+        assertEquals("id5", candidate.get().getInstanceId()); //least utilized
+
+        //65 cpu && 65 mem means only id3,4,5 are viable
+        candidate = CyclingECSScheduler.selectHost(candidates, mem(65), cpu(65), true);
+        assertTrue(candidate.isPresent());
+        assertEquals("id5", candidate.get().getInstanceId()); //least utilized
+
+        //75 cpu && 75 mem means only id4,id5 is viable
+        candidate = CyclingECSScheduler.selectHost(candidates, mem(75), cpu(75), true);
+        assertTrue(candidate.isPresent());
+        //we don't update the utilization model, so id5 is always picked because it's the
+        // least utilized in the beginning
+        assertEquals("id5", candidate.get().getInstanceId()); //least utilized
+
+    }
+
 
     @Test
     public void scheduleScaleUp() throws Exception {
