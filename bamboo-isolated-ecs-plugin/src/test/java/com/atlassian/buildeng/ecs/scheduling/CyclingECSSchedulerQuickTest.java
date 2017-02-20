@@ -60,7 +60,7 @@ public class CyclingECSSchedulerQuickTest {
     @Property public void selectHostTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
         assumeThat(requiredMemory, greaterThan(0));
         assumeThat(requiredCpu, greaterThan(0));
-        Optional<DockerHost> result = selectHost(candidates, requiredMemory, requiredCpu);
+        Optional<DockerHost> result = selectHost(candidates, requiredMemory, requiredCpu, false);
         if (result.isPresent()) {
             DockerHost candidate = result.get();
             assertTrue(candidate.canRun(requiredMemory, requiredCpu));

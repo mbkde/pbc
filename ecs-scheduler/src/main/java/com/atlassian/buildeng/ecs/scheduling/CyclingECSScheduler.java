@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,10 +106,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, int requiredMemory, int requiredCpu) {
+    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, int requiredMemory, int requiredCpu, boolean demandOverflowing) {
+        Comparator<DockerHost> comparator = DockerHost.compareByResourcesAndAge();
+        if (demandOverflowing) {
+            // when we know that there is demand overflow, we want to spread out the
+            // scheduling, so always prefer the more empty ones. that way we keep on
+            // rotating instances until they are all full (or equally utilized)
+            comparator = comparator.reversed();
+        }
         return candidates.stream()
                 .filter(dockerHost -> dockerHost.canRun(requiredMemory, requiredCpu))
-                .sorted(DockerHost.compareByResourcesAndAge())
+                .sorted(comparator)
                 .findFirst();
     }
 
@@ -143,7 +151,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         while (pair != null) {
             try {
                 logger.debug("Processing request for {}", request);
-                Optional<DockerHost> candidate = selectHost(hosts.fresh(), request.getMemory(), request.getCpu());
+                Optional<DockerHost> candidate = selectHost(hosts.fresh(), request.getMemory(), request.getCpu(), !consideredRequestIdentifiers.isEmpty());
                 if (candidate.isPresent()) {
                     DockerHost candidateHost = candidate.get();
                     SchedulingResult schedulingResult = schedulerBackend.schedule(candidateHost.getContainerInstanceArn(), cluster, request, globalConfiguration.getTaskDefinitionName());
