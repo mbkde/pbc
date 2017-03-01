@@ -37,7 +37,7 @@ AJS.$(document).ready(function () {
         }
         AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + jobKey + query.replace("&", "?"), function( data ) {
             div.empty();
-            div.append("<textarea>" + data +"</textarea>");
+            div.append("<textarea style='width:100%; height:200px' class='textarea'>" + data +"</textarea>");
         }, "text")
         .fail(function() {
             div.empty();
