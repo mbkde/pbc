@@ -25,8 +25,10 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
@@ -60,10 +62,13 @@ public class SummaryPanel implements WebPanel {
             Map<String, String> customData =
                     createCustomDataMap(buildcontext, summary);
 
-            String rend = detail.renderContainerLogs(configuration, customData);
-            if (rend != null) {
-                ret.append("<dt>Container Logs</dt>")
-                   .append("<dd>").append(rend).append("</dd>");
+            Map<String, URL> containerLogs = detail.getContainerLogs(configuration, customData);
+            if (!containerLogs.isEmpty()) {
+                ret.append("<dt>Container Logs</dt><dd>");
+                containerLogs.forEach((String t, URL u) -> {
+                    ret.append("<a href=\"").append(u.toString()).append("\">").append(t).append("</a>,&nbsp;&nbsp;");
+                });
+                ret.append("</dd>");
             }
             String error = buildcontext != null 
                     ? buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR) 

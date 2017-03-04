@@ -32,7 +32,9 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +43,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
@@ -114,25 +118,24 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public String renderContainerLogs(Configuration configuration, Map<String, String> customData) {
+    public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String taskArn = customData.get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
         if (taskArn == null || AwsLogs.getAwsLogsDriver(globalConfiguration) == null) {
-            return null;
+            return Collections.emptyMap();
         }
         Stream<String> s = Stream.concat(
                 Stream.of(Constants.AGENT_CONTAINER_NAME),
                           configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
-        String ss = s.map((String name) -> {
+        return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
-               URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/docker/latest/logs")
-                .addParameter(Rest.PARAM_CONTAINER, name)
-                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
-                return "<a href=\"" + bb.build().toString() + "\">" + name + "</a>" + COMMA_SPACES;
-            } catch (URISyntaxException ex) {
-                return "";
+                URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/docker/latest/logs")
+                        .addParameter(Rest.PARAM_CONTAINER, t)
+                        .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+                return bb.build().toURL();
+            } catch (URISyntaxException | MalformedURLException ex) {
+                return null; //??
             }
-        }).collect(Collectors.joining());
-        return ss.substring(0, ss.length() - COMMA_SPACES.length());
+        }));
     }
 
     
@@ -148,6 +151,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
         config.put("schedulerBackend", schedulerBackend);
+        config.put("isolatedAgentService", this);
         pluginScheduler.scheduleJob(Constants.PLUGIN_JOB_KEY, ECSWatchdogJob.class, config, new Date(), Constants.PLUGIN_JOB_INTERVAL_MILLIS);
     }
 
@@ -156,5 +160,4 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         pluginScheduler.unscheduleJob(Constants.PLUGIN_JOB_KEY);
     }
 
-    private static final String COMMA_SPACES = ",&nbsp;&nbsp;";
 }

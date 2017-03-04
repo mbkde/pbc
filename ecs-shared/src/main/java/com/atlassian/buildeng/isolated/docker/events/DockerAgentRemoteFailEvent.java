@@ -16,6 +16,8 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
+import java.net.URL;
+import java.util.Map;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.
@@ -27,17 +29,57 @@ public final class DockerAgentRemoteFailEvent {
     private final Key key;
     private final String taskArn;
     private final String containerArn;
+    private final Map<String, URL> markdownLinks;
+
+    static boolean ddmarkdown = Boolean.parseBoolean(System.getProperty("pbc.event.tostring.datadog", "true"));
 
 
-    public DockerAgentRemoteFailEvent(String errorMessage, Key key, String taskArn, String containerArn) {
+    public DockerAgentRemoteFailEvent(String errorMessage, Key key, String taskArn, String containerArn, Map<String, URL> markdownLinks) {
         this.errorMessage = errorMessage;
         this.key = key;
         this.taskArn = taskArn;
         this.containerArn = containerArn;
+        this.markdownLinks = markdownLinks;
     }
 
     @Override
     public String toString() {
-        return "DockerAgentRemoteFailEvent{task=" + taskArn +  ", container=" + containerArn + ",message=" + errorMessage + ", key=" + key  + "}";
+        if (ddmarkdown) {
+            //http://docs.datadoghq.com/guides/markdown/
+            return "%%% \\n" +
+                    key.getKey() + " " +
+                    taskArn + "\\n" +
+                    "Container ARN:" + containerArn + "\\n" +
+                    "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n" +
+                    escape(errorMessage) + "\\n" +
+                    "\\n %%%";
+        }
+        return "DockerAgentRemoteFailEvent{task=" + taskArn +  ", container=" + containerArn + ", key=" + key  + ",containerLogs=" + markdownLinks +  ",message=" + errorMessage +  "}";
+    }
+
+    private String generateMarkdownLinks(Map<String, URL> markdownLinks) {
+        StringBuilder sb = new StringBuilder();
+        markdownLinks.forEach((String t, URL u) -> {
+            sb.append("[").append(t).append("](").append(u.toString()).append(") ");
+        });
+        return sb.toString();
+    }
+
+    private String escape(String text) {
+        return text.replace("\\", "\\\\")
+                   .replace("`", "\\`")
+                   .replace("*", "\\*")
+                   .replace("_", "\\_")
+                   .replace("#", "\\#")
+                   .replace("-", "\\-")
+                   .replace(".", "\\.")
+                   .replace("!", "\\!")
+                   .replace("[", "\\[")
+                   .replace("]", "\\]")
+                   .replace("(", "\\(")
+                   .replace(")", "\\)")
+                   .replace("{", "\\{")
+                   .replace("}", "\\}")
+                ;
     }
 }
