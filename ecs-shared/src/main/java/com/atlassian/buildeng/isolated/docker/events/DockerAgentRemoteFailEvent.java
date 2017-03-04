@@ -47,8 +47,7 @@ public final class DockerAgentRemoteFailEvent {
         if (ddmarkdown) {
             //http://docs.datadoghq.com/guides/markdown/
             return "%%% \\n" +
-                    key.getKey() + " " +
-                    taskArn + "\\n" +
+                    "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n" +
                     "Container ARN:" + containerArn + "\\n" +
                     "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n" +
                     escape(errorMessage) + "\\n" +
