@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public interface IsolatedAgentService {
     /**
@@ -37,11 +38,12 @@ public interface IsolatedAgentService {
     }
 
     /**
-     * provide links to container logs for the cunfiguration and specific run data.
+     * provide links to container logs for the configuration and specific run data.
      * @param configuration
      * @param customData implementation specific custom data as returned by IsolatedDockerAgentResult
-     * @return container name: link
+     * @return never null, always a map with container name: link key-value pairs
      */
+    @NotNull
     default Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         return Collections.emptyMap();
     }

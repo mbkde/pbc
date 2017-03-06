@@ -28,7 +28,6 @@ import java.io.Writer;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
