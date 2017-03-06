@@ -19,35 +19,26 @@ package com.atlassian.buildeng.isolated.docker.compose;
 import com.atlassian.bamboo.build.PlanResultsAction;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
-import com.atlassian.bamboo.plan.job.JobService;
+import com.atlassian.bamboo.resultsummary.ResultsSummary;
+import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.opensymphony.xwork2.Preparable;
 
 public class LocalExecAction extends PlanResultsAction implements Preparable {
 
-    private final JobService jobService;
-
-    private String jobKey;
+//    private final ResultsSummaryManager resultsSummaryManager;
 
     private boolean dockerIncluded = false;
 
     private Configuration configuration;
 
-    public LocalExecAction(JobService jobService) {
-        this.jobService = jobService;
-    }
+//    public LocalExecAction(ResultsSummaryManager resultsSummaryManager) {
+//        this.resultsSummaryManager = resultsSummaryManager;
+//    }
 
     public Configuration getConfiguration() {
         return configuration;
-    }
-
-    public String getJobKey() {
-        return jobKey;
-    }
-
-    public void setJobKey(String jobKey) {
-        this.jobKey = jobKey;
     }
 
     public boolean isDockerIncluded() {
@@ -56,9 +47,10 @@ public class LocalExecAction extends PlanResultsAction implements Preparable {
 
     @Override
     public void prepare() throws Exception {
-        if (jobKey != null) {
-            ImmutableJob job = jobService.getJob(PlanKeys.getPlanKey(jobKey));
-            configuration = AccessConfiguration.forJob(job);
+        if (getBuildKey() != null) {
+//            ResultsSummary rs = resultsSummaryManager.getResultsSummary(PlanKeys.getPlanResultKey(getBuildKey(), getBuildNumber()));
+            configuration = AccessConfiguration.forBuildResultSummary(resultsSummary);
+
             if (configuration.isEnabled()) {
                 for (Configuration.ExtraContainer extra : configuration.getExtraContainers()) {
                     if (isDockerInDockerImage(extra.getImage())) {

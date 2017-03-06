@@ -2,7 +2,7 @@
     <meta name="decorator" content="atl.result">
     <title>How to reproduce build locally?</title>
     ${webResourceManager.requireResourcesForContext("viewLocalExec")}
-    <meta name="jobKey" content="${jobKey}">
+    <meta name="tab" content="PBC"/>
 </head>
 
 <body>
@@ -19,6 +19,7 @@
 <br/>
 Please note: If your bamboo-agent docker image is not running as root user, you will have to manually tweak volume mappings in the generated file.
 <form>
+  <input type="hidden" id="buildKey" name="buildKey" value="${buildKey}">
   <input type="checkbox" id="reservations" name="reservations" value="true">Generate memory and CPU reservations<br>
   <input type="checkbox" id="mavenLocal" name="mavenLocal" value="true">Share Maven local repository (unchecked means only settings files are shared)<br>
   <#if dockerIncluded >

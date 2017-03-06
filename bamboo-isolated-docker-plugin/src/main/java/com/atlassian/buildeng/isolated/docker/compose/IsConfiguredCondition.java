@@ -16,11 +16,22 @@
 
 package com.atlassian.buildeng.isolated.docker.compose;
 
+import com.atlassian.bamboo.plan.PlanKeys;
+import com.atlassian.bamboo.resultsummary.ResultsSummary;
+import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.plugin.PluginParseException;
 import com.atlassian.plugin.web.Condition;
 import java.util.Map;
 
 public class IsConfiguredCondition implements Condition {
+
+    private final ResultsSummaryManager resultsSummaryManager;
+
+    public IsConfiguredCondition(ResultsSummaryManager resultsSummaryManager) {
+        this.resultsSummaryManager = resultsSummaryManager;
+    }
 
     @Override
     public void init(Map<String, String> params) throws PluginParseException {
@@ -30,8 +41,13 @@ public class IsConfiguredCondition implements Condition {
     public boolean shouldDisplay(Map<String, Object> context) {
         String jobKey = (String) context.get("buildKey");
         String buildNumber = (String) context.get("buildNumber");
-        
-        return true;
+        if (jobKey != null && buildNumber != null)  {
+            int br = Integer.parseInt(buildNumber);
+            ResultsSummary resultsSummary = resultsSummaryManager.getResultsSummary(PlanKeys.getPlanResultKey(jobKey, br));
+            Configuration config = AccessConfiguration.forBuildResultSummary(resultsSummary);
+            return config.isEnabled();
+        }
+        return false;
     }
 
 }

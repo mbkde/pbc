@@ -17,7 +17,6 @@
 /* global AJS */
 
 AJS.$(document).ready(function () {
-    var jobKey = AJS.$('meta[name=jobKey]').attr("content");
     AJS.$("#generate").click(function() {
         var div = AJS.$("#docker-compose");
         div.empty();
@@ -35,13 +34,14 @@ AJS.$(document).ready(function () {
         {
             query = query + '&reservations=' +  AJS.$('#reservations').val();
         }
-        AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + jobKey + query.replace("&", "?"), function( data ) {
+        var buildKey = AJS.$('input#buildKey').val();
+        AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + buildKey + query.replace("&", "?"), function( data ) {
             div.empty();
             div.append("<textarea style='width:100%; height:200px' class='textarea'>" + data +"</textarea>");
         }, "text")
         .fail(function() {
             div.empty();
-            AJS.$("#docker-compose").append("<p>Error while loading usages.</p>");
+            AJS.$("#docker-compose").append("<p>Error while generating compose file</p>");
         });
 
     });

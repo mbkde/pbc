@@ -19,7 +19,7 @@ package com.atlassian.buildeng.spi.isolated.docker;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
-import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
+import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
@@ -79,7 +79,7 @@ public class AccessConfiguration {
         return forMap(cc);
     }
 
-    public static Configuration forBuildResultSummary(BuildResultsSummary summary) {
+    public static Configuration forBuildResultSummary(ResultsSummary summary) {
         Map<String, String> cc = summary.getCustomBuildData();
         return forMap(cc);
     }

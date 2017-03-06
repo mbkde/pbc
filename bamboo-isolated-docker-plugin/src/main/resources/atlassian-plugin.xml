@@ -130,9 +130,9 @@ limitations under the License.
             </action>
         </package>
     </xwork>
-  <web-item key="PBC:${buildKey}-${buildNumber}" name="pbclink" section="results.subMenu/results" weight="65">
+  <web-item key="PBC:${buildKey}-${buildNumber}" name="PBC" section="results.subMenu/results" weight="65">
     <label key="PBC"/>
-    <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?jobKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
+    <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
     <condition class="com.atlassian.buildeng.isolated.docker.compose.IsConfiguredCondition"/>
   </web-item>
     <web-resource key="docker-ulocal-exec-ui-js" name="JavaScript for local exec panel.">
