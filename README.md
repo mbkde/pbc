@@ -18,16 +18,18 @@ The most battle hardened are the ones backed by AWS ECS.
 * bamboo-isolated-docker-plugin - the general UI and bamboo lifecycle management. Mandatory plugin.
 * isolated-docker-spi - the plugin with API for the various backends. Mandatory plugin.
 * bamboo-isolated-ecs-plugin - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. Implies one ECS cluster per Bamboo Server.
-* bamboo-remote-ecs-backend-plugin - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster.
+* bamboo-remote-ecs-backend-plugin - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
+requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
 * bamboo-kubernetes-backend-plugin - Experimental backend that schedules agents on Kubernetes cluster.
 
 In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use.
 
 Important:
-You will also require a 'sidekick' image. That's an issue with just a volume defined containing JRE + Bamboo agent jars.
+==========
+You will also require a 'sidekick' image. That's a Docker image with just a volume defined containing JRE + Bamboo agent jars.
 You will need to build the image yourself and push it to your docker registry. We cannot publish it to Dockerhub as it
-contains Oracle JRE to run the Bamboo agent. Check sidekick/README.md for details
+contains Oracle JRE to run the Bamboo agent. Check [sidekick README](sidekick/README.md) for details
 
 
 Installation
@@ -35,19 +37,25 @@ Installation
 
 First and foremost, you need an existing Bamboo installation.
 Then you need to decide what Docker clustering solution to use (where your builds will be running).
+We recommend AWS ECS right now as it's the most (the only one) battle-hardened.
 Then install the appropriate Bamboo plugins and configure them.
 
+
+Usage
+=====
 To run individual jobs on per-build-container agents, go to Job's Miscellaneous tab, enable it and select a Docker image to use.
+![alt](images/job-configuration.png)
+
 
 
 Documentation
 =============
 
-* ECS setup tutorial - TBD
+* [ECS And PBC microservice](ecs-scheduler-service/README.md) setup
 * creating Docker images for builds, Bamboo capabilities - TBD
 * monitoring considerations - TBD
 * customized, optimized sidekick creation - TBD
-* secrets management considerations - TBD
+* [secrets management considerations] (sidekick/secrets.md)
 
 Tests
 =====
