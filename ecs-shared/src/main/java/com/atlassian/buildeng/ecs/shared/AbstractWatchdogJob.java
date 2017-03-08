@@ -33,12 +33,14 @@ import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteSilentRetryEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
 import static com.google.common.base.Preconditions.checkNotNull;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
@@ -83,6 +85,7 @@ public abstract class AbstractWatchdogJob implements PluginJob {
         DeploymentResultService deploymentResultService = getService(DeploymentResultService.class, "deploymentResultService");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
+        IsolatedAgentService isolatedAgentService = getService(IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
         
         QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, new com.google.common.base.Function<BuildQueueManager.QueueItemView<CommonContext>, BuildQueueManager.QueueItemView<CommonContext>>() {
             @Override
@@ -137,8 +140,7 @@ public abstract class AbstractWatchdogJob implements PluginJob {
                             logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
                             errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(RESULT_ERROR, error);
-                            //monitoring only
-                            eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
+                            generateRemoteFailEvent(t, error, tsk, isolatedAgentService, eventPublisher);
                             if (t.getView() instanceof BuildContext) {
                                 current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                                 buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
@@ -160,6 +162,20 @@ public abstract class AbstractWatchdogJob implements PluginJob {
             });
         }
 
+    }
+
+    private void generateRemoteFailEvent(BuildQueueManager.QueueItemView<CommonContext> t,
+            String error, StoppedState tsk,
+            IsolatedAgentService isolatedAgentService, EventPublisher eventPublisher) {
+        Configuration c = AccessConfiguration.forContext(t.getView());
+        Map<String, String> customData =
+                new HashMap<>(t.getView().getCurrentResult().getCustomBuildData());
+        //sort of implementation detail, would be nice to place elsewhere but it's shared across
+        //ecs-shared and bamboo-isolated-docker modules
+        customData.entrySet().removeIf((Map.Entry<String, String> tt) -> !tt.getKey().startsWith("result.isolated.docker."));
+        Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(c, customData);
+        DockerAgentRemoteFailEvent event = new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn(), containerLogs);
+        eventPublisher.publish(event);
     }
 
     private List<String> getQueuedARNs(QueueManagerView<CommonContext, CommonContext> queue) {

@@ -32,12 +32,15 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.core.MediaType;
@@ -114,30 +117,25 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public String renderContainerLogs(Configuration configuration, Map<String, String> customData) {
+    public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String taskArn = customData.get(RESULT_PREFIX + RESULT_PART_TASKARN);
         if (taskArn == null) {
-            return null;
+            return Collections.emptyMap();
         }
         Stream<String> s = Stream.concat(
                 Stream.of(AGENT_CONTAINER_NAME),
                           configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
-        String ss = s.map((String name) -> {
+        return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
-               URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
-                .addParameter(Rest.PARAM_CONTAINER, name)
-                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
-                return "<a href=\"" + bb.build().toString() + "\">" + name + "</a>" + COMMA_SPACES;
-            } catch (URISyntaxException ex) {
-                return "";
+                URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
+                        .addParameter(Rest.PARAM_CONTAINER, t)
+                        .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+                return bb.build().toURL();
+            } catch (URISyntaxException | MalformedURLException ex) {
+                return null; //??
             }
-        }).collect(Collectors.joining());
-        return ss.substring(0, ss.length() - COMMA_SPACES.length());
+        }));
     }
-    private static final String COMMA_SPACES = ",&nbsp;&nbsp;";
-    
-
-
 
     @Override
     public List<String> getKnownDockerImages() {
@@ -148,6 +146,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     public void onStart() {
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
+        config.put("isolatedAgentService", this);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, RemoteWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
 

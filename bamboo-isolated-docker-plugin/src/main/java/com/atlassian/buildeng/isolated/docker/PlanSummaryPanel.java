@@ -30,6 +30,7 @@ import com.atlassian.plugin.web.model.WebPanel;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,9 +64,13 @@ public class PlanSummaryPanel implements WebPanel {
                    .append("</dt><dd>")
                    .append(config.getDockerImage());
                 Map<String, String> custom = SummaryPanel.createCustomDataMap(buildcontext, (BuildResultsSummary) brs);
-                String render = detail.renderContainerLogs(config, custom);
-                if (render != null) {
-                    ret.append("<br/>").append(render);
+                Map<String, URL> containerLogs = detail.getContainerLogs(config, custom);
+                if (!containerLogs.isEmpty()) {
+                    ret.append("<br/>");
+                    containerLogs.forEach((String t, URL u) -> {
+                        ret.append("<a href=\"").append(u.toString()).append("\">").append(t).append("</a>,&nbsp;&nbsp;");
+                    });
+                    ret.append("</dd>");
                 }
                 if (error != null) {
                     ret.append("<br/><span class=\"errorText\">")

@@ -15,9 +15,11 @@
  */
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public interface IsolatedAgentService {
     /**
@@ -36,13 +38,14 @@ public interface IsolatedAgentService {
     }
 
     /**
-     * participate in rendering of the job/plan result summary PBC page snippet.
+     * provide links to container logs for the configuration and specific run data.
      * @param configuration
-     * @param customData
-     * @return null if no logs available, html snippet otherwise
+     * @param customData implementation specific custom data as returned by IsolatedDockerAgentResult
+     * @return never null, always a map with container name: link key-value pairs
      */
-    default String renderContainerLogs(Configuration configuration, Map<String, String> customData) {
-        return null;
+    @NotNull
+    default Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
+        return Collections.emptyMap();
     }
 
 }
