@@ -38,8 +38,8 @@ public class Reaper implements LifecycleAware {
     private final AgentRemovals agentRemovals;
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;
-    
-    static long   REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(5).toMillis(); //Reap agents if they're older than 5 minutes
+    //BUILDENG-12799 Reap agents if they're older than 40 minutes, see the issue to learn why the number is so high.
+    static long   REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(40).toMillis(); 
     static long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
     static String REAPER_KEY = "isolated-docker-reaper";
     static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
