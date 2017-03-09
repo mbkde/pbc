@@ -9,21 +9,30 @@ Each execution of a Bamboo job or deployment environment will run on a newly cre
 that will contain exactly the tools needed for the job, run it and then destroy itself. Services as Selenium, databases or Docker
 can be defined as extra containers that the build can interact with.
 
+What is it good for?
+====================
+
+* Teams own their build pipelines, including the definition of build agents
+* Teams upgrade their dependencies on tools and services individually, at their timetable
+* Builds in CI (Bamboo) match the local dev environment in terms of tools used or can be at least easily reproduced locally with ease
+* Support a wide variety of tool combinations on a Bamboo instance with limited agent number license.
+
+
 Usage
 ======
 
 You would typically install a subset of Bamboo plugins depending on what infrastructure backend you going to use.
-The most battle hardened are the ones backed by AWS ECS.
+The most battle hardened are the ones backed by AWS ECS. Download all binaries in the [Download](https://bitbucket.org/atlassian/per-build-container/downloads/) section.
 
-* bamboo-isolated-docker-plugin - the general UI and bamboo lifecycle management. Mandatory plugin.
-* isolated-docker-spi - the plugin with API for the various backends. Mandatory plugin.
+* [bamboo-isolated-docker-plugin](bamboo-isolated-docker-plugin/README.md) - the general UI and bamboo lifecycle management. Mandatory plugin.
+* [isolated-docker-spi](isolated-docker-spi/README.md) - the plugin with API for the various backends. Mandatory plugin.
 * bamboo-isolated-ecs-plugin - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. Implies one ECS cluster per Bamboo Server.
 * bamboo-remote-ecs-backend-plugin - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
 requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
 * bamboo-kubernetes-backend-plugin - Experimental backend that schedules agents on Kubernetes cluster.
 
-In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use.
+In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use. See individual plugin's documentation for details.
 
 Important:
 ==========
@@ -40,11 +49,6 @@ Then you need to decide what Docker clustering solution to use (where your build
 We recommend AWS ECS right now as it's the most (the only one) battle-hardened.
 Then install the appropriate Bamboo plugins and configure them.
 
-
-Usage
-=====
-To run individual jobs on per-build-container agents, go to Job's Miscellaneous tab, enable it and select a Docker image to use.
-![alt](images/job-configuration.png)
 
 
 
