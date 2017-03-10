@@ -27,7 +27,7 @@ The most battle hardened are the ones backed by AWS ECS. Download all binaries i
 * [bamboo-isolated-docker-plugin](bamboo-isolated-docker-plugin/README.md) - the general UI and bamboo lifecycle management. Mandatory plugin.
 * [isolated-docker-spi](isolated-docker-spi/README.md) - the plugin with API for the various backends. Mandatory plugin.
 * bamboo-isolated-ecs-plugin - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. Implies one ECS cluster per Bamboo Server.
-* bamboo-remote-ecs-backend-plugin - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
+* [bamboo-remote-ecs-backend-plugin](bamboo-remote-ecs-backend-plugin/README.md) - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
 requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
 * bamboo-kubernetes-backend-plugin - Experimental backend that schedules agents on Kubernetes cluster.

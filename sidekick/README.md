@@ -4,14 +4,14 @@
 
 
 * Description:
-    * This image encapsulates all mandatory content to successfuly run a Bamboo agent
+    * This image encapsulates all mandatory content to successfully run a Bamboo agent
     inside a Docker container and makes it available as volume for use by other containers.
     That way, makes the actual Docker images used free of Bamboo specific content.
     * This is the data volume which mounts a volume at `/buildeng`. The volume is to contain:
         * Script to run the agent at /buildeng/run-agent.sh
         * Untarred jre installation at /buildeng/jre/
         * Bamboo agent jar optionally preloaded with plugins from your Bamboo instance at /buildeng/atlassian-bamboo-agent.jar
-        * Pre-initialised `bamboo-capabilities.properties` file. See below for how to add custom capabilities.
+        * Pre-initialized `bamboo-capabilities.properties` file. See below for how to add custom capabilities.
         * jq binary at /buildeng/jq
     * Currently the image uses a small base image `tianon/true` which only contains `bin/true`. This saves us having to start an operating system.
 
