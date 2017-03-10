@@ -2,12 +2,12 @@ ECS scheduler service
 ==============
 
 A microservice to deal with scheduling bamboo agent tasks onto ECS cluster and scaling the cluster based on current demand.
+It is assumed that one such service handles a single ECS cluster/Autoscaling group.
 
 Distribution
 ====
 
-Docker image: TODO
-Binary jar: TODO
+Binary executable jar: [ecs-scheduler-service-*.jar](https://bitbucket.org/atlassian/per-build-container/downloads/)
 
 
 Infrastructure

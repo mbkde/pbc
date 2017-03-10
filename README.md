@@ -26,7 +26,7 @@ The most battle hardened are the ones backed by AWS ECS. Download all binaries i
 
 * [bamboo-isolated-docker-plugin](bamboo-isolated-docker-plugin/README.md) - the general UI and bamboo lifecycle management. Mandatory plugin.
 * [isolated-docker-spi](isolated-docker-spi/README.md) - the plugin with API for the various backends. Mandatory plugin.
-* bamboo-isolated-ecs-plugin - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. Implies one ECS cluster per Bamboo Server.
+* [bamboo-isolated-ecs-plugin](bamboo-isolated-ecs-plugin/README.md) - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. __Implies one ECS cluster per Bamboo Server__.
 * [bamboo-remote-ecs-backend-plugin](bamboo-remote-ecs-backend-plugin/README.md) - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
 requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
@@ -44,10 +44,10 @@ contains Oracle JRE to run the Bamboo agent. Check [sidekick README](sidekick/RE
 Installation
 ============
 
-First and foremost, you need an existing Bamboo installation.
-Then you need to decide what Docker clustering solution to use (where your builds will be running).
+* First and foremost, you need an existing Bamboo installation.
+* Then you need to decide what Docker clustering solution to use (where your builds will be running).
 We recommend AWS ECS right now as it's the most (the only one) battle-hardened.
-Then install the appropriate Bamboo plugins and configure them.
+* Then install the appropriate Bamboo plugins and configure them. Follow the links in the __Usage__ section to learn how to setup each plugin.
 
 
 
