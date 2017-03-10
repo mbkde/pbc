@@ -1,7 +1,6 @@
 <head xmlns="http://www.w3.org/1999/html">
     <meta name="decorator" content="atl.result">
     <title>How to reproduce build locally?</title>
-    ${webResourceManager.requireResourcesForContext("viewLocalExec")}
     <meta name="tab" content="PBC"/>
 </head>
 
@@ -47,4 +46,37 @@ Open new terminal and run:
 <p/>
 <pre class='code'>docker-compose exec bamboo-agent npm install</pre> for specific commands only.
 
+<script type="text/javascript">
+
+AJS.$(document).ready(function () {
+    AJS.$("#generate").click(function() {
+        var div = AJS.$("#docker-compose");
+        div.empty();
+        div.append("<p>Loading...</p>");
+        var query = "";
+        if (AJS.$('#dind').is(":checked"))
+        {
+            query = query + '&dind=' +  AJS.$('#dind').val();
+        }
+        if (AJS.$('#mavenLocal').is(":checked"))
+        {
+            query = query + '&mavenLocal=' +  AJS.$('#mavenLocal').val();
+        }
+        if (AJS.$('#reservations').is(":checked"))
+        {
+            query = query + '&reservations=' +  AJS.$('#reservations').val();
+        }
+        var buildKey = AJS.$('input#buildKey').val();
+        AJS.$.get(AJS.contextPath() + "/rest/docker-ui/1.0/localExec/" + buildKey + query.replace("&", "?"), function( data ) {
+            div.empty();
+            div.append("<textarea style='width:100%; height:200px' class='textarea'>" + data +"</textarea>");
+        }, "text")
+        .fail(function() {
+            div.empty();
+            AJS.$("#docker-compose").append("<p>Error while generating compose file</p>");
+        });
+
+    });
+});
+</script>
 </body>
