@@ -92,5 +92,5 @@ limitations under the License.
 
         <resource type="download" name="usages.js" location="/templates/plugin/dockerUsages.js"/>
         <context>viewDockerUsages</context>
-    </web-resource>    
+    </web-resource>
 </atlassian-plugin>

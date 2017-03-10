@@ -19,6 +19,6 @@ package com.atlassian.buildeng.ecs;
 import com.opensymphony.xwork2.ActionSupport;
 
 public class DockerUsagesAction extends ActionSupport {
-    
-    
+
+
 }
