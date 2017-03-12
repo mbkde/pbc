@@ -135,12 +135,5 @@ limitations under the License.
     <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
     <condition class="com.atlassian.buildeng.isolated.docker.compose.IsConfiguredCondition"/>
   </web-item>
-    <web-resource key="docker-ulocal-exec-ui-js" name="JavaScript for local exec panel.">
-        <dependency>com.atlassian.auiplugin:ajs</dependency>
-        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
-
-        <resource type="download" name="localExec.js" location="/templates/plugin/localExec.js"/>
-        <context>viewLocalExec</context>
-    </web-resource>
     
 </atlassian-plugin>
