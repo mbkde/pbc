@@ -9,8 +9,10 @@ The plugin will schedule tasks on the cluster, scale it's autoscaling group etc.
 Usage
 =====
 
-__Please note that this plugin assume that a single Amazon ECS cluster/Autoscaling Group is always just accessed and managed by one
+__Please note that this plugin assumes that a single Amazon ECS cluster/Autoscaling Group is always just accessed and managed by one
 Bamboo server only. So for each instance you want to run, you have to provision separate infrastructure__
+
+__Important: The Bamboo server itself needs the AWS permissions as specified in [ecs-scheduler-service](../ecs-scheduler-service/README.md)__
 
 If your Bamboo agents need to assume particular AIM roles, please make sure the role is part of the Autoscaling Group/Launch configuration setup.
 
