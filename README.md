@@ -56,7 +56,7 @@ Documentation
 
 * [ECS And PBC microservice](ecs-scheduler-service/README.md) setup. Also includes infrastructure requirements that are the same for [bamboo-isolated-ecs-plugin](bamboo-isolated-ecs-plugin/README.md) as well.
 * creating Docker images for builds with [Bamboo agent capabilities](sidekick/capabilities.md)
-* [secrets management considerations] (sidekick/secrets.md)
+* [secrets management considerations](sidekick/secrets.md)
 
 Tests
 =====
