@@ -49,6 +49,8 @@ Installation
 We recommend AWS ECS right now as it's the most (the only one) battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
 * Generate a [sidekick](sidekick/README.md) Docker image and push to your Docker registry.
 * Then install the appropriate Bamboo plugins and configure them. Follow the links in the __Usage__ section to learn how to setup each plugin.
+* Create a bamboo plan with a simple echo script task job, configure it to be run on `ubuntu:16.04` in [Job's Miscellaneous tab](bamboo-isolated-docker-plugin/README.md) and run the build!
+* If everything is setup correctly, a new bamboo agent will start up shortly and build your plan.
 
 
 Documentation
