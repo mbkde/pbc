@@ -50,7 +50,7 @@ Caveats and gotchas
 
 Since the UI and entire functionality is created as part of a Bamboo plugin only, there are few suboptimal places in UI.
 
-* The need for a task to configure PBC in Deployment projects is one (described above)
+* Deployment projects require a task to configure PBC (described above)
 * The entire system of Job Requirements and Agent capabilities and the associated UI sort of breaks. We always create a build Agent
 for each execution, it comes online, builds the job it's meant to build and gets removed immediately afterwards. The consequences are:
     - At the time of configuration, Bamboo knows nothing of the agent's capabilities, so it will often complain about 'No agent matching requirements'.

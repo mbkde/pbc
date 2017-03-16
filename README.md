@@ -36,9 +36,9 @@ In any of these cases you will have to configure some global settings in the Bam
 
 Important:
 ==========
-You will also require a 'sidekick' image. That's a Docker image with just a volume defined containing JRE + Bamboo agent jars.
-You will need to build the image yourself and push it to your docker registry. We cannot publish it to Dockerhub as it
-contains Oracle JRE to run the Bamboo agent. Check [sidekick README](sidekick/README.md) for details
+You will also require a 'sidekick' image. That's a Docker image with just a volume defined containing JRE + agent jars tailored for your Bamboo instance.
+`mkleint/sidekick-openjdk` is minimal version for experimenting purposes only.
+Please build the image yourself from sources and push it to your docker registry. Check [sidekick README](sidekick/README.md) for details
 
 
 Installation
@@ -46,20 +46,19 @@ Installation
 
 * First and foremost, you need an existing Bamboo installation.
 * Then you need to decide what Docker clustering solution to use (where your builds will be running).
-We recommend AWS ECS right now as it's the most (the only one) battle-hardened.
+We recommend AWS ECS right now as it's the most (the only one) battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
+* Generate a [sidekick](sidekick/README.md) Docker image and push to your Docker registry.
 * Then install the appropriate Bamboo plugins and configure them. Follow the links in the __Usage__ section to learn how to setup each plugin.
-
-
+* Create a bamboo plan with a simple echo script task job, configure it to be run on `ubuntu:16.04` in [Job's Miscellaneous tab](bamboo-isolated-docker-plugin/README.md) and run the build!
+* If everything is setup correctly, a new bamboo agent will start up shortly and build your plan.
 
 
 Documentation
 =============
 
-* [ECS And PBC microservice](ecs-scheduler-service/README.md) setup
-* creating Docker images for builds, Bamboo capabilities - TBD
-* monitoring considerations - TBD
-* customized, optimized sidekick creation - TBD
-* [secrets management considerations] (sidekick/secrets.md)
+* [ECS And PBC microservice](ecs-scheduler-service/README.md) setup. Also includes infrastructure requirements that are the same for [bamboo-isolated-ecs-plugin](bamboo-isolated-ecs-plugin/README.md) as well.
+* creating Docker images for builds with [Bamboo agent capabilities](sidekick/capabilities.md)
+* [secrets management considerations](sidekick/secrets.md)
 
 Tests
 =====

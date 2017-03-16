@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euf
 if [ -n "${BASH_VERSION:+x}" -o -n "${ZSH_VERSION:+x}" ]; then
   set -o pipefail
@@ -11,7 +11,7 @@ Usage: $0 [OPTION]...
 Creates a sidekick.
 
 Mandatory arguments to long options are mandatory for short options too.
-  -j,    Java (JRE) download url
+  -j,    Java (JRE) download url or path inside working directory
   -b,    Bamboo version
   -B,    Bamboo instance for pre-warming the agent (optional)
   -d,    Debug mode.
@@ -26,7 +26,11 @@ download_if_not_cached() {
   url="$2"
   checksum="${3:-}"
   if [ ! "`find 'output/' -maxdepth 1 -name "${filename}" -ctime -1`" ]; then
-    wget -O "output/${filename}" --progress=dot:mega "${url}"
+    if [ -f "$url" ]; then
+        cp "$url" "output/${filename}"
+    else
+        wget -O "output/${filename}" --progress=dot:mega "${url}"
+    fi
   fi
   if [ -n "${checksum}" ]; then
     echo "${checksum} output/${filename}" | sha256sum -c
@@ -51,7 +55,7 @@ if [ ! -f '/.dockerenv' ]; then
     -e "BAMBOO_USER=${BAMBOO_USER}" \
     -e "BAMBOO_PASSWORD=${BAMBOO_PASSWORD}" \
     --entrypoint "$0" \
-    ubuntu:16.04 \
+    mkleint/sidekick-builder \
     "$@"
   exit
 fi
@@ -100,7 +104,7 @@ mkdir -p "${volume_path}"
 ################################
 download_if_not_cached jre.tar.gz "${jre_url}"
 mkdir -p "${volume_path}/jre"
-tar --no-same-owner -xzvf output/jre.tar.gz -C "${volume_path}/jre/"
+tar --no-same-owner -xzvf output/jre.tar.gz --strip 1 -C "${volume_path}/jre"
 export PATH="$(pwd)/${volume_path}/jre/bin:$PATH"
 
 ###################################

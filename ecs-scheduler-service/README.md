@@ -15,12 +15,12 @@ Infrastructure
 
 The assumed existing infrastructure includes:
 
-* AWS ECS cluster backed by an Autoscaling Group. The instances in the ASG are meant to be running
+* AWS ECS cluster backed by EC2 Autoscaling Group+Launch Configuration. The instances in the ASG are meant to be running
 the [ECS optimized AMI](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html) or equivalent.
 
 * the following AIM permissions
-    - arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess for full access to ECS cluster.
-    - this custom policy to manipulate the Autoscaling group.
+    - __arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess__ for full access to ECS cluster.
+    - this custom policy to manipulate the Autoscaling Group.
 ```
 {
     "Statement": [
