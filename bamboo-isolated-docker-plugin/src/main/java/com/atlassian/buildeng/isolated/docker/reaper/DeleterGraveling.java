@@ -60,10 +60,12 @@ public class DeleterGraveling implements BuildAgentVisitor {
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
-                boolean remove = unmetRequirements.markAndStopTheBuild(pipelineDefinition);
-                agentRemovals.stopAgentRemotely(buildAgent);
-                if (remove) {
+                boolean matched = unmetRequirements.markAndStopTheBuild(pipelineDefinition);
+                if (!matched) {
+                    agentRemovals.stopAgentRemotely(buildAgent);
                     agentRemovals.removeAgent(buildAgent);
+                } else {
+                    //agent stopped by UnmetRequirements, but is not to be removed.
                 }
             }
         });

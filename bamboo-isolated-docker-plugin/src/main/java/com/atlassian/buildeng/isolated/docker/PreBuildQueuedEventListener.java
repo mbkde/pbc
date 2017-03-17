@@ -218,13 +218,7 @@ public class PreBuildQueuedEventListener {
                 if (cs != null && cs.getCapability(Constants.CAPABILITY_RESULT) != null) {
                     jmx.incrementActive();
                 }
-
-                event.getAgent().getId();
-                boolean remove = unmetRequirements.markAndStopTheBuild(pipelineDefinition);
-                if (!remove) {
-                    agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
-                }
-
+                unmetRequirements.markAndStopTheBuild(pipelineDefinition);
             }
         });
     }

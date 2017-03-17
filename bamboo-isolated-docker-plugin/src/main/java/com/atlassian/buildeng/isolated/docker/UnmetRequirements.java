@@ -16,10 +16,10 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
+import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
@@ -27,15 +27,20 @@ import com.atlassian.bamboo.plan.cache.ImmutableBuildable;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
-import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcher;
+import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcherImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
+import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentNonMatchedRequirementEvent;
+import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -48,24 +53,31 @@ public class UnmetRequirements {
     private final CachedPlanManager cachedPlanManager;
     private final CapabilityRequirementsMatcher capabilityRequirementsMatcher;
     private final AgentManager agentManager;
+    private final AgentRemovals agentRemovals;
+    private final ErrorUpdateHandler errorUpdateHandler;
+    private final EventPublisher eventPublisher;
 
-    public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager, CapabilityRequirementsMatcher capabilityRequirementsMatcher, AgentManager agentManager) {
+    public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager, AgentManager agentManager, AgentRemovals agentRemovals, 
+                            ErrorUpdateHandler errorUpdateHandler, EventPublisher eventPublisher) {
         this.buildQueueManager = buildQueueManager;
         this.cachedPlanManager = cachedPlanManager;
-        this.capabilityRequirementsMatcher = capabilityRequirementsMatcher;
+        this.capabilityRequirementsMatcher = new CapabilityRequirementsMatcherImpl();
         this.agentManager = agentManager;
+        this.agentRemovals = agentRemovals;
+        this.errorUpdateHandler = errorUpdateHandler;
+        this.eventPublisher = eventPublisher;
     }
-
+    
     /**
-     * check if requirements match the capabilities of the agent. it will disable the agent + remove job from queue
+     * check if requirements match the capabilities of the agent. it will disable the agent+ stop the agent + remove job from queue
      * when so.
      * @param pipelineDefinition
-     * @return true when agent can be removed next to stopped.
+     * @return true when unmatched requirements were detected;
      */
     public boolean markAndStopTheBuild(RemoteAgentDefinition pipelineDefinition) {
         final CapabilitySet capabilitySet = pipelineDefinition.getCapabilitySet();
         if (capabilitySet == null) {
-            return true;
+            return false;
         }
         Capability resultCap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
         if (resultCap != null) {
@@ -82,16 +94,17 @@ public class UnmetRequirements {
                     //only builds
                     RequirementSet req = build.getEffectiveRequirementSet();
                     if (!capabilityRequirementsMatcher.matches(capabilitySet, req)) {
-                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Capabilities of agent don't match requirements. Check the <a href=\"/admin/agent/viewAgent.action?agentId=" + pipelineDefinition.getId() + "\">agent's capabilities.</a>");
+                        List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
+                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Capabilities of agent don't match requirements. Check the <a href=\"/admin/agent/viewAgent.action?agentId=" + pipelineDefinition.getId() + "\">agent's capabilities.</a></br>Affected requirements:" + missingReqKeys);
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
-                        PipelineDefinition pd = pipelineDefinition;
-                        pd.setEnabled(false);
-                        agentManager.savePipeline(pd);
+                        pipelineDefinition.setEnabled(false);
+                        agentManager.savePipeline(pipelineDefinition);
                         buildQueueManager.removeBuildFromQueue(found.get().getView().getResultKey());
-//                        errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
-//                        eventPublisher.publish(new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey()));
-                        return false;
+                        agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
+                        errorUpdateHandler.recordError(found.get().getView().getEntityKey(), "Capabilities of PBC agent don't match job's requirements (" + found.get().getView().getResultKey() + "). Affected requirements:" + missingReqKeys);
+                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getView().getEntityKey(), missingReqKeys));
+                        return true;
                     }
                 }
             }
@@ -99,6 +112,13 @@ public class UnmetRequirements {
                 //TODO no idea how to deal with requirements matching in deployments.
             }
         }
-        return true;
+        return false;
+    }
+
+    private List<String> findMissingRequirements(CapabilitySet capabilitySet, RequirementSet req) {
+        return req.getRequirements().stream()
+                .filter((Requirement t) -> !capabilityRequirementsMatcher.matches(capabilitySet, t))
+                .map((Requirement t) -> t.getKey())
+                .collect(Collectors.toList());
     }
 }
