@@ -19,14 +19,13 @@ import com.atlassian.bamboo.buildqueue.PipelineDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper.ExecutorQuery;
-import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
-import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
+import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
 import com.atlassian.sal.api.scheduling.PluginJob;
 
 import java.util.ArrayList;
@@ -53,15 +52,14 @@ public class ReaperJob implements PluginJob {
 
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
         ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(Reaper.REAPER_AGENTS_HELPER_KEY);
-        BuildQueueManager buildQueueManager = (BuildQueueManager) jobDataMap.get(Reaper.REAPER_BUILDQUEUEMANAGER_KEY);
-        CachedPlanManager cachedPlanManager = (CachedPlanManager) jobDataMap.get(Reaper.REAPER_CACHEDPLANMANAGER_KEY);
         AgentRemovals agentRemovals = (AgentRemovals) jobDataMap.get(Reaper.REAPER_REMOVALS_KEY);
+        UnmetRequirements unmetRequirement = (UnmetRequirements) jobDataMap.get(Reaper.REAPER_UNMET_KEY);
         
         List<BuildAgent> deathList = (List<BuildAgent>) jobDataMap.get(Reaper.REAPER_DEATH_LIST);
 
         // Stop and remove disabled agents
         for (BuildAgent agent : deathList) {
-            agent.accept(new DeleterGraveling(agentRemovals, agentManager, buildQueueManager, cachedPlanManager));
+            agent.accept(new DeleterGraveling(agentRemovals, unmetRequirement));
         }
 
         deathList.clear();

@@ -78,6 +78,9 @@ limitations under the License.
     <component key="agentRemovals" class="com.atlassian.buildeng.isolated.docker.AgentRemovals">
     </component>
 
+    <component key="unmetRequirements" class="com.atlassian.buildeng.isolated.docker.UnmetRequirements">
+    </component>
+
     <web-resource key="docker-ui-js" name="JavaScript to modify task panels.">
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
         <dependency>com.atlassian.auiplugin:ajs</dependency>
