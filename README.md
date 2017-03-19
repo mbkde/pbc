@@ -1,4 +1,4 @@
-Project Name
+Per-build Container (PBC) Bamboo Agents
 ==============
 
 Set of plugins for [Atlassian Bamboo](https://www.atlassian.com/software/bamboo). Allows running builds and deployments
