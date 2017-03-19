@@ -18,10 +18,11 @@ package com.atlassian.buildeng.ecs;
 
 import com.atlassian.event.api.EventPublisher;
 import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-//TODO how do we do publishing, on bamboo server it's event being picked up
-// by monitoring plugin and the datadog plugin pushes it to datadog as event.
 public class DummyEventPublisher implements EventPublisher {
+    private static final Logger logger = LoggerFactory.getLogger(DummyEventPublisher.class);
 
     @Inject
     public DummyEventPublisher() {
@@ -30,6 +31,7 @@ public class DummyEventPublisher implements EventPublisher {
 
     @Override
     public void publish(Object event) {
+        logger.info("Event published:" + event.toString());
     }
 
     @Override
