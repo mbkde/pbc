@@ -69,6 +69,7 @@ public class PreBuildQueuedEventListener {
     private final DeploymentResultService deploymentResultService;
     private final DeploymentExecutionService deploymentExecutionService;
     private final AgentRemovals agentRemovals;
+    private final UnmetRequirements unmetRequirements;
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
     private final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
@@ -82,6 +83,7 @@ public class PreBuildQueuedEventListener {
                                         DeploymentExecutionService deploymentExecutionService,
                                         EventPublisher eventPublisher,
                                         AgentRemovals agentRemovals,
+                                        UnmetRequirements unmetRequirements,
                                         DockerSoxService dockerSoxService) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
@@ -93,6 +95,7 @@ public class PreBuildQueuedEventListener {
         this.eventPublisher = eventPublisher;
         this.dockerSoxService = dockerSoxService;
         this.deploymentExecutionService = deploymentExecutionService;
+        this.unmetRequirements = unmetRequirements;
     }
 
     @EventListener
@@ -215,6 +218,7 @@ public class PreBuildQueuedEventListener {
                 if (cs != null && cs.getCapability(Constants.CAPABILITY_RESULT) != null) {
                     jmx.incrementActive();
                 }
+                unmetRequirements.markAndStopTheBuild(pipelineDefinition);
             }
         });
     }
