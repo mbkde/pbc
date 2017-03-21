@@ -28,15 +28,14 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
-import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentRemoteSilentRetryEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.fugue.Iterables;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -87,13 +86,7 @@ public abstract class AbstractWatchdogJob implements PluginJob {
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
         IsolatedAgentService isolatedAgentService = getService(IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
         
-        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, new com.google.common.base.Function<BuildQueueManager.QueueItemView<CommonContext>, BuildQueueManager.QueueItemView<CommonContext>>() {
-            @Override
-            public BuildQueueManager.QueueItemView<CommonContext> apply(BuildQueueManager.QueueItemView<CommonContext> input) {
-                return input;
-            }
-        });
-        List<String> arns = getQueuedARNs(queue);
+        List<String> arns = getQueuedARNs(buildQueueManager);
         Map<String, Date> missingTaskArns = getMissingTasksArn(jobDataMap);
         if (arns.isEmpty()) {
             return;
@@ -108,8 +101,8 @@ public abstract class AbstractWatchdogJob implements PluginJob {
             logger.info("Found stopped tasks: {}", stoppedTasksByArn.size());
             logger.debug("Found stopped tasks for {}", stoppedTasksByArn);
             //intentionally not reusing the last time's list, it could have changed since we last looked at it.
-            queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
-                CurrentResult current = t.getView().getCurrentResult();
+            DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext t) -> {
+                CurrentResult current = t.getCurrentResult();
                 String taskArn = current.getCustomBuildData().get(RESULT_PREFIX + RESULT_PART_TASKARN);
                 if (taskArn != null) {
                     StoppedState tsk = stoppedTasksByArn.get(taskArn);
@@ -131,21 +124,21 @@ public abstract class AbstractWatchdogJob implements PluginJob {
                         if (error.contains("CannotStartContainerError") 
                                 || error.contains("CannotCreateContainerError")
                                 || error.contains("HostConfigError")) {
-                            logger.info("Retrying job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
-                            Configuration config = AccessConfiguration.forContext(t.getView());
-                            eventPublisher.publish(new RetryAgentStartupEvent(config, t.getView()));
+                            logger.info("Retrying job {} because of ecs task {} failure: {}", t.getResultKey(), tsk, error);
+                            Configuration config = AccessConfiguration.forContext(t);
+                            eventPublisher.publish(new RetryAgentStartupEvent(config, t));
                             //monitoring only
-                            eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
+                            eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(error, t.getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                         } else {       
-                            logger.info("Stopping job {} because of ecs task {} failure: {}", t.getView().getResultKey(), tsk, error);
-                            errorUpdateHandler.recordError(t.getView().getEntityKey(), "Build was not queued due to error:" + error);
+                            logger.info("Stopping job {} because of ecs task {} failure: {}", t.getResultKey(), tsk, error);
+                            errorUpdateHandler.recordError(t.getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(RESULT_ERROR, error);
                             generateRemoteFailEvent(t, error, tsk, isolatedAgentService, eventPublisher);
-                            if (t.getView() instanceof BuildContext) {
+                            if (t instanceof BuildContext) {
                                 current.setLifeCycleState(LifeCycleState.NOT_BUILT);
-                                buildQueueManager.removeBuildFromQueue(t.getView().getResultKey());
-                            } else if (t.getView() instanceof DeploymentContext) {
-                                DeploymentContext dc = (DeploymentContext) t.getView();
+                                buildQueueManager.removeBuildFromQueue(t.getResultKey());
+                            } else if (t instanceof DeploymentContext) {
+                                DeploymentContext dc = (DeploymentContext) t;
                                 ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
                                     //without runWithSystemAuthority() this call terminates execution with a log entry only
                                     DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
@@ -154,7 +147,7 @@ public abstract class AbstractWatchdogJob implements PluginJob {
                                     }
                                 });
                             } else {
-                                logger.error("unknown type of CommonContext {}", t.getView().getClass());
+                                logger.error("unknown type of CommonContext {}", t.getClass());
                             }
                         }
                     }
@@ -164,24 +157,24 @@ public abstract class AbstractWatchdogJob implements PluginJob {
 
     }
 
-    private void generateRemoteFailEvent(BuildQueueManager.QueueItemView<CommonContext> t,
+    private void generateRemoteFailEvent(CommonContext t,
             String error, StoppedState tsk,
             IsolatedAgentService isolatedAgentService, EventPublisher eventPublisher) {
-        Configuration c = AccessConfiguration.forContext(t.getView());
+        Configuration c = AccessConfiguration.forContext(t);
         Map<String, String> customData =
-                new HashMap<>(t.getView().getCurrentResult().getCustomBuildData());
+                new HashMap<>(t.getCurrentResult().getCustomBuildData());
         //sort of implementation detail, would be nice to place elsewhere but it's shared across
         //ecs-shared and bamboo-isolated-docker modules
         customData.entrySet().removeIf((Map.Entry<String, String> tt) -> !tt.getKey().startsWith("result.isolated.docker."));
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(c, customData);
-        DockerAgentRemoteFailEvent event = new DockerAgentRemoteFailEvent(error, t.getView().getEntityKey(), tsk.getArn(), tsk.getContainerArn(), containerLogs);
+        DockerAgentRemoteFailEvent event = new DockerAgentRemoteFailEvent(error, t.getEntityKey(), tsk.getArn(), tsk.getContainerArn(), containerLogs);
         eventPublisher.publish(event);
     }
 
-    private List<String> getQueuedARNs(QueueManagerView<CommonContext, CommonContext> queue) {
+    private List<String> getQueuedARNs(BuildQueueManager buildQueueManager) {
         List<String> arns = new ArrayList<>();
-        queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
-            Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
+        DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext t) -> {
+            Map<String, String> bd = t.getCurrentResult().getCustomBuildData();
             String taskArn = bd.get(RESULT_PREFIX + RESULT_PART_TASKARN);
             if (taskArn != null) {
                 arns.add(taskArn);

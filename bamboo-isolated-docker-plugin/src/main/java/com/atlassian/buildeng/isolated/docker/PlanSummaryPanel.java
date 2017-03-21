@@ -24,14 +24,13 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
-import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
+import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,11 +88,10 @@ public class PlanSummaryPanel implements WebPanel {
     }
 
     static Map<PlanResultKey, BuildContext> mapKeyToBuildContext(BuildQueueManager buildQueueManager) {
-        QueueManagerView<CommonContext, CommonContext> view = QueueManagerView.newView(buildQueueManager, (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
         Map<PlanResultKey, BuildContext> map = new HashMap<>();
-        view.getQueueView(Collections.emptyList()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
-            if (t.getView() instanceof BuildContext) {
-                map.put(((BuildContext)t.getView()).getPlanResultKey(), (BuildContext)t.getView());
+        DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext t) -> {
+            if (t instanceof BuildContext) {
+                map.put(((BuildContext)t).getPlanResultKey(), (BuildContext)t);
             }
         });
         return map;
