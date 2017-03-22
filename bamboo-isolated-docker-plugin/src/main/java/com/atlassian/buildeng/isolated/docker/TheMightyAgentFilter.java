@@ -24,6 +24,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
 
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,7 +42,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     @Override
     public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
         log.debug("have {} agents for {}", agents.size(), context.getResultKey());
-        if (hasIsolatedDockerRequirement(requirements)) {
+        if (isPBCContext(context)) {
             for (BuildAgent agent : agents) {
                 if (!AgentType.REMOTE.equals(agent.getType())) {
                     continue;
@@ -51,7 +52,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
                     Capability cap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
                     if (cap != null) {
                         String resultKey = cap.getValue();
-                        if (context.getResultKey().toString().equals(resultKey)) {
+                        if (context.getResultKey().getKey().equals(resultKey)) {
                             log.debug("returned agent: {} id={}", agent.getName(), agent.getId());
                             return Collections.singletonList(agent);
                         }
@@ -67,7 +68,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
                     //only check remote agents
                     CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
                     if (capabilitySet != null) {
-                        if (capabilitySet.getCapability(Constants.CAPABILITY) != null) {
+                        if (capabilitySet.getCapability(Constants.CAPABILITY_RESULT) != null) {
                             continue;
                         }
                     }
@@ -78,8 +79,8 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
         }
     }
 
-    private static boolean hasIsolatedDockerRequirement(MinimalRequirementSet requirements) {
-        return requirements.getRequirements().stream().anyMatch(t -> Constants.CAPABILITY.equals(t.getKey()));
+    private static boolean isPBCContext(CommonContext context) {
+        return AccessConfiguration.forContext(context).isEnabled();
     }
     
 }

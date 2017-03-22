@@ -20,15 +20,11 @@ import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomPreBuildAction;
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.plan.Plan;
-import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
@@ -103,15 +99,6 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         return buildContext;
     }
 
-    @Override
-    public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
-        removeBuildRequirements(planKey, buildConfiguration, requirementSet);
-        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
-        if (config.isEnabled()) {
-            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY, false, config.getDockerImage(), true));
-        }
-    }
-
     @NotNull
     @Override
     public ErrorCollection validate(@NotNull BuildConfiguration bc) {
@@ -129,11 +116,6 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         return super.validate(bc);
     }
 
-
-    @Override
-    public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
-        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(Constants.CAPABILITY));
-    }
 
     @Override
     protected void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull BuildConfiguration buildConfiguration, Plan plan) {
