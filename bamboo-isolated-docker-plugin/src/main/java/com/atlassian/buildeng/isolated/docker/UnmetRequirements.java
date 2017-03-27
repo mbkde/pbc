@@ -34,14 +34,12 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
-import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentNonMatchedRequirementEvent;
+import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.fugue.Iterables;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  *
@@ -83,12 +81,11 @@ public class UnmetRequirements {
         if (resultCap != null) {
             String resultKey = resultCap.getValue();
             final PlanResultKey key = PlanKeys.getPlanResultKey(resultKey);
-            QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
-            Optional<BuildQueueManager.QueueItemView<CommonContext>> found = StreamSupport.stream(queue.getQueueView(Iterables.emptyIterable()).spliterator(), false)
-                    .filter((BuildQueueManager.QueueItemView<CommonContext> t) -> key.equals(t.getQueuedResultKey().getResultKey()))
+            Optional<CommonContext> found = DockerAgentBuildQueue.currentlyQueued(buildQueueManager)
+                    .filter((CommonContext t) -> key.equals(t.getResultKey()))
                     .findFirst();
-            if (found.isPresent() && found.get().getView() instanceof BuildContext) {
-                CurrentResult current = found.get().getView().getCurrentResult();
+            if (found.isPresent() && found.get() instanceof BuildContext) {
+                CurrentResult current = found.get().getCurrentResult();
                 final ImmutableBuildable build = cachedPlanManager.getPlanByKey(key.getPlanKey(), ImmutableBuildable.class);
                 if (build != null) {
                     //only builds
@@ -100,15 +97,15 @@ public class UnmetRequirements {
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                         pipelineDefinition.setEnabled(false);
                         agentManager.savePipeline(pipelineDefinition);
-                        buildQueueManager.removeBuildFromQueue(found.get().getView().getResultKey());
+                        buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
-                        errorUpdateHandler.recordError(found.get().getView().getEntityKey(), "Capabilities of PBC agent don't match job's requirements (" + found.get().getView().getResultKey() + "). Affected requirements:" + missingReqKeys);
-                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getView().getEntityKey(), missingReqKeys));
+                        errorUpdateHandler.recordError(found.get().getEntityKey(), "Capabilities of PBC agent don't match job's requirements (" + found.get().getResultKey() + "). Affected requirements:" + missingReqKeys);
+                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getEntityKey(), missingReqKeys));
                         return true;
                     }
                 }
             }
-            if (found.isPresent() && found.get().getView() instanceof DeploymentContext) {
+            if (found.isPresent() && found.get() instanceof DeploymentContext) {
                 //TODO no idea how to deal with requirements matching in deployments.
             }
         }

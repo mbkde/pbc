@@ -21,6 +21,7 @@ import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
@@ -148,7 +149,7 @@ public class PreBuildQueuedEventListenerTest {
     @Test
     public void testRerunAfterFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
-        
+
         Mockito.doAnswer(invocation -> {
             IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
@@ -167,6 +168,7 @@ public class PreBuildQueuedEventListenerTest {
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
 
+        when(buildContext.getBuildKey()).thenReturn(new BuildKey());
         event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         assertNotEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
@@ -191,7 +193,8 @@ public class PreBuildQueuedEventListenerTest {
         //now check the rerun
         buildContext.getBuildDefinition().getCustomConfiguration().put(Configuration.ENABLED_FOR_JOB, "false");
         assertEquals("false", buildContext.getBuildDefinition().getCustomConfiguration().get(Configuration.ENABLED_FOR_JOB));
-                
+
+        when(buildContext.getBuildKey()).thenReturn(new BuildKey());
         event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         assertNotEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
@@ -214,6 +217,7 @@ public class PreBuildQueuedEventListenerTest {
         customConfig.put(Configuration.ENABLED_FOR_JOB, "" + dockerEnabled);
         customConfig.put(Configuration.DOCKER_IMAGE, image);
         when(bd.getCustomConfiguration()).thenReturn(customConfig);
+        when(buildContext.getBuildKey()).thenReturn(new BuildKey());
         return buildContext;
     }
 

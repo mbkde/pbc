@@ -42,6 +42,7 @@ import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -118,6 +119,7 @@ public class PreBuildQueuedEventListener {
             //when a rerun happens and docker agents were disabled.
             Configuration.removeFrom(buildContext.getCurrentResult().getCustomBuildData());
             clearResultCustomData(event.getContext());
+            buildContext.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
         }
     }
 
@@ -130,6 +132,7 @@ public class PreBuildQueuedEventListener {
             return;
         }
         clearResultCustomData(event.getContext());
+        setBuildkeyCustomData(event.getContext());
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier(), getQueueTimestamp(event.getContext())),
                         new IsolatedDockerRequestCallback() {
@@ -240,6 +243,11 @@ public class PreBuildQueuedEventListener {
             config.copyTo(context.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
             retry(new RetryAgentStartupEvent(config, context));
+        } else {
+            //when a rerun happens and docker agents were disabled.
+            Configuration.removeFrom(context.getCurrentResult().getCustomBuildData());
+            clearResultCustomData(event.getContext());
+            context.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
         }
     }
     
@@ -270,5 +278,16 @@ public class PreBuildQueuedEventListener {
     }
     private void setQueueTimestamp(CommonContext context) {
         context.getCurrentResult().getCustomBuildData().put(QUEUE_TIMESTAMP, "" + System.currentTimeMillis());
+    }
+
+    //BUILDENG-12837 a fairly complicated issue lurking here.
+    // PreBuildQueuedEventListener attempts to clear RESULT_PART_TASKARN value (any custom values)
+    // but if the event queue is stuck for long periods of time, the clearing itself is not happening for a long time.
+    // that is a problem for reruns and event queue independent code (like AbstractWatchdogJob)
+    // that might be retrieving old custom data from previous run.
+    // BuildKey is unique for each run/rerun and as such we can compare the value in customData and the context itself
+    // and if both are equal be sure that we are in correct state.
+    private void setBuildkeyCustomData(CommonContext context) {
+        context.getCurrentResult().getCustomBuildData().put(DockerAgentBuildQueue.BUILD_KEY, context.getBuildKey().getKey());
     }
 }
