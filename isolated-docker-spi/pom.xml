@@ -37,6 +37,7 @@ limitations under the License.
                         </Export-Package>
                         <Import-Package>
                             com.atlassian.bamboo.build.*,
+                            com.atlassian.bamboo.v2.build.queue.*,
                             com.atlassian.bamboo.deployments.execution.*,
                             com.atlassian.bamboo.deployments.results.*,
                             com.atlassian.bamboo.plan.cache.*,
@@ -47,9 +48,11 @@ limitations under the License.
                             com.atlassian.bamboo.v2.build.*,
                             com.atlassian.bamboo.ww2.actions.build.admin.create.*,
                             com.google.common.collect.*,
+                            com.google.common.base.*,
                             com.google.gson.*,
                             org.slf4j.*,
-                            javax.annotation.*
+                            javax.annotation.*,
+                            com.atlassian.fugue.*,
                         </Import-Package>
                     </instructions>
                 </configuration>
