@@ -16,26 +16,25 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.agent.AgentType;
+import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.v2.build.CommonContext;
+import com.atlassian.bamboo.plan.PlanResultKey;
+import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.RemoteAgentDefinitionImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,49 +44,46 @@ import static org.mockito.Mockito.when;
  */
 public class TheMightyAgentFilterTest {
     
+    PlanResultKey resultKey1 = PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1);
+    PlanResultKey resultKey2 = PlanKeys.getPlanResultKey("AAA-BBB-JOB2", 2);
     /**
      * Test of filter method, of class TheMightyAgentFilter.
      */
     @Test
     public void testDockerJob() {
-        CommonContext context = mock(CommonContext.class);
-        when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1));
+        HashMap<String, String> customConfig = new HashMap<>();
+        BuildContext context = mockBuildContext(customConfig);
+        when(context.getResultKey()).thenReturn(resultKey1);
+        ConfigurationBuilder.create("aaa").build().copyTo(customConfig);
         Collection<BuildAgent> agents = mockAgents();
-        MinimalRequirementSet requirements = mock(MinimalRequirementSet.class);
-        Set<Requirement> req = new HashSet<>();
-        req.add(new RequirementImpl(Constants.CAPABILITY, true, "image"));
-        when(requirements.getRequirements()).thenReturn(req);
         
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
-        Collection<BuildAgent> result = instance.filter(context, agents, requirements);
+        Collection<BuildAgent> result = instance.filter(context, agents, mock(MinimalRequirementSet.class));
         assertEquals(1, result.size());
         
     }
     
     @Test
     public void testDockerJobMissingAgent() {
-        CommonContext context = mock(CommonContext.class);
-        when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 2));
+        HashMap<String, String> customConfig = new HashMap<>();
+        ConfigurationBuilder.create("aaa").build().copyTo(customConfig);
+        BuildContext context = mockBuildContext(customConfig);
+        when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 3));
         Collection<BuildAgent> agents = mockAgents();
-        MinimalRequirementSet requirements = mock(MinimalRequirementSet.class);
-        Set<Requirement> req = new HashSet<>();
-        req.add(new RequirementImpl(Constants.CAPABILITY, true, "image"));
-        when(requirements.getRequirements()).thenReturn(req);
         
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
-        Collection<BuildAgent> result = instance.filter(context, agents, requirements);
+        Collection<BuildAgent> result = instance.filter(context, agents, mock(MinimalRequirementSet.class));
         assertEquals(0, result.size());
         
     }    
 
     @Test
     public void testNonDockerJob() {
-        CommonContext context = mock(CommonContext.class);
+        HashMap<String, String> customConfig = new HashMap<>();
+        BuildContext context = mockBuildContext(customConfig);
         when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1));
         Collection<BuildAgent> agents = mockAgents();
         MinimalRequirementSet requirements = mock(MinimalRequirementSet.class);
-        Set<Requirement> req = new HashSet<>();
-        when(requirements.getRequirements()).thenReturn(req);
         
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
         Collection<BuildAgent> result = instance.filter(context, agents, requirements);
@@ -98,11 +94,9 @@ public class TheMightyAgentFilterTest {
     
     private Collection<BuildAgent> mockAgents() {
         CapabilitySet cs1 = new CapabilitySetImpl();
-        cs1.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, "AAA-BBB-JOB-1"));
-        cs1.addCapability(new CapabilityImpl(Constants.CAPABILITY, "true"));
+        cs1.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, resultKey1.getKey()));
         CapabilitySet cs2 = new CapabilitySetImpl();
-        cs2.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, "AAA-BBB-JOB2-2"));
-        cs2.addCapability(new CapabilityImpl(Constants.CAPABILITY, "true"));
+        cs2.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, resultKey2.getKey()));
         return Arrays.asList(
                 mockLocalAgent(),
                 mockElasticAgent(),
@@ -133,6 +127,14 @@ public class TheMightyAgentFilterTest {
         d2.setCapabilitySet(set);
         when(agent.getDefinition()).thenReturn(d2);
         return agent;
+    }
+
+    private BuildContext mockBuildContext(HashMap<String, String> customConfig) {
+        BuildContext context = mock(BuildContext.class);
+        BuildDefinition bd = mock(BuildDefinition.class);
+        when(context.getBuildDefinition()).thenReturn(bd);
+        when(bd.getCustomConfiguration()).thenReturn(customConfig);
+        return context;
     }
     
 }

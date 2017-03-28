@@ -26,7 +26,6 @@ public interface Constants {
      * possible values 'true', 'false' or not defined.
      */
     String RESULT_AGENT_KILLED_ITSELF = "custom.isolated.docker.stopped";
-    String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
     String CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.for";
     /**
      * prefix for custom data passed from the api implementation.

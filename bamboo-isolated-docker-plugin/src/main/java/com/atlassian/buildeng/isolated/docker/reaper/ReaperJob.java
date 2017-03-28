@@ -65,7 +65,7 @@ public class ReaperJob implements PluginJob {
         deathList.clear();
 
         RequirementSetImpl reqs = new RequirementSetImpl();
-        reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY, true, ".*"));
+        reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
         Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQuery(reqs));
         Collection<BuildAgent> relevantAgents = new ArrayList<>();
 

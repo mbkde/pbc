@@ -18,16 +18,10 @@ package com.atlassian.buildeng.isolated.docker.deployment;
 import com.atlassian.bamboo.collections.ActionParametersMap;
 import com.atlassian.bamboo.task.AbstractTaskConfigurator;
 import com.atlassian.bamboo.task.TaskDefinition;
-import com.atlassian.bamboo.task.TaskRequirementSupport;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-import com.google.common.collect.Sets;
 import com.atlassian.struts.TextProvider;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -40,9 +34,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Set;
 
-public class RequirementTaskConfigurator extends AbstractTaskConfigurator implements TaskRequirementSupport
+public class RequirementTaskConfigurator extends AbstractTaskConfigurator
 {
 
     @SuppressWarnings("UnusedDeclaration")
@@ -149,16 +142,5 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         }
     }
 
-    @NotNull
-    @Override
-    public Set<Requirement> calculateRequirements(@NotNull TaskDefinition taskDefinition)
-    {
-        Set<Requirement> requirementSet = Sets.newHashSet();
-        Configuration config = AccessConfiguration.forTaskConfiguration(taskDefinition);
-        if (config.isEnabled()) {
-            requirementSet.add(new RequirementImpl(Constants.CAPABILITY, false, config.getDockerImage(), true));
-        }
-        return requirementSet;
-    }
 
 }
