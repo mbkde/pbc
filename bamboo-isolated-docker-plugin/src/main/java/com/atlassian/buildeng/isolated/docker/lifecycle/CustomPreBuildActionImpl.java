@@ -20,11 +20,16 @@ import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomPreBuildAction;
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.plan.Plan;
+import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.agent.capability.Capability;
+import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
@@ -97,6 +102,19 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
             }
         }
         return buildContext;
+    }
+
+    // TODO eventually remove once we are sure noone is using the capability anymore.
+    @Override
+    public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
+        removeBuildRequirements(planKey, buildConfiguration, requirementSet);
+    }
+    String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
+
+    // TODO eventually remove once we are sure noone is using the capability anymore.
+    @Override
+    public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
+        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(CAPABILITY));
     }
 
     @NotNull
