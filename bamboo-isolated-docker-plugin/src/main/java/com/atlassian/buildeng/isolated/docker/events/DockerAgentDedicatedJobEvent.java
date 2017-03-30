@@ -24,5 +24,8 @@ public class DockerAgentDedicatedJobEvent {
     public DockerAgentDedicatedJobEvent(Key key) {
         this.key = key;
     }
-
+    @Override
+    public String toString() {
+        return "DockerAgentDedicatedJobEvent{" + "key=" + key + '}';
+    }
 }

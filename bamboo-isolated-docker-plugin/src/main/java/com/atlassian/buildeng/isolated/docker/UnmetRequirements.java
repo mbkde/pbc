@@ -39,6 +39,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentDedicatedJobEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentNonMatchedRequirementEvent;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.event.api.EventPublisher;
@@ -120,7 +121,8 @@ public class UnmetRequirements {
                     Set<AgentAssignmentService.AgentAssignmentExecutor> dedicatedAgents = assignments.forExecutables(
                             Iterables.concat(
                                 AgentAssignmentServiceHelper.asExecutables(build),
-                                AgentAssignmentServiceHelper.asExecutables(plan)));
+                                AgentAssignmentServiceHelper.asExecutables(plan),
+                                AgentAssignmentServiceHelper.projectToExecutables(plan.getProject())));
                     if (!dedicatedAgents.isEmpty()) {
                         current.getCustomBuildData().put(Constants.RESULT_ERROR, "Please undedictate this job or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
@@ -129,12 +131,14 @@ public class UnmetRequirements {
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
                         agentRemovals.removeAgent(pipelineDefinition.getId());
                         errorUpdateHandler.recordError(found.get().getEntityKey(), "Please undedictate job " + key.getPlanKey() + " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
+                        eventPublisher.publish(new DockerAgentDedicatedJobEvent(found.get().getEntityKey()));
                         return true;
                     }
                 }
             }
             if (found.isPresent() && found.get() instanceof DeploymentContext) {
                 //TODO no idea how to deal with requirements matching in deployments.
+                //agentAssignmentService.isCapabilitiesMatch() could be the way.
             }
         }
         return false;
