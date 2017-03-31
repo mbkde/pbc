@@ -24,6 +24,7 @@ import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.event.api.EventPublisher;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -73,9 +74,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     private final Duration stalePeriod;
     private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
-    // ghost instances where we schedule content to do the bean counting towards how many instances to start.
-    private final List<VirtualHost> lackingHosts = new ArrayList<>();
-
+    private long lackingCPU = 0;
+    private long lackingMemory = 0;
     private final Set<UUID> consideredRequestIdentifiers = new HashSet<>();
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -108,10 +108,6 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     // Is Nothing if there are no feasible hosts
     static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, int requiredMemory, int requiredCpu, boolean demandOverflowing) {
         Comparator<DockerHost> comparator = DockerHost.compareByResourcesAndAge();
-        return selectHost(candidates, requiredMemory, requiredCpu, demandOverflowing, comparator);
-    }
-
-    static <T extends Host> Optional<T> selectHost(Collection<T> candidates, int requiredMemory, int requiredCpu, boolean demandOverflowing, Comparator<T> comparator) {
         if (demandOverflowing) {
             // when we know that there is demand overflow, we want to spread out the
             // scheduling, so always prefer the more empty ones. that way we keep on
@@ -163,26 +159,21 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     candidateHost.reduceAvailableCpuBy(request.getCpu());
                     candidateHost.reduceAvailableMemoryBy(request.getMemory());
                     pair.getRight().handle(schedulingResult);
-                    Optional<VirtualHost> lacking = VirtualHost.findByRequest(lackingHosts, request.getIdentifier());
-                    if (lacking.isPresent()) {
-                        lacking.get().increaseAvailability(request.getMemory(), request.getCpu(), request.getIdentifier());
-                        if (lacking.get().isEmpty()) {
-                            lackingHosts.remove(lacking.get());
-                        }
+                    lackingCPU = Math.max(0, lackingCPU - request.getCpu());
+                    lackingMemory = Math.max(0, lackingMemory - request.getMemory());
+                    // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
+                    // Clear everything out, we're probably fine
+                    if (lackingCPU < Configuration.ContainerSize.SMALL.cpu() || lackingMemory < Configuration.ContainerSize.SMALL.memory()) {
+                        consideredRequestIdentifiers.clear();
+                        lackingCPU = 0;
+                        lackingMemory = 0;
                     }
                 } else {
                     // Note how much capacity we're lacking
                     // But don't double count the same request that comes through
                     if (consideredRequestIdentifiers.add(request.getIdentifier())) {
-                        Optional<VirtualHost> lackingHostCandidate = selectHost(lackingHosts, request.getMemory(), request.getCpu(), false, Host.compareByResources());
-                        VirtualHost lackingHost;
-                        if (lackingHostCandidate.isPresent()) {
-                            lackingHost = lackingHostCandidate.get();
-                        } else {
-                            lackingHost = new VirtualHost(computeInstanceMemoryLimits(hosts.allUsable()), computeInstanceCPULimits(hosts.allUsable()));
-                            lackingHosts.add(lackingHost);
-                        }
-                        lackingHost.reduceAvailablity(request.getMemory(), request.getCpu(), request.getIdentifier());
+                        lackingCPU += request.getCpu();
+                        lackingMemory += request.getMemory();
                     }
                     //scale up + down and set all other queued requests to null.
                     someDiscarded = true;
@@ -203,9 +194,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         int disconnectedSize = hosts.agentDisconnected().size() - terminateDisconnectedInstances(hosts, asgName, cluster);
         int desiredScaleSize = currentSize;
         if (someDiscarded) {
+            // cpu and memory requirements in instances
+            long cpuRequirements = lackingCPU / computeInstanceCPULimits(hosts.allUsable());
+            long memoryRequirements = lackingMemory / computeInstanceMemoryLimits(hosts.allUsable());
+            logger.info("Scaling w.r.t. this much cpu " + lackingCPU);
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
-            long extraRequired = Math.max(1, lackingHosts.size());
+            long extraRequired = Math.max(1, Math.max(cpuRequirements, memoryRequirements));
 
             desiredScaleSize += extraRequired;
         }
@@ -378,7 +373,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
      * @param hosts known current hosts
      * @return number of CPU power available
      */
-   private int computeInstanceCPULimits(Collection<DockerHost> hosts) {
+    private int computeInstanceCPULimits(Collection<DockerHost> hosts) {
         //we settle on minimum as that's the safer option here, better to scale faster than slower.
         //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig

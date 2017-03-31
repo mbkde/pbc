@@ -29,7 +29,7 @@ import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DockerHost implements Host {
+public class DockerHost {
     private final static Logger logger = LoggerFactory.getLogger(DockerHost.class);
 
     private int remainingMemory;
@@ -78,6 +78,14 @@ public class DockerHost implements Host {
                 )));
     }
 
+    public boolean canRun(int requiredMemory, int requiredCpu) {
+        return requiredMemory <= remainingMemory && requiredCpu <= remainingCpu;
+    }
+
+    public boolean runningNothing() {
+        return registeredMemory == remainingMemory && registeredCpu == remainingCpu;
+    }
+
     public long ageMillis() {
         return System.currentTimeMillis() - launchTime.getTime();
     }
@@ -90,25 +98,25 @@ public class DockerHost implements Host {
     }
 
     static Comparator<DockerHost> compareByResourcesAndAge() {
-        Comparator<Host> resourceOnly = Host.compareByResources();
         return (o1, o2) -> {
-            int result = resourceOnly.compare(o1, o2);
-            if (result == 0) {
+            if (o1.remainingMemory == o2.remainingMemory) {
+                if (o1.remainingCpu == o2.remainingCpu) {
                     //for equals utilization we value older instances higher due to existing caches.
                     // we want it to come first
                     return o1.launchTime.compareTo(o2.launchTime);
+                } else {
+                    return Integer.compare(o1.remainingCpu, o2.remainingCpu);
+                }
             } else {
-                return result;
+                return Integer.compare(o1.remainingMemory, o2.remainingMemory);
             }
         };
     }
 
-    @Override
     public int getRemainingMemory() {
         return remainingMemory;
     }
 
-    @Override
     public int getRemainingCpu() {
         return remainingCpu;
     }
@@ -125,7 +133,6 @@ public class DockerHost implements Host {
      * the total amount of cpu available for docker containers on the instance
      * @return
      */
-    @Override
     public int getRegisteredCpu() {
         return registeredCpu;
     }
@@ -134,7 +141,6 @@ public class DockerHost implements Host {
      * the amount of memory available for docker containers on the instance
      * @return
      */
-    @Override
     public int getRegisteredMemory() {
         return registeredMemory;
     }

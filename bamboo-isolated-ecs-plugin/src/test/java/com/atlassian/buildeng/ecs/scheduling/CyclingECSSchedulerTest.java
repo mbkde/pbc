@@ -749,40 +749,6 @@ public class CyclingECSSchedulerTest {
         verify(eventPublisher, times(1)).publish(any(DockerAgentEcsStaleAsgInstanceEvent.class));
 
     }
-
-    @Test
-    public void scheduleLargeAndScaleAppropriately() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(
-                Arrays.asList(
-                    ci("id1", "arn1", true, 51, 51)
-                    ),
-                Arrays.asList(
-                        ec2("id1", new Date())
-                ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(51), mem(51), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
-
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(51), mem(51), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
-
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
-        awaitProcessing(scheduler);
-        //purely algorithmically it should be 2 (51+51+51 is 153%) but we actually need 3 instances here.
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(3), anyString());
-    }
-
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
         return mockBackend(containerInstances, ec2Instances, ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
