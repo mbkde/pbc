@@ -726,65 +726,36 @@ public class CyclingECSSchedulerTest {
         final EventPublisher eventPublisher = mock(EventPublisher.class);
         CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), eventPublisher);
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new EmptySchedulingCallbackImpl());
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new EmptySchedulingCallbackImpl());
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+            }
+        });
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+            }
+        });
         awaitProcessing(scheduler);
         //only id6 should be marked as stale, id7 is just transiently in asg and not in ecs
         verify(eventPublisher, times(1)).publish(any(DockerAgentEcsStaleAsgInstanceEvent.class));
 
     }
-
-    @Test
-    public void scheduleLargeAndScaleAppropriately() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(
-                Arrays.asList(
-                    ci("id1", "arn1", true, 51, 51)
-                    ),
-                Arrays.asList(
-                        ec2("id1", new Date())
-                ));
-        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
-        UUID firstUUID = UUID.randomUUID();
-        scheduler.schedule(new SchedulingRequest(firstUUID, "a1", 1, cpu(51), mem(51), null), new EmptySchedulingCallbackImpl());
-        UUID secondUUID = UUID.randomUUID();
-        scheduler.schedule(new SchedulingRequest(secondUUID, "a1", 1, cpu(51), mem(51), null), new EmptySchedulingCallbackImpl());
-        //cannot terminate worked thread.
-        Thread.sleep(300);
-        //purely algorithmically it should be 2 (51+51+51 is 153%) but we actually need 3 instances here.
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(3), anyString());
-
-        changeMockedBackend(schedulerBackend,
-                Arrays.asList(
-                    ci("id1", "arn1", true, 51, 51),
-                    ci("id2", "arn2", true, 0, 0)
-                    ),
-                Arrays.asList(
-                        ec2("id1", new Date()),
-                        ec2("id2", new Date())
-                ));
-        scheduler.schedule(new SchedulingRequest(secondUUID, "a1", 1, cpu(51), mem(51), null), new EmptySchedulingCallbackImpl());
-        scheduler.schedule(new SchedulingRequest(firstUUID, "a1", 1, cpu(51), mem(51), null), new EmptySchedulingCallbackImpl());
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(48), mem(48), null), new EmptySchedulingCallbackImpl());
-        //still just 3 in total, we have 1 new instance and one virtual reused by existing item + new one that fits.
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(3), anyString());
-    }
-
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
-        SchedulerBackend mocked = mock(SchedulerBackend.class);
-        return changeMockedBackend(mocked, containerInstances, ec2Instances);
+        return mockBackend(containerInstances, ec2Instances, ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
     }
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances, Set<String> asgInstances) throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
-        changeMockedBackend(mocked, containerInstances, ec2Instances, asgInstances);
-        return mocked;
-    }
-    private SchedulerBackend changeMockedBackend(SchedulerBackend mocked, List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {
-        return changeMockedBackend(mocked, containerInstances, ec2Instances, ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
-    }
-
-    private SchedulerBackend changeMockedBackend(SchedulerBackend mocked, List<ContainerInstance> containerInstances, List<Instance> ec2Instances, Set<String> asgInstances) throws ECSException {
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
         mockASG(asgInstances, mocked);
@@ -853,18 +824,4 @@ public class CyclingECSSchedulerTest {
          return ((List) list).size() == 2;
      }
  }
-
-    private static class EmptySchedulingCallbackImpl implements SchedulingCallback {
-
-        public EmptySchedulingCallbackImpl() {
-        }
-
-        @Override
-        public void handle(SchedulingResult result) {
-        }
-
-        @Override
-        public void handle(ECSException exception) {
-        }
-    }
 }
