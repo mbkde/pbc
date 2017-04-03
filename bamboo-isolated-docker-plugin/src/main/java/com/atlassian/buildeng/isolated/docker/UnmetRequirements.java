@@ -124,7 +124,7 @@ public class UnmetRequirements {
                                 AgentAssignmentServiceHelper.asExecutables(plan),
                                 AgentAssignmentServiceHelper.projectToExecutables(plan.getProject())));
                     if (!dedicatedAgents.isEmpty()) {
-                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Please undedictate this job or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
+                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Please <a href=\"https://confluence.atlassian.com/display/BAMBOO/Dedicating+an+agent\">undedictate</a> this job or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
