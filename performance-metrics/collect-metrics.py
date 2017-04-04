@@ -177,7 +177,7 @@ def report_metrics_callback():
             # TODO: threadify this
             # TODO: update_metadata(ctx) we need to update each separately with start time on discovery
             os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + os.path.join(container_data_path, 'arn'))
-            with open(os.path.join(container_data_path, 'arn'), 'w') as f:
+            with open(os.path.join(container_data_path, 'arn'), 'r') as f:
                 task_map = f.read()
                 if task_map != '||':
                     # from: arn:aws:ecs:us-east-1:960714566901:task/c5dc732d-ac78-4b54-bd6c-9a41355fc678||bamboo-agent
