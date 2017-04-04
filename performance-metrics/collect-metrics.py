@@ -159,28 +159,41 @@ def dispatch_data(data, value_type, container_data_path):
         values = [str(data.get(field, 0)) for field in config['fields']]
         rrdtool.update(output_file, 'N:' + ':'.join(values))
 
-def update_metadata(ctx):
-    with open(os.path.join(DATA_DIR, 'metadata.yaml'), 'w') as f:
-        yaml.dump({'start_epoch_time': ctx.get('start_epoch_time', ''), 'end_epoch_time': int(time.time())}, f)
-
+def record_time_to_file(container_data_path, file_path):
+    with open(os.path.join(container_data_path, file_path), 'w') as f:
+        f.write(time.time())
 
 def report_metrics_callback(ctx):
     logging.info('Collecting metrics')
 
     docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join('.', f))]
     for container in docker_containers:
-        container_data_path = os.path.join(DATA_DIR, container)
+        container_data_path = os.path.join(DATA_DIR, "containers", container)
         if not os.path.exists(container_data_path):
             os.makedirs(container_data_path)
+            record_time_to_file(container_data_path, 'start.txt')
         if not os.path.isfile(os.path.join(container_data_path, 'arn')):
             # TODO: eventually only write the results below for valid results
             # TODO: threadify this
             # TODO: update_metadata(ctx) we need to update each separately with start time on discovery
-            os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + container_data_path + '/arn')
+            os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + os.path.join(container_data_path, 'arn'))
+            with open(os.path.join(container_data_path, 'arn'), 'w') as f:
+                task_map = f.read()
+                if task_map != '||':
+                    # from: arn:aws:ecs:us-east-1:960714566901:task/c5dc732d-ac78-4b54-bd6c-9a41355fc678||bamboo-agent
+                    # task: c5dc732d-ac78-4b54-bd6c-9a41355fc678
+                    task = task_map.split('||')[0].split('/')[1]
+                    # container_name:   bamboo-agent
+                    container_name = task_map.split('||')[1]
+                    task_dir = os.path.join(DATA_DIR, "tasks", task)
+                    if not os.path.exists(task_dir):
+                        os.makedirs(task_dir)
+                    os.symlink(container_data_path, os.path.join(task_dir, container_name))
+
         else:
             dispatch_data(cpu(container), 'cpu.usage', container_data_path)
             dispatch_data(memory(container), 'memory.usage', container_data_path)
-    update_metadata(ctx)
+            record_time_to_file(container_data_path, 'end.txt')
 
 
 def wait_for_kill_signal(signal, f):
@@ -191,8 +204,8 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     logging.getLogger("apscheduler.executors.default").setLevel(logging.WARN)
 
-    ctx = {'start_epoch_time': int(time.time())}
 
+    # /buildeng-metrics
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
 
