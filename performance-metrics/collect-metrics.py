@@ -188,7 +188,8 @@ def report_metrics_callback():
                     task_dir = os.path.join(DATA_DIR, "tasks", task)
                     if not os.path.exists(task_dir):
                         os.makedirs(task_dir)
-                    os.symlink(container_data_path, os.path.join(task_dir, container_name))
+                    os.symlink('../../containers/'+container, os.path.join(task_dir, container_name))
+
 
         else:
             if not os.path.isfile(os.path.join(container_data_path, 'stop')):
