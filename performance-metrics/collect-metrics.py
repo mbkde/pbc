@@ -167,7 +167,7 @@ def update_metadata(ctx):
 def report_metrics_callback(ctx):
     logging.info('Collecting metrics')
 
-    docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join('.', f))]
+    docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join(CPU_DIR, f))]
     for container in docker_containers:
         container_data_path = os.path.join(DATA_DIR, container)
         if not os.path.exists(container_data_path):
