@@ -161,7 +161,7 @@ def dispatch_data(data, value_type, container_data_path):
 
 def record_time_to_file(container_data_path, file_path):
     with open(os.path.join(container_data_path, file_path), 'w') as f:
-        f.write(str(time.time()))
+        f.write(str(time.time()).split('.')[0])
 
 def report_metrics_callback():
     logging.info('Collecting metrics')
