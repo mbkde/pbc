@@ -178,8 +178,9 @@ def report_metrics_callback(ctx):
             # TODO: update_metadata(ctx) we need to update each separately with start time on discovery
             os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + container_data_path + '/arn')
         else:
-            dispatch_data(cpu(container), 'cpu.usage', container_data_path)
-            dispatch_data(memory(container), 'memory.usage', container_data_path)
+            if not os.path.isfile(os.path.join(container_data_path, 'stop')):
+                dispatch_data(cpu(container), 'cpu.usage', container_data_path)
+                dispatch_data(memory(container), 'memory.usage', container_data_path)
     update_metadata(ctx)
 
 
