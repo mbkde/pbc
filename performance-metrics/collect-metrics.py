@@ -166,7 +166,7 @@ def record_time_to_file(container_data_path, file_path):
 def report_metrics_callback(ctx):
     logging.info('Collecting metrics')
 
-    docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join('.', f))]
+    docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join(CPU_DIR, f))]
     for container in docker_containers:
         container_data_path = os.path.join(DATA_DIR, "containers", container)
         if not os.path.exists(container_data_path):
@@ -191,9 +191,10 @@ def report_metrics_callback(ctx):
                     os.symlink(container_data_path, os.path.join(task_dir, container_name))
 
         else:
-            dispatch_data(cpu(container), 'cpu.usage', container_data_path)
-            dispatch_data(memory(container), 'memory.usage', container_data_path)
-            record_time_to_file(container_data_path, 'end.txt')
+            if not os.path.isfile(os.path.join(container_data_path, 'stop')):
+                dispatch_data(cpu(container), 'cpu.usage', container_data_path)
+                dispatch_data(memory(container), 'memory.usage', container_data_path)
+                record_time_to_file(container_data_path, 'end.txt')
 
 
 def wait_for_kill_signal(signal, f):
