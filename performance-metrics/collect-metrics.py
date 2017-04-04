@@ -163,7 +163,7 @@ def record_time_to_file(container_data_path, file_path):
     with open(os.path.join(container_data_path, file_path), 'w') as f:
         f.write(time.time())
 
-def report_metrics_callback(ctx):
+def report_metrics_callback():
     logging.info('Collecting metrics')
 
     docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join(CPU_DIR, f))]
@@ -212,7 +212,7 @@ if __name__ == '__main__':
 
     # Start the reporting
     scheduler.start()
-    scheduler.add_job(report_metrics_callback, 'interval', [ctx], seconds=STEP_SIZE_IN_SEC, coalesce=True, max_instances=1)
+    scheduler.add_job(report_metrics_callback, 'interval', seconds=STEP_SIZE_IN_SEC, coalesce=True, max_instances=1)
 
     # loop over all docker containers in the /cgroup/cpu/ dir,
     # collect the cpu.stat file for each one
