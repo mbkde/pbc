@@ -18,11 +18,13 @@ STEP_SIZE_IN_SEC = 5
 # Timeout between two updates before the value is considered unknown.
 HEARTBEAT_IN_SEC = STEP_SIZE_IN_SEC * 2
 
-CPU_DIR = '/cgroup/cpu/docker'
-CPU_ACC_DIR = '/cgroup/cpuacct/docker'
-MEM_DIR = '/cgroup/memory/docker'
+PSEUDO_ROOT = os.getenv('PSEUDO_ROOT', '/')  # root directory containing the relevant pseudo files like sys and proc
 
-DATA_DIR = os.getenv('DATA_DIR', '/var/lib/docker/buildeng-metrics')
+CPU_DIR = PSEUDO_ROOT + 'cgroup/cpu/docker'
+CPU_ACC_DIR = PSEUDO_ROOT + 'cgroup/cpuacct/docker'
+MEM_DIR = PSEUDO_ROOT + 'cgroup/memory/docker'
+
+DATA_DIR = os.getenv('DATA_DIR', '/buildeng-metrics')
 
 # How long to keep metrics in the database, based on the parameter above
 #

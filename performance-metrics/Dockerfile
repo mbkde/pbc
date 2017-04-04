@@ -1,7 +1,8 @@
 FROM python:2.7
-MAINTAINER CAPS Dev
+MAINTAINER build-team@atlassian.com
 
-ENV DATA_DIR=/var/lib/app PSEUDO_ROOT=/host PATH=${PATH}:/opt/app
+# docker run -v /cgroup/:/host/cgroup/ -v /var/lib/docker/buildeng-metrics:/buildeng-metrics <image>
+ENV DATA_DIR=/buildeng-metrics PSEUDO_ROOT=/host/ PATH=${PATH}:/opt/app
 
 RUN apt-get update && apt-get install -qy --no-install-recommends librrd-dev
 
