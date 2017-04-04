@@ -167,7 +167,7 @@ def update_metadata(ctx):
 def report_metrics_callback(ctx):
     logging.info('Collecting metrics')
 
-    docker_containers = [f for f in os.listdir('.') if not os.path.isfile(os.path.join('.', f))]
+    docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join('.', f))]
     for container in docker_containers:
         container_data_path = os.path.join(DATA_DIR, container)
         if not os.path.exists(container_data_path):
@@ -175,6 +175,7 @@ def report_metrics_callback(ctx):
         if not os.path.isfile(os.path.join(container_data_path, 'arn')):
             # TODO: eventually only write the results below for valid results
             # TODO: threadify this
+            # TODO: update_metadata(ctx) we need to update each separately with start time on discovery
             os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + container_data_path + '/arn')
         else:
             dispatch_data(cpu(container), 'cpu.usage', container_data_path)
