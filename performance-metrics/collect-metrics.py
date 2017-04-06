@@ -2,10 +2,12 @@
 
 import logging
 import os
+import shutil
 import rrdtool
 import signal
 import time
 import yaml
+from multiprocessing import Process
 
 from threading import Event
 
@@ -14,9 +16,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # Data is collected every X seconds
 STEP_SIZE_IN_SEC = 5
+CLEAN_UP_INTERVAL = 30
 
 # Timeout between two updates before the value is considered unknown.
 HEARTBEAT_IN_SEC = STEP_SIZE_IN_SEC * 2
+
+EXPIRATION_TIME = 1 * 60 * 60
 
 PSEUDO_ROOT = os.getenv('PSEUDO_ROOT', '/')  # root directory containing the relevant pseudo files like sys and proc
 
@@ -163,40 +168,71 @@ def record_time_to_file(container_data_path, file_path):
     with open(os.path.join(container_data_path, file_path), 'w') as f:
         f.write(str(time.time()).split('.')[0])
 
+def record_data(container):
+    container_data_path = os.path.join(DATA_DIR, "containers", container)
+    if not os.path.exists(container_data_path):
+        os.makedirs(container_data_path)
+        record_time_to_file(container_data_path, 'start.txt')
+    if not os.path.isfile(os.path.join(container_data_path, 'arn')):
+        os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + os.path.join(container_data_path, 'arn'))
+        with open(os.path.join(container_data_path, 'arn'), 'r') as f:
+            task_map = f.read().strip() # docker adds a newline
+            if task_map != '||':
+                # from: arn:aws:ecs:us-east-1:960714566901:task/c5dc732d-ac78-4b54-bd6c-9a41355fc678||bamboo-agent
+                # task: c5dc732d-ac78-4b54-bd6c-9a41355fc678
+                task = task_map.split('||')[0].split('/')[1]
+                # container_name:   bamboo-agent
+                container_name = task_map.split('||')[1]
+                task_dir = os.path.join(DATA_DIR, "tasks", task)
+                if not os.path.exists(task_dir):
+                    os.makedirs(task_dir)
+                os.symlink('../../containers/'+container, os.path.join(task_dir, container_name))
+                # Also create a reciprocal symlink from the container back to the task
+                os.symlink(os.path.join('../../tasks/', task), os.path.join('containers', container, 'task_symlink'))
+
+    else:
+        if not os.path.isfile(os.path.join(container_data_path, 'stop')):
+            dispatch_data(cpu(container), 'cpu.usage', container_data_path)
+            dispatch_data(memory(container), 'memory.usage', container_data_path)
+            record_time_to_file(container_data_path, 'end.txt')
+
 def report_metrics_callback():
     logging.info('Collecting metrics')
 
     docker_containers = [f for f in os.listdir(CPU_DIR) if not os.path.isfile(os.path.join(CPU_DIR, f))]
+    threads = list()
     for container in docker_containers:
-        container_data_path = os.path.join(DATA_DIR, "containers", container)
-        if not os.path.exists(container_data_path):
-            os.makedirs(container_data_path)
-            record_time_to_file(container_data_path, 'start.txt')
-        if not os.path.isfile(os.path.join(container_data_path, 'arn')):
-            # TODO: eventually only write the results below for valid results
-            # TODO: threadify this
-            # TODO: update_metadata(ctx) we need to update each separately with start time on discovery
-            os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + os.path.join(container_data_path, 'arn'))
-            with open(os.path.join(container_data_path, 'arn'), 'r') as f:
-                task_map = f.read().strip() # docker adds newline
-                if task_map != '||':
-                    # from: arn:aws:ecs:us-east-1:960714566901:task/c5dc732d-ac78-4b54-bd6c-9a41355fc678||bamboo-agent
-                    # task: c5dc732d-ac78-4b54-bd6c-9a41355fc678
-                    task = task_map.split('||')[0].split('/')[1]
-                    # container_name:   bamboo-agent
-                    container_name = task_map.split('||')[1]
-                    task_dir = os.path.join(DATA_DIR, "tasks", task)
-                    if not os.path.exists(task_dir):
-                        os.makedirs(task_dir)
-                    os.symlink('../../containers/'+container, os.path.join(task_dir, container_name))
+        p = Process(target=record_data, args=(container,))
+        threads.append(p)
+        p.start()
 
+    [thread.join() for thread in threads]
 
-        else:
-            if not os.path.isfile(os.path.join(container_data_path, 'stop')):
-                dispatch_data(cpu(container), 'cpu.usage', container_data_path)
-                dispatch_data(memory(container), 'memory.usage', container_data_path)
-                record_time_to_file(container_data_path, 'end.txt')
+def clean_up():
+    logging.info('Cleaning up expired containers and tasks...')
 
+    containers_to_be_deleted = list()
+    tasks_to_be_deleted = list()
+
+    containers = [f for f in os.listdir(os.path.join(DATA_DIR, 'containers'))]
+    for container in containers:
+        end_file_path =  os.path.join(DATA_DIR, 'containers', container, 'end.txt')
+        symlink_path =  os.path.join(DATA_DIR, 'containers', container, 'task_symlink')
+        if os.path.isfile(end_file_path):
+            if (time.time() - os.path.getmtime(end_file_path)) > EXPIRATION_TIME:
+                containers_to_be_deleted.append(container)
+                task = os.path.realpath(symlink_path).split('/')[-1]
+                tasks_to_be_deleted.append(task)
+
+    for container in containers_to_be_deleted:
+        logging.debug('deleting container %s', container)
+        shutil.rmtree(os.path.join(DATA_DIR, 'containers', container), ignore_errors=True)
+
+    for task in tasks_to_be_deleted:
+        logging.debug('deleting task %s', task)
+        shutil.rmtree(os.path.join(DATA_DIR, 'tasks', task), ignore_errors=True)
+
+    logging.info('Finished deleting tasks and containers.')
 
 def wait_for_kill_signal(signal, f):
     scheduler.shutdown()
@@ -214,9 +250,7 @@ if __name__ == '__main__':
     # Start the reporting
     scheduler.start()
     scheduler.add_job(report_metrics_callback, 'interval', seconds=STEP_SIZE_IN_SEC, coalesce=True, max_instances=1)
-
-    # loop over all docker containers in the /cgroup/cpu/ dir,
-    # collect the cpu.stat file for each one
+    scheduler.add_job(clean_up, 'interval', seconds=CLEAN_UP_INTERVAL, coalesce=True, max_instances=1)
 
     # Go to sleep
     signal.signal(signal.SIGINT, wait_for_kill_signal)
