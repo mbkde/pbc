@@ -58,7 +58,7 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
         String artifactNames = resultsSummary.getCustomBuildData().get("image_artifacts");
         if (artifactNames != null) {
             Splitter.on(",").splitToList(artifactNames).forEach((String t) -> {
-                Artifact artifact = createArtifact(t, resultsSummary.getPlanResultKey());
+                Artifact artifact = createArtifact(t, resultsSummary.getPlanResultKey(), resultsSummary.getCustomBuildData().get("image_artifacts_type"));
                 ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
                 if (artifactLinkDataProvider == null) {
                     addActionError("Unable to find artifact link data provider for artifact link");
@@ -85,7 +85,7 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
         return isSingleDownloadableFile ? singleFile : null;
     }
 
-    private Artifact createArtifact(String label, PlanResultKey prk) {
+    private Artifact createArtifact(String label, PlanResultKey prk, String linkType) {
         return new Artifact() {
             @Override
             public String getLabel() {
@@ -99,8 +99,7 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
 
             @Override
             public String getLinkType() {
-                //TODO don't hardcode
-                return "com.atlassian.bamboo.plugin.artifact.handler.remote:S3ArtifactHandler";
+                return linkType;
             }
 
             @Override

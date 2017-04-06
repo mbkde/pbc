@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.ecs.metrics;
 
+import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomBuildProcessor;
 import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.rrd4j.ConsolFun;
@@ -129,8 +131,8 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
                     String memoryName = containerFolder.getName() + "-memory";
                     generateCpuPng(createGraphDef(startTime, endTime, containerFolder.getName() + " CPU Usage", "CPU Cores", targetDir, cpuName + ".png"), containerFolder, buildLogger);
                     generateMemoryPng(createGraphDef(startTime, endTime, containerFolder.getName() + " Memory Usage", "Memory Usage", targetDir, memoryName + ".png"), containerFolder, buildLogger);
-                    publishImage(cpuName, secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration);
-                    publishImage(memoryName, secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration);
+                    publishImage(cpuName, secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
+                    publishImage(memoryName, secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
                     names.add("pbc-metrics-" + cpuName);
                     names.add("pbc-metrics-"+ memoryName);
                 }
@@ -139,7 +141,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
         }
     }
 
-    private void publishImage(String name, SecureToken secureToken, BuildLogger buildLogger, File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration) {
+    private void publishImage(String name, SecureToken secureToken, BuildLogger buildLogger, File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration, BuildContext buildContext) {
         ArtifactDefinitionContextImpl artifact = new ArtifactDefinitionContextImpl("pbc-metrics-" + name, false, secureToken);
         artifact.setCopyPattern(name + ".png");
         artifact.setLocation(".pbc-metrics");
@@ -150,9 +152,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
                         artifact,
                         artifactHandlerConfiguration,
                         0);
-        publishingResult.getSuccessfulPublishingResults().forEach((ArtifactHandlerPublishingResult t) -> {
-            buildLogger.addBuildLogEntry("handlerKey:" + t.getArtifactHandlerKey());
-        });
+        buildContext.getCurrentResult().getCustomBuildData().put("image_artifacts_type", publishingResult.getSuccessfulPublishingResults().stream().findAny().map((ArtifactHandlerPublishingResult t) -> t.getArtifactHandlerKey()).orElse(Artifact.SYSTEM_LINK_TYPE));
     }
 
     private void generateCpuPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {
