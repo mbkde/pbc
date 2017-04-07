@@ -62,6 +62,7 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
                 ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
                 if (artifactLinkDataProvider == null) {
                     addActionError("Unable to find artifact link data provider for artifact link");
+                    return;
                 }
                 final String sanitisedTag = "";
                 Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects(sanitisedTag);
