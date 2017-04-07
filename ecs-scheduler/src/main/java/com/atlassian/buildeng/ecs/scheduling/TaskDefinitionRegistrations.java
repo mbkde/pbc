@@ -87,6 +87,14 @@ public class TaskDefinitionRegistrations {
         return def;
     }
 
+    private static RegisterTaskDefinitionRequest  withMetricHostVolume(ContainerDefinition def, RegisterTaskDefinitionRequest req) {
+        req.withVolumes(new Volume().withName("metrics")
+                                    .withHost(new HostVolumeProperties().withSourcePath("/var/lib/docker/buildeng-metrics")));
+        def.withMountPoints(new MountPoint().withSourceVolume("metrics")
+                                            .withContainerPath("/buildeng/metrics"));
+        return req;
+    }
+
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
     public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
         ContainerDefinition main = withLogDriver(withGlobalEnvVars(
@@ -103,10 +111,10 @@ public class TaskDefinitionRegistrations {
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(env.getBambooBaseUrl()))
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
                 globalConfiguration), globalConfiguration);
-        RegisterTaskDefinitionRequest req = new RegisterTaskDefinitionRequest()
+        RegisterTaskDefinitionRequest req = withMetricHostVolume(main, new RegisterTaskDefinitionRequest()
                 .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick())) //, Constants.METADATA_DEFINITION)
                 .withFamily(globalConfiguration.getTaskDefinitionName())
-                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME));
+                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME)));
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()
