@@ -188,7 +188,7 @@ def record_data(container):
                     os.makedirs(task_dir)
                 os.symlink('../../containers/'+container, os.path.join(task_dir, container_name))
                 # Also create a reciprocal symlink from the container back to the task
-                os.symlink(os.path.join('../../tasks/', task), os.path.join('containers', container, 'task_symlink'))
+                os.symlink(os.path.join('../../tasks/', task), os.path.join(container_data_path, 'task_symlink'))
 
     else:
         if not os.path.isfile(os.path.join(container_data_path, 'stop')):
