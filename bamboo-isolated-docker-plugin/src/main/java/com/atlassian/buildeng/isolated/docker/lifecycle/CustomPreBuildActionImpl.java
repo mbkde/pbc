@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -143,13 +144,15 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         context.put("imageSizes", getImageSizes());
     }
 
+    @NotNull
     public static Collection<Pair<String, String>> getImageSizes() {
-        return Lists.newArrayList(
+        return Arrays.asList(
                 //this is stupid ordering but we want to keep regular as default for new
                 //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
                 Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
+                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
                 Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
-                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"));
+                Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"));
     }
 
 }
