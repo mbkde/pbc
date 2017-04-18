@@ -4,7 +4,7 @@
         <mirror>
           <id>maven-atlassian-com</id>
           <name>mirror all the things</name>
-          <url>https://maven.atlassian.com/public/</url>
+          <url>https://maven.atlassian.com/content/groups/public/</url>
           <mirrorOf>external:*</mirrorOf>
         </mirror>
     </mirrors>
