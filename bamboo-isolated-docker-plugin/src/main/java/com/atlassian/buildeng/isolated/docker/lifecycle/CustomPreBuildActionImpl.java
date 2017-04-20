@@ -105,17 +105,21 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         return buildContext;
     }
 
-    // TODO eventually remove once we are sure noone is using the capability anymore.
+    // TODO eventually remove CAPABILITY once we are sure noone is using it anymore.
     @Override
     public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
+        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
+        if (config.isEnabled()) {
+            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
+        }
     }
     String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
-    // TODO eventually remove once we are sure noone is using the capability anymore.
+    // TODO eventually remove CAPABILITY once we are sure noone is using the it anymore.
     @Override
     public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
-        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(CAPABILITY));
+        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
     }
 
     @NotNull
