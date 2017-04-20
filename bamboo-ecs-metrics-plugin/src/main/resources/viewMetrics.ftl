@@ -8,9 +8,10 @@
 </head>
 
 <body>
-<h1>metrics</h1>
+<h1>PBC Container Metrics</h1>
+<p>Shows CPU and memory unitization of PBC containers used in the build. If absent, the images were likely not generated or data is missing.</p>
 [#list bambooAgentUrls.iterator() as url]
-    <img src="${url}"/>
+    <img src="${url}" alt="Container usage image"/>
 [/#list]
 
 

@@ -15,7 +15,7 @@ limitations under the License.
 -->
 <atlassian-plugin key="${project.groupId}.${project.artifactId}" name="View PBC ECS Metrics Plugin" plugins-version="2">
     <plugin-info>
-        <description>XXX</description>
+        <description>Adds a tab to job results with PBC container graphs</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
@@ -23,7 +23,7 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="ecs-metrics-plugin"/>
 
-    <buildProcessor key="generateImages" name="Generate Metrics images"
+    <buildProcessor key="generateImages" name="Generate Container Metrics images"
                     class="com.atlassian.buildeng.ecs.metrics.MetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
