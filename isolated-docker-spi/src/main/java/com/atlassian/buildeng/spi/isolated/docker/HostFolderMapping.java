@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ * Copyright 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.ecs.scheduling;
+package com.atlassian.buildeng.spi.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
-import java.util.List;
-import org.jetbrains.annotations.Nullable;
+public interface HostFolderMapping {
 
-public interface BambooServerEnvironment {
-    String getCurrentSidekick();
-    String getBambooBaseUrl();
-    @Nullable
-    String getECSTaskRoleARN();
-    List<HostFolderMapping> getHostFolderMappings();
+    String getVolumeName();
+    String getHostPath();
+    String getContainerPath();
+    
 }

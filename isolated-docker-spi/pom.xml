@@ -33,7 +33,9 @@ limitations under the License.
                 <configuration>
                     <extractDependencies>false</extractDependencies>
                     <instructions>
-                        <Export-Package>com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}"
+                        <Export-Package>
+                            com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}",
+                            com.atlassian.plugin.*
                         </Export-Package>
                         <Import-Package>
                             com.atlassian.bamboo.build.*,
@@ -47,6 +49,9 @@ limitations under the License.
                             com.atlassian.bamboo.utils.error.*,
                             com.atlassian.bamboo.v2.build.*,
                             com.atlassian.bamboo.ww2.actions.build.admin.create.*,
+                            com.atlassian.plugin.*,
+                            com.atlassian.plugin.module.*,
+                            com.atlassian.bamboo.plugin.descriptor.*,
                             com.google.common.collect.*,
                             com.google.common.base.*,
                             com.google.gson.*,

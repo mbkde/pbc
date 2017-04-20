@@ -75,7 +75,7 @@ public class CyclingECSSchedulerQuickTest {
     }
 
     @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
-        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null, null, null), new EventPublisher() {
+        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null, null, null, null), new EventPublisher() {
             @Override
             public void publish(Object event) {
             }

@@ -17,11 +17,14 @@ package com.atlassian.buildeng.ecs.api;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class Scheduler {
 
@@ -43,7 +46,20 @@ public class Scheduler {
             if (c == null) {
                 throw new IllegalArgumentException("Wrong format!");
             }
-            Scheduler scheduler = new Scheduler(uuid.getAsString(), resultId.getAsString(), server.getAsString(), sidekick.getAsString(), c);
+            final List<HostFolderMapping> mappings = new ArrayList<>();
+            JsonArray hostMappings = oo.getAsJsonArray("hostFolderMappings");
+            if (hostMappings != null) {
+                hostMappings.forEach((JsonElement t) -> {
+                    JsonObject o = (JsonObject) t;
+                    JsonPrimitive name = o.getAsJsonPrimitive("volumeName");
+                    JsonPrimitive hostPath = o.getAsJsonPrimitive("hostPath");
+                    JsonPrimitive containerPath = o.getAsJsonPrimitive("containerPath");
+                    if (name != null && hostPath != null && containerPath != null) {
+                        mappings.add(new HostFolderMappingImpl(name.getAsString(), hostPath.getAsString(), containerPath.getAsString()));
+                    }
+                });
+            }
+            Scheduler scheduler = new Scheduler(uuid.getAsString(), resultId.getAsString(), server.getAsString(), sidekick.getAsString(), c, mappings);
 
             JsonPrimitive taskArn = oo.getAsJsonPrimitive("taskARN");
             if (taskArn != null) {
@@ -64,13 +80,16 @@ public class Scheduler {
     private String taskARN;
     private final Configuration configuration;
     private long queueTimestamp = -1;
+    private final List<HostFolderMapping> hostFolderMappings;
 
-    public Scheduler(String uuid, String resultId, String server, String sidekick, Configuration configuration) {
+    public Scheduler(String uuid, String resultId, String server, String sidekick, 
+            Configuration configuration, List<HostFolderMapping> mappings) {
         this.uuid = uuid;
         this.resultId = resultId;
         this.configuration = configuration;
         this.bambooServer = server;
         this.sidekick = sidekick;
+        this.hostFolderMappings = mappings;
     }
 
     public String getUuid() {
@@ -108,5 +127,37 @@ public class Scheduler {
 
     public void setQueueTimestamp(long queueTimestamp) {
         this.queueTimestamp = queueTimestamp;
+    }
+
+    public List<HostFolderMapping> getHostFolderMappings() {
+        return hostFolderMappings;
+    }
+
+    private static class HostFolderMappingImpl implements HostFolderMapping {
+
+        private final String name;
+        private final String hostPath;
+        private final String containerPath;
+
+        public HostFolderMappingImpl(String name, String hostPath, String containerPath) {
+            this.name = name;
+            this.hostPath = hostPath;
+            this.containerPath = containerPath;
+        }
+
+        @Override
+        public String getVolumeName() {
+            return name;
+        }
+
+        @Override
+        public String getHostPath() {
+            return hostPath;
+        }
+
+        @Override
+        public String getContainerPath() {
+            return containerPath;
+        }
     }
 }

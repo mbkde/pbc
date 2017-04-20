@@ -36,6 +36,7 @@ import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestM
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import java.io.IOException;
@@ -87,11 +88,13 @@ public class TaskDefinitionRegistrations {
         return def;
     }
 
-    private static RegisterTaskDefinitionRequest  withMetricHostVolume(ContainerDefinition def, RegisterTaskDefinitionRequest req) {
-        req.withVolumes(new Volume().withName("metrics")
-                                    .withHost(new HostVolumeProperties().withSourcePath("/var/lib/docker/buildeng-metrics")));
-        def.withMountPoints(new MountPoint().withSourceVolume("metrics")
-                                            .withContainerPath("/buildeng/metrics"));
+    private static RegisterTaskDefinitionRequest withHostVolumes(ContainerDefinition agentContainerDef, RegisterTaskDefinitionRequest req, BambooServerEnvironment env) {
+        env.getHostFolderMappings().forEach((HostFolderMapping t) -> {
+            req.withVolumes(new Volume().withName(t.getVolumeName())
+                    .withHost(new HostVolumeProperties().withSourcePath(t.getHostPath())));
+            agentContainerDef.withMountPoints(new MountPoint().withSourceVolume(t.getVolumeName())
+                    .withContainerPath(t.getContainerPath()));
+        });
         return req;
     }
 
@@ -111,10 +114,13 @@ public class TaskDefinitionRegistrations {
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(env.getBambooBaseUrl()))
                         .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
                 globalConfiguration), globalConfiguration);
-        RegisterTaskDefinitionRequest req = withMetricHostVolume(main, new RegisterTaskDefinitionRequest()
-                .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick())) //, Constants.METADATA_DEFINITION)
-                .withFamily(globalConfiguration.getTaskDefinitionName())
-                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME)));
+        RegisterTaskDefinitionRequest req =
+                withHostVolumes(main,
+                        new RegisterTaskDefinitionRequest()
+                                .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick())) //, Constants.METADATA_DEFINITION)
+                                .withFamily(globalConfiguration.getTaskDefinitionName())
+                                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME)),
+                        env);
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()

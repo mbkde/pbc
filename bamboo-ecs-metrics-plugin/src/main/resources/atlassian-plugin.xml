@@ -42,5 +42,6 @@ limitations under the License.
         <link linkId="ECSMETRICS:${buildKey}-${buildNumber}">/build/result/viewMetrics.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
         <condition class="com.atlassian.buildeng.ecs.metrics.IsConfiguredCondition"/>
     </web-item>
-    
+    <hostFolderMapping key="metrics" class="com.atlassian.buildeng.ecs.metrics.MetricHostFolderMapping">
+    </hostFolderMapping>
 </atlassian-plugin>
