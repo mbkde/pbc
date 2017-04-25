@@ -1,7 +1,6 @@
 FROM python:2.7
 MAINTAINER build-team@atlassian.com
 
-# docker run -v /var/run/docker.sock:/var/run/docker.sock -v /cgroup/:/host/cgroup/ -v /var/lib/docker/buildeng-metrics:/buildeng-metrics <image>
 ENV DATA_DIR=/buildeng-metrics PSEUDO_ROOT=/host/ PATH=${PATH}:/opt/app
 
 RUN apt-get update && apt-get install -qy --no-install-recommends \

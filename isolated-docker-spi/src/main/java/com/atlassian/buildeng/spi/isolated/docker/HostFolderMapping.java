@@ -16,6 +16,16 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+/**
+ * When implemented and registered by plugins, the backend plugins will include
+ * host instance folder in the agent container at given path.
+ * Implementations to be registered in atlassian-plugin.xml file, eg.
+ * <code>
+ * <hostFolderMapping key="metrics" class="com.atlassian.buildeng.ecs.metrics.MetricHostFolderMapping">
+    </hostFolderMapping>
+ * </code>
+ * @author mkleint
+ */
 public interface HostFolderMapping {
 
     String getVolumeName();

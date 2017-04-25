@@ -18,5 +18,9 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.plugin.ModuleDescriptor;
 
+/**
+ * Module descriptor for HostFolderMapping.
+ * @author mkleint
+ */
 public interface HostFolderMappingModuleDescriptor extends ModuleDescriptor<HostFolderMapping> {
 }
