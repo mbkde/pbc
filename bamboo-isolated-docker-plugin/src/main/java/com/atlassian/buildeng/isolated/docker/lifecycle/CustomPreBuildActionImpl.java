@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -104,17 +105,21 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         return buildContext;
     }
 
-    // TODO eventually remove once we are sure noone is using the capability anymore.
+    // TODO eventually remove CAPABILITY once we are sure noone is using it anymore.
     @Override
     public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
+        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
+        if (config.isEnabled()) {
+            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
+        }
     }
     String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
-    // TODO eventually remove once we are sure noone is using the capability anymore.
+    // TODO eventually remove CAPABILITY once we are sure noone is using the it anymore.
     @Override
     public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
-        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(CAPABILITY));
+        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
     }
 
     @NotNull
@@ -143,13 +148,15 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         context.put("imageSizes", getImageSizes());
     }
 
+    @NotNull
     public static Collection<Pair<String, String>> getImageSizes() {
-        return Lists.newArrayList(
+        return Arrays.asList(
                 //this is stupid ordering but we want to keep regular as default for new
                 //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
                 Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
+                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
                 Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
-                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"));
+                Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"));
     }
 
 }

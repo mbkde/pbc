@@ -40,6 +40,11 @@ limitations under the License.
                          class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
+
+    <bambooEventListener key="agentRegisteredListener" name="Bamboo Event Listener"
+                         class="com.atlassian.buildeng.isolated.docker.AgentRegisteredListener">
+        <description>Listens to events of Bamboo.</description>
+    </bambooEventListener>
     
     <bambooEventListener key="buildCancelledEventListener" name="Listens on Build Cancelled events"
                          class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildCancelledEventListener">
