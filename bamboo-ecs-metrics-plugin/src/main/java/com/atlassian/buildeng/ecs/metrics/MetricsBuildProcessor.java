@@ -36,8 +36,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.rrd4j.ConsolFun;
@@ -49,8 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Responsible for stopping the Docker-based Bamboo agent so it won't run more than one job.
- * Runs on agent and in coordination with PostJobActionImpl
+ * After the build extracts the rrd files from a source directory and generates the
+ * images and uploads them as artifacts.
  */
 public class MetricsBuildProcessor  implements CustomBuildProcessor {
     private static final Logger logger = LoggerFactory.getLogger(MetricsBuildProcessor.class);
@@ -62,8 +60,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
 
     private final BuildLoggerManager buildLoggerManager;
     private BuildContext buildContext;
-    private ArtifactManager artifactManager;
-//    private final SecureTokenService secureTokenService;
+    private final ArtifactManager artifactManager;
 
 
     private MetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
@@ -90,8 +87,9 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
     }
 
     private void generateMetricsGraphs(BuildLogger buildLogger) {
+        String token = buildContext.getCurrentResult().getCustomBuildData().remove("secureToken");
         String taskArn = buildContext.getCurrentResult().getCustomBuildData().get("result.isolated.docker.TaskARN");
-        if (taskArn != null) {
+        if (taskArn != null && token != null) {
             //arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
             String taskId = taskArn.substring(taskArn.indexOf("/"));
             File rootFolder = new File("/buildeng/metrics/tasks");
@@ -100,9 +98,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
 
                 final Map<String, String> artifactHandlerConfiguration = BuildContextHelper.getArtifactHandlerConfiguration(buildContext);
                 File buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext)buildContext);
-                final SecureToken secureToken = SecureToken.createFromString(buildContext.getBuildResult().getCustomBuildData().get("secureToken"));
-                //remove the token again.
-                buildContext.getBuildResult().getCustomBuildData().remove("secureToken");
+                final SecureToken secureToken = SecureToken.createFromString(token);
                 
                 List<String> names = new ArrayList<>();
                 for (File containerFolder : taskFolder.listFiles((File pathname) -> pathname.isDirectory() && !"~internal~ecs-emptyvolume-source".equals(pathname.getName()) &&  !"bamboo-agent-sidekick".equals(pathname.getName()))) {
@@ -113,15 +109,16 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
                         Thread.sleep(100); //sleep a bit to make sure the provider is no longer writing there.
                         startTime = Long.parseLong(FileUtils.readFileToString(new File(containerFolder, "start.txt")).trim());
                         endTime = Long.parseLong(FileUtils.readFileToString(new File(containerFolder, "end.txt")).trim());
+                        //rrd4j has it's own format, we need to convert from rrd first
                         RrdDb rrd = new RrdDb(new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "rrdtool:/" + new File(containerFolder, "cpu.usage.rrd").getAbsolutePath(), new RrdSafeFileBackendFactory());
                         rrd.close();
                         RrdDb rrd2 = new RrdDb(new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "rrdtool:/" + new File(containerFolder, "memory.usage.rrd").getAbsolutePath(), new RrdSafeFileBackendFactory());
                         rrd2.close();
 
-                    } catch (Exception ex) {
+                    } catch (IOException | InterruptedException | NumberFormatException ex) {
                         startTime = 0;
                         endTime = 0;
-                        buildLogger.addErrorLogEntry("err", ex);
+                        buildLogger.addErrorLogEntry("Error while processing rrd files", ex);
                     }
                     File targetDir = new File(buildWorkingDirectory, ".pbc-metrics");
                     targetDir.mkdirs();
@@ -186,7 +183,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
         try {
             RrdGraph graph = new RrdGraph(gDef);
         } catch (IOException e) {
-            buildLogger.addErrorLogEntry("Error", e);
+            buildLogger.addErrorLogEntry("Error while generating rrd graph", e);
         }
     }
 
@@ -248,7 +245,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
         try {
             RrdGraph graph = new RrdGraph(gDef);
         } catch (IOException e) {
-            buildLogger.addErrorLogEntry("Error", e);
+            buildLogger.addErrorLogEntry("Error while generating rrd graph", e);
         }
 
     }
