@@ -661,6 +661,31 @@ public class CyclingECSSchedulerTest {
         verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
     } 
     
+    @Test
+    public void agentDoesntFitInstance() throws Exception {
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                    ci("id1", "arn1", true, 0, 0)
+                    ),
+                Arrays.asList(
+                    ec2("id1", new Date())
+                ));
+        CyclingECSScheduler scheduler = new CyclingECSScheduler(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
+        AtomicReference<String> thrown = new AtomicReference<>("not thrown");
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(120), mem(120), null), new SchedulingCallback() {
+            @Override
+            public void handle(SchedulingResult result) {
+            }
+
+            @Override
+            public void handle(ECSException exception) {
+                thrown.set(exception.getMessage());
+            }
+        });
+        awaitProcessing(scheduler);
+        assertEquals("Agent's resource reservation is larger than any single instance size in ECS cluster.", thrown.get());
+    }
+
     
     @Test
     public void scheduleTerminatingOfNonASGContainer() throws Exception {
