@@ -91,14 +91,12 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
 
     private void generateMetricsGraphs(BuildLogger buildLogger) {
         String taskArn = buildContext.getCurrentResult().getCustomBuildData().get("result.isolated.docker.TaskARN");
-        buildLogger.addBuildLogEntry("TaskARN:"+ taskArn);
         if (taskArn != null) {
             //arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
             String taskId = taskArn.substring(taskArn.indexOf("/"));
             File rootFolder = new File("/buildeng/metrics/tasks");
             File taskFolder = new File(rootFolder, taskId);
             if (taskFolder.isDirectory()) {
-                buildLogger.addBuildLogEntry("Task folder:"+ taskFolder);
 
                 final Map<String, String> artifactHandlerConfiguration = BuildContextHelper.getArtifactHandlerConfiguration(buildContext);
                 File buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext)buildContext);
@@ -153,6 +151,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
                         artifactHandlerConfiguration,
                         0);
         buildContext.getCurrentResult().getCustomBuildData().put("image_artifacts_type", publishingResult.getSuccessfulPublishingResults().stream().findAny().map((ArtifactHandlerPublishingResult t) -> t.getArtifactHandlerKey()).orElse(Artifact.SYSTEM_LINK_TYPE));
+        buildLogger.addBuildLogEntry("Generated and published '" + name + "' container performance image.");
     }
 
     private void generateCpuPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {
@@ -186,7 +185,6 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
         gDef.gprint("throttled_max", "Max: %10.2lf%Ss\\l");
         try {
             RrdGraph graph = new RrdGraph(gDef);
-            buildLogger.addBuildLogEntry(graph.getRrdGraphInfo().dump());
         } catch (IOException e) {
             buildLogger.addErrorLogEntry("Error", e);
         }
@@ -249,7 +247,6 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
 
         try {
             RrdGraph graph = new RrdGraph(gDef);
-            buildLogger.addBuildLogEntry(graph.getRrdGraphInfo().dump());
         } catch (IOException e) {
             buildLogger.addErrorLogEntry("Error", e);
         }
