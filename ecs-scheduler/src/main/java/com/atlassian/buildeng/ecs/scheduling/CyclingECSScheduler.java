@@ -20,6 +20,7 @@ import com.amazonaws.services.autoscaling.model.SuspendedProcess;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.exceptions.InstancesSmallerThanAgentException;
 import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsDisconnectedPurgeEvent;
@@ -169,15 +170,20 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                         lackingMemory = 0;
                     }
                 } else {
-                    // Note how much capacity we're lacking
-                    // But don't double count the same request that comes through
-                    if (consideredRequestIdentifiers.add(request.getIdentifier())) {
-                        lackingCPU += request.getCpu();
-                        lackingMemory += request.getMemory();
+                    if (! fitsOnAny(hosts.fresh(), request.getMemory())) {
+                        //anything that wants to prevert rescheduling here needs changes in DefaultSchedulingCallback as well
+                        pair.getRight().handle(new ECSException(new InstancesSmallerThanAgentException()));
+                    } else {
+                        // Note how much capacity we're lacking
+                        // But don't double count the same request that comes through
+                        if (consideredRequestIdentifiers.add(request.getIdentifier())) {
+                            lackingCPU += request.getCpu();
+                            lackingMemory += request.getMemory();
+                        }
+                        //scale up + down and set all other queued requests to null.
+                        someDiscarded = true;
+                        pair.getRight().handle(new ECSException("Capacity not available"));
                     }
-                    //scale up + down and set all other queued requests to null.
-                    someDiscarded = true;
-                    pair.getRight().handle(new ECSException("Capacity not available"));
                 }
             } catch (ECSException ex) {
                 logger.error("Scheduling failed", ex);
@@ -460,6 +466,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             eventPublisher.publish(new DockerAgentEcsDisconnectedPurgeEvent(selectedToKill));
         }
         return terminateInstances(selectedToKill, asgName, false, clusterName);
+    }
+
+    private boolean fitsOnAny(List<DockerHost> fresh, int memory) {
+        return fresh.isEmpty() || fresh.stream().anyMatch((DockerHost t) -> t.getRegisteredMemory() > memory);
     }
 
     private class EndlessPolling implements Runnable {

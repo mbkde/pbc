@@ -19,6 +19,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.exceptions.InstancesSmallerThanAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import java.util.List;
@@ -71,6 +72,8 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
         logger.warn("Failed to schedule {}, treating as overload: {}", resultId, exception);
         if (exception.getCause() instanceof TimeoutException) {
             toRet.withRetryRecoverable("Request timed out without completing.");
+        } else if (exception.getCause() instanceof InstancesSmallerThanAgentException) {
+            toRet.withError(exception.getMessage());
         } else {
             toRet.withRetryRecoverable("No Container Instance currently available. Reason: " + exception.getLocalizedMessage());
         }
