@@ -92,7 +92,7 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
         if (taskArn != null && token != null) {
             //arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
             String taskId = taskArn.substring(taskArn.indexOf("/"));
-            File rootFolder = new File("/buildeng/metrics/tasks");
+            File rootFolder = new File(MetricHostFolderMapping.CONTAINER_METRICS_PATH  + "/tasks");
             File taskFolder = new File(rootFolder, taskId);
             if (taskFolder.isDirectory()) {
 
