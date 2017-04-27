@@ -15,10 +15,6 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.atlassian.buildeng.ecs.scheduling.DockerHost;
-import com.atlassian.buildeng.ecs.scheduling.DockerHost;
-import com.atlassian.buildeng.ecs.scheduling.DockerHosts;
-import com.atlassian.buildeng.ecs.scheduling.DockerHosts;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSSchedulerTest.cpu;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSSchedulerTest.mem;
 import com.google.common.collect.Lists;
