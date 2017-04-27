@@ -15,6 +15,8 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.atlassian.buildeng.ecs.scheduling.DockerHost;
+import com.atlassian.buildeng.ecs.scheduling.DockerHost;
 import com.pholser.junit.quickcheck.generator.GenerationStatus;
 import com.pholser.junit.quickcheck.generator.Generator;
 import com.pholser.junit.quickcheck.generator.java.lang.StringGenerator;

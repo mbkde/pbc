@@ -15,6 +15,8 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
+import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration.ExtraContainer;
 import java.util.ArrayList;
