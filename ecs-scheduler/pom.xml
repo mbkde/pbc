@@ -19,7 +19,7 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>1.119-SNAPSHOT</version>
+        <version>1.121-SNAPSHOT</version>
     </parent>
     <artifactId>ecs-scheduler</artifactId>
     <packaging>jar</packaging>

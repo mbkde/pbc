@@ -32,6 +32,8 @@ import java.io.BufferedWriter;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +56,10 @@ public class AwsLogs {
             GetLogEventsResult response = logs.getLogEvents(request);
             while (response != null) {
                 response.getEvents().forEach((OutputLogEvent t) -> {
+                    if (t.getTimestamp() != null) {
+                        writer.write(DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(t.getTimestamp())));
+                        writer.write(" ");
+                    }
                     writer.write(t.getMessage());
                     writer.write("\n");
                 });
