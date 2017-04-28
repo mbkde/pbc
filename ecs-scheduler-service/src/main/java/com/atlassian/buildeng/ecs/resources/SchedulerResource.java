@@ -27,6 +27,7 @@ import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
@@ -85,6 +86,11 @@ public class SchedulerResource {
             @Override
             public String getECSTaskRoleARN() {
                 return s.getTaskARN();
+            }
+
+            @Override
+            public List<HostFolderMapping> getHostFolderMappings() {
+                return s.getHostFolderMappings();
             }
         };
         int revision = taskDefRegistrations.findTaskRegistrationVersion(s.getConfiguration(), env);

@@ -18,13 +18,17 @@ package com.atlassian.buildeng.ecs.remote;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMappingModuleDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -62,10 +66,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
+    private final PluginAccessor pluginAccessor;
 
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, 
+            PluginScheduler pluginScheduler, PluginAccessor pluginAccessor) {
         this.globalConfiguration = globalConfiguration;
         this.pluginScheduler = pluginScheduler;
+        this.pluginAccessor = pluginAccessor;
     }
 
 
@@ -163,8 +170,26 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         root.addProperty("bambooServer", globalConfiguration.getBambooBaseUrl());
         root.addProperty("sidekick", globalConfiguration.getCurrentSidekick());
         root.addProperty("taskARN", globalConfiguration.getCurrentRole());
+        root.add("hostFolderMappings", generateHostFolderMappings());
         root.add("configuration", ConfigurationPersistence.toJson(request.getConfiguration()));
         return root.toString();
     }
 
+    private JsonArray generateHostFolderMappings() {
+        JsonArray arr = new JsonArray();
+        getHostFolderMappings().forEach((HostFolderMapping t) -> {
+            JsonObject o = new JsonObject();
+            o.addProperty("volumeName", t.getVolumeName());
+            o.addProperty("hostPath", t.getHostPath());
+            o.addProperty("containerPath", t.getContainerPath());
+            arr.add(o);
+        });
+        return arr;
+    }
+
+    public List<HostFolderMapping> getHostFolderMappings() {
+        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
+                .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
+                .collect(Collectors.toList());
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ * Copyright 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.ecs.scheduling;
+package com.atlassian.buildeng.spi.isolated.docker.internal;
 
+import com.atlassian.bamboo.plugin.descriptor.AbstractBambooModuleDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
-import java.util.List;
-import org.jetbrains.annotations.Nullable;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMappingModuleDescriptor;
+import com.atlassian.plugin.module.ModuleFactory;
 
-public interface BambooServerEnvironment {
-    String getCurrentSidekick();
-    String getBambooBaseUrl();
-    @Nullable
-    String getECSTaskRoleARN();
-    List<HostFolderMapping> getHostFolderMappings();
+public class HostModuleMappingMDImpl extends AbstractBambooModuleDescriptor<HostFolderMapping> implements HostFolderMappingModuleDescriptor {
+
+    public HostModuleMappingMDImpl(ModuleFactory moduleFactory) {
+        super(moduleFactory);
+    }
+    
 }
