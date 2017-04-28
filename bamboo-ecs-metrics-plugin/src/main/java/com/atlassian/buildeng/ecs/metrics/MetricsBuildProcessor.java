@@ -132,6 +132,8 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
                     names.add("pbc-metrics-"+ memoryName);
                 }
                 buildContext.getCurrentResult().getCustomBuildData().put("image_artifacts", Joiner.on(",").join(names));
+            } else {
+                buildLogger.addBuildLogEntry("Folder with metrics data not mounted");
             }
         }
     }
