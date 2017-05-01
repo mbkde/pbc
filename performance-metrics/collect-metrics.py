@@ -175,7 +175,7 @@ def record_data(container):
     if not os.path.exists(container_data_path):
         os.makedirs(container_data_path)
         # http://www.thegeekstuff.com/2011/02/sticky-bit-on-directory-file/
-        os.chmod(container_data_path, stat.S_ISUID | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        os.chmod(container_data_path, stat.S_ISVTX | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         record_time_to_file(container_data_path, 'start.txt')
     if not os.path.isfile(os.path.join(container_data_path, 'arn')):
         os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + os.path.join(container_data_path, 'arn'))
