@@ -43,6 +43,9 @@ import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.ecs.scheduling.BambooServerEnvironment;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMappingModuleDescriptor;
+import com.atlassian.plugin.PluginAccessor;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
 import java.util.Date;
@@ -70,13 +73,16 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
+    private final PluginAccessor pluginAccessor;
 
     public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor,
-            AuditLogService auditLogService, BambooAuthenticationContext authenticationContext) {
+            AuditLogService auditLogService, BambooAuthenticationContext authenticationContext,
+            PluginAccessor pluginAccessor) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;
+        this.pluginAccessor = pluginAccessor;
     }
 
     @Override
@@ -290,5 +296,12 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     private void auditLogEntry(String name, String oldValue, String newValue) {
         AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
+    }
+
+    @Override
+    public List<HostFolderMapping> getHostFolderMappings() {
+        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
+                .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
+                .collect(Collectors.toList());
     }
 }

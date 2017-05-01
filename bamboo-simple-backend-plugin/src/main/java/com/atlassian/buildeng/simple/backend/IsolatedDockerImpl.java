@@ -18,11 +18,14 @@ package com.atlassian.buildeng.simple.backend;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.buildeng.simple.backend.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
+import com.atlassian.buildeng.spi.isolated.docker.HostFolderMappingModuleDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.base.Joiner;
@@ -38,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -70,16 +74,19 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
 
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final PluginScheduler pluginScheduler;
+    private final PluginAccessor pluginAccessor;
     private final GlobalConfiguration globalConfiguration;
     private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
     
 
-    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, PluginScheduler pluginScheduler, GlobalConfiguration globalConfiguration) {
+    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, 
+            PluginScheduler pluginScheduler, GlobalConfiguration globalConfiguration,
+            PluginAccessor pluginAccessor) {
         this.admConfAccessor = admConfAccessor;
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
-        
+        this.pluginAccessor = pluginAccessor;
     }
     
     @Override
@@ -133,12 +140,19 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         envs.put(ENV_VAR_RESULT_ID, rk);
         envs.put(ENV_VAR_SERVER, baseUrl);
         Map<String, Object> agent = new HashMap<>();
+        List<String> agentVolumes = new ArrayList<>();
+        agentVolumes.add(BUILD_DIR_VOLUME_NAME + ":" + BUILD_DIR);
+
+        getHostFolderMappings().forEach((HostFolderMapping t) -> {
+            agentVolumes.add(t.getHostPath() + ":" + t.getContainerPath());
+        });
+
         agent.put("image", config.getDockerImage());
         agent.put("working_dir", "/buildeng");
         agent.put("entrypoint", "/buildeng/run-agent.sh");
         agent.put("environment", envs);
         agent.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
-        agent.put("volumes", Collections.singletonList(BUILD_DIR_VOLUME_NAME + ":" + BUILD_DIR));
+        agent.put("volumes", agentVolumes);
         services.put("bamboo-agent", agent);
         
         Config gc = globalConfiguration.getDockerConfig();
@@ -151,7 +165,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         } else {
             if (gc.getSidekick() != null) {
                 String path = gc.getSidekick().trim();
-                agent.put("volumes", Collections.singletonList(path + ":/buildeng"));
+                agentVolumes.add(path + ":/buildeng");
             }
         }
         
@@ -207,5 +221,9 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         return image.startsWith("docker:") && image.endsWith("dind");
     }
     
-    
+    public List<HostFolderMapping> getHostFolderMappings() {
+        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
+                .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
+                .collect(Collectors.toList());
+    }
 }

@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.atlassian.buildeng</groupId>
     <artifactId>bamboo-isolated-docker</artifactId>
-    <version>1.121-SNAPSHOT</version>
+    <version>1.122-SNAPSHOT</version>
     <name>Bamboo plugins for ECS based docker agents...</name>
     <description>more relevant text here</description>
     <packaging>pom</packaging>
@@ -147,5 +147,6 @@
         <module>ecs-scheduler-service</module>
         <module>bamboo-remote-ecs-backend-plugin</module>
         <module>ecs-shared</module>
+        <module>bamboo-ecs-metrics-plugin</module>
     </modules>
 </project>
