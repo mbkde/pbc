@@ -20,7 +20,6 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
-import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
 import com.atlassian.event.api.EventPublisher;
@@ -828,8 +827,8 @@ public class CyclingECSSchedulerTest {
     }
     
     
-    private GlobalConfiguration mockGlobalConfig() {
-        GlobalConfiguration mock = mock(GlobalConfiguration.class);
+    private ECSConfiguration mockGlobalConfig() {
+        ECSConfiguration mock = mock(ECSConfiguration.class);
         when(mock.getCurrentCluster()).thenReturn("cluster");
         when(mock.getCurrentASG()).thenReturn("asg");
         return mock;

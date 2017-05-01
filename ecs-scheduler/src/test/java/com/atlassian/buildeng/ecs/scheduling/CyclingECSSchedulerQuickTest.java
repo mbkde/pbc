@@ -15,7 +15,6 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.atlassian.buildeng.ecs.GlobalConfiguration;
 import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
@@ -28,6 +27,7 @@ import java.util.Optional;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
 import com.atlassian.event.api.EventPublisher;
 import java.time.Duration;
+import java.util.Map;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -50,7 +50,7 @@ public class CyclingECSSchedulerQuickTest {
 
     @Property public void percentageUtilizedValidBounds(LinkedList<@From(DockerHostGenerator.class)DockerHost> testHosts) {
         double result = percentageUtilized(testHosts);
-        assertThat(result, is(both(greaterThanOrEqualTo(0.0)).and(lessThanOrEqualTo(1.0))));
+        assertThat(result, is(both( greaterThanOrEqualTo(0.0)).and(lessThanOrEqualTo(1.0))));
         // empty lists -> the cluster is fully utilized
         if (testHosts.isEmpty()) {
             assertEquals(1, result, 0.01d);
@@ -75,7 +75,7 @@ public class CyclingECSSchedulerQuickTest {
     }
 
     @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
-        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new GlobalConfiguration(null,null, null, null, null), new EventPublisher() {
+        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new TestECSConfigurationImpl(), new EventPublisher() {
             @Override
             public void publish(Object event) {
             }
@@ -100,6 +100,42 @@ public class CyclingECSSchedulerQuickTest {
         } else {
             // If we have anything to potentially terminate, we shouldn't terminate everything
             assertTrue(selectedHosts.size() < allHosts.size());
+        }
+    }
+
+    static class TestECSConfigurationImpl implements ECSConfiguration {
+
+        public TestECSConfigurationImpl() {
+        }
+
+        @Override
+        public String getCurrentCluster() {
+            return null;
+        }
+
+        @Override
+        public String getCurrentASG() {
+            return null;
+        }
+
+        @Override
+        public String getTaskDefinitionName() {
+            return null;
+        }
+
+        @Override
+        public String getLoggingDriver() {
+            return null;
+        }
+
+        @Override
+        public Map<String, String> getLoggingDriverOpts() {
+            return null;
+        }
+
+        @Override
+        public Map<String, String> getEnvVars() {
+            return null;
         }
     }
 }
