@@ -124,7 +124,7 @@ public class LocalExecRest {
             if (isDockerInDockerImage(t.getImage())) {
                 if (useDockerInDocker) {
                     bambooAgentEnvVars.add("DOCKER_HOST=tcp://" + t.getName() + ":2375");
-                    extra.put("privileged", "true");
+                    extra.put("privileged", true);
                 } else {
                     bambooAgentVolumes.add("/var/run/docker.sock:/var/run/docker.sock");
                     return;
