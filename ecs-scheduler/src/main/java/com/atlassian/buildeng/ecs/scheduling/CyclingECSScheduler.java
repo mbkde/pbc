@@ -449,9 +449,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         if (!cache.isEmpty()) {
             //debugging block
             logger.warn("Hosts with disconnected agent:" + cache.size() + " " + cache.toString());
-            if (oldSize != cache.size()) {
-                eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
-            }
+            //too chatty and datadog cannot filter it out properly
+//            if (oldSize != cache.size()) {
+//                eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
+//            }
         }
         final List<DockerHost> selectedToKill = selectDisconnectedToKill(hosts, cache);
 
