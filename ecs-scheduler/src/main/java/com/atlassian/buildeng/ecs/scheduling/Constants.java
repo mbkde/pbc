@@ -22,10 +22,18 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 public interface Constants {
 
     /**
+     * name of ecs container instance attribute and bamboo server/pbc service system property
+     * that denotes what storage driver to pass to the docker-in-docker daemon.
+     * With DinD it's important to keep storage drivers in sync for inner and outer daemon.
+     * ECS container instance attribute takes precedence if present and is generally recommended.
+     */
+    String STORAGE_DRIVER_PROPERTY = "pbc.dind.storage.driver";
+
+    /**
      * the storage driver used with docker on the ec2 instances in ecs. For docker-in-docker to work
      * we need to use this one in place of the default vfs that is terribly slow.
      */
-    public static String storage_driver = System.getProperty("pbc.dind.storage.driver", "overlay");
+    String storage_driver = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay");
 
     // ECS
 

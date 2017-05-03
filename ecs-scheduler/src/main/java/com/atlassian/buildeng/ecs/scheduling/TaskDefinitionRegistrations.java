@@ -18,7 +18,6 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.Request;
 import com.amazonaws.protocol.json.JsonClientMetadata;
-import com.amazonaws.protocol.json.SdkJsonProtocolFactory;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
@@ -32,7 +31,7 @@ import com.amazonaws.services.ecs.model.Ulimit;
 import com.amazonaws.services.ecs.model.UlimitName;
 import com.amazonaws.services.ecs.model.Volume;
 import com.amazonaws.services.ecs.model.VolumeFrom;
-import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestMarshaller;
+import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestProtocolMarshaller;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -150,7 +149,11 @@ public class TaskDefinitionRegistrations {
     }
 
     private static String createRegisterTaskDefinitionString(Configuration configuration, ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
-        RegisterTaskDefinitionRequestMarshaller rtdm = new RegisterTaskDefinitionRequestMarshaller(new SdkJsonProtocolFactory(new JsonClientMetadata()));
+        RegisterTaskDefinitionRequestProtocolMarshaller rtdm = new RegisterTaskDefinitionRequestProtocolMarshaller(new com.amazonaws.protocol.json.SdkJsonProtocolFactory(
+            new JsonClientMetadata()
+                    .withProtocolVersion("1.1")
+                    .withSupportsCbor(false)
+                    .withSupportsIon(false)));
         Request<RegisterTaskDefinitionRequest> rr = rtdm.marshall(taskDefinitionRequest(configuration, globalConfiguration, env));
         try {
             return Streams.asString(rr.getContent(), "UTF-8");

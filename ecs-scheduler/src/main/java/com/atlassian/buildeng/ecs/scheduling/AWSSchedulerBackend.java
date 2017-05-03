@@ -22,14 +22,18 @@ import com.amazonaws.services.autoscaling.model.DetachInstancesRequest;
 import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.autoscaling.model.SuspendProcessesRequest;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
+import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerOverride;
@@ -187,7 +191,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public void terminateInstances(List<String> instanceIds) throws ECSException {
         try {
-            AmazonEC2Client ec2Client = new AmazonEC2Client();
+            AmazonEC2 ec2Client = AmazonEC2ClientBuilder.defaultClient();
             try {
                 TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
                         new TerminateInstancesRequest(instanceIds));
@@ -222,7 +226,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
 
     private void deregisterInstance(String containerInstanceArn, String cluster) {
-        AmazonECSClient ecsClient = new AmazonECSClient();
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         try {
             ecsClient.deregisterContainerInstance(new DeregisterContainerInstanceRequest()
                     .withCluster(cluster)
@@ -235,19 +239,19 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest request, String taskDefinition) throws ECSException {
+    public SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest request, String taskDefinition) throws ECSException {
         try {
-            AmazonECSClient ecsClient = new AmazonECSClient();
+            AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
             TaskOverride overrides = new TaskOverride();
             ContainerOverride buildResultOverride = new ContainerOverride()
                 .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
-                .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(containerArn))
+                .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(dockerHost.getContainerInstanceArn()))
                 .withEnvironment(new KeyValuePair().withName("QUEUE_TIMESTAMP").withValue("" + request.getQueueTimeStamp()))
                 .withEnvironment(new KeyValuePair().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()))
                 .withName(Constants.AGENT_CONTAINER_NAME);
             overrides.withContainerOverrides(buildResultOverride);
             request.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-                List<String> adjustedCommands = adjustCommands(t);
+                List<String> adjustedCommands = adjustCommands(t, dockerHost);
                 if (!adjustedCommands.isEmpty() || !t.getEnvVariables().isEmpty()) {
                     ContainerOverride ride = new ContainerOverride().withName(t.getName());
                     adjustedCommands.forEach((String t1) -> {
@@ -261,11 +265,11 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             });
             StartTaskResult startTaskResult = ecsClient.startTask(new StartTaskRequest()
                     .withCluster(cluster)
-                    .withContainerInstances(containerArn)
+                    .withContainerInstances(dockerHost.getContainerInstanceArn())
                     .withTaskDefinition(taskDefinition + ":" + request.getRevision())
                     .withOverrides(overrides)
             );
-            return new SchedulingResult(startTaskResult, containerArn);
+            return new SchedulingResult(startTaskResult, dockerHost.getContainerInstanceArn());
         } catch (Exception e) {
             throw new ECSException(e);
         }
@@ -303,7 +307,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Override
     public Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException {
-        AmazonECSClient ecsClient = new AmazonECSClient();
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         try {
             final List<ArnStoppedState> toRet = new ArrayList<>();
             List<List<String>> partitioned = Lists.partition(taskArns, MAXIMUM_TASKS_TO_DESCRIBE);
@@ -346,7 +350,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
      * @param t
      * @return
      */
-    static List<String> adjustCommands(Configuration.ExtraContainer t) {
+    static List<String> adjustCommands(Configuration.ExtraContainer t, DockerHost host) {
         if (TaskDefinitionRegistrations.isDockerInDockerImage(t.getImage())) {
             List<String> cmds = new ArrayList<>(t.getCommands());
             Iterator<String> it = cmds.iterator();
@@ -360,7 +364,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     }
                 }
             }
-            cmds.add("--storage-driver=" + Constants.storage_driver);
+            String driver = StringUtils.defaultIfEmpty(host.getContainerAttribute(Constants.STORAGE_DRIVER_PROPERTY), Constants.storage_driver);
+            cmds.add("--storage-driver=" + driver);
             return cmds;
         }
         return t.getCommands();
