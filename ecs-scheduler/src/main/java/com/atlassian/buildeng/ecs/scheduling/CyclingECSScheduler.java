@@ -155,7 +155,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 Optional<DockerHost> candidate = selectHost(hosts.fresh(), request.getMemory(), request.getCpu(), !consideredRequestIdentifiers.isEmpty());
                 if (candidate.isPresent()) {
                     DockerHost candidateHost = candidate.get();
-                    SchedulingResult schedulingResult = schedulerBackend.schedule(candidateHost.getContainerInstanceArn(), cluster, request, globalConfiguration.getTaskDefinitionName());
+                    SchedulingResult schedulingResult = schedulerBackend.schedule(candidateHost, cluster, request, globalConfiguration.getTaskDefinitionName());
                     hosts.addUsedCandidate(candidateHost);
                     candidateHost.reduceAvailableCpuBy(request.getCpu());
                     candidateHost.reduceAvailableMemoryBy(request.getMemory());

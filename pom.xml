@@ -42,7 +42,7 @@
         <xvfb.enable>true</xvfb.enable>
         <platform.version>3.0.4</platform.version>
         <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
-        <aws-java.version>1.11.42</aws-java.version>
+        <aws-java.version>1.11.125</aws-java.version>
     </properties>
 
     <dependencyManagement>

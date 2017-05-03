@@ -18,7 +18,6 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.amazonaws.services.ecs.model.Task;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Collection;
 import java.util.List;
@@ -71,7 +70,7 @@ public interface SchedulerBackend {
      */
     void terminateInstances(List<String> instanceIds) throws ECSException;
 
-    SchedulingResult schedule(String containerArn, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
+    SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     
     /**
      * describe autoscaling group of given name

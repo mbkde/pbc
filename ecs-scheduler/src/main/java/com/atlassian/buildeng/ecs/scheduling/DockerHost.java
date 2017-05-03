@@ -16,11 +16,13 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ecs.model.Attribute;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -41,6 +43,7 @@ public class DockerHost {
     private final Date launchTime;
     private final boolean agentConnected;
     private boolean presentInASG = true;
+    private final List<Attribute> attributes;
 
     @TestOnly
     DockerHost(int remainingMemory, int remainingCpu, int registeredMemory, int registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, boolean agentConnected, String instanceType) {
@@ -52,6 +55,7 @@ public class DockerHost {
         this.instanceId = instanceId;
         this.launchTime = launchTime;
         this.agentConnected = agentConnected;
+        this.attributes = new ArrayList<>();
     }
 
     public DockerHost(ContainerInstance containerInstance, Instance instance, boolean inASG) throws ECSException {
@@ -64,6 +68,7 @@ public class DockerHost {
         launchTime = instance.getLaunchTime();
         agentConnected = containerInstance.isAgentConnected();
         presentInASG = inASG;
+        attributes = containerInstance.getAttributes();
     }
 
     private static int getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
@@ -184,6 +189,14 @@ public class DockerHost {
         result = 31 * result + (launchTime != null ? launchTime.hashCode() : 0);
         return result;
     }
+
+    public String getContainerAttribute(String name) {
+        return attributes.stream()
+                .filter((Attribute t) -> name.equals(t.getName()))
+                .map((Attribute t) ->  t.getValue())
+                .findFirst().orElse(null);
+    }
+
 
     @Override
     public String toString() {

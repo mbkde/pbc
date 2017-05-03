@@ -518,7 +518,7 @@ public class CyclingECSSchedulerTest {
                 )
         );
         mockASG(Sets.newHashSet("id1", "id2"), backend);
-        when(backend.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenThrow(new ECSException("error3"));
+        when(backend.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = new CyclingECSScheduler(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(19), null), new SchedulingCallback() {
@@ -783,9 +783,9 @@ public class CyclingECSSchedulerTest {
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
         mockASG(asgInstances, mocked);
-        when(mocked.schedule(anyString(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
-            String foo = (String) invocationOnMock.getArguments()[0];
-            return new SchedulingResult(new StartTaskResult(), foo);
+        when(mocked.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
+            DockerHost foo = (DockerHost) invocationOnMock.getArguments()[0];
+            return new SchedulingResult(new StartTaskResult(), foo.getContainerInstanceArn());
         });
         return mocked;
     }
