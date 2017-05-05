@@ -26,10 +26,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:ssh://git@stash.atlassian.com:7997/buildeng/bamboo-isolated-docker.git</connection>
-        <developerConnection>scm:git:ssh://git@stash.atlassian.com:7997/buildeng/bamboo-isolated-docker.git
-        </developerConnection>
-        <url>http://stash.atlassian.com/projects/BUILDENG/repos/bamboo-isolated-docker/browse</url>
+        <connection>scm:git:ssh://git@bitbucket.org:atlassian/per-build-container.git</connection>
+        <developerConnection>scm:git:ssh://git@bitbucket.org:atlassian/per-build-container.git</developerConnection>
+        <url>https://bitbucket.org/atlassian/per-build-container</url>
         <tag>HEAD</tag>
     </scm>
 
