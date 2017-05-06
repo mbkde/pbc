@@ -1,14 +1,9 @@
-FROM python:2.7
+FROM alpine
 MAINTAINER build-team@atlassian.com
 
 ENV DATA_DIR=/buildeng-metrics PSEUDO_ROOT=/host/ PATH=${PATH}:/opt/app
 
-RUN apt-get update && apt-get install -qy --no-install-recommends \
-        librrd-dev \
-        curl \
-        software-properties-common \
-        && rm -rf /var/lib/apt/lists/*
-
+RUN apk add --no-cache py-rrd py-yaml py-pip python
 COPY requirements.txt /opt/app/
 
 RUN pip install -r /opt/app/requirements.txt

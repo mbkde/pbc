@@ -104,7 +104,7 @@ DATA_SOURCES = {
 
 
 redPill = Event()
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone="UTC")
 
 
 def parse_pseudo_file(pseudo_file):
