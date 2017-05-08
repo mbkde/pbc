@@ -17,11 +17,16 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration.ExtraContainer;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -37,6 +42,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -64,6 +71,11 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     //configuration
     static final String KUB_HOST = "https://192.168.99.100:8443";
     static final String NAMESPACE_BAMBOO = "bamboo";
+
+    // The working directory of isolated agents
+    String WORK_DIR = "/buildeng";
+    // The working directory for builds
+    String BUILD_DIR = WORK_DIR + "/bamboo-agent-home/xml-data/build-dir";
 
     
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -106,7 +118,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     private Pod createPod(IsolatedDockerAgentRequest r) {
         Configuration c = r.getConfiguration();
-        PodBuilder pb = new PodBuilder()
+        PodBuilder pb;
+        pb = new PodBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE_BAMBOO)
                 .withName(r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString())
@@ -115,36 +128,59 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             .withNewSpec()
                 .withRestartPolicy("Never")
                 .addNewContainer()
-                    .withName("sidekick")
-                    //more or less same data as regular sidekick, just extending alpine to be able to 
+                    .withName("bamboo-agent-sidekick")
+                    //more or less same data as regular sidekick, just extending alpine to be able to
                     // run shell scripts inside + /kubernetes.sh script to copy to shared directory
                     .withImage("docker.atlassian.io/buildeng/bamboo-agent-sidekick-k8s")
                     //kubernetes fails to pull from docker.a.io and this skips the container. ??
-                    .withImagePullPolicy("Never")
-                    .addNewVolumeMount("/buildeng", "bamboo-agent-sidekick", false)
+                    .withImagePullPolicy("Always")
+                    .addNewVolumeMount("/buildeng-data", "bamboo-agent-sidekick", false, "")
                     //copies data from /buildeng-data to /buildeng + the /buildeng/kubernetes flag file
-                    .withCommand("sh", "-c", "/kubernetes.sh")
+                    .withCommand("sh", "-c", "cp -r /buildeng/* /buildeng-data;touch /buildeng-data/kubernetes")
                 .endContainer()
                 .addNewContainer()
                     .withName(CONTAINER_NAME_BAMBOOAGENT)
                     .withImage(c.getDockerImage())
-//                    .withImagePullPolicy("Never")
-                    .withWorkingDir("/buildeng")
-                // containers in pod don't have startup ordering and don't wait for each other. We need to do manually
+                    .withImagePullPolicy("Always")
+                    .withWorkingDir(WORK_DIR)
+                    // containers in pod don't have startup ordering and don't wait for each other. We need to do manually
                     .withCommand("sh", "-c", "while [ ! -f /buildeng/kubernetes ]; do sleep 1; done; /buildeng/run-agent.sh")
                     .addNewEnv().withName(ENV_VAR_IMAGE).withValue(c.getDockerImage()).endEnv()
                     .addNewEnv().withName(ENV_VAR_RESULT_ID).withValue(r.getResultKey()).endEnv()
                     .addNewEnv().withName(ENV_VAR_SERVER).withValue(admConfAccessor.getAdministrationConfiguration().getBaseUrl()).endEnv()
-                    .addNewVolumeMount("/buildeng", "bamboo-agent-sidekick", false)
+                    .addNewEnv().withName("QUEUE_TIMESTAMP").withValue("" + r.getQueueTimestamp()).endEnv()
+                    .addNewEnv().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()).endEnv()
+                    .addNewVolumeMount(WORK_DIR, "bamboo-agent-sidekick", false, "")
+                    .addNewVolumeMount(BUILD_DIR, "workdir", false, "")
                 .endContainer()
+                .withContainers(createExtraContainers(r.getConfiguration().getExtraContainers()))
                 .addNewVolume()
                     .withName("bamboo-agent-sidekick")
+                    .withNewEmptyDir().endEmptyDir()
+                .endVolume()
+                .addNewVolume()
+                    .withName("workdir")
                     .withNewEmptyDir().endEmptyDir()
                 .endVolume()
             .endSpec();
                 
                         
         return pb.build();
+    }
+
+    private List<Container> createExtraContainers(List<ExtraContainer> extraContainers) {
+        return extraContainers.stream().map((ExtraContainer t) -> {
+            return new ContainerBuilder()
+                .withName(t.getName())
+                .withImage(t.getImage())
+                .withImagePullPolicy("Always")
+                .addNewVolumeMount(BUILD_DIR, "workdir", false, "")
+                .withCommand(t.getCommands())
+                .withEnv(t.getEnvVariables().stream()
+                        .map((Configuration.EnvVariable t1) -> new EnvVarBuilder().withName(t1.getName()).withValue(t1.getValue()).build())
+                        .collect(Collectors.toList()))
+                .build();
+        }).collect(Collectors.toList());
     }
 
     @Override
