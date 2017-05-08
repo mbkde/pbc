@@ -24,8 +24,10 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PodCreator {
@@ -56,14 +58,21 @@ public class PodCreator {
     static final String NAMESPACE_BAMBOO = "bamboo";
 
 
-    static Pod create(IsolatedDockerAgentRequest r, String bambooUrl) {
+    static Pod create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Configuration c = r.getConfiguration();
+        Map<String, String> annotations = new HashMap<>();
+        if (globalConfiguration.getIAMRole() != null) {
+            annotations.put("iam.amazonaws.com/role", globalConfiguration.getIAMRole());
+        }
+        Map<String, String> labels = new HashMap<>();
+        labels.put("pbc.resultId", r.getResultKey());
+        labels.put("pbc.uuid",  r.getUniqueIdentifier().toString());
         PodBuilder pb = new PodBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE_BAMBOO)
                 .withName(r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString())
-                .addToLabels("resultId", r.getResultKey())
-                .addToLabels("uuid", r.getUniqueIdentifier().toString())
+                .withLabels(labels)
+                .withAnnotations(annotations)
             .endMetadata()
             .withNewSpec()
                 .withRestartPolicy("Never")
@@ -71,7 +80,7 @@ public class PodCreator {
                     .withName("bamboo-agent-sidekick")
                     //more or less same data as regular sidekick, just extending alpine to be able to
                     // run shell scripts inside + /kubernetes.sh script to copy to shared directory
-                    .withImage("docker.atlassian.io/buildeng/bamboo-agent-sidekick-k8s")
+                    .withImage(globalConfiguration.getCurrentSidekick())
                     //kubernetes fails to pull from docker.a.io and this skips the container. ??
                     .withImagePullPolicy("Always")
                     .addNewVolumeMount("/buildeng-data", "bamboo-agent-sidekick", false, "")
@@ -87,13 +96,20 @@ public class PodCreator {
                     .withCommand("sh", "-c", "while [ ! -f /buildeng/kubernetes ]; do sleep 1; done; /buildeng/run-agent.sh")
                     .addNewEnv().withName(ENV_VAR_IMAGE).withValue(c.getDockerImage()).endEnv()
                     .addNewEnv().withName(ENV_VAR_RESULT_ID).withValue(r.getResultKey()).endEnv()
-                    .addNewEnv().withName(ENV_VAR_SERVER).withValue(bambooUrl).endEnv()
+                    .addNewEnv().withName(ENV_VAR_SERVER).withValue(globalConfiguration.getBambooBaseUrl()).endEnv()
                     .addNewEnv().withName("QUEUE_TIMESTAMP").withValue("" + r.getQueueTimestamp()).endEnv()
                     .addNewEnv().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()).endEnv()
                     .addNewVolumeMount(WORK_DIR, "bamboo-agent-sidekick", false, "")
                     .addNewVolumeMount(BUILD_DIR, "workdir", false, "")
+                    .withNewResources()
+                        .addToRequests("memory", new Quantity("" + c.getSize().memory() + "Mi"))
+                        .addToLimits("memory", new Quantity("" + (long)(c.getSize().memory()  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"))
+                        .addToRequests("cpu", new Quantity("" + c.getSize().cpu() + "m"))
+//                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
+                    .endResources()
+
                 .endContainer()
-                .withContainers(createExtraContainers(r.getConfiguration().getExtraContainers()))
+                .addAllToContainers(createExtraContainers(r.getConfiguration().getExtraContainers()))
                 .addNewVolume()
                     .withName("bamboo-agent-sidekick")
                     .withNewEmptyDir().endEmptyDir()
@@ -121,7 +137,7 @@ public class PodCreator {
                         .collect(Collectors.toList()))
                 .withNewResources()
                     .addToRequests("memory", new Quantity("" + t.getExtraSize().memory() + "Mi"))
-                    .addToLimits("memory", new Quantity("" + t.getExtraSize().memory()  * SOFT_TO_HARD_LIMIT_RATIO + "Mi"))
+                    .addToLimits("memory", new Quantity("" + (long)(t.getExtraSize().memory()  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"))
                     .addToRequests("cpu", new Quantity("" + t.getExtraSize().cpu() + "m"))
 //                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
                 .endResources()

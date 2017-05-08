@@ -15,7 +15,6 @@
  */
 package com.atlassian.buildeng.kubernetes;
 
-import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
@@ -30,6 +29,7 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
@@ -56,6 +56,23 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
+            Pod pod = PodCreator.create(request, globalConfiguration);
+            Map<String, String> labels = new HashMap<>();
+            labels.put("pbc.resultId", request.getResultKey());
+            labels.put("pbc.uuid",  request.getUniqueIdentifier().toString());
+
+            JobBuilder jb = new JobBuilder()
+                    .withNewMetadata()
+                        .withNamespace(PodCreator.NAMESPACE_BAMBOO)
+                        .withName(request.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + request.getUniqueIdentifier().toString())
+                        .withLabels(labels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withCompletions(1)
+                        .withNewTemplate().withNewSpecLike(pod.getSpec()).endSpec().endTemplate()
+                    .endSpec();
+
+            System.out.println("JB:" + Serialization.asYaml(jb.build()));
         try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
             //TODO only create namespace when creation of pod fails?
             if (!client.namespaces().list().getItems().stream()
@@ -64,18 +81,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 System.out.println("no bamboo namespace, creating");
                 client.namespaces().createNew().withNewMetadata().withName(PodCreator.NAMESPACE_BAMBOO).endMetadata().done();
             }
-            Pod pod = PodCreator.create(request, globalConfiguration.getBambooBaseUrl());
-            JobBuilder jb = new JobBuilder()
-                    .withNewMetadata()
-                        .withNamespace(PodCreator.NAMESPACE_BAMBOO)
-                        .withName(request.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + request.getUniqueIdentifier().toString())
-                    .endMetadata()
-                    .withNewSpec()
-                        .withCompletions(1)
-                        .withNewTemplate().withNewSpecLike(pod.getSpec()).endSpec().endTemplate()
-                    .endSpec();
-
-            System.out.println("POD:" + pod.toString());
             Job job = client.extensions().jobs().inNamespace(PodCreator.NAMESPACE_BAMBOO).create(jb.build());
             //TODO do we extract useful information from the podstatus here?
         }
