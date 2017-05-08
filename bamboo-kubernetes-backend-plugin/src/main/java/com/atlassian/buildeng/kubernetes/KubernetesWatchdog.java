@@ -36,12 +36,12 @@ public class KubernetesWatchdog implements PluginJob {
             //TODO do we want to repeatedly query or 'watch' for changes?
             //client.pods().watch();
             
-            List<Pod> pods = client.pods().inNamespace(KubernetesIsolatedDockerImpl.NAMESPACE_BAMBOO).list().getItems();
+            List<Pod> pods = client.pods().inNamespace(PodCreator.NAMESPACE_BAMBOO).list().getItems();
             List<Pod> agentDied = pods.stream().filter(new Predicate<Pod>() {
                 @Override
                 public boolean test(Pod t) {
                     return t.getStatus().getContainerStatuses().stream()
-                            .filter((ContainerStatus t1) -> KubernetesIsolatedDockerImpl.CONTAINER_NAME_BAMBOOAGENT.equals(t1.getName()))
+                            .filter((ContainerStatus t1) -> PodCreator.CONTAINER_NAME_BAMBOOAGENT.equals(t1.getName()))
                             .filter((ContainerStatus t1) -> t1.getState().getTerminated() != null).findFirst().isPresent();
                 }
             }).collect(Collectors.toList());
