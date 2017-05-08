@@ -45,23 +45,18 @@ import java.util.Map;
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
-    
-    //configuration
-    static final String KUB_HOST = "https://192.168.99.100:8443";
 
-
-    
-    private final AdministrationConfigurationAccessor admConfAccessor;
+    private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
 
-    public KubernetesIsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, PluginScheduler pluginScheduler) {
-        this.admConfAccessor = admConfAccessor;
+    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
         this.pluginScheduler = pluginScheduler;
+        this.globalConfiguration = globalConfiguration;
     }
 
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
-        try (KubernetesClient client = createKubernetesClient()) {
+        try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
             //TODO only create namespace when creation of pod fails?
             if (!client.namespaces().list().getItems().stream()
                     .filter((Namespace t) -> PodCreator.NAMESPACE_BAMBOO.equals(t.getMetadata().getName()))
@@ -69,7 +64,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 System.out.println("no bamboo namespace, creating");
                 client.namespaces().createNew().withNewMetadata().withName(PodCreator.NAMESPACE_BAMBOO).endMetadata().done();
             }
-            Pod pod = PodCreator.create(request, admConfAccessor.getAdministrationConfiguration().getBaseUrl());
+            Pod pod = PodCreator.create(request, globalConfiguration.getBambooBaseUrl());
             JobBuilder jb = new JobBuilder()
                     .withNewMetadata()
                         .withNamespace(PodCreator.NAMESPACE_BAMBOO)
@@ -81,14 +76,14 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                     .endSpec();
 
             System.out.println("POD:" + pod.toString());
-            Job job = client.extensions().jobs().create(jb.build());
+            Job job = client.extensions().jobs().inNamespace(PodCreator.NAMESPACE_BAMBOO).create(jb.build());
             //TODO do we extract useful information from the podstatus here?
         }
     }
 
-    static KubernetesClient createKubernetesClient() throws KubernetesClientException {
+    static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration) throws KubernetesClientException {
         Config config = new ConfigBuilder()
-                .withMasterUrl(KUB_HOST)
+                .withMasterUrl(globalConfiguration.getKubernetesURL())
                 .build();
         KubernetesClient client = new DefaultKubernetesClient(config);
         return client;
@@ -102,6 +97,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @Override
     public void onStart() {
         Map<String, Object> config = new HashMap<>();
+        config.put("globalConfiguration", globalConfiguration);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
 

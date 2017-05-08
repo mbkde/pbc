@@ -16,6 +16,7 @@
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.sal.api.scheduling.PluginJob;
+import static com.google.common.base.Preconditions.checkNotNull;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -32,7 +33,8 @@ public class KubernetesWatchdog implements PluginJob {
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
-        try (KubernetesClient client = KubernetesIsolatedDockerImpl.createKubernetesClient()) {
+        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
+        try (KubernetesClient client = KubernetesIsolatedDockerImpl.createKubernetesClient(globalConfiguration)) {
             //TODO do we want to repeatedly query or 'watch' for changes?
             //client.pods().watch();
             
@@ -52,6 +54,10 @@ public class KubernetesWatchdog implements PluginJob {
             }
             
         }
+    }
+    protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
+        final Object obj = checkNotNull(jobDataMap.get(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
+        return type.cast(obj);
     }
     
 }

@@ -45,8 +45,8 @@ public class Rest {
     @Path("/config")
     public Response getConfig() {
         Config c = new Config();
-        c.setAwsRole(configuration.getCurrentRole());
-        c.setServerUrl(configuration.getCurrentServer());
+        c.setAwsRole(configuration.getIAMRole());
+        c.setServerUrl(configuration.getKubernetesURL());
         c.setSidekickImage(configuration.getCurrentSidekick());
         return Response.ok(c).build();
     }
