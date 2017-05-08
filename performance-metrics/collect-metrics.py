@@ -8,6 +8,9 @@ import signal
 import time
 import yaml
 import stat
+import json
+import urllib
+import urllib2
 
 from multiprocessing import Process
 
@@ -15,10 +18,13 @@ from threading import Event
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
+#ec2host is expected to be ecs ec2 host name passed into the docker container
+#TODO should ec2host be env variable or parameter?
+introspection_url = 'http://ec2host:51678/v1/tasks?dockerid='
 
 # Data is collected every X seconds
 STEP_SIZE_IN_SEC = 5
-CLEAN_UP_INTERVAL = 30
+CLEAN_UP_INTERVAL = 600
 
 # Timeout between two updates before the value is considered unknown.
 HEARTBEAT_IN_SEC = STEP_SIZE_IN_SEC * 2
@@ -98,7 +104,7 @@ DATA_SOURCES = {
 
 
 redPill = Event()
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone="UTC")
 
 
 def parse_pseudo_file(pseudo_file):
@@ -178,21 +184,29 @@ def record_data(container):
         os.chmod(container_data_path, stat.S_ISVTX | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         record_time_to_file(container_data_path, 'start.txt')
     if not os.path.isfile(os.path.join(container_data_path, 'arn')):
-        os.system('docker inspect --format \'{{index .Config.Labels "com.amazonaws.ecs.task-arn"}}||{{index .Config.Labels "com.amazonaws.ecs.container-name"}}\' ' + container + ' > ' + os.path.join(container_data_path, 'arn'))
-        with open(os.path.join(container_data_path, 'arn'), 'r') as f:
-            task_map = f.read().strip() # docker adds a newline
-            if task_map != '||':
-                # from: arn:aws:ecs:us-east-1:960714566901:task/c5dc732d-ac78-4b54-bd6c-9a41355fc678||bamboo-agent
-                # task: c5dc732d-ac78-4b54-bd6c-9a41355fc678
-                task = task_map.split('||')[0].split('/')[1]
-                # container_name:   bamboo-agent
-                container_name = task_map.split('||')[1]
-                task_dir = os.path.join(DATA_DIR, "tasks", task)
+        try:
+            response = urllib2.urlopen(introspection_url  + container)
+            response_json = json.loads(response.read().decode('utf-8'))
+            task = response_json['Arn']
+            container_name = 'XXX'
+            containers_json = response_json['Containers']
+            for container_json in containers_json:
+                if container_json['DockerId'] == container:
+                    container_name = container_json['Name']
+                    break
+            if container_name is not 'XXX':
+                with open(os.path.join(container_data_path, 'arn'), 'w') as f:
+                    f.write(task + '||' + container_name)
+                task_dir = os.path.join(DATA_DIR, "tasks", task.split('/')[1])
                 if not os.path.exists(task_dir):
                     os.makedirs(task_dir)
                 os.symlink('../../containers/'+container, os.path.join(task_dir, container_name))
                 # Also create a reciprocal symlink from the container back to the task
-                os.symlink(os.path.join('../../tasks/', task), os.path.join(container_data_path, 'task_symlink'))
+                os.symlink(os.path.join('../../tasks/', task.split('/')[1]), os.path.join(container_data_path, 'task_symlink'))
+        except urllib2.HTTPError as e:
+            ## the service returns 404 on unknown docker id
+            with open(os.path.join(container_data_path, 'arn'), 'w') as f:
+                f.write('||')
 
     else:
         if not os.path.isfile(os.path.join(container_data_path, 'stop')):
