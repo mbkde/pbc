@@ -21,6 +21,8 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.JobBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Config;
@@ -33,6 +35,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -67,8 +70,18 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 client.namespaces().createNew().withNewMetadata().withName(PodCreator.NAMESPACE_BAMBOO).endMetadata().done();
             }
             Pod pod = PodCreator.create(request, admConfAccessor.getAdministrationConfiguration().getBaseUrl());
+            JobBuilder jb = new JobBuilder()
+                    .withNewMetadata()
+                        .withNamespace(PodCreator.NAMESPACE_BAMBOO)
+                        .withName(request.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + request.getUniqueIdentifier().toString())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withCompletions(1)
+                        .withNewTemplate().withNewSpecLike(pod.getSpec()).endSpec().endTemplate()
+                    .endSpec();
+
             System.out.println("POD:" + pod.toString());
-            pod = client.pods().create(pod);
+            Job job = client.extensions().jobs().create(jb.build());
             //TODO do we extract useful information from the podstatus here?
         }
     }
