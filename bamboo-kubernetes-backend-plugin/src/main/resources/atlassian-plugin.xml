@@ -27,12 +27,42 @@ limitations under the License.
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
-    
+
+    <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.GlobalConfiguration">
+    </component>
+
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
     </component-import>
     
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+
+    <!-- REST resources -->
+    <rest key="pbc-kubernetes" path="/pbc-kubernetes" version="1.0">
+        <description>Provides the REST resource</description>
+    </rest>
+
+    <web-resource key="aui-stuff">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+
+        <resource type="download" name="viewKubernetesConfiguration.js" location="/viewKubernetesConfiguration.js"/>
+        <context>viewKubernetesConfiguration</context>
+    </web-resource>
+
+    <web-item key="kubernetes-config" name="Configure ECS Kubernetes Backend" section="system.admin/plugins" weight="296">
+        <description key="kubernetes-config-link.desc"/>
+        <label key="kubernetes-config-link.label"/>
+        <link linkId="kubernetes-config-link">/admin/viewKubernetesConfiguration.action</link>
+    </web-item>
+
+    <xwork key="kubernetes-configuration" name="Configure ECS Kubernetes Backend">
+        <package name="kubernetesConfiguration" extends="admin">
+            <action name="viewKubernetesConfiguration" class="com.atlassian.buildeng.kubernetes.ConfigurationAction">
+                <result name="success" type="freemarker">/config/kubernetesConfig.ftl</result>
+            </action>
+        </package>
+    </xwork>
 
 </atlassian-plugin>
