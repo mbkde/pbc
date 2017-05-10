@@ -32,6 +32,13 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             </div>
         </div>
         <div class="field-group">
+            <label for="namespaceToUse">Kubernetes Namespace</label>
+            <input type="text" class="text long-field" id="namespaceToUse"></input>
+            <div class="description" id="desc-namespaceToUse">
+                Schedule agents in this Kubernetes namespace
+            </div>
+        </div>
+        <div class="field-group">
             <label for="roleToUse">AWS IAM Role to use</label>
             <input type="text" class="text long-field" id="roleToUse"</input>
             <div class="description" id="desc-roleToUse">

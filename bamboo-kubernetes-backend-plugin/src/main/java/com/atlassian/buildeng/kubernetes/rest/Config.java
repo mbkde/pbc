@@ -21,14 +21,16 @@ public class Config {
     public String sidekickImage;
     public String serverUrl;
     public String awsRole;
+    public String namespace;
 
     public Config() {
     }
 
-    public Config(String sidekickImage, String serverUrl, String awsRole) {
+    public Config(String sidekickImage, String serverUrl, String awsRole, String namespace) {
         this.sidekickImage = sidekickImage;
         this.serverUrl = serverUrl;
         this.awsRole = awsRole;
+        this.namespace = namespace;
     }
 
     public String getSidekickImage() {
@@ -55,5 +57,14 @@ public class Config {
         this.awsRole = awsRole;
     }
 
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    
 
 }

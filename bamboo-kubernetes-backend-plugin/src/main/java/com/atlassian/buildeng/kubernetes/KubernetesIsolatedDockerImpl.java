@@ -62,8 +62,9 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             labels.put("pbc.uuid",  request.getUniqueIdentifier().toString());
 
             JobBuilder jb = new JobBuilder()
+                    .withApiVersion("batch/v1")
                     .withNewMetadata()
-                        .withNamespace(PodCreator.NAMESPACE_BAMBOO)
+                        .withNamespace(globalConfiguration.getKubernetesNamespace())
                         .withName(request.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + request.getUniqueIdentifier().toString())
                         .withLabels(labels)
                     .endMetadata()
@@ -72,17 +73,19 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                         .withNewTemplate().withNewSpecLike(pod.getSpec()).endSpec().endTemplate()
                     .endSpec();
 
-            System.out.println("JB:" + Serialization.asYaml(jb.build()));
+            System.out.println("Pod:" + Serialization.asYaml(pod));
         try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
-            //TODO only create namespace when creation of pod fails?
-            if (!client.namespaces().list().getItems().stream()
-                    .filter((Namespace t) -> PodCreator.NAMESPACE_BAMBOO.equals(t.getMetadata().getName()))
-                    .findFirst().isPresent()) {
-                System.out.println("no bamboo namespace, creating");
-                client.namespaces().createNew().withNewMetadata().withName(PodCreator.NAMESPACE_BAMBOO).endMetadata().done();
-            }
-            Job job = client.extensions().jobs().inNamespace(PodCreator.NAMESPACE_BAMBOO).create(jb.build());
-            //TODO do we extract useful information from the podstatus here?
+                //TODO only create namespace when creation of pod fails?
+//            if (!client.namespaces().list().getItems().stream()
+//                    .filter((Namespace t) -> PodCreator.NAMESPACE_BAMBOO.equals(t.getMetadata().getName()))
+//                    .findFirst().isPresent()) {
+//                System.out.println("no bamboo namespace, creating");
+////                client.namespaces().createNew().withNewMetadata().withName(PodCreator.NAMESPACE_BAMBOO).endMetadata().done();
+//            }
+                Pod podd = client.pods().create(pod);
+                System.out.println("podd=" + podd);
+//            Job job = client.extensions().jobs().inNamespace(PodCreator.NAMESPACE_BAMBOO).create(jb.build());
+                //TODO do we extract useful information from the podstatus here?
         }
     }
 

@@ -48,6 +48,7 @@ public class Rest {
         c.setAwsRole(configuration.getIAMRole());
         c.setServerUrl(configuration.getKubernetesURL());
         c.setSidekickImage(configuration.getCurrentSidekick());
+        c.setNamespace(configuration.getKubernetesNamespace());
         return Response.ok(c).build();
     }
 
@@ -62,7 +63,10 @@ public class Rest {
         if (StringUtils.isBlank(config.getSidekickImage())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
         }
-        configuration.persist(config.getSidekickImage(), config.getAwsRole(), config.getServerUrl());
+        if (StringUtils.isBlank(config.getNamespace())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("namespace is mandatory").build();
+        }
+        configuration.persist(config.getSidekickImage(), config.getAwsRole(), config.getServerUrl(), config.getNamespace());
         return Response.noContent().build();
     }
 }

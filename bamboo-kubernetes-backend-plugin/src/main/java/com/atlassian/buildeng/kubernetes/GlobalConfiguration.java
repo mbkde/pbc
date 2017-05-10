@@ -28,6 +28,7 @@ public class GlobalConfiguration {
     static String BANDANA_AWS_ROLE_KEY = "com.atlassian.buildeng.pbc.kubernetes.awsrole";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
     static String BANDANA_SERVER_URL_KEY = "com.atlassian.buildeng.pbc.kubernetes.server";
+    static String BANDANA_NAMESPACE_KEY = "com.atlassian.buildeng.pbc.kubernetes.namespace";
 
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -53,15 +54,21 @@ public class GlobalConfiguration {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY);
     }
 
-    public synchronized void persist(@Nullable String sidekick, @Nullable String awsRole, String url) {
+    public synchronized String getKubernetesNamespace() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_NAMESPACE_KEY);
+    }
+
+    public synchronized void persist(String sidekick, @Nullable String awsRole, String url, String namespace) {
         Preconditions.checkArgument(StringUtils.isNotBlank(url));
+        Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
+        Preconditions.checkArgument(StringUtils.isNotBlank(namespace));
         if (StringUtils.isBlank(awsRole)) {
             bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
         } else {
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, awsRole);
         }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_NAMESPACE_KEY, namespace);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, url);
     }
-
 }

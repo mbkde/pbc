@@ -55,7 +55,6 @@ public class PodCreator {
     static final Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
     
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
-    static final String NAMESPACE_BAMBOO = "bamboo";
 
 
     static Pod create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
@@ -65,11 +64,12 @@ public class PodCreator {
             annotations.put("iam.amazonaws.com/role", globalConfiguration.getIAMRole());
         }
         Map<String, String> labels = new HashMap<>();
+        labels.put("pbc", "true");
         labels.put("pbc.resultId", r.getResultKey());
         labels.put("pbc.uuid",  r.getUniqueIdentifier().toString());
         PodBuilder pb = new PodBuilder()
             .withNewMetadata()
-                .withNamespace(NAMESPACE_BAMBOO)
+                .withNamespace(globalConfiguration.getKubernetesNamespace())
                 .withName(r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString())
                 .withLabels(labels)
                 .withAnnotations(annotations)

@@ -32,6 +32,7 @@
         AJS.$("#serviceUrl").val(response.serverUrl);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#roleToUse").val(response.awsRole);
+        AJS.$("#namespaceToUse").val(response.namespace);
     }
 
     function setRemoteConfig() {
@@ -39,6 +40,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.awsRole = AJS.$("#roleToUse").val().trim();
         config.serverUrl = AJS.$("#serviceUrl").val().trim();
+        config.namespace = AJS.$("#namespaceToUse").val().trim();
 
         updateStatus("Saving...");
 
