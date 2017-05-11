@@ -20,14 +20,18 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class PodCreator {
@@ -67,6 +71,22 @@ public class PodCreator {
         labels.put("pbc", "true");
         labels.put("pbc.resultId", r.getResultKey());
         labels.put("pbc.uuid",  r.getUniqueIdentifier().toString());
+        List<EnvVar> mainContainerExtraEnvVars = new ArrayList<>();
+        Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream().filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage())).findFirst();
+        if (optDind.isPresent()) {
+            EnvVar var = new EnvVar();
+            var.setName("DOCKER_HOST");
+            var.setValue("tcp://" + optDind.get().getName() + ":2375");
+            mainContainerExtraEnvVars.add(var);
+        }
+        //compatibility with ecs, each extra containe has a hostname
+        final ExecActionBuilder readinessProbe = new ExecActionBuilder().addToCommand("/bin/bash", "-c");
+        StringBuilder cmd = new StringBuilder("if [ -f /buildeng/touch ]; then { echo exists;} else {");
+        r.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
+            cmd.append(" echo '127.0.0.1 ").append(t.getName()).append("' >> /etc/hosts; ");
+        });
+        cmd.append(" touch /buildeng/touch; } fi");
+        readinessProbe.addToCommand(cmd.toString());
         PodBuilder pb = new PodBuilder()
             .withNewMetadata()
                 .withNamespace(globalConfiguration.getKubernetesNamespace())
@@ -99,6 +119,7 @@ public class PodCreator {
                     .addNewEnv().withName(ENV_VAR_SERVER).withValue(globalConfiguration.getBambooBaseUrl()).endEnv()
                     .addNewEnv().withName("QUEUE_TIMESTAMP").withValue("" + r.getQueueTimestamp()).endEnv()
                     .addNewEnv().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()).endEnv()
+                    .addAllToEnv(mainContainerExtraEnvVars)
                     .addNewVolumeMount(WORK_DIR, "bamboo-agent-sidekick", false, "")
                     .addNewVolumeMount(BUILD_DIR, "workdir", false, "")
                     .withNewResources()
@@ -107,7 +128,11 @@ public class PodCreator {
                         .addToRequests("cpu", new Quantity("" + c.getSize().cpu() + "m"))
 //                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
                     .endResources()
-
+                    .editOrNewReadinessProbe()
+                        .withPeriodSeconds(100)
+                        .withInitialDelaySeconds(5)
+                        .withExec(readinessProbe.build())
+                    .endReadinessProbe()
                 .endContainer()
                 .addAllToContainers(createExtraContainers(r.getConfiguration().getExtraContainers()))
                 .addNewVolume()
@@ -122,6 +147,10 @@ public class PodCreator {
 
 
         return pb.build();
+    }
+
+    public static boolean isDockerInDockerImage(String image) {
+        return image.startsWith("docker:") && image.endsWith("dind");
     }
 
     private static List<Container> createExtraContainers(List<Configuration.ExtraContainer> extraContainers) {
@@ -141,7 +170,9 @@ public class PodCreator {
                     .addToRequests("cpu", new Quantity("" + t.getExtraSize().cpu() + "m"))
 //                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
                 .endResources()
-
+                .withNewSecurityContext()
+                    .withPrivileged(isDockerInDockerImage(t.getImage()))
+                .endSecurityContext()
                 .build();
         }).collect(Collectors.toList());
     }
