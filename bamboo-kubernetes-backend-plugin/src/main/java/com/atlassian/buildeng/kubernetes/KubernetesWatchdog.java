@@ -20,9 +20,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.LogWatch;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -37,8 +41,8 @@ public class KubernetesWatchdog implements PluginJob {
         try (KubernetesClient client = KubernetesIsolatedDockerImpl.createKubernetesClient(globalConfiguration)) {
             //TODO do we want to repeatedly query or 'watch' for changes?
             //client.pods().watch();
-            
-            List<Pod> pods = client.pods().inNamespace(PodCreator.NAMESPACE_BAMBOO).list().getItems();
+            System.out.println("watchdog");
+            List<Pod> pods = client.pods().inNamespace(globalConfiguration.getKubernetesNamespace()).list().getItems();
             List<Pod> agentDied = pods.stream().filter(new Predicate<Pod>() {
                 @Override
                 public boolean test(Pod t) {
@@ -48,9 +52,17 @@ public class KubernetesWatchdog implements PluginJob {
                 }
             }).collect(Collectors.toList());
             if (!agentDied.isEmpty()) {
-                System.out.println("agents died, remove pods");
+                System.out.println("agents died, remove pods:" + Serialization.asYaml(agentDied));
+//                for (Pod dead : agentDied) {
+//                    LogWatch watch = client.pods().inNamespace(globalConfiguration.getKubernetesNamespace()).withName(dead.getMetadata().getName()).tailingLines(100).watchLog(System.out);
+//                }
+//                try {
+//                    Thread.sleep(20000);
+//                } catch (InterruptedException ex) {
+//                    Logger.getLogger(KubernetesWatchdog.class.getName()).log(Level.SEVERE, null, ex);
+//                }
                 client.pods().delete(agentDied);
-                //TODO if job still queued, remove from bamboo queue. + add error
+//                TODO if job still queued, remove from bamboo queue. + add error
             }
             
         }
