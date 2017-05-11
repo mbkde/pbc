@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.ExecAction;
 import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -33,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PodCreator {
     /**
@@ -79,14 +81,7 @@ public class PodCreator {
             var.setValue("tcp://" + optDind.get().getName() + ":2375");
             mainContainerExtraEnvVars.add(var);
         }
-        //compatibility with ecs, each extra containe has a hostname
-        final ExecActionBuilder readinessProbe = new ExecActionBuilder().addToCommand("/bin/bash", "-c");
-        StringBuilder cmd = new StringBuilder("if [ -f /buildeng/touch ]; then { echo exists;} else {");
-        r.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-            cmd.append(" echo '127.0.0.1 ").append(t.getName()).append("' >> /etc/hosts; ");
-        });
-        cmd.append(" touch /buildeng/touch; } fi");
-        readinessProbe.addToCommand(cmd.toString());
+
         PodBuilder pb = new PodBuilder()
             .withNewMetadata()
                 .withNamespace(globalConfiguration.getKubernetesNamespace())
@@ -131,10 +126,10 @@ public class PodCreator {
                     .editOrNewReadinessProbe()
                         .withPeriodSeconds(100)
                         .withInitialDelaySeconds(5)
-                        .withExec(readinessProbe.build())
+                        .withExec(hostNameModificationExecAction(r.getConfiguration(), CONTAINER_NAME_BAMBOOAGENT))
                     .endReadinessProbe()
                 .endContainer()
-                .addAllToContainers(createExtraContainers(r.getConfiguration().getExtraContainers()))
+                .addAllToContainers(createExtraContainers(r.getConfiguration()))
                 .addNewVolume()
                     .withName("bamboo-agent-sidekick")
                     .withNewEmptyDir().endEmptyDir()
@@ -153,8 +148,8 @@ public class PodCreator {
         return image.startsWith("docker:") && image.endsWith("dind");
     }
 
-    private static List<Container> createExtraContainers(List<Configuration.ExtraContainer> extraContainers) {
-        return extraContainers.stream().map((Configuration.ExtraContainer t) -> {
+    private static List<Container> createExtraContainers(Configuration c) {
+        return c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
             return new ContainerBuilder()
                 .withName(t.getName())
                 .withImage(t.getImage())
@@ -170,6 +165,12 @@ public class PodCreator {
                     .addToRequests("cpu", new Quantity("" + t.getExtraSize().cpu() + "m"))
 //                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
                 .endResources()
+                    .editOrNewReadinessProbe()
+                        .withPeriodSeconds(100)
+                        .withInitialDelaySeconds(5)
+                        .withExec(hostNameModificationExecAction(c, CONTAINER_NAME_BAMBOOAGENT))
+                    .endReadinessProbe()
+
                 .withNewSecurityContext()
                     .withPrivileged(isDockerInDockerImage(t.getImage()))
                 .endSecurityContext()
@@ -177,4 +178,21 @@ public class PodCreator {
         }).collect(Collectors.toList());
     }
 
+    private static List<String> containerNames(Configuration config) {
+        return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT), config.getExtraContainers().stream().map(t -> t.getName()))
+                .collect(Collectors.toList());
+    }
+
+    private static ExecAction hostNameModificationExecAction(Configuration c, String currentName) {
+        //compatibility with ecs, each extra container has a hostname
+        final ExecActionBuilder readinessProbeExec = new ExecActionBuilder().addToCommand("/bin/sh", "-c");
+        StringBuilder cmd = new StringBuilder();
+        cmd.append("if [ -f /buildeng/touch-").append(currentName).append(" ]; then { echo exists;} else {");
+        containerNames(c).forEach(t -> {
+            cmd.append(" echo '127.0.0.1 ").append(t).append("' >> /etc/hosts; ");
+        });
+        cmd.append(" mkdir -p /buildeng; touch /buildeng/touch-").append(currentName).append("; } fi");
+        readinessProbeExec.addToCommand(cmd.toString());
+        return readinessProbeExec.build();
+    }
 }
