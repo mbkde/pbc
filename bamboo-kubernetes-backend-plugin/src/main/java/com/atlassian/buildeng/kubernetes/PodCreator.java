@@ -124,7 +124,7 @@ public class PodCreator {
 //                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
                     .endResources()
                     .editOrNewReadinessProbe()
-                        .withPeriodSeconds(100)
+                        .withPeriodSeconds(5)
                         .withInitialDelaySeconds(5)
                         .withExec(hostNameModificationExecAction(r.getConfiguration(), CONTAINER_NAME_BAMBOOAGENT))
                     .endReadinessProbe()
@@ -166,9 +166,9 @@ public class PodCreator {
 //                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
                 .endResources()
                     .editOrNewReadinessProbe()
-                        .withPeriodSeconds(100)
+                        .withPeriodSeconds(5)
                         .withInitialDelaySeconds(5)
-                        .withExec(hostNameModificationExecAction(c, CONTAINER_NAME_BAMBOOAGENT))
+                        .withExec(hostNameModificationExecAction(c, t.getName()))
                     .endReadinessProbe()
 
                 .withNewSecurityContext()
@@ -187,11 +187,11 @@ public class PodCreator {
         //compatibility with ecs, each extra container has a hostname
         final ExecActionBuilder readinessProbeExec = new ExecActionBuilder().addToCommand("/bin/sh", "-c");
         StringBuilder cmd = new StringBuilder();
-        cmd.append("if [ -f /buildeng/touch-").append(currentName).append(" ]; then { echo exists;} else {");
+        cmd.append("if [ -f /touch-").append(currentName).append(" ]; then { echo exists;} else {");
         containerNames(c).forEach(t -> {
             cmd.append(" echo '127.0.0.1 ").append(t).append("' >> /etc/hosts; ");
         });
-        cmd.append(" mkdir -p /buildeng; touch /buildeng/touch-").append(currentName).append("; } fi");
+        cmd.append(" touch /touch-").append(currentName).append("; } fi");
         readinessProbeExec.addToCommand(cmd.toString());
         return readinessProbeExec.build();
     }
