@@ -248,6 +248,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(dockerHost.getContainerInstanceArn()))
                 .withEnvironment(new KeyValuePair().withName("QUEUE_TIMESTAMP").withValue("" + request.getQueueTimeStamp()))
                 .withEnvironment(new KeyValuePair().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()))
+                .withEnvironment(new KeyValuePair().withName("RESULT_UUID").withValue(request.getIdentifier().toString()))
                 .withName(Constants.AGENT_CONTAINER_NAME);
             overrides.withContainerOverrides(buildResultOverride);
             request.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
