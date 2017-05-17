@@ -31,6 +31,7 @@ import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
@@ -100,11 +101,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 s = e.getResponse().getEntity(String.class);
             }
             logger.error("Error contacting ECS:" + code + " " + s, e);
-            if (code == 504) { //gateway timeout
+            if (code == 504 || code == 503) { //gateway timeout/Service Unavailable
                 callback.handle(new IsolatedDockerAgentResult().withRetryRecoverable(s));
             } else {
                 callback.handle(new IsolatedDockerAgentException(e));
             }
+        } catch (ClientHandlerException che) {
+            logger.error("Error connecting to ECS:", che);
+            callback.handle(new IsolatedDockerAgentResult().withRetryRecoverable(che.getMessage()));
         } catch (Throwable t) {
             logger.error("unknown error", t);
             callback.handle(new IsolatedDockerAgentException(t));
