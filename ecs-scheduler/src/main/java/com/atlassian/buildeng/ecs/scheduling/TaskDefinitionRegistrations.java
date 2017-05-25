@@ -277,9 +277,7 @@ public class TaskDefinitionRegistrations {
     }
 
     public static String sanitizeImageName(String image) {
-        StringBuilder out = new StringBuilder();
-        image.chars().filter((int codepoint) -> !Character.isWhitespace(codepoint)).forEach(out::appendCodePoint);
-        return out.toString();
+        return image.trim();
     }
 
 }
