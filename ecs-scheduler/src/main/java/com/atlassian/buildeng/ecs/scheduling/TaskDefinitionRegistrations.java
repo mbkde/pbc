@@ -105,7 +105,7 @@ public class TaskDefinitionRegistrations {
                         .withCpu(configuration.getSize().cpu())
                         .withMemoryReservation(configuration.getSize().memory())
                         .withMemory((int) (configuration.getSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
-                        .withImage(configuration.getDockerImage())
+                        .withImage(sanitizeImageName(configuration.getDockerImage()))
                         .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
                         .withEntryPoint(Constants.RUN_SCRIPT)
                         .withWorkingDirectory(Constants.WORK_DIR)
@@ -123,8 +123,8 @@ public class TaskDefinitionRegistrations {
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()
-                    .withName(t.getName())
-                    .withImage(t.getImage())
+                    .withName(sanitizeImageName(t.getName()))
+                    .withImage(sanitizeImageName(t.getImage()))
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
                     .withMemory((int) (t.getExtraSize().memory() * Constants.SOFT_TO_HARD_LIMIT_RATIO))
@@ -276,5 +276,8 @@ public class TaskDefinitionRegistrations {
         return getEnvVarValue(t, Constants.ENV_VAR_PBC_EXTRA_LINKS);
     }
 
+    public static String sanitizeImageName(String image) {
+        return image.trim();
+    }
 
 }

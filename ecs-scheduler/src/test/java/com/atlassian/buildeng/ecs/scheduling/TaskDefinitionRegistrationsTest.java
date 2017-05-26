@@ -25,6 +25,8 @@ import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
+
+import static com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations.sanitizeImageName;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -109,7 +111,12 @@ public class TaskDefinitionRegistrationsTest {
         assertEquals(-1, notExisting);
 
     }
-    
+
+    @Test
+    public void sanitizeTest() throws Exception {
+        assertEquals("image:tag", sanitizeImageName("\t\n\f\r image:tag\t\n\f\r "));
+    }
+
     public static class TaskDefinitionRegistrationsSubclass extends TaskDefinitionRegistrations {
         AmazonECS ecsClient = mock(AmazonECS.class);
         
