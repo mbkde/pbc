@@ -123,7 +123,7 @@ public class TaskDefinitionRegistrations {
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()
-                    .withName(t.getName())
+                    .withName(sanitizeImageName(t.getName()))
                     .withImage(sanitizeImageName(t.getImage()))
                     .withCpu(t.getExtraSize().cpu())
                     .withMemoryReservation(t.getExtraSize().memory())
