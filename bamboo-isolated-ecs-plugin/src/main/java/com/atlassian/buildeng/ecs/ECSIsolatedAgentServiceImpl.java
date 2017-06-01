@@ -18,7 +18,6 @@ package com.atlassian.buildeng.ecs;
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
@@ -82,7 +81,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         if (revision == -1) {
             try {
                 revision = taskDefRegistrations.registerDockerImage(req.getConfiguration(), globalConfiguration);
-            } catch (ImageAlreadyRegisteredException | ECSException ex) {
+            } catch (ECSException ex) {
                 logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
                 //Have to catch some of the exceptions here instead of the callback to use retries.
                 if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
