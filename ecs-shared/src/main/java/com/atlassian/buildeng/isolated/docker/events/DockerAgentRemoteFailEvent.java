@@ -64,7 +64,7 @@ public final class DockerAgentRemoteFailEvent {
         return sb.toString();
     }
 
-    private String escape(String text) {
+    static String escape(String text) {
         return text.replace("\\", "\\\\")
                    .replace("`", "\\`")
                    .replace("*", "\\*")
