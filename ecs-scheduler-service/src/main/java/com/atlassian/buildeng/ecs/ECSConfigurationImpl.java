@@ -22,6 +22,7 @@ import com.google.common.base.Splitter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.lang3.StringUtils;
@@ -39,8 +40,8 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     private final String cluster;
     private final String asg;
     private final String taskDefinitionName;
-    private Map<String, Integer> ecsTaskMapping = new HashMap<>();
-    private Map<Configuration, Integer> configurationMapping = new HashMap<>();
+    private Map<String, Integer> ecsTaskMapping = new ConcurrentHashMap<>();
+    private Map<Configuration, Integer> configurationMapping = new ConcurrentHashMap<>();
     private final String logDriver;
     private final Map<String, String> logOptionsMap;
 

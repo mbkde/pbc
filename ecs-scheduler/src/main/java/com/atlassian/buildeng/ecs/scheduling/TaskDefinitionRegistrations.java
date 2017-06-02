@@ -33,7 +33,6 @@ import com.amazonaws.services.ecs.model.Volume;
 import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestProtocolMarshaller;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 import com.google.common.annotations.VisibleForTesting;
@@ -55,6 +54,7 @@ public class TaskDefinitionRegistrations {
         return image.startsWith("docker:") && image.endsWith("dind");
     }
 
+    //TODO this should be refactored to no expose the internal structure at all.
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
         Map<String, Integer> getAllECSTaskRegistrations();
@@ -168,19 +168,22 @@ public class TaskDefinitionRegistrations {
      * @param configuration The configuration to register
      * @return The internal identifier for the registered image.
      */
-    public int registerDockerImage(Configuration configuration, BambooServerEnvironment env) throws ImageAlreadyRegisteredException, ECSException {
-        Map<String, Integer> registrationMappings = backend.getAllECSTaskRegistrations();
-        String newReg = createRegisterTaskDefinitionString(configuration, ecsConfiguration, env);
-        if (registrationMappings.containsKey(newReg)) {
-            throw new ImageAlreadyRegisteredException(configuration.getDockerImage());
-        }
+    private static final Object registerLock = new Object();
+    public int registerDockerImage(Configuration configuration, BambooServerEnvironment env) throws ECSException {
+        synchronized (registerLock) {
+            Map<String, Integer> registrationMappings = backend.getAllECSTaskRegistrations();
+            String newReg = createRegisterTaskDefinitionString(configuration, ecsConfiguration, env);
+            if (registrationMappings.containsKey(newReg)) {
+                return registrationMappings.get(newReg);
+            }
 
-        Map<Configuration, Integer> dockerMappings = backend.getAllRegistrations();
-        Integer revision = registerDockerImageECS(configuration, env);
-        dockerMappings.put(configuration, revision);
-        registrationMappings.put(newReg, revision);
-        backend.persistDockerMappingsConfiguration(dockerMappings, registrationMappings);
-        return revision;
+            Map<Configuration, Integer> dockerMappings = backend.getAllRegistrations();
+            Integer revision = registerDockerImageECS(configuration, env);
+            dockerMappings.put(configuration, revision);
+            registrationMappings.put(newReg, revision);
+            backend.persistDockerMappingsConfiguration(dockerMappings, registrationMappings);
+            return revision;
+        }
     }
     
     private Integer registerDockerImageECS(Configuration configuration, BambooServerEnvironment env) throws ECSException {

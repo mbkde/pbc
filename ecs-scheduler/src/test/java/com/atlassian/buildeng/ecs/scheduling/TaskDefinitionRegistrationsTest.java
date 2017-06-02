@@ -19,7 +19,6 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-import com.atlassian.buildeng.ecs.exceptions.ImageAlreadyRegisteredException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.HashMap;
@@ -77,18 +76,16 @@ public class TaskDefinitionRegistrationsTest {
             int val = regs.registerDockerImage(c, env);
             Assert.assertEquals(4, val);
             Assert.assertEquals(4, regs.findTaskRegistrationVersion(c, env));
-        } catch (ImageAlreadyRegisteredException | ECSException ex) {
+        } catch (ECSException ex) {
             Assert.fail(ex.getMessage());
         }
         
         //next time round we should not add anything.
         try {
             int val = regs.registerDockerImage(c, env);
-            Assert.fail("Cannot add the same config twice");
+            Assert.assertEquals(4, val);
         } catch (ECSException ex) {
             Assert.fail(ex.getMessage());
-        } catch (ImageAlreadyRegisteredException ex) {
-            //correct path
         }
     }
 
