@@ -270,7 +270,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withTaskDefinition(taskDefinition + ":" + request.getRevision())
                     .withOverrides(overrides)
             );
-            return new SchedulingResult(startTaskResult, dockerHost.getContainerInstanceArn());
+            return new SchedulingResult(startTaskResult, dockerHost.getContainerInstanceArn(), dockerHost.getInstanceId());
         } catch (Exception e) {
             throw new ECSException(e);
         }

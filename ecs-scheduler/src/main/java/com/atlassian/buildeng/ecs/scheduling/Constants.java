@@ -84,6 +84,8 @@ public interface Constants {
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs_container_arn";
 
     String RESULT_PART_TASKARN = "TaskARN";
+    String RESULT_PART_EC2_INSTANCEID = "EC2InstanceId";
+    String RESULT_PART_ECS_CONTAINERARN = "ECSContainerARN";
 
     // Ratio between soft and hard limits
     Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;

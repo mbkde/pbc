@@ -44,6 +44,8 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
         StartTaskResult startTaskResult = schedulingResult.getStartTaskResult();
         startTaskResult.getTasks().stream().findFirst().ifPresent((com.amazonaws.services.ecs.model.Task t) -> {
             toRet.withCustomResultData(Constants.RESULT_PART_TASKARN, t.getTaskArn());
+            toRet.withCustomResultData(Constants.RESULT_PART_EC2_INSTANCEID, schedulingResult.getEc2InstanceId());
+            toRet.withCustomResultData(Constants.RESULT_PART_ECS_CONTAINERARN, schedulingResult.getContainerArn());
         });
         logger.info("ECS Returned: {}", startTaskResult);
         List<Failure> failures = startTaskResult.getFailures();
