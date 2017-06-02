@@ -785,7 +785,7 @@ public class CyclingECSSchedulerTest {
         mockASG(asgInstances, mocked);
         when(mocked.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             DockerHost foo = (DockerHost) invocationOnMock.getArguments()[0];
-            return new SchedulingResult(new StartTaskResult(), foo.getContainerInstanceArn());
+            return new SchedulingResult(new StartTaskResult(), foo.getContainerInstanceArn(), foo.getInstanceId());
         });
         return mocked;
     }

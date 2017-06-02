@@ -19,11 +19,13 @@ import com.amazonaws.services.ecs.model.StartTaskResult;
 
 public class SchedulingResult {
     private final StartTaskResult startTaskResult;
-    private String containerArn;
+    private final String containerArn;
+    private final String ec2InstanceId;
 
-    public SchedulingResult(StartTaskResult startTaskResult, String containerArn) {
+    public SchedulingResult(StartTaskResult startTaskResult, String containerArn, String ec2InstanceId) {
         this.startTaskResult = startTaskResult;
         this.containerArn = containerArn;
+        this.ec2InstanceId = ec2InstanceId;
     }
 
     public StartTaskResult getStartTaskResult() {
@@ -32,5 +34,9 @@ public class SchedulingResult {
 
     public String getContainerArn() {
         return containerArn;
+    }
+
+    public String getEc2InstanceId() {
+        return ec2InstanceId;
     }
 }
