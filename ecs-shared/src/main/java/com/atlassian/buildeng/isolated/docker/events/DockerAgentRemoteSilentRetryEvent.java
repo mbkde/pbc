@@ -38,14 +38,16 @@ public final class DockerAgentRemoteSilentRetryEvent {
 
     @Override
     public String toString() {
-        return "DockerAgentRemoteSilentRetryEvent{" + "errorMessage=" + escapeMarkdown(errorMessage) + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn + "}";
-    }
-
-    String escapeMarkdown(String message) {
         if (DockerAgentRemoteFailEvent.ddmarkdown) {
-            return DockerAgentRemoteFailEvent.escape(message);
+            //http://docs.datadoghq.com/guides/markdown/
+            return "%%% \\n" +
+                    "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n" +
+                    "Container ARN:" + containerArn + "\\n" +
+                    DockerAgentRemoteFailEvent.escape(errorMessage) + "\\n" +
+                    "\\n %%%";
         }
-        return message;
+
+        return "DockerAgentRemoteSilentRetryEvent{" + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn + "}";
     }
     
 }
