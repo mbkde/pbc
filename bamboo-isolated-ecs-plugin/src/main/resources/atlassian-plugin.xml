@@ -49,6 +49,10 @@ limitations under the License.
         <interface>com.atlassian.buildeng.ecs.scheduling.SchedulerBackend</interface>
     </component>
 
+    <component key="modelLoader" class="com.atlassian.buildeng.ecs.scheduling.AwsPullModelLoader">
+        <interface>com.atlassian.buildeng.ecs.scheduling.ModelLoader</interface>
+    </component>
+
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
     <!-- REST resources -->

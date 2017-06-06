@@ -20,8 +20,10 @@ import com.atlassian.buildeng.ecs.resources.SchedulerResource;
 import com.atlassian.buildeng.ecs.resources.HeartBeatResource;
 import com.atlassian.buildeng.ecs.resources.LogsResource;
 import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
+import com.atlassian.buildeng.ecs.scheduling.AwsPullModelLoader;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.ModelLoader;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.event.api.EventPublisher;
@@ -94,6 +96,7 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
                 bind(ECSConfiguration.class).to(ECSConfigurationImpl.class);
                 bind(ECSScheduler.class).to(CyclingECSScheduler.class);
                 bind(SchedulerBackend.class).to(AWSSchedulerBackend.class);
+                bind(ModelLoader.class).to(AwsPullModelLoader.class);
                 bind(TaskDefinitionRegistrations.Backend.class).to(ECSConfigurationImpl.class);
 
                 Names.bindProperties(binder(), props);

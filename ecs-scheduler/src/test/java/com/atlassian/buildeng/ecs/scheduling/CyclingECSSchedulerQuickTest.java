@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
@@ -75,7 +76,8 @@ public class CyclingECSSchedulerQuickTest {
     }
 
     @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
-        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(new AWSSchedulerBackend(), new TestECSConfigurationImpl(), new EventPublisher() {
+        final AWSSchedulerBackend awsSchedulerBackend = new AWSSchedulerBackend();
+        final EventPublisher eventPublisher = new EventPublisher() {
             @Override
             public void publish(Object event) {
             }
@@ -91,8 +93,11 @@ public class CyclingECSSchedulerQuickTest {
             @Override
             public void unregisterAll() {
             }
-        });
-        DockerHosts hosts = new DockerHosts(allHosts,Duration.ofDays(1));
+        };
+        final TestECSConfigurationImpl testECSConfigurationImpl = new TestECSConfigurationImpl();
+
+        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(awsSchedulerBackend, testECSConfigurationImpl, eventPublisher, new AwsPullModelLoader(awsSchedulerBackend, eventPublisher, testECSConfigurationImpl));
+        DockerHosts hosts = new DockerHosts(allHosts, Duration.ofDays(1), new AutoScalingGroup());
         List<DockerHost> selectedHosts = ecsScheduler.selectToTerminate(hosts);
         if (allHosts.isEmpty()) {
             // If we have nothing to potentially terminate, we shouldn't select anything

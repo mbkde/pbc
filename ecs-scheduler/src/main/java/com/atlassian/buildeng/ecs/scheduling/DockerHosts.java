@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 
@@ -27,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-final class DockerHosts {
+public final class DockerHosts {
 
     private final Collection<DockerHost> usable;
     private final Set<DockerHost> usedCandidates = new HashSet<>();
@@ -35,14 +36,15 @@ final class DockerHosts {
     private final List<DockerHost> freshHosts;
     private final List<DockerHost> unusedStaleHosts;
     private final Collection<DockerHost> agentDisconnected;
+    private final AutoScalingGroup asg;
 
-    @VisibleForTesting
-    public DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod) {
+    DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod, AutoScalingGroup asg) {
         usable = allHosts.stream().filter((DockerHost t) -> t.getAgentConnected()).collect(Collectors.toList());
         agentDisconnected = allHosts.stream().filter((DockerHost t) -> !t.getAgentConnected()).collect(Collectors.toSet());
         Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(usable, stalePeriod);
         freshHosts = partitionedHosts.get(true);
         unusedStaleHosts = unusedStaleInstances(partitionedHosts.get(false));
+        this.asg = asg;
     }
 
     public void addUsedCandidate(DockerHost host) {
@@ -97,6 +99,10 @@ final class DockerHosts {
     private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
         // Java pls
         return dockerHosts.stream().collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.isPresentInASG() && dockerHost.ageMillis() < stalePeriod.toMillis()));
+    }
+
+    AutoScalingGroup getASG() {
+        return asg;
     }
 
 }
