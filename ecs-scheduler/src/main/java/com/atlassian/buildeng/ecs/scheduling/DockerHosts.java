@@ -16,7 +16,6 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
-import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 
 import java.util.ArrayList;
@@ -37,14 +36,16 @@ public final class DockerHosts {
     private final List<DockerHost> unusedStaleHosts;
     private final Collection<DockerHost> agentDisconnected;
     private final AutoScalingGroup asg;
+    private final String clusterName;
 
-    DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod, AutoScalingGroup asg) {
+    DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod, AutoScalingGroup asg, String clusterName) {
         usable = allHosts.stream().filter((DockerHost t) -> t.getAgentConnected()).collect(Collectors.toList());
         agentDisconnected = allHosts.stream().filter((DockerHost t) -> !t.getAgentConnected()).collect(Collectors.toSet());
         Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(usable, stalePeriod);
         freshHosts = partitionedHosts.get(true);
         unusedStaleHosts = unusedStaleInstances(partitionedHosts.get(false));
         this.asg = asg;
+        this.clusterName = clusterName;
     }
 
     public void addUsedCandidate(DockerHost host) {
@@ -105,4 +106,11 @@ public final class DockerHosts {
         return asg;
     }
 
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    String getASGName() {
+        return asg.getAutoScalingGroupName();
+    }
 }

@@ -53,6 +53,10 @@ limitations under the License.
         <interface>com.atlassian.buildeng.ecs.scheduling.ModelLoader</interface>
     </component>
 
+    <component key="modelUpdater" class="com.atlassian.buildeng.ecs.scheduling.DefaultModelUpdater">
+        <interface>com.atlassian.buildeng.ecs.scheduling.ModelUpdater</interface>
+    </component>
+
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
     <!-- REST resources -->

@@ -142,7 +142,7 @@ public final class AwsPullModelLoader implements ModelLoader {
                     });
             logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})", asgInstances.size(), containerInstances.size());
         }
-        return new DockerHosts(dockerHosts.values(), stalePeriod, asg);
+        return new DockerHosts(dockerHosts.values(), stalePeriod, asg, cluster);
     }
 
 

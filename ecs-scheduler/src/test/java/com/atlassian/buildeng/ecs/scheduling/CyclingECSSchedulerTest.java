@@ -618,7 +618,7 @@ public class CyclingECSSchedulerTest {
     private void populateDisconnectedCacheWithRipeHosts(CyclingECSScheduler scheduler) throws ECSException {
         DockerHosts hosts = scheduler.modelLoader.load("", "");
         for (DockerHost disc : hosts.agentDisconnected()) {
-            scheduler.disconnectedAgentsCache.put(disc, new Date(new Date().getTime() - 1000 * 60 * 2 * CyclingECSScheduler.TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT));
+            ((DefaultModelUpdater)scheduler.modelUpdater).disconnectedAgentsCache.put(disc, new Date(new Date().getTime() - 1000 * 60 * 2 * DefaultModelUpdater.TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT));
         }
     }
     
@@ -777,7 +777,8 @@ public class CyclingECSSchedulerTest {
 
     private CyclingECSScheduler create(SchedulerBackend backend, ECSConfiguration globalConfig, EventPublisher eventPublisher) {
         AwsPullModelLoader loader = new AwsPullModelLoader(backend, eventPublisher, globalConfig);
-        return new CyclingECSScheduler(backend, mockGlobalConfig(), eventPublisher, loader);
+        DefaultModelUpdater updater = new DefaultModelUpdater(backend, eventPublisher);
+        return new CyclingECSScheduler(backend, mockGlobalConfig(), loader, updater);
     }
     
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances) throws ECSException {

@@ -94,11 +94,9 @@ public class CyclingECSSchedulerQuickTest {
             public void unregisterAll() {
             }
         };
-        final TestECSConfigurationImpl testECSConfigurationImpl = new TestECSConfigurationImpl();
-
-        CyclingECSScheduler ecsScheduler = new CyclingECSScheduler(awsSchedulerBackend, testECSConfigurationImpl, eventPublisher, new AwsPullModelLoader(awsSchedulerBackend, eventPublisher, testECSConfigurationImpl));
-        DockerHosts hosts = new DockerHosts(allHosts, Duration.ofDays(1), new AutoScalingGroup());
-        List<DockerHost> selectedHosts = ecsScheduler.selectToTerminate(hosts);
+        DefaultModelUpdater dmu = new DefaultModelUpdater(awsSchedulerBackend, eventPublisher);
+        DockerHosts hosts = new DockerHosts(allHosts, Duration.ofDays(1), new AutoScalingGroup(), "cn");
+        List<DockerHost> selectedHosts = dmu.selectToTerminate(hosts);
         if (allHosts.isEmpty()) {
             // If we have nothing to potentially terminate, we shouldn't select anything
             assertTrue(selectedHosts.isEmpty());
