@@ -16,6 +16,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ClientException;
+import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.logs.AwsLogs;
@@ -143,6 +144,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 c.getExtraContainers().stream().map(ec -> ec.getImage()));
     }
 
+    @Override
+    public void reserveCapacity(BuildKey buildKey, int stageIndex, long memoryCapacity, long cpuCapacity) {
+
+        ecsScheduler.reserveCapacity(new ReserveRequest(buildKey.getKey(), "" + stageIndex +  + "-" + buildKey.getKey(), memoryCapacity, cpuCapacity));
+    }
 
     @Override
     public void onStart() {

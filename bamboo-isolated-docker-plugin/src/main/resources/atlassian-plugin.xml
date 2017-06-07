@@ -30,6 +30,11 @@ limitations under the License.
         <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </preBuildAction>
 
+<!-- Job that communicates with the predator service to get the global config into the build context -->
+    <preJobAction key="test" class="com.atlassian.buildeng.isolated.docker.lifecycle.Test">
+    </preJobAction>
+
+
     <buildProcessor key="stopContainerAgent" name="Stop Container Agent"
                     class="com.atlassian.buildeng.isolated.docker.lifecycle.StopDockerAgentBuildProcessor">
         <skipIfFailed>false</skipIfFailed>

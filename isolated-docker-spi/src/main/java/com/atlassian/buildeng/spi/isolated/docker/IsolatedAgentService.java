@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.v2.build.BuildKey;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +47,16 @@ public interface IsolatedAgentService {
     @NotNull
     default Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         return Collections.emptyMap();
+    }
+
+    /**
+     * optional way to announce future requirements
+     * @param buildKey
+     * @param stageIndex
+     * @param memoryCapacity
+     * @param cpuCapacity
+     */
+    default void reserveCapacity(BuildKey buildKey, int stageIndex, long memoryCapacity, long cpuCapacity) {
     }
 
 }
