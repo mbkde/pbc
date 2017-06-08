@@ -23,6 +23,7 @@ public final class IsolatedDockerAgentRequest {
     private final String resultKey;
     private final UUID uniqueIdentifier;
     private final long queueTimestamp;
+    private final String buildKey;
 
     /**
      * @param configuration
@@ -30,11 +31,12 @@ public final class IsolatedDockerAgentRequest {
      * @param uniqueIdentifier - something to uniquely identifier the request with
      * @param originalQueingTimestamp - timestamp of when the job was originally queued in bamboo. Only relevant for monitoring purposes.
      */
-    public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier, long originalQueingTimestamp) {
+    public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier, long originalQueingTimestamp, String buildKey) {
         this.configuration = configuration;
         this.resultKey = resultKey;
         this.uniqueIdentifier = uniqueIdentifier;
         this.queueTimestamp = originalQueingTimestamp;
+        this.buildKey = buildKey;
     }
 
     public Configuration getConfiguration() {
@@ -52,4 +54,9 @@ public final class IsolatedDockerAgentRequest {
     public long getQueueTimestamp() {
         return queueTimestamp;
     }
+
+    public String getBuildKey() {
+        return buildKey;
+    }
+
 }

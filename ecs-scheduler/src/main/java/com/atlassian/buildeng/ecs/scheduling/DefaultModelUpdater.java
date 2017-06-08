@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -58,9 +59,9 @@ public class DefaultModelUpdater implements ModelUpdater {
 
 
     @Override
-    public void scaleDown(DockerHosts hosts) {
+    public void scaleDown(DockerHosts hosts, long futureReservations) {
         terminateDisconnectedInstances(hosts);
-        terminateInstances(selectToTerminate(hosts), hosts.getASGName(), true, hosts.getClusterName());
+        terminateInstances(selectToTerminate(hosts, futureReservations), hosts.getASGName(), true, hosts.getClusterName());
     }
 
     @Override
@@ -71,16 +72,25 @@ public class DefaultModelUpdater implements ModelUpdater {
         int desiredScaleSize = currentSize;
         if (req.isSomeDiscarded()) {
             // cpu and memory requirements in instances
-            long cpuRequirements = req.getLackingCPU() / computeInstanceCPULimits(hosts.allUsable());
-            long memoryRequirements = req.getLackingMemory() / computeInstanceMemoryLimits(hosts.allUsable());
+            long cpuRequirements = 1 + req.getLackingCPU() / computeInstanceCPULimits(hosts.allUsable());
+            long memoryRequirements = 1 + req.getLackingMemory() / computeInstanceMemoryLimits(hosts.allUsable());
             logger.info("Scaling w.r.t. this much cpu " + req.getLackingCPU());
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
-            long extraRequired = Math.max(1, Math.max(cpuRequirements, memoryRequirements));
+            long extraRequired = Math.max(cpuRequirements, memoryRequirements);
 
             desiredScaleSize += extraRequired;
         }
-        int terminatedCount = terminateInstances(selectToTerminate(hosts), hosts.getASGName(), true, hosts.getClusterName());
+        //TODO only sums up free space, but it could be just unusable tiny pieces on
+        // many instance, maybe we should ignore pieces that are smaller than SMALL agent size
+        long freeMem = computeFreeCapacityMemory(hosts.allUsable());
+        if (freeMem < req.getFutureReservations()) {
+            long memoryRequirements = 1 + req.getFutureReservations() / computeInstanceMemoryLimits(hosts.allUsable());
+            logger.info("Scaling w.r.t. this much future memory " + req.getFutureReservations());
+            desiredScaleSize += memoryRequirements;
+        }
+
+        int terminatedCount = terminateInstances(selectToTerminate(hosts, req.getFutureReservations()), hosts.getASGName(), true, hosts.getClusterName());
         desiredScaleSize = desiredScaleSize - terminatedCount;
         //we are reducing the currentSize by the terminated list because that's
         //what the terminateInstances method should reduce it to.
@@ -140,7 +150,7 @@ public class DefaultModelUpdater implements ModelUpdater {
                 .collect(Collectors.toList());
     }
 
-    List<DockerHost> selectToTerminate(DockerHosts hosts) {
+    List<DockerHost> selectToTerminate(DockerHosts hosts, long futureReservations) {
         List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .collect(Collectors.toList());
         if (toTerminate.isEmpty()) {
@@ -155,8 +165,11 @@ public class DefaultModelUpdater implements ModelUpdater {
         //keep certain overcapacity around
         List<DockerHost> notTerminating = new ArrayList<>(hosts.allUsable());
         notTerminating.removeAll(toTerminate);
-        long free = computeFreeCapacityMemory(notTerminating);
+        long free = computeFreeCapacityMemory(notTerminating) - futureReservations;
         long cap = computeMaxCapacityMemory(notTerminating);
+        if (free < 0) {
+            return Collections.emptyList();
+        }
         double freeRatio = (double)free / cap;
         while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
             DockerHost host = toTerminate.remove(0);
@@ -245,6 +258,4 @@ public class DefaultModelUpdater implements ModelUpdater {
         return cache;
     }
 
-
-   
 }

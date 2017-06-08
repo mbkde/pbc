@@ -108,7 +108,7 @@ public class SchedulerResource {
                 return;
             }
         }
-        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision, s.getConfiguration(), s.getQueueTimestamp());
+        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision, s.getConfiguration(), s.getQueueTimestamp(), s.getBuildKey());
         DefaultSchedulingCallback dsc = new DefaultSchedulingCallback(new IsolatedDockerRequestCallback() {
             @Override
             public void handle(IsolatedDockerAgentResult result) {

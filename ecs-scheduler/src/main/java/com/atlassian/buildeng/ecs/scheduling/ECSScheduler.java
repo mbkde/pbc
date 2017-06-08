@@ -22,5 +22,5 @@ public interface ECSScheduler {
      */
     void schedule(SchedulingRequest request, SchedulingCallback callback);
 
-    public void reserveCapacity(ReserveRequest req);
+    void reserveFutureCapacity(ReserveRequest req);
 }

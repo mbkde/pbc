@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
+import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
@@ -154,6 +155,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
+    public void reserveCapacity(BuildKey buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+        //TODO
+    }
+
+    @Override
     public void onStart() {
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
@@ -174,6 +180,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         root.addProperty("bambooServer", globalConfiguration.getBambooBaseUrl());
         root.addProperty("sidekick", globalConfiguration.getCurrentSidekick());
         root.addProperty("taskARN", globalConfiguration.getCurrentRole());
+        root.addProperty("buildKey", request.getBuildKey());
         root.add("hostFolderMappings", generateHostFolderMappings());
         root.add("configuration", ConfigurationPersistence.toJson(request.getConfiguration()));
         return root.toString();

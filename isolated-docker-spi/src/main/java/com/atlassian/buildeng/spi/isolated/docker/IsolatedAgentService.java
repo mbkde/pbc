@@ -52,11 +52,11 @@ public interface IsolatedAgentService {
     /**
      * optional way to announce future requirements
      * @param buildKey
-     * @param stageIndex
-     * @param memoryCapacity
-     * @param cpuCapacity
+     * @param jobResultKeys
+     * @param excessMemoryCapacity
+     * @param excessCpuCapacity
      */
-    default void reserveCapacity(BuildKey buildKey, int stageIndex, long memoryCapacity, long cpuCapacity) {
+    default void reserveCapacity(BuildKey buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
     }
 
 }

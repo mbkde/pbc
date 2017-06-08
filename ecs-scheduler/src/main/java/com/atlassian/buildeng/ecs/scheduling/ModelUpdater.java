@@ -19,18 +19,20 @@ public interface ModelUpdater {
 
     void updateModel(DockerHosts hosts, State req);
 
-    void scaleDown(DockerHosts hosts);
+    void scaleDown(DockerHosts hosts, long futureReservations);
 
     public static final class State {
 
         private final long lackingCPU;
         private final long lackingMemory;
         private final boolean someDiscarded;
+        private final long futureReservations;
 
-        public State(long lackingCPU, long lackingMemory, boolean someDiscarded) {
+        State(long lackingCPU, long lackingMemory, boolean someDiscarded, long futureReservations) {
             this.lackingCPU = lackingCPU;
             this.lackingMemory = lackingMemory;
             this.someDiscarded = someDiscarded;
+            this.futureReservations = futureReservations;
         }
 
         public long getLackingCPU() {
@@ -43,6 +45,10 @@ public interface ModelUpdater {
 
         public boolean isSomeDiscarded() {
             return someDiscarded;
+        }
+
+        public long getFutureReservations() {
+            return futureReservations;
         }
 
     }

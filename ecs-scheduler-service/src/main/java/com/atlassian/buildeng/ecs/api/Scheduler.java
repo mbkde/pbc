@@ -69,6 +69,10 @@ public class Scheduler {
             if (queueTimestamp != null) {
                 scheduler.setQueueTimestamp(queueTimestamp.getAsLong());
             }
+            JsonPrimitive buildKey = oo.getAsJsonPrimitive("buildKey");
+            if (buildKey != null) {
+                scheduler.setBuildKey(buildKey.getAsString());
+            }
             return scheduler;
         }
         throw new IllegalArgumentException("Wrong format!");
@@ -81,6 +85,7 @@ public class Scheduler {
     private final Configuration configuration;
     private long queueTimestamp = -1;
     private final List<HostFolderMapping> hostFolderMappings;
+    private String buildKey = "none";
 
     public Scheduler(String uuid, String resultId, String server, String sidekick, 
             Configuration configuration, List<HostFolderMapping> mappings) {
@@ -127,6 +132,14 @@ public class Scheduler {
 
     public void setQueueTimestamp(long queueTimestamp) {
         this.queueTimestamp = queueTimestamp;
+    }
+
+    public String getBuildKey() {
+        return buildKey;
+    }
+
+    public void setBuildKey(String buildKey) {
+        this.buildKey = buildKey;
     }
 
     public List<HostFolderMapping> getHostFolderMappings() {

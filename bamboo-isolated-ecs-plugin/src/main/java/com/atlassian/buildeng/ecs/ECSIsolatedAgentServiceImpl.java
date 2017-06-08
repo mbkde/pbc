@@ -21,6 +21,7 @@ import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.logs.AwsLogs;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.ReserveRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
@@ -101,7 +102,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 resultId,
                 revision,
                 req.getConfiguration(),
-                req.getQueueTimestamp());
+                req.getQueueTimestamp(),
+                req.getBuildKey());
         ecsScheduler.schedule(schedulingRequest, new DefaultSchedulingCallback(callback, resultId));
     }
     
@@ -145,9 +147,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public void reserveCapacity(BuildKey buildKey, int stageIndex, long memoryCapacity, long cpuCapacity) {
-
-        ecsScheduler.reserveCapacity(new ReserveRequest(buildKey.getKey(), "" + stageIndex +  + "-" + buildKey.getKey(), memoryCapacity, cpuCapacity));
+    public void reserveCapacity(BuildKey buildKey, List<String> jobResultKeys, long memoryCapacity, long cpuCapacity) {
+        ecsScheduler.reserveFutureCapacity(new ReserveRequest(buildKey.getKey(), jobResultKeys, memoryCapacity, cpuCapacity));
     }
 
     @Override

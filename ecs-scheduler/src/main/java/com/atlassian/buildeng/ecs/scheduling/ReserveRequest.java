@@ -16,27 +16,32 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
+import java.util.List;
+import java.util.Objects;
+
 public class ReserveRequest {
-    private final String groupIdentifier;
-    private final String uniqueIndentifier;
+    private final String buildKey;
     private final long cpuReservation;
     private final long memoryReservation;
+    private final long creationTimestamp;
+    private final List<String> resultKeys;
 
-    public ReserveRequest(String groupIdentifier, String uniqueIndentifier, long cpuReservation, long memoryReservation) {
-        this.groupIdentifier = groupIdentifier;
-        this.uniqueIndentifier = uniqueIndentifier;
+    public ReserveRequest(String groupIdentifier, List<String> resultKeys, long cpuReservation, long memoryReservation) {
+        this.buildKey = groupIdentifier;
         this.cpuReservation = cpuReservation;
         this.memoryReservation = memoryReservation;
+        this.resultKeys = resultKeys;
+        this.creationTimestamp = System.currentTimeMillis();
     }
 
-    public String getGroupIdentifier() {
-        return groupIdentifier;
+    public String getBuildKey() {
+        return buildKey;
     }
 
-    public String getUniqueIndentifier() {
-        return uniqueIndentifier;
+    public List<String> getResultKeys() {
+        return resultKeys;
     }
-
+    
     public long getCpuReservation() {
         return cpuReservation;
     }
@@ -44,6 +49,45 @@ public class ReserveRequest {
     public long getMemoryReservation() {
         return memoryReservation;
     }
+
+    public long getCreationTimestamp() {
+        return creationTimestamp;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + Objects.hashCode(this.buildKey);
+        hash = 31 * hash + (int) (this.cpuReservation ^ (this.cpuReservation >>> 32));
+        hash = 31 * hash + (int) (this.memoryReservation ^ (this.memoryReservation >>> 32));
+        hash = 31 * hash + Objects.hashCode(this.resultKeys);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ReserveRequest other = (ReserveRequest) obj;
+        if (this.cpuReservation != other.cpuReservation) {
+            return false;
+        }
+        if (this.memoryReservation != other.memoryReservation) {
+            return false;
+        }
+        if (!Objects.equals(this.buildKey, other.buildKey)) {
+            return false;
+        }
+        return Objects.equals(this.resultKeys, other.resultKeys);
+    }
+
 
 
 }
