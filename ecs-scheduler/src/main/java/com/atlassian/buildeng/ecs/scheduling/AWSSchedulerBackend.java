@@ -58,7 +58,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -86,7 +89,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
             // Get containerInstanceArns
             boolean finished = false;
-            Collection<String> containerInstanceArns = new ArrayList<>();
+            List<String> containerInstanceArns = new ArrayList<>();
             while (!finished) {
                 ListContainerInstancesResult listContainerInstancesResult = ecsClient.listContainerInstances(listReq);
                 containerInstanceArns.addAll(listContainerInstancesResult.getContainerInstanceArns());
@@ -101,11 +104,12 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             if (containerInstanceArns.isEmpty()) {
                 return Collections.emptyList();
             } else {
-                DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
-                        .withCluster(cluster)
-                        .withContainerInstances(containerInstanceArns);
-                return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream()
-                        .collect(Collectors.toList());
+                return Lists.partition(containerInstanceArns, 99).stream().flatMap((List<String> t) -> {
+                    DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
+                            .withCluster(cluster)
+                            .withContainerInstances(t);
+                    return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream();
+                }).collect(Collectors.toList());
             }
         } catch (Exception ex) {
             throw new ECSException(ex);

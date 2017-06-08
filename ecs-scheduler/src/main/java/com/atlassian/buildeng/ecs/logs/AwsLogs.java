@@ -57,7 +57,7 @@ public class AwsLogs {
             while (response != null) {
                 response.getEvents().forEach((OutputLogEvent t) -> {
                     if (t.getTimestamp() != null) {
-                        writer.write(DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(t.getTimestamp())));
+                        writer.write(DateFormat.getTimeInstance(DateFormat.MEDIUM).format(new Date(t.getTimestamp())));
                         writer.write(" ");
                     }
                     writer.write(t.getMessage());
