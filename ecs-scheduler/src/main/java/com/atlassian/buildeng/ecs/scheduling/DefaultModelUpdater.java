@@ -59,9 +59,9 @@ public class DefaultModelUpdater implements ModelUpdater {
 
 
     @Override
-    public void scaleDown(DockerHosts hosts, long futureReservations) {
+    public void scaleDown(DockerHosts hosts, State req) {
         terminateDisconnectedInstances(hosts);
-        terminateInstances(selectToTerminate(hosts, futureReservations), hosts.getASGName(), true, hosts.getClusterName());
+        terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
     }
 
     @Override
@@ -74,7 +74,7 @@ public class DefaultModelUpdater implements ModelUpdater {
             // cpu and memory requirements in instances
             long cpuRequirements = 1 + req.getLackingCPU() / computeInstanceCPULimits(hosts.allUsable());
             long memoryRequirements = 1 + req.getLackingMemory() / computeInstanceMemoryLimits(hosts.allUsable());
-            logger.info("Scaling w.r.t. this much cpu " + req.getLackingCPU());
+            logger.info("Scaling w.r.t. this much cpu/memory {} {} ", req.getLackingCPU(), req.getLackingMemory());
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
             long extraRequired = Math.max(cpuRequirements, memoryRequirements);
@@ -84,13 +84,18 @@ public class DefaultModelUpdater implements ModelUpdater {
         //TODO only sums up free space, but it could be just unusable tiny pieces on
         // many instance, maybe we should ignore pieces that are smaller than SMALL agent size
         long freeMem = computeFreeCapacityMemory(hosts.allUsable());
-        if (freeMem < req.getFutureReservations()) {
-            long memoryRequirements = 1 + req.getFutureReservations() / computeInstanceMemoryLimits(hosts.allUsable());
-            logger.info("Scaling w.r.t. this much future memory " + req.getFutureReservations());
-            desiredScaleSize += memoryRequirements;
+        long freeCpu = computeFreeCapacityCPU(hosts.allUsable());
+        logger.debug("freeMem:" + freeMem + " reservedMem:" + req.getFutureReservationMemory());
+        logger.debug("freeCpu:" + freeCpu + " reservedCpu:" + req.getFutureReservationCPU());
+        if (freeMem < req.getFutureReservationMemory() || freeCpu < req.getFutureReservationCPU()) {
+            long memoryRequirements = 1 + (req.getFutureReservationMemory() - freeMem) / computeInstanceMemoryLimits(hosts.allUsable());
+            long cpuRequirements = 1 + (req.getFutureReservationCPU() - freeCpu) / computeInstanceCPULimits(hosts.allUsable());
+            logger.info("Scaling w.r.t. this much future CPU/memory {} {}", req.getFutureReservationCPU(), req.getFutureReservationMemory());
+            desiredScaleSize += Math.max(cpuRequirements, memoryRequirements);
+            logger.info("desired size: " + desiredScaleSize  + " cpuReq:" + cpuRequirements + " memReq:" + memoryRequirements);
         }
 
-        int terminatedCount = terminateInstances(selectToTerminate(hosts, req.getFutureReservations()), hosts.getASGName(), true, hosts.getClusterName());
+        int terminatedCount = terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
         desiredScaleSize = desiredScaleSize - terminatedCount;
         //we are reducing the currentSize by the terminated list because that's
         //what the terminateInstances method should reduce it to.
@@ -150,7 +155,7 @@ public class DefaultModelUpdater implements ModelUpdater {
                 .collect(Collectors.toList());
     }
 
-    List<DockerHost> selectToTerminate(DockerHosts hosts, long futureReservations) {
+    List<DockerHost> selectToTerminate(DockerHosts hosts, State req) {
         List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .collect(Collectors.toList());
         if (toTerminate.isEmpty()) {
@@ -165,17 +170,21 @@ public class DefaultModelUpdater implements ModelUpdater {
         //keep certain overcapacity around
         List<DockerHost> notTerminating = new ArrayList<>(hosts.allUsable());
         notTerminating.removeAll(toTerminate);
-        long free = computeFreeCapacityMemory(notTerminating) - futureReservations;
-        long cap = computeMaxCapacityMemory(notTerminating);
-        if (free < 0) {
+        long freeMem = computeFreeCapacityMemory(notTerminating) - req.getFutureReservationMemory();
+        long capMem = computeMaxCapacityMemory(notTerminating);
+        long freeCpu = computeFreeCapacityCPU(notTerminating) - req.getFutureReservationCPU();
+        long capCpu = computeMaxCapacityCPU(notTerminating);
+        if (freeMem < 0 || freeCpu < 0) {
             return Collections.emptyList();
         }
-        double freeRatio = (double)free / cap;
+        double freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
             DockerHost host = toTerminate.remove(0);
-            free = free + host.getRegisteredMemory();
-            cap = cap + host.getRegisteredMemory();
-            freeRatio = (double)free / cap;
+            freeMem = freeMem + host.getRegisteredMemory();
+            capMem = capMem + host.getRegisteredMemory();
+            freeCpu = freeCpu + host.getRegisteredCpu();
+            capCpu = capCpu + host.getRegisteredCpu();
+            freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         }
         return toTerminate;
     }
@@ -241,6 +250,14 @@ public class DefaultModelUpdater implements ModelUpdater {
 
     private long computeFreeCapacityMemory(Collection<DockerHost> hosts) {
         return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingMemory()).sum();
+    }
+
+    private long computeFreeCapacityCPU(Collection<DockerHost> hosts) {
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingCpu()).sum();
+    }
+
+    private long computeMaxCapacityCPU(Collection<DockerHost> hosts) {
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredCpu()).sum();
     }
     
     /**

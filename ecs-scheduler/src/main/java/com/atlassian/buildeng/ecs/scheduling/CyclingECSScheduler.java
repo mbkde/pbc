@@ -154,7 +154,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 request = pair.getLeft();
             }
         }
-        modelUpdater.updateModel(hosts, new ModelUpdater.State(lackingCPU, lackingMemory, someDiscarded, sumOfFutureReservations()));
+        Pair<Long, Long> sum = sumOfFutureReservations();
+        modelUpdater.updateModel(hosts, new ModelUpdater.State(lackingCPU, lackingMemory, someDiscarded, sum.getLeft(), sum.getRight()));
     }
     
 
@@ -163,7 +164,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             String asgName = globalConfiguration.getCurrentASG();
             String cluster = globalConfiguration.getCurrentCluster();
             DockerHosts hosts = modelLoader.load(cluster, asgName);
-            modelUpdater.scaleDown(hosts, sumOfFutureReservations());
+            Pair<Long, Long> sum = sumOfFutureReservations();
+            modelUpdater.scaleDown(hosts, new ModelUpdater.State(sum.getLeft(), sum.getRight()));
         } catch (ECSException ex) {
             logger.error("Failed to scale down", ex);
         }
@@ -189,6 +191,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 //TODO do we carry over any data from the old one to new one?
                 (ReserveRequest oldone, ReserveRequest newone) -> oldone == null || !oldone.equals(newone) ? newone : oldone
         );
+        logger.info("Adding future reservation for " + req.getBuildKey() + " size: " + req.getMemoryReservation());
     }
 
     public void unreserveFutureCapacity(SchedulingRequest req) {
@@ -204,13 +207,17 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     private static final int MINUTES_TO_KEEP_FUTURE_RES_ALIVE = 40;
 
-    private long sumOfFutureReservations() {
+    /**
+     *
+     * @return pair of memory, cpu reservation sums
+     */
+    private Pair<Long,Long>  sumOfFutureReservations() {
         long currentTime = System.currentTimeMillis();
         futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) ->
                 Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE);
-        return futureReservations.values().stream()
-                .mapToLong((ReserveRequest value) -> value.getMemoryReservation())
-                .sum();
+        return Pair.of(
+                futureReservations.values().stream().mapToLong((ReserveRequest value) -> value.getMemoryReservation()).sum(),
+                futureReservations.values().stream().mapToLong((ReserveRequest value) -> value.getCpuReservation()).sum());
     }
 
     private class EndlessPolling implements Runnable {
