@@ -15,6 +15,7 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSSchedulerTest.cpu;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSSchedulerTest.mem;
 import com.google.common.collect.Lists;
@@ -45,7 +46,7 @@ public class DockerHostsTest {
                 CyclingECSSchedulerTest.ci("id4", "arn4", false, mem(10), cpu(50)),
                 CyclingECSSchedulerTest.ec2("id4", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())), true);
         
-        DockerHosts hosts = new DockerHosts(Lists.newArrayList(dh1, dh2, dh3, dh4), Duration.ofDays(1));
+        DockerHosts hosts = new DockerHosts(Lists.newArrayList(dh1, dh2, dh3, dh4), Duration.ofDays(1), new AutoScalingGroup(),"cn");
         assertFalse(hosts.agentDisconnected().contains(dh1));
         assertTrue(hosts.agentDisconnected().contains(dh2));
         assertFalse(hosts.agentDisconnected().contains(dh3));
@@ -79,7 +80,7 @@ public class DockerHostsTest {
         DockerHost dh4 = new DockerHost(
                 CyclingECSSchedulerTest.ci("id4", "arn4", true, 0, 0),
                 CyclingECSSchedulerTest.ec2("id4", new Date(new Date().getTime() - Duration.ofDays(2).toMillis())), false);
-        DockerHosts hosts = new DockerHosts(Lists.newArrayList(dh1, dh2, dh3, dh4), Duration.ofDays(1));
+        DockerHosts hosts = new DockerHosts(Lists.newArrayList(dh1, dh2, dh3, dh4), Duration.ofDays(1), new AutoScalingGroup(), "cn");
         
         assertTrue(hosts.allUsable().contains(dh1));
         assertTrue(hosts.allUsable().contains(dh2));
