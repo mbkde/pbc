@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ public final class AwsPullModelLoader implements ModelLoader {
     // Cloud-init v. 0.7.6 finished at Fri, 16 Dec 2016 04:45:49 +0000. Datasource DataSourceEc2.  Up 50.12 seconds
     private static final int ASG_MISSING_IN_CLUSTER_GRACE_PERIOD = 5;
 
-
+    @Inject
     public AwsPullModelLoader(SchedulerBackend schedulerBackend, EventPublisher eventPublisher, ECSConfiguration globalConfiguration) {
         this.schedulerBackend = schedulerBackend;
         this.eventPublisher = eventPublisher;

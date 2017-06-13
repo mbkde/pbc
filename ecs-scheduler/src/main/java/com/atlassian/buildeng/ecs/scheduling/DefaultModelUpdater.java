@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,7 @@ public class DefaultModelUpdater implements ModelUpdater {
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
+    @Inject
     public DefaultModelUpdater(SchedulerBackend schedulerBackend, EventPublisher eventPublisher) {
         this.schedulerBackend = schedulerBackend;
         this.eventPublisher = eventPublisher;
