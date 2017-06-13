@@ -40,6 +40,9 @@ public class ReserveFutureCapacityPreJobAction implements PreJobAction {
 
     @Override
     public void execute(StageExecution stageExecution, BuildContext buildContext) {
+        //set the buildKey in customData because we are not having a way to retrieve it in postJobAction otherwise
+        buildContext.getBuildResult().getCustomBuildData().put(PostJobActionImpl.PBCBUILD_KEY, buildContext.getBuildKey().getKey());
+
         Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
         Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
         logger.debug("current stage needs:" + currentStageCpu + " " + currentStageMem);
@@ -49,14 +52,15 @@ public class ReserveFutureCapacityPreJobAction implements PreJobAction {
         long diffCpu = Math.max(0, nextStageCpu - currentStageCpu);
         long diffMem = Math.max(0, nextStageMem - currentStageMem);
         logger.info("overhead:" + diffCpu + " " + diffMem);
-        if (diffMem > 0 && diffCpu > 0) {
+        if (diffMem > 0 || diffCpu > 0) {
             isoService.reserveCapacity(buildContext.getBuildKey(), 
                     stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                     diffMem, diffCpu);
         }
     }
 
-    private Stream<Configuration> stagePBCExecutions(ChainExecution chainExecution, int stageIndex) {
+
+    static Stream<Configuration> stagePBCExecutions(ChainExecution chainExecution, int stageIndex) {
         Stream<Configuration> stream = chainExecution.getStages().stream()
                 .filter((StageExecution t) -> t.getStageIndex() == stageIndex)
                 .flatMap((StageExecution t) -> t.getBuilds().stream())
@@ -65,7 +69,7 @@ public class ReserveFutureCapacityPreJobAction implements PreJobAction {
         return stream;
     }
 
-    private List<String> stagePBCJobResultKeys(ChainExecution chainExecution, int stageIndex) {
+    static  List<String> stagePBCJobResultKeys(ChainExecution chainExecution, int stageIndex) {
         return chainExecution.getStages().stream()
                 .filter((StageExecution t) -> t.getStageIndex() == stageIndex)
                 .flatMap((StageExecution t) -> t.getBuilds().stream())

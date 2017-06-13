@@ -16,7 +16,7 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
-import com.atlassian.bamboo.v2.build.BuildKey;
+import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
@@ -31,6 +31,7 @@ import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -155,8 +156,26 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public void reserveCapacity(BuildKey buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
-        //TODO
+    public void reserveCapacity(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+        Client client = createClient();
+        final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
+        try {
+            resource
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
+        }
+        catch (UniformInterfaceException e) {
+            int code = e.getResponse().getClientResponseStatus().getStatusCode();
+            String s = "";
+            if (e.getResponse().hasEntity()) {
+                s = e.getResponse().getEntity(String.class);
+            }
+            logger.error("Error contacting ECS wrt future:" + code + " " + s, e);
+        } catch (ClientHandlerException che) {
+            logger.error("Error connecting to ECS wrt future:", che);
+        } catch (Throwable t) {
+            logger.error("unknown error", t);
+        }
     }
 
     @Override
@@ -183,6 +202,19 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         root.addProperty("buildKey", request.getBuildKey());
         root.add("hostFolderMappings", generateHostFolderMappings());
         root.add("configuration", ConfigurationPersistence.toJson(request.getConfiguration()));
+        return root.toString();
+    }
+
+    private String createFutureReqBody(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+        JsonObject root = new JsonObject();
+        root.addProperty("buildKey", buildKey.getKey());
+        JsonArray arr = new JsonArray();
+        jobResultKeys.forEach((String t) -> {
+            arr.add(new JsonPrimitive(t));
+        });
+        root.add("resultKeys", arr);
+        root.addProperty("cpu", excessCpuCapacity);
+        root.addProperty("memory", excessMemoryCapacity);
         return root.toString();
     }
 

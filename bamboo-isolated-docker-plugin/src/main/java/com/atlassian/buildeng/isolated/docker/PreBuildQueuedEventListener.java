@@ -119,6 +119,7 @@ public class PreBuildQueuedEventListener {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             LOG.info("Retrying but {} was already cancelled, aborting. (state:{})", event.getContext().getResultKey().getKey(), event.getContext().getCurrentResult().getLifeCycleState());
+            //TODO cancel future reservations if any
             jmx.incrementCancelled();
             return;
         }

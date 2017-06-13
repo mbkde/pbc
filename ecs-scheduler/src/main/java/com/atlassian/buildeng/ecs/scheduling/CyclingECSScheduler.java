@@ -205,6 +205,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         });
     }
 
+    //IMPORTANT: the cleanup constant defines the max time how long the previous stage can take in order to take
+    // advantage of the pre expanded cluster.
     private static final int MINUTES_TO_KEEP_FUTURE_RES_ALIVE = 40;
 
     /**

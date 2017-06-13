@@ -174,9 +174,7 @@ public class DefaultModelUpdater implements ModelUpdater {
         long capMem = computeMaxCapacityMemory(notTerminating);
         long freeCpu = computeFreeCapacityCPU(notTerminating) - req.getFutureReservationCPU();
         long capCpu = computeMaxCapacityCPU(notTerminating);
-        if (freeMem < 0 || freeCpu < 0) {
-            return Collections.emptyList();
-        }
+        logger.info("FREECPU:" + freeCpu + " FREEMEM:" + freeMem);
         double freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
             DockerHost host = toTerminate.remove(0);

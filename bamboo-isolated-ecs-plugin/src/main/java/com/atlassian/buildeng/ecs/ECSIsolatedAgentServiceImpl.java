@@ -16,7 +16,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ClientException;
-import com.atlassian.bamboo.v2.build.BuildKey;
+import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.logs.AwsLogs;
@@ -147,7 +147,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public void reserveCapacity(BuildKey buildKey, List<String> jobResultKeys, long memoryCapacity, long cpuCapacity) {
+    public void reserveCapacity(Key buildKey, List<String> jobResultKeys, long memoryCapacity, long cpuCapacity) {
         logger.info("Reserving future capacity for {}: mem:{} cpu:{}", buildKey, memoryCapacity, cpuCapacity);
         ecsScheduler.reserveFutureCapacity(new ReserveRequest(buildKey.getKey(), jobResultKeys, cpuCapacity, memoryCapacity));
     }

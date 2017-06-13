@@ -15,7 +15,7 @@
  */
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import com.atlassian.bamboo.v2.build.BuildKey;
+import com.atlassian.bamboo.Key;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +56,7 @@ public interface IsolatedAgentService {
      * @param excessMemoryCapacity
      * @param excessCpuCapacity
      */
-    default void reserveCapacity(BuildKey buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+    default void reserveCapacity(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
     }
 
 }
