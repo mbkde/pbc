@@ -200,8 +200,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             final boolean present = old.getResultKeys().contains(req.getResultId());
             if (present) {
                 logger.info("Removing reservation for " + key + " because of " + req.getResultId());
+                return null;
+            } else {
+                return old;
             }
-            return present ? null : old;
         });
     }
 

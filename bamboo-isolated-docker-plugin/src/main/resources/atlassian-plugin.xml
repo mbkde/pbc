@@ -31,7 +31,7 @@ limitations under the License.
     </preBuildAction>
 
 <!-- Job that communicates with the predator service to get the global config into the build context -->
-    <preJobAction key="test" class="com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction">
+    <preJobAction key="reserveFutureCapacityPreJob" class="com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction">
     </preJobAction>
 
 
