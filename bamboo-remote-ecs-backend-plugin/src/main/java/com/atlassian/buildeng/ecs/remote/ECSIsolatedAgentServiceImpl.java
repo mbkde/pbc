@@ -157,24 +157,26 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public void reserveCapacity(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
-        Client client = createClient();
-        final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
-        try {
-            resource
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
-        }
-        catch (UniformInterfaceException e) {
-            int code = e.getResponse().getClientResponseStatus().getStatusCode();
-            String s = "";
-            if (e.getResponse().hasEntity()) {
-                s = e.getResponse().getEntity(String.class);
+        if (globalConfiguration.isPreemptiveScaling()) {
+            Client client = createClient();
+            final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
+            try {
+                resource
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
             }
-            logger.error("Error contacting ECS wrt future:" + code + " " + s, e);
-        } catch (ClientHandlerException che) {
-            logger.error("Error connecting to ECS wrt future:", che);
-        } catch (Throwable t) {
-            logger.error("unknown error", t);
+            catch (UniformInterfaceException e) {
+                int code = e.getResponse().getClientResponseStatus().getStatusCode();
+                String s = "";
+                if (e.getResponse().hasEntity()) {
+                    s = e.getResponse().getEntity(String.class);
+                }
+                logger.error("Error contacting ECS wrt future:" + code + " " + s, e);
+            } catch (ClientHandlerException che) {
+                logger.error("Error connecting to ECS wrt future:", che);
+            } catch (Throwable t) {
+                logger.error("unknown error", t);
+            }
         }
     }
 

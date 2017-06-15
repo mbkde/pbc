@@ -41,6 +41,16 @@ manages the scaling and scheduling of Bamboo agents on ECS.
             </div>
         </div>
 
+        <div class="field-group">
+            <label for="preemptive">Preemptive scaling</label>
+            <input type="checkbox" class="long-field" id="preemptive"></input>
+            <div class="description" id="desc-preemptive">
+               If checked, build's subsequent stages will reserve future capacity in the cluster
+               during previous stage to allow cluster to scale ahead of time if necessary
+            </div>
+        </div>
+
+
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>

@@ -18,8 +18,8 @@ package com.atlassian.buildeng.ecs.remote;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.ecs.remote.rest.Config;
 import com.google.common.base.Preconditions;
-import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 
 public class GlobalConfiguration {
@@ -27,6 +27,7 @@ public class GlobalConfiguration {
     static String BANDANA_AWS_ROLE_KEY = "com.atlassian.buildeng.ecs.remote.awsrole";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.remote.sidekick";
     static String BANDANA_SERVER_URL_KEY = "com.atlassian.buildeng.ecs.remote.server";
+    static String BANDANA_PREEMPTIVE_KEY = "com.atlassian.buildeng.ecs.remote.preemptive";
     // The name of the atlassian docker registry sidekick
     static String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 
@@ -55,15 +56,21 @@ public class GlobalConfiguration {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY);
     }
 
-    public synchronized void persist(@Nullable String sidekick, @Nullable String awsRole, String url) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(url));
-        if (StringUtils.isBlank(awsRole)) {
+    public synchronized void persist(Config config) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(config.getServerUrl()));
+        if (StringUtils.isBlank(config.getAwsRole())) {
             bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
         } else {
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, awsRole);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, config.getAwsRole());
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, url);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, config.getSidekickImage());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, config.getServerUrl());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, config.isPreemptiveScaling());
+    }
+
+    public synchronized boolean isPreemptiveScaling() {
+        Boolean val = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY);
+        return val != null ? val : false;
     }
 
 }
