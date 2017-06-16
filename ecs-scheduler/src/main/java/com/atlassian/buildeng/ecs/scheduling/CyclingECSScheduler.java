@@ -188,8 +188,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     @Override
     public void reserveFutureCapacity(ReserveRequest req) {
         futureReservations.merge(req.getBuildKey(), req,
-                //TODO do we carry over any data from the old one to new one?
-                (ReserveRequest oldone, ReserveRequest newone) -> oldone == null || !oldone.equals(newone) ? newone : oldone
+            (ReserveRequest oldone, ReserveRequest newone) -> oldone == null || oldone.getCreationTimestamp() > newone.getCreationTimestamp() ? newone : oldone
         );
         logger.info("Adding future reservation for " + req.getBuildKey() + " size: " + req.getMemoryReservation());
     }
