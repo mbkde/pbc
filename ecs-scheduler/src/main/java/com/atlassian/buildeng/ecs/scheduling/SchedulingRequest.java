@@ -27,6 +27,7 @@ public class SchedulingRequest {
     private final int memory;
     private final Configuration configuration;
     private long queueTimestamp = -1;
+    private String buildKey;
 
     //only here because rewriting the tests where custom CPU/memory values are
     //used to use just REGULAR/SMALL sizing is a major pain
@@ -41,7 +42,7 @@ public class SchedulingRequest {
         this.configuration = configuration;
     }
     
-    public SchedulingRequest(UUID identifier, String resultId, int revision, Configuration configuration, long queueTimestamp) {
+    public SchedulingRequest(UUID identifier, String resultId, int revision, Configuration configuration, long queueTimestamp, String buildKey) {
         this.identifier = identifier;
         this.resultId = resultId;
         this.revision = revision;
@@ -49,6 +50,7 @@ public class SchedulingRequest {
         this.cpu = configuration.getCPUTotal();
         this.memory = configuration.getMemoryTotal();
         this.queueTimestamp = queueTimestamp;
+        this.buildKey = buildKey;
     }
 
     public UUID getIdentifier() {
@@ -79,4 +81,7 @@ public class SchedulingRequest {
         return queueTimestamp;
     }
 
+    public String getBuildKey() {
+        return buildKey;
+    }
 }

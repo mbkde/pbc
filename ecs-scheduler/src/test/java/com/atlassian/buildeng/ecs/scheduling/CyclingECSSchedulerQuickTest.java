@@ -96,7 +96,7 @@ public class CyclingECSSchedulerQuickTest {
         };
         DefaultModelUpdater dmu = new DefaultModelUpdater(awsSchedulerBackend, eventPublisher);
         DockerHosts hosts = new DockerHosts(allHosts, Duration.ofDays(1), new AutoScalingGroup(), "cn");
-        List<DockerHost> selectedHosts = dmu.selectToTerminate(hosts);
+        List<DockerHost> selectedHosts = dmu.selectToTerminate(hosts, new ModelUpdater.State(0, 0));
         if (allHosts.isEmpty()) {
             // If we have nothing to potentially terminate, we shouldn't select anything
             assertTrue(selectedHosts.isEmpty());

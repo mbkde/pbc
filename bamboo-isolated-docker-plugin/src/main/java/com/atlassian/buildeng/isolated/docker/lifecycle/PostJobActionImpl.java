@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
+import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
@@ -26,8 +27,12 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction.stagePBCExecutions;
+import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction.stagePBCJobResultKeys;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.lang.StringUtils;
@@ -38,17 +43,31 @@ import org.slf4j.Logger;
  */
 public class PostJobActionImpl implements PostJobAction {
     private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
+    //key in customBuildData to store the build key that is only available in CommonContexts
+    static final String PBCBUILD_KEY = "pbc.buildKey";
 
     private final AgentRemovals agentRemovals;
     private final AgentManager agentManager;
+    private final IsolatedAgentService isoService;
 
-    private PostJobActionImpl(AgentRemovals agentRemovals, AgentManager agentManager) {
+    private PostJobActionImpl(AgentRemovals agentRemovals, AgentManager agentManager, IsolatedAgentService isoService) {
         this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;
+        this.isoService = isoService;
     }
 
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
+        //cleanup future reservations in case of failure.
+        if (buildResultsSummary.isFailed()) {
+            Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
+            Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
+            if (nextStageCpu > 0 || nextStageMem > 0) {
+                isoService.reserveCapacity(new BuildKeyReplica(buildResultsSummary.getCustomBuildData().get(PBCBUILD_KEY)),
+                        stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
+                        0, 0);
+            }
+        }
         Configuration config = AccessConfiguration.forBuildResultSummary(buildResultsSummary);
         if (config.isEnabled()) {
             String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
@@ -94,5 +113,28 @@ public class PostJobActionImpl implements PostJobAction {
             }
             return test;
         }
+    }
+
+    //because BuildKey in bamboo can't be recreated from string and we need to store it
+    // in string, string map and recreate
+    private static class BuildKeyReplica implements Key {
+
+        private final String key;
+
+        public BuildKeyReplica(String key) {
+            this.key = key;
+        }
+
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String toString() {
+            return getKey();
+        }
+
     }
 }

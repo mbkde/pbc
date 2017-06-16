@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,7 @@ public class DefaultModelUpdater implements ModelUpdater {
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
+    @Inject
     public DefaultModelUpdater(SchedulerBackend schedulerBackend, EventPublisher eventPublisher) {
         this.schedulerBackend = schedulerBackend;
         this.eventPublisher = eventPublisher;
@@ -58,9 +61,9 @@ public class DefaultModelUpdater implements ModelUpdater {
 
 
     @Override
-    public void scaleDown(DockerHosts hosts) {
+    public void scaleDown(DockerHosts hosts, State req) {
         terminateDisconnectedInstances(hosts);
-        terminateInstances(selectToTerminate(hosts), hosts.getASGName(), true, hosts.getClusterName());
+        terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
     }
 
     @Override
@@ -71,16 +74,30 @@ public class DefaultModelUpdater implements ModelUpdater {
         int desiredScaleSize = currentSize;
         if (req.isSomeDiscarded()) {
             // cpu and memory requirements in instances
-            long cpuRequirements = req.getLackingCPU() / computeInstanceCPULimits(hosts.allUsable());
-            long memoryRequirements = req.getLackingMemory() / computeInstanceMemoryLimits(hosts.allUsable());
-            logger.info("Scaling w.r.t. this much cpu " + req.getLackingCPU());
+            long cpuRequirements = 1 + req.getLackingCPU() / computeInstanceCPULimits(hosts.allUsable());
+            long memoryRequirements = 1 + req.getLackingMemory() / computeInstanceMemoryLimits(hosts.allUsable());
+            logger.info("Scaling w.r.t. this much cpu/memory {} {} ", req.getLackingCPU(), req.getLackingMemory());
             //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
             //by at least one instance.
-            long extraRequired = Math.max(1, Math.max(cpuRequirements, memoryRequirements));
+            long extraRequired = Math.max(cpuRequirements, memoryRequirements);
 
             desiredScaleSize += extraRequired;
         }
-        int terminatedCount = terminateInstances(selectToTerminate(hosts), hosts.getASGName(), true, hosts.getClusterName());
+        //TODO only sums up free space, but it could be just unusable tiny pieces on
+        // many instance, maybe we should ignore pieces that are smaller than SMALL agent size
+        long freeMem = computeFreeCapacityMemory(hosts.allUsable());
+        long freeCpu = computeFreeCapacityCPU(hosts.allUsable());
+        logger.debug("freeMem:" + freeMem + " reservedMem:" + req.getFutureReservationMemory());
+        logger.debug("freeCpu:" + freeCpu + " reservedCpu:" + req.getFutureReservationCPU());
+        if (freeMem < req.getFutureReservationMemory() || freeCpu < req.getFutureReservationCPU()) {
+            long memoryRequirements = 1 + (req.getFutureReservationMemory() - freeMem) / computeInstanceMemoryLimits(hosts.allUsable());
+            long cpuRequirements = 1 + (req.getFutureReservationCPU() - freeCpu) / computeInstanceCPULimits(hosts.allUsable());
+            logger.info("Scaling w.r.t. this much future CPU/memory {} {}", req.getFutureReservationCPU(), req.getFutureReservationMemory());
+            desiredScaleSize += Math.max(cpuRequirements, memoryRequirements);
+            logger.info("desired size: " + desiredScaleSize  + " cpuReq:" + cpuRequirements + " memReq:" + memoryRequirements);
+        }
+
+        int terminatedCount = terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
         desiredScaleSize = desiredScaleSize - terminatedCount;
         //we are reducing the currentSize by the terminated list because that's
         //what the terminateInstances method should reduce it to.
@@ -140,7 +157,7 @@ public class DefaultModelUpdater implements ModelUpdater {
                 .collect(Collectors.toList());
     }
 
-    List<DockerHost> selectToTerminate(DockerHosts hosts) {
+    List<DockerHost> selectToTerminate(DockerHosts hosts, State req) {
         List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
                 .collect(Collectors.toList());
         if (toTerminate.isEmpty()) {
@@ -155,14 +172,19 @@ public class DefaultModelUpdater implements ModelUpdater {
         //keep certain overcapacity around
         List<DockerHost> notTerminating = new ArrayList<>(hosts.allUsable());
         notTerminating.removeAll(toTerminate);
-        long free = computeFreeCapacityMemory(notTerminating);
-        long cap = computeMaxCapacityMemory(notTerminating);
-        double freeRatio = (double)free / cap;
+        long freeMem = computeFreeCapacityMemory(notTerminating) - req.getFutureReservationMemory();
+        long capMem = computeMaxCapacityMemory(notTerminating);
+        long freeCpu = computeFreeCapacityCPU(notTerminating) - req.getFutureReservationCPU();
+        long capCpu = computeMaxCapacityCPU(notTerminating);
+        logger.info("FREECPU:" + freeCpu + " FREEMEM:" + freeMem);
+        double freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
             DockerHost host = toTerminate.remove(0);
-            free = free + host.getRegisteredMemory();
-            cap = cap + host.getRegisteredMemory();
-            freeRatio = (double)free / cap;
+            freeMem = freeMem + host.getRegisteredMemory();
+            capMem = capMem + host.getRegisteredMemory();
+            freeCpu = freeCpu + host.getRegisteredCpu();
+            capCpu = capCpu + host.getRegisteredCpu();
+            freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         }
         return toTerminate;
     }
@@ -229,6 +251,14 @@ public class DefaultModelUpdater implements ModelUpdater {
     private long computeFreeCapacityMemory(Collection<DockerHost> hosts) {
         return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingMemory()).sum();
     }
+
+    private long computeFreeCapacityCPU(Collection<DockerHost> hosts) {
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingCpu()).sum();
+    }
+
+    private long computeMaxCapacityCPU(Collection<DockerHost> hosts) {
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredCpu()).sum();
+    }
     
     /**
      *   update the cache with times of first report for disconnected agent. Remove those that recovered
@@ -245,6 +275,4 @@ public class DefaultModelUpdater implements ModelUpdater {
         return cache;
     }
 
-
-   
 }

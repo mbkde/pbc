@@ -16,24 +16,18 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
-import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
-import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
-import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
-import com.atlassian.bamboo.event.agent.AgentRegisteredEvent;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.security.ImpersonationHelper;
 import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
-import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
@@ -125,13 +119,15 @@ public class PreBuildQueuedEventListener {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             LOG.info("Retrying but {} was already cancelled, aborting. (state:{})", event.getContext().getResultKey().getKey(), event.getContext().getCurrentResult().getLifeCycleState());
+            //TODO cancel future reservations if any
             jmx.incrementCancelled();
             return;
         }
         clearResultCustomData(event.getContext());
         setBuildkeyCustomData(event.getContext());
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier(), getQueueTimestamp(event.getContext())),
+                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(), event.getUniqueIdentifier(), 
+                        getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {

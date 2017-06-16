@@ -16,6 +16,7 @@
 package com.atlassian.buildeng.ecs.resources;
 
 import com.amazonaws.services.ecs.model.ClientException;
+import com.atlassian.buildeng.ecs.api.RestReserveFuture;
 import com.atlassian.buildeng.ecs.scheduling.ArnStoppedState;
 import com.atlassian.buildeng.ecs.api.Scheduler;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -23,6 +24,7 @@ import com.atlassian.buildeng.ecs.scheduling.BambooServerEnvironment;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
+import com.atlassian.buildeng.ecs.scheduling.ReserveRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
@@ -108,7 +110,7 @@ public class SchedulerResource {
                 return;
             }
         }
-        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision, s.getConfiguration(), s.getQueueTimestamp());
+        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision, s.getConfiguration(), s.getQueueTimestamp(), s.getBuildKey());
         DefaultSchedulingCallback dsc = new DefaultSchedulingCallback(new IsolatedDockerRequestCallback() {
             @Override
             public void handle(IsolatedDockerAgentResult result) {
@@ -127,6 +129,13 @@ public class SchedulerResource {
         producing and consuming Java objects as JSON objects. The provider writes out the JSON and the client
         receives a 200 OK response with a content type of application/json.
          */
+    }
+
+    @POST
+    @Path("future")
+    public void postFutureReservations(final String body) {
+        final RestReserveFuture f = RestReserveFuture.fromJson(body);
+        ecsScheduler.reserveFutureCapacity(new ReserveRequest(f.getBuildKey(), f.getResultKeys(), f.getCpuReservation(), f.getMemoryReservation()));
     }
 
     @GET
