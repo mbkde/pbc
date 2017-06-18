@@ -23,6 +23,7 @@ public class Config {
     public String ecsClusterName;
     public String autoScalingGroupName;
     public String sidekickImage;
+    public boolean preemptiveScaling = false;
     public LogConfiguration logConfiguration;
     public Map<String, String> envs;
 
@@ -74,8 +75,15 @@ public class Config {
     public void setEnvs(Map<String, String> envs) {
         this.envs = envs;
     }
-    
 
+    public boolean isPreemptiveScaling() {
+        return preemptiveScaling;
+    }
+
+    public void setPreemptiveScaling(boolean preemptiveScaling) {
+        this.preemptiveScaling = preemptiveScaling;
+    }
+    
     public static class LogConfiguration {
         public String driver;
         public Map<String, String> options;

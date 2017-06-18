@@ -148,8 +148,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public void reserveCapacity(Key buildKey, List<String> jobResultKeys, long memoryCapacity, long cpuCapacity) {
-        logger.info("Reserving future capacity for {}: mem:{} cpu:{}", buildKey, memoryCapacity, cpuCapacity);
-        ecsScheduler.reserveFutureCapacity(new ReserveRequest(buildKey.getKey(), jobResultKeys, cpuCapacity, memoryCapacity));
+        if (globalConfiguration.isPreemptiveScaling()) {
+            logger.info("Reserving future capacity for {}: mem:{} cpu:{}", buildKey, memoryCapacity, cpuCapacity);
+            ecsScheduler.reserveFutureCapacity(new ReserveRequest(buildKey.getKey(), jobResultKeys, cpuCapacity, memoryCapacity));
+        } else {
+            logger.info("Reserving future capacity is disabled");
+        }
     }
 
     @Override

@@ -51,6 +51,7 @@ public class Rest {
         c.setAwsRole(configuration.getCurrentRole());
         c.setServerUrl(configuration.getCurrentServer());
         c.setSidekickImage(configuration.getCurrentSidekick());
+        c.setPreemptiveScaling(configuration.isPreemptiveScaling());
         return Response.ok(c).build();
     }
 
@@ -62,7 +63,7 @@ public class Rest {
         if (StringUtils.isBlank(config.getServerUrl())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("serverUrl is mandatory").build();
         }
-        configuration.persist(config.getSidekickImage(), config.getAwsRole(), config.getServerUrl());
+        configuration.persist(config);
         return Response.noContent().build();
     }
 

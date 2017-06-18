@@ -58,6 +58,15 @@ List is updated on running a plan the first time, not editing it.
         </div>
 
         <div class="field-group">
+            <label for="preemptive">Preemptive scaling</label>
+            <input type="checkbox" class="long-field" id="preemptive"></input>
+            <div class="description" id="desc-preemptive">
+               If checked, build's subsequent stages will reserve future capacity in the cluster
+               during previous stage to allow cluster to scale ahead of time if necessary
+            </div>
+        </div>
+
+        <div class="field-group">
             <label for="logDriver">Log Driver</label>
             <input type="text" class="text long-field" id="logDriver"
                     placeholder="Default if empty"></input>

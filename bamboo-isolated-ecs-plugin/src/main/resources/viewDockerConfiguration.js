@@ -46,6 +46,7 @@
         AJS.$("#currentCluster").val(response.ecsClusterName);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#asgToUse").val(response.autoScalingGroupName);
+        AJS.$("#preemptive").attr("checked", response.preemptiveScaling);
         var log = response.logConfiguration;
         AJS.$.each( response.envs, function( key, value ) {
             appendEnvVar(key, value);
@@ -91,6 +92,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.autoScalingGroupName = AJS.$("#asgToUse").val().trim();
         config.ecsClusterName = AJS.$("#currentCluster").val().trim();
+        config.preemptiveScaling = AJS.$("#preemptive").is(":checked");
         var log = {};
         config.logConfiguration = log;
         log.options = {};

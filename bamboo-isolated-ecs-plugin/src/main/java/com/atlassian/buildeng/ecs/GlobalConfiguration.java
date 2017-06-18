@@ -67,6 +67,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     static String BANDANA_LOGGING_DRIVER_KEY = "com.atlassian.buildeng.ecs.loggingDriver";
     static String BANDANA_LOGGING_OPTS_KEY = "com.atlassian.buildeng.ecs.loggingOpts";
     static String BANDANA_ENVS_KEY = "com.atlassian.buildeng.ecs.envVars";
+    static String BANDANA_PREEMPTIVE_KEY = "com.atlassian.buildeng.ecs.preemptiveScaling";
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
     private final BandanaManager bandanaManager;
@@ -177,6 +178,11 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
     }
 
+    public boolean isPreemptiveScaling() {
+        Boolean val = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY);
+        return val != null ? val : false;
+    }
+
     /**
      * Synchronously deregister the docker image with given task revision
      *
@@ -277,6 +283,11 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         if (!StringUtils.equals(newSidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), newSidekick);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, newSidekick);
+        }
+        boolean newPremptive = config.isPreemptiveScaling();
+        if (isPreemptiveScaling() != newPremptive) {
+            auditLogEntry("PBC Preemptive scaling", "" + isPreemptiveScaling(), "" + newPremptive);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, newPremptive);
         }
         Config.LogConfiguration lc = config.getLogConfiguration();
         String driver = lc != null ? lc.getDriver() : null;

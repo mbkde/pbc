@@ -33,6 +33,7 @@
         AJS.$("#serviceUrl").val(response.serverUrl);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#roleToUse").val(response.awsRole);
+        AJS.$("#preemptive").attr("checked", response.preemptiveScaling);
     }
 
     function setRemoteConfig() {
@@ -40,6 +41,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.awsRole = AJS.$("#roleToUse").val().trim();
         config.serverUrl = AJS.$("#serviceUrl").val().trim();
+        config.preemptiveScaling = AJS.$("#preemptive").is(":checked");
 
         updateStatus("Saving...");
 
