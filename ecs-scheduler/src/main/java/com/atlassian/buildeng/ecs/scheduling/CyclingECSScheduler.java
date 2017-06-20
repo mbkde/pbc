@@ -190,7 +190,11 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         futureReservations.merge(req.getBuildKey(), req,
             (ReserveRequest oldone, ReserveRequest newone) -> oldone == null || oldone.getCreationTimestamp() > newone.getCreationTimestamp() ? newone : oldone
         );
-        logger.info("Adding future reservation for " + req.getBuildKey() + " size: " + req.getMemoryReservation());
+        if (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0) {
+            logger.info("FutureReservation: Adding for " + req.getBuildKey() + " size: " + req.getMemoryReservation());
+        } else {
+            logger.info("FutureReservation: Resetting for " + req.getBuildKey());
+        }
     }
 
     public void unreserveFutureCapacity(SchedulingRequest req) {
@@ -198,7 +202,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         futureReservations.computeIfPresent(req.getBuildKey(), (String key, ReserveRequest old) -> {
             final boolean present = old.getResultKeys().contains(req.getResultId());
             if (present) {
-                logger.info("Removing reservation for " + key + " because of " + req.getResultId());
+                logger.info("FutureReservation: Removing for " + key + " because of " + req.getResultId());
                 return null;
             } else {
                 return old;
@@ -216,8 +220,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
      */
     private Pair<Long,Long>  sumOfFutureReservations() {
         long currentTime = System.currentTimeMillis();
-        futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) ->
-                Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE);
+        futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) -> {
+            boolean remove = Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE;
+            if (remove) {
+                logger.info("FutureReservation: Removing for " + t.getKey() + " because of timeout." );
+            }
+            return remove;
+        });
         return Pair.of(
                 futureReservations.values().stream().mapToLong((ReserveRequest value) -> value.getMemoryReservation()).sum(),
                 futureReservations.values().stream().mapToLong((ReserveRequest value) -> value.getCpuReservation()).sum());
