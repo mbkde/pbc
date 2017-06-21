@@ -223,7 +223,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) -> {
             boolean remove = Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE;
             if (remove) {
-                logger.info("FutureReservation: Removing for " + t.getKey() + " because of timeout." );
+                logger.info("FutureReservation: Timeout for " + t.getKey());
             }
             return remove;
         });
