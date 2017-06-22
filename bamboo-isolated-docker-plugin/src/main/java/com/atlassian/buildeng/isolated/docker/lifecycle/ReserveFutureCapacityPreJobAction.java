@@ -45,14 +45,12 @@ public class ReserveFutureCapacityPreJobAction implements PreJobAction {
 
         Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
         Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
-        logger.debug("current stage needs:" + currentStageCpu + " " + currentStageMem);
         Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
         Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
-        logger.debug("next stage needs:" + nextStageCpu + " " + nextStageMem);
         long diffCpu = Math.max(0, nextStageCpu - currentStageCpu);
         long diffMem = Math.max(0, nextStageMem - currentStageMem);
-        logger.info("overhead:" + diffCpu + " " + diffMem);
         if (diffMem > 0 || diffCpu > 0) {
+            logger.info("Adding future reservation for " + buildContext.getBuildKey().getKey() + " " + buildContext.getPlanResultKey());
             isoService.reserveCapacity(buildContext.getBuildKey(), 
                     stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                     diffMem, diffCpu);

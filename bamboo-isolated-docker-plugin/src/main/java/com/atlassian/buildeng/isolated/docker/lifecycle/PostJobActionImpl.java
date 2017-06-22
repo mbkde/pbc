@@ -63,6 +63,7 @@ public class PostJobActionImpl implements PostJobAction {
             Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
             Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
             if (nextStageCpu > 0 || nextStageMem > 0) {
+                LOG.info("Resetting reservation " + buildResultsSummary.getCustomBuildData().get(PBCBUILD_KEY) +  " due to failed build result " + buildResultsSummary.getPlanResultKey());
                 isoService.reserveCapacity(new BuildKeyReplica(buildResultsSummary.getCustomBuildData().get(PBCBUILD_KEY)),
                         stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                         0, 0);
