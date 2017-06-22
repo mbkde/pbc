@@ -204,9 +204,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             }
         );
         if (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0) {
-            logger.info("FutureReservation: Adding for " + req.getBuildKey() + " size: " + req.getMemoryReservation());
+            logger.info("FutureReservation: Adding for " + req.getBuildKey() + " size: " + req.getMemoryReservation() + " " + req.getResultKeys());
         } else {
-            logger.info("FutureReservation: Resetting for " + req.getBuildKey());
+            logger.info("FutureReservation: Resetting for " + req.getBuildKey() + " " + req.getResultKeys());
         }
     }
 
@@ -236,7 +236,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) -> {
             boolean remove = Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE;
             if (remove) {
-                logger.info("FutureReservation: Timeout for " + t.getKey());
+                logger.info("FutureReservation: Timeout for " + t.getKey() + " " + t.getValue().getResultKeys());
             }
             return remove;
         });
