@@ -188,13 +188,20 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     @Override
     public void reserveFutureCapacity(ReserveRequest req) {
         futureReservations.merge(req.getBuildKey(), req,
-            (ReserveRequest oldone, ReserveRequest newone) -> oldone == null
+            (ReserveRequest oldone, ReserveRequest newone) -> {
+                if (oldone == null
                     //use old instance unless the new one is actually older
-                    || oldone.getCreationTimestamp() > newone.getCreationTimestamp()
-                        // only use new instance if reservations are bigger than 0, otherwise just remove.
-                        ? (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0 ? newone : null)
-                        //otherwise just keep the old bit
-                        : oldone
+                    || oldone.getCreationTimestamp() > newone.getCreationTimestamp()) {
+                    // only use new instance if reservations are bigger than 0, otherwise just remove.
+                    if (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0) {
+                        return newone;
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return oldone;
+                }
+            }
         );
         if (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0) {
             logger.info("FutureReservation: Adding for " + req.getBuildKey() + " size: " + req.getMemoryReservation());
