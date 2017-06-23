@@ -59,7 +59,7 @@ public class PostJobActionImpl implements PostJobAction {
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
         //cleanup future reservations in case of failure.
-        if (buildResultsSummary.isFailed()) {
+        if (!buildResultsSummary.isSuccessful()) {
             Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
             Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
             if (nextStageCpu > 0 || nextStageMem > 0) {
