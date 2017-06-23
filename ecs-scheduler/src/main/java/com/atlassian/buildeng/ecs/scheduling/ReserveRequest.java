@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,11 +28,15 @@ public class ReserveRequest {
     private final List<String> resultKeys;
 
     public ReserveRequest(String groupIdentifier, List<String> resultKeys, long cpuReservation, long memoryReservation) {
+        this(groupIdentifier, resultKeys, cpuReservation, memoryReservation, System.currentTimeMillis());
+    }
+    @VisibleForTesting
+    ReserveRequest(String groupIdentifier, List<String> resultKeys, long cpuReservation, long memoryReservation, long timeMillis) {
         this.buildKey = groupIdentifier;
         this.cpuReservation = cpuReservation;
         this.memoryReservation = memoryReservation;
         this.resultKeys = resultKeys;
-        this.creationTimestamp = System.currentTimeMillis();
+        this.creationTimestamp = timeMillis;
     }
 
     public String getBuildKey() {

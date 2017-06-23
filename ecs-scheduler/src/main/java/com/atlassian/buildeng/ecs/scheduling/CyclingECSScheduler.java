@@ -50,7 +50,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     @VisibleForTesting
     final ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final BlockingQueue<Pair<SchedulingRequest, SchedulingCallback>> requests = new LinkedBlockingQueue<>();
-    private final ConcurrentMap<String, ReserveRequest> futureReservations = new ConcurrentHashMap<>();
+    @VisibleForTesting
+    final ConcurrentMap<String, ReserveRequest> futureReservations = new ConcurrentHashMap<>();
     
     private final SchedulerBackend schedulerBackend;
     private final ECSConfiguration globalConfiguration;
@@ -189,7 +190,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     public void reserveFutureCapacity(ReserveRequest req) {
         futureReservations.merge(req.getBuildKey(), req,
             (ReserveRequest oldone, ReserveRequest newone) -> {
-                if (oldone == null
+                if (oldone == null 
+                    //custom equals on ReserveRequest
+                    || !oldone.equals(newone)
                     //use old instance unless the new one is actually older
                     || oldone.getCreationTimestamp() > newone.getCreationTimestamp()) {
                     // only use new instance if reservations are bigger than 0, otherwise just remove.
@@ -231,7 +234,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
      *
      * @return pair of memory, cpu reservation sums
      */
-    private Pair<Long,Long>  sumOfFutureReservations() {
+    @VisibleForTesting
+    Pair<Long,Long> sumOfFutureReservations() {
         long currentTime = System.currentTimeMillis();
         futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) -> {
             boolean remove = Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE;
