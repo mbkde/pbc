@@ -187,29 +187,24 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     @Override
-    public void reserveFutureCapacity(ReserveRequest req) {
-        futureReservations.merge(req.getBuildKey(), req,
-            (ReserveRequest oldone, ReserveRequest newone) -> {
-                if (oldone == null 
-                    //custom equals on ReserveRequest
-                    || !oldone.equals(newone)
-                    //use old instance unless the new one is actually older
-                    || oldone.getCreationTimestamp() > newone.getCreationTimestamp()) {
-                    // only use new instance if reservations are bigger than 0, otherwise just remove.
-                    if (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0) {
-                        return newone;
-                    } else {
-                        return null;
-                    }
-                } else {
-                    return oldone;
-                }
+    public void reserveFutureCapacity(ReserveRequest newone) {
+        ReserveRequest oldone = futureReservations.get(newone.getBuildKey());
+        if (newone.getCpuReservation() > 0 && newone.getMemoryReservation() > 0) {
+            if (oldone == null
+                //custom equals on ReserveRequest
+                || !oldone.equals(newone)
+                //use old instance unless the new one is actually older
+                || oldone.getCreationTimestamp() > newone.getCreationTimestamp())
+            {
+                // only use new instance if reservations are bigger than 0, otherwise just remove.
+                logger.info("FutureReservation: Adding for " + newone.getBuildKey() + " size: " + newone.getMemoryReservation() + " " + newone.getResultKeys());
+                futureReservations.put(newone.getBuildKey(), newone);
+            } else {
+                //keep the existing one.
             }
-        );
-        if (req.getCpuReservation() > 0 && req.getMemoryReservation() > 0) {
-            logger.info("FutureReservation: Adding for " + req.getBuildKey() + " size: " + req.getMemoryReservation() + " " + req.getResultKeys());
-        } else {
-            logger.info("FutureReservation: Resetting for " + req.getBuildKey() + " " + req.getResultKeys());
+        } else if (oldone != null) {
+            logger.info("FutureReservation: Resetting for " + newone.getBuildKey() + " " +newone.getResultKeys());
+            futureReservations.remove(newone.getBuildKey());
         }
     }
 
