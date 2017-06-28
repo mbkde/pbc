@@ -105,7 +105,6 @@ List is updated on running a plan the first time, not editing it.
     <tr>
         <th>Docker Image</th>
         <th></th>
-        <th></th>
     </tr>
 </table>
 
