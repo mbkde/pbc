@@ -790,6 +790,20 @@ public class CyclingECSSchedulerTest {
     }
 
     @Test
+    public void futureReservationGetsDoubleReset() {
+        final EventPublisher eventPublisher = mock(EventPublisher.class);
+        final SchedulerBackend schedulerBackend = mock(SchedulerBackend.class);
+        CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), eventPublisher);
+        //run at current time, reset is supposed to remove the
+        ReserveRequest r = new ReserveRequest("111-222", Collections.singletonList("AAA-BBB-CCC-1"), 100, 100, System.currentTimeMillis());
+        ReserveRequest reset = new ReserveRequest("111-222", Collections.singletonList("AAA-BBB-CCC-1"), 0, 0, System.currentTimeMillis());
+        scheduler.reserveFutureCapacity(r);
+        scheduler.reserveFutureCapacity(reset);
+        scheduler.reserveFutureCapacity(reset);
+        assertTrue("future reservation was reset and entry removed from map", scheduler.futureReservations.isEmpty());
+    }
+
+    @Test
     public void futureReservationTimeouts() {
         final EventPublisher eventPublisher = mock(EventPublisher.class);
         final SchedulerBackend schedulerBackend = mock(SchedulerBackend.class);
