@@ -183,41 +183,6 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         return val != null ? val : false;
     }
 
-    /**
-     * Synchronously deregister the docker image with given task revision
-     *
-     * @param revision The internal ECS task definition to deregister
-     */
-    synchronized void deregisterDockerImage(Integer revision) throws RevisionNotActiveException, ECSException {
-        Map<Configuration, Integer> dockerMappings = getAllRegistrations();
-        if (!dockerMappings.containsValue(revision)) {
-            throw new RevisionNotActiveException(revision);
-        }
-        deregisterDockerImageECS(revision);
-        removeWithValue(revision, dockerMappings);
-        Map<String, Integer> taskRegMappings = getAllECSTaskRegistrations();
-        removeWithValue(revision, taskRegMappings);
-        persistDockerMappingsConfiguration(dockerMappings, taskRegMappings);
-    }
-    
-    private void deregisterDockerImageECS(Integer revision) throws ECSException {
-        try {
-            createClient().deregisterTaskDefinition(deregisterTaskDefinitionRequest(revision));
-        } catch (Exception e) {
-            throw new ECSException(e);
-        }
-    }
-    
-    private <T> void removeWithValue(Integer value, Map<T, Integer> map) {
-        for (Iterator<Map.Entry<T, Integer>> iterator = map.entrySet().iterator(); iterator.hasNext();) {
-            Map.Entry<T, Integer> next = iterator.next();
-            if (value.equals(next.getValue())) {
-                iterator.remove();
-            }
-        }
-    }
-    
-   
 
     /**
      * Returns a list of Configuration objects that were used to register the given

@@ -34,7 +34,6 @@ import java.io.OutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -77,13 +76,6 @@ public class Rest {
         return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
                 (Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(), entry.getValue())
         ).collect(Collectors.toList()))).build();
-    }
-
-    @DELETE
-    @Path("/{revision}")
-    public Response delete(@PathParam("revision") Integer revision) throws RestableIsolatedDockerException {
-        configuration.deregisterDockerImage(revision);
-        return Response.noContent().build();
     }
 
     @GET
