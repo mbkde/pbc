@@ -69,22 +69,8 @@
     function appendTableRow(parent, mapping) {
             parent.append('<tr id="row-revision-' + mapping.revision + '">' + 
                          "<td>" + mapping.dockerImage + "</td>" + 
-                         '<td><button type="button" class="aui-button" onclick="deleteImage(' + mapping.revision + ')">Deregister</button></td>' +
                          '<td><a href="/admin/viewDockerUsages.action?revision=' + mapping.revision + '&image=' + mapping.dockerImage + '">Usages</a></td>' +
                          "</tr>");
-    }
-
-    function deleteImage(revision) {
-        AJS.$.ajax({
-            type: "DELETE",
-            url: restEndpoint + revision,
-            success: function () {
-                AJS.$("#dockerImageTable #row-revision-" + revision).remove();
-            },
-            error: function (err) {
-                alert(err.responseText);
-            }
-        });
     }
 
     function setEcsConfig() {

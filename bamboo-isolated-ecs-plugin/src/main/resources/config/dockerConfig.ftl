@@ -9,22 +9,7 @@
 <br>
 Global Configuration for running Per-build Container agents on AWS ECS cluster. The Bamboo plugin
 manages the scaling and scheduling of Bamboo agents on ECS.
-</br>
 <br>
-        Only Docker images (and tags) registered with ECS can run in the cluster. Below is the list of images known to this Bamboo server/ECS cluster. 
-List is updated on running a plan the first time, not editing it.
-
-            <h2>Registered Docker Images</h2><br>
-
-            <table id="dockerImageTable" class="aui">
-                <tr>
-                    <th>Docker Image</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </table>
-
-            <br>
 
 <h2>ECS cluster configuration</h2>
     Configure the ECS cluster associated with this Bamboo server.
@@ -109,5 +94,19 @@ List is updated on running a plan the first time, not editing it.
         <div class="save-status"/>
     </fieldset>
 </form>
+
+<br>
+Only Docker images (and tags) registered with ECS can run in the cluster. Below is the list of images known to this Bamboo server/ECS cluster.
+List is updated on running a plan the first time, not editing it.
+
+<h2>Registered Docker Images</h2><br>
+
+<table id="dockerImageTable" class="aui">
+    <tr>
+        <th>Docker Image</th>
+        <th></th>
+        <th></th>
+    </tr>
+</table>
 
 </body>
