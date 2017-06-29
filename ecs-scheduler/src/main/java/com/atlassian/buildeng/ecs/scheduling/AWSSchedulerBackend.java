@@ -52,11 +52,8 @@ import com.amazonaws.services.ecs.model.TaskOverride;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -69,6 +66,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
+    private Map<String, Instance> cachedInstances;
 
     //there seems to be a limit of 100 to the tasks that can be described in a batch
     private static final int MAXIMUM_TASKS_TO_DESCRIBE = 90;
@@ -115,6 +113,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Override
     public List<Instance> getInstances(Collection<String> instanceIds) throws ECSException {
+        // if not in instanceIds, remove from cache
+        Collection<String> finalInstanceIds = instanceIds;
+        cachedInstances = cachedInstances.entrySet().stream()
+                .filter(t -> finalInstanceIds.contains(t.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        instanceIds = instanceIds.stream().filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
         List<Instance> instances = new ArrayList<>();
         if (!instanceIds.isEmpty()) try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
