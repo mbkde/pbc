@@ -89,9 +89,8 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         String instanceName = admConfAccessor.getAdministrationConfiguration().getInstanceName();
         // Sanitize as the family for a task definition can only contain certain characters and
         // be of max length 255
-        return instanceName
-                .replaceAll("[^\\w-]", "")
-                .substring(0, Math.min(instanceName.length(), 255 - Constants.TASK_DEFINITION_SUFFIX.length()))
+        instanceName = instanceName.replaceAll("[^\\w-]", "");
+        return instanceName.substring(0, Math.min(instanceName.length(), 255 - Constants.TASK_DEFINITION_SUFFIX.length()))
                 + Constants.TASK_DEFINITION_SUFFIX;
     }
     
