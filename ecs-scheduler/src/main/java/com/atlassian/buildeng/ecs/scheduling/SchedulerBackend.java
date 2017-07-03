@@ -43,7 +43,7 @@ public interface SchedulerBackend {
      * @return 
      * @throws ECSException
      */
-    List<Instance> getInstances(Collection<String> instanceIds) throws ECSException;
+    Collection<Instance> getInstances(Collection<String> instanceIds) throws ECSException;
     
     /**
      * scale the ASG to desired capacity

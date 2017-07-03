@@ -53,8 +53,14 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Lists;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -114,17 +120,16 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public List<Instance> getInstances(Collection<String> instanceIds) throws ECSException {
         // if not in instanceIds, remove from cache
-        Collection<String> finalInstanceIds = instanceIds;
         cachedInstances = cachedInstances.entrySet().stream()
-                .filter(t -> finalInstanceIds.contains(t.getKey()))
+                .filter(t -> instanceIds.contains(t.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        instanceIds = instanceIds.stream().filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
+        List<String> misses = instanceIds.stream().filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
         List<Instance> instances = new ArrayList<>();
-        if (!instanceIds.isEmpty()) try {
+        if (!misses.isEmpty()) try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             DescribeInstancesRequest req = new DescribeInstancesRequest()
-                    .withInstanceIds(instanceIds);
+                    .withInstanceIds(misses);
             boolean finished = false;
 
             while (!finished) {
@@ -140,7 +145,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         } catch (Exception ex) {
             throw new ECSException(ex);
         }
-        return instances.stream().distinct().collect(Collectors.toList());
+        cachedInstances.putAll(instances.stream().collect(Collectors.toMap(Instance::getInstanceId, Function.identity())));
+        return new ArrayList<>(cachedInstances.values());
     }
 
     @Override
