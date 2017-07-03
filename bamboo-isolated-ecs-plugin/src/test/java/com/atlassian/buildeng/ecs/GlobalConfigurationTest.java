@@ -33,11 +33,14 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import static org.mockito.Matchers.any;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.Arrays;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -73,6 +76,34 @@ public class GlobalConfigurationTest {
     
     Configuration of(String name) {
         return ConfigurationBuilder.create(name).build();
+    }
+
+    @Test
+    public void getTaskDefinitionNameWithInvalidCharacters() {
+        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
+        when(conf.getInstanceName()).thenReturn("Bad! -name1");
+        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
+        assertEquals("Bad-name1" + Constants.TASK_DEFINITION_SUFFIX, configuration.getTaskDefinitionName());
+    }
+
+    @Test
+    public void getTaskDefinitionNameTooLong() {
+        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
+        char[] chars = new char[300];
+        Arrays.fill(chars, 'c');
+        String name = new String(chars);
+        when(conf.getInstanceName()).thenReturn(name);
+        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
+        assertEquals(name.substring(0, 255 - Constants.TASK_DEFINITION_SUFFIX.length()) + Constants.TASK_DEFINITION_SUFFIX, configuration.getTaskDefinitionName());
+    }
+
+    @Test
+    public void getTaskDefinitionNameNoChanges() {
+        AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
+        String name = "Good-name2";
+        when(conf.getInstanceName()).thenReturn(name);
+        when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
+        assertEquals(name + Constants.TASK_DEFINITION_SUFFIX, configuration.getTaskDefinitionName());
     }
 
     @Test
