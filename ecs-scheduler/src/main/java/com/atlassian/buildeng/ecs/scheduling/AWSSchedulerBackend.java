@@ -123,7 +123,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         // if not in instanceIds, remove from cache
         List<String> stale = cachedInstances.entrySet().stream()
                 .map(Map.Entry::getKey)
-                .filter(instanceIds::contains)
+                .filter(t -> !instanceIds.contains(t))
                 .collect(Collectors.toList());
 
         stale.forEach(cachedInstances::remove);
