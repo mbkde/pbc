@@ -56,6 +56,7 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +80,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Inject
     public AWSSchedulerBackend() {
+        cachedInstances = new HashMap<>();
     }
     
     @Override
