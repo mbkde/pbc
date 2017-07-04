@@ -73,14 +73,13 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
-    private Map<String, Instance> cachedInstances;
+    private final Map<String, Instance> cachedInstances = new HashMap<>();
 
     //there seems to be a limit of 100 to the tasks that can be described in a batch
     private static final int MAXIMUM_TASKS_TO_DESCRIBE = 90;
 
     @Inject
     public AWSSchedulerBackend() {
-        cachedInstances = new HashMap<>();
     }
     
     @Override
@@ -122,12 +121,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public List<Instance> getInstances(Collection<String> instanceIds) throws ECSException {
         // if not in instanceIds, remove from cache
-        cachedInstances = cachedInstances.entrySet().stream()
-                .filter(t -> instanceIds.contains(t.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        List<String> stale = cachedInstances.entrySet().stream()
+                .map(Map.Entry::getKey)
+                .filter(instanceIds::contains)
+                .collect(Collectors.toList());
 
+        stale.forEach(cachedInstances::remove);
         List<String> misses = instanceIds.stream().filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
-        List<Instance> instances = new ArrayList<>();
         if (!misses.isEmpty()) try {
             AmazonEC2Client ec2Client = new AmazonEC2Client();
             DescribeInstancesRequest req = new DescribeInstancesRequest()
@@ -136,7 +136,9 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
             while (!finished) {
                 DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
-                describeInstancesResult.getReservations().forEach(reservation -> instances.addAll(reservation.getInstances()));
+                describeInstancesResult.getReservations().stream()
+                        .flatMap(t -> t.getInstances().stream())
+                        .forEach(t -> cachedInstances.put(t.getInstanceId(), t));
                 String nextToken = describeInstancesResult.getNextToken();
                 if (nextToken == null) {
                     finished = true;
@@ -147,7 +149,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         } catch (Exception ex) {
             throw new ECSException(ex);
         }
-        cachedInstances.putAll(instances.stream().collect(Collectors.toMap(Instance::getInstanceId, Function.identity())));
         return new ArrayList<>(cachedInstances.values());
     }
 
