@@ -118,6 +118,9 @@ public class Rest {
         if (StringUtils.isBlank(config.getEcsClusterName())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("ecsClusterName is mandatory").build();
         }
+        if (StringUtils.isBlank(config.getSidekickImage())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
+        }
         configuration.setConfig(config);
         return Response.noContent().build();
     }

@@ -158,7 +158,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         Config gc = globalConfiguration.getDockerConfig();
         if (gc.isSidekickImage()) {
             Map<String, Object> sidekick = new HashMap<>();
-            String img = StringUtils.isNotBlank(gc.getSidekick()) ? gc.getSidekick().trim() : "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
+            String img = gc.getSidekick().trim();
             sidekick.put("image", img);
             services.put("bamboo-agent-sidekick", sidekick);
             agent.put("volumes_from", Collections.singletonList("bamboo-agent-sidekick"));

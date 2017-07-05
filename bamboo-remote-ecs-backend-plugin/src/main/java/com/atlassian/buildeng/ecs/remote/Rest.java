@@ -63,6 +63,9 @@ public class Rest {
         if (StringUtils.isBlank(config.getServerUrl())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("serverUrl is mandatory").build();
         }
+        if (StringUtils.isBlank(config.getSidekickImage())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
+        }
         configuration.persist(config);
         return Response.noContent().build();
     }
