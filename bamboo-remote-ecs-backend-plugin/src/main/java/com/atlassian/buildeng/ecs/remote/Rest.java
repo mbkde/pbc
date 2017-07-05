@@ -27,9 +27,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.WebResource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
 
 @WebSudoRequired
 @Path("/")
@@ -85,11 +90,16 @@ public class Rest {
         if (server == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("remote pbc server not defined in global settings.").build();
         }
+        Client client = createClient();
         try {
             URIBuilder uriBuilder = new URIBuilder(configuration.getCurrentServer() + "/rest/logs")
                     .addParameter(Rest.PARAM_CONTAINER, containerName)
                     .addParameter(Rest.PARAM_TASK_ARN, taskArn);
-            return Response.seeOther(uriBuilder.build()).build();
+            WebResource resource = client.resource(uriBuilder.build());
+            return Response.ok().entity(resource
+                    .accept(MediaType.TEXT_PLAIN_TYPE)
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .get(String.class)).build();
         } catch (URISyntaxException ex) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Error constructing URI to pbc-service").build();
         }
