@@ -108,8 +108,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
      */
     @Override
     public synchronized String getCurrentSidekick() {
-        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
-        return name == null ? Constants.DEFAULT_SIDEKICK_REPOSITORY : name;
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
     @Override
@@ -247,7 +246,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
             auditLogEntry("PBC Autoscaling Group", getCurrentASG(), config.getAutoScalingGroupName());
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, config.getAutoScalingGroupName());
         }
-        String newSidekick = StringUtils.isBlank(config.getSidekickImage()) ? Constants.DEFAULT_SIDEKICK_REPOSITORY : config.getSidekickImage();
+        String newSidekick = config.getSidekickImage();
         if (!StringUtils.equals(newSidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), newSidekick);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, newSidekick);

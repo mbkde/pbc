@@ -28,8 +28,6 @@ public class GlobalConfiguration {
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.ecs.remote.sidekick";
     static String BANDANA_SERVER_URL_KEY = "com.atlassian.buildeng.ecs.remote.server";
     static String BANDANA_PREEMPTIVE_KEY = "com.atlassian.buildeng.ecs.remote.preemptive";
-    // The name of the atlassian docker registry sidekick
-    static String DEFAULT_SIDEKICK_REPOSITORY = "docker.atlassian.io/buildeng/bamboo-agent-sidekick";
 
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -44,8 +42,7 @@ public class GlobalConfiguration {
     }
 
     public synchronized String getCurrentSidekick() {
-        String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
-        return name == null ? DEFAULT_SIDEKICK_REPOSITORY : name;
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
     public synchronized String getCurrentRole() {
