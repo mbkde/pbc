@@ -84,11 +84,11 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                     // if the build key is not present in CurrentResult customBuildData or does not match our context
                     // build key then PreBuildQueuedEventListener.call(BuildQueuedEvent event) was never called
                     // i.e., the plugin was offline when the build event was fired
-                    if (buildKey == null || buildKey.equals(t.getView().getBuildKey().getKey())) {
+                    // else, the docker agent for this one is either coming up online or will be dumped/stopped by
+                    // ECSWatchDogJob
+                    if (buildKey == null || !buildKey.equals(t.getView().getBuildKey().getKey())) {
                         LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
                         eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
-                    } else {
-                        //docker agent for this one is either coming up online or will be dumped/stopped by ECSWatchDogJob
                     }
                 }
              }
