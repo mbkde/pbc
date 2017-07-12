@@ -15,12 +15,17 @@
  */
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
+import com.atlassian.bamboo.deployments.execution.DeploymentContext;
+import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.executor.NamedExecutors;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
+import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
@@ -77,11 +82,24 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                     LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
                     eventPublisher.publish(new RetryAgentStartupEvent(c, t.getView()));
                 } else {
-                    //docker agent for this one is either coming up online or will be dumped/stopped by ECSWatchDogJob
+                    String buildKey = bd.get(DockerAgentBuildQueue.BUILD_KEY);
+                    // if the build key is not present in CurrentResult customBuildData or does not match our context
+                    // build key then PreBuildQueuedEventListener.call(BuildQueuedEvent event) was never called
+                    // i.e., the plugin was offline when the build event was fired
+                    // else, the docker agent for this one is either coming up online or will be dumped/stopped by
+                    // ECSWatchDogJob
+                    if (buildKey == null || !buildKey.equals(t.getView().getBuildKey().getKey())) {
+                        LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
+                        if (t.getView() instanceof BuildContext) {
+                            eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
+                        }
+                        else if (t.getView() instanceof DeploymentContext) {
+                            eventPublisher.publish(new DeploymentTriggeredEvent((DeploymentContext) t.getView()));
+                        }
+                    }
                 }
              }
         });
-        
     }
 
     @Override
