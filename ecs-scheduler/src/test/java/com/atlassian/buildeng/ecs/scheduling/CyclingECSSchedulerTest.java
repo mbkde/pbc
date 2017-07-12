@@ -17,7 +17,9 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -69,11 +71,11 @@ public class CyclingECSSchedulerTest {
     public void testSelectHost() throws ECSException {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 50, 50),
-                    ci("id2", "arn2", true, 40, 40),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 20, 20),
-                    ci("id5", "arn5", true, 10, 10)
+                    ci("id1", "arn1", true, 50, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 40, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 20, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 10, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -106,11 +108,11 @@ public class CyclingECSSchedulerTest {
     public void testSelectHostWithDemandOverflow() throws ECSException {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 50, 50),
-                    ci("id2", "arn2", true, 40, 40),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 20, 20),
-                    ci("id5", "arn5", true, 10, 10)
+                    ci("id1", "arn1", true, 50, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 40, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 20, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 10, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -145,11 +147,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleScaleUp() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 10, 50),
-                    ci("id2", "arn2", true, 20, 40),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 40, 20),
-                    ci("id5", "arn5", true, 50, 10)
+                    ci("id1", "arn1", true, 10, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 40, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 50, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -180,11 +182,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleNoScaling() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 10, 50),
-                    ci("id2", "arn2", true, 20, 40),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 40, 20),
-                    ci("id5", "arn5", true, 50, 10)
+                    ci("id1", "arn1", true, 10, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 40, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 50, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -216,11 +218,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleTerminateStale() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 0, 0),
-                    ci("id2", "arn2", true, 50, 50),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 40, 20),
-                    ci("id5", "arn5", true, 50, 10)
+                    ci("id1", "arn1", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 50, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 40, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 50, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date(System.currentTimeMillis() - (AwsPullModelLoader.DEFAULT_STALE_PERIOD.toMillis() + 1000))),
@@ -254,11 +256,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleStaleNotLoaded() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 10, 10),
-                    ci("id2", "arn2", true, 40, 40),
-                    ci("id3", "arn3", true, 10, 10),
-                    ci("id4", "arn4", true, 40, 20),
-                    ci("id5", "arn5", true, 30, 10)
+                    ci("id1", "arn1", true, 10, 10, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 40, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 10, 10, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 40, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 30, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date(System.currentTimeMillis() - (AwsPullModelLoader.DEFAULT_STALE_PERIOD.toMillis() + 1000))),
@@ -292,11 +294,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleTerminatingOfIdleInLastQuarterOfBillingCycle() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 0, 0),
-                    ci("id2", "arn2", true, 60, 60),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 30, 30),
-                    ci("id5", "arn5", true, 10, 10)
+                    ci("id1", "arn1", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 60, 60, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 10, 10, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
@@ -332,13 +334,13 @@ public class CyclingECSSchedulerTest {
     public void scheduleTerminationKeepFreeRation() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true,  0, 0),
-                    ci("id2", "arn2", true,  80, 80),
-                    ci("id3", "arn3", true,  80, 80),
-                    ci("id4", "arn4", true,  80, 80),
-                    ci("id5", "arn5", true,  80, 80),
-                    ci("id6", "arn6", true,  0, 0),
-                    ci("id7", "arn7", true,  0, 0)
+                    ci("id1", "arn1", true,  0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true,  80, 80, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true,  80, 80, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true,  80, 80, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true,  80, 80, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id6", "arn6", true,  0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id7", "arn7", true,  0, 0, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
@@ -379,11 +381,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleUnusedFreshIsSelected() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 60, 60),
-                    ci("id2", "arn2", true, 20, 20),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 40, 40),
-                    ci("id5", "arn5", true, 50, 50)
+                    ci("id1", "arn1", true, 60, 60, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 40, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 50, 50, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         // 40 minutes old instance (past halfway in billing cycle)\
@@ -419,8 +421,8 @@ public class CyclingECSSchedulerTest {
     public void scheduleRequestCoalesce() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 60, 60),
-                    ci("id2", "arn2", true, 40, 40)
+                    ci("id1", "arn1", true, 60, 60, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 40, 40, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -483,8 +485,8 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend backend = mock(SchedulerBackend.class);
         when(backend.getClusterContainerInstances(anyString())).thenReturn(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 60, 60),
-                    ci("id2", "arn2", true, 20, 40)
+                    ci("id1", "arn1", true, 60, 60, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 40, ContainerInstanceStatus.ACTIVE.toString())
                 )
         );
         mockASG(Sets.newHashSet("id1", "id2"), backend);
@@ -510,8 +512,8 @@ public class CyclingECSSchedulerTest {
         SchedulerBackend backend = mock(SchedulerBackend.class);
         when(backend.getClusterContainerInstances(anyString())).thenReturn(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 60, 60),
-                    ci("id2", "arn2", true, 20, 40)
+                    ci("id1", "arn1", true, 60, 60, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 40, ContainerInstanceStatus.ACTIVE.toString())
                     )
         );
         when(backend.getInstances(anyList())).thenReturn(Arrays.asList(
@@ -543,11 +545,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleScaleUpWithDisconnected() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", false, 10, 10),
-                    ci("id2", "arn2", false, 20, 20),
-                    ci("id3", "arn3", false, 80, 80),
-                    ci("id4", "arn4", false, 100, 100),
-                    ci("id5", "arn5", false, 0, 0)
+                    ci("id1", "arn1", false, 10, 10, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", false, 20, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", false, 80, 80, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", false, 100, 100, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", false, 0, 0, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -582,11 +584,11 @@ public class CyclingECSSchedulerTest {
     public void noTerminationOnFreshDisconnected() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", false, 10, 50),
-                    ci("id2", "arn2", false, 20, 20),
-                    ci("id3", "arn3", false, 0, 0),
-                    ci("id4", "arn4", false, 100, 100),
-                    ci("id5", "arn5", false, 50, 50)
+                    ci("id1", "arn1", false, 10, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", false, 20, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", false, 0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", false, 100, 100, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", false, 50, 50, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -627,11 +629,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleScaleUpWithDisconnectedTerminationFailed() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", false, 10, 20),
-                    ci("id2", "arn2", false, 10, 10),
-                    ci("id3", "arn3", false, 80, 80),
-                    ci("id4", "arn4", false, 50, 50),
-                    ci("id5", "arn5", false, 50, 50)
+                    ci("id1", "arn1", false, 10, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", false, 10, 10, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", false, 80, 80, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", false, 50, 50, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", false, 50, 50, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -666,7 +668,7 @@ public class CyclingECSSchedulerTest {
     public void agentDoesntFitInstance() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 0, 0)
+                    ci("id1", "arn1", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString())
                     ),
                 Arrays.asList(
                     ec2("id1", new Date())
@@ -692,11 +694,11 @@ public class CyclingECSSchedulerTest {
     public void scheduleTerminatingOfNonASGContainer() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 0, 0),
-                    ci("id2", "arn2", true, 20, 40),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 40, 20),
-                    ci("id5", "arn5", true, 0, 0) //unused stale only gets killed
+                    ci("id1", "arn1", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 40, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString()) //unused stale only gets killed
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -732,11 +734,11 @@ public class CyclingECSSchedulerTest {
     public void asgIsLonely() throws Exception {
         SchedulerBackend schedulerBackend = mockBackend(
                 Arrays.asList(
-                    ci("id1", "arn1", true, 0, 0),
-                    ci("id2", "arn2", true, 20, 40),
-                    ci("id3", "arn3", true, 30, 30),
-                    ci("id4", "arn4", true, 20, 20),
-                    ci("id5", "arn5", true, 0, 0) //unused stale only gets killed
+                    ci("id1", "arn1", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id2", "arn2", true, 20, 40, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id3", "arn3", true, 30, 30, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id4", "arn4", true, 20, 20, ContainerInstanceStatus.ACTIVE.toString()),
+                    ci("id5", "arn5", true, 0, 0, ContainerInstanceStatus.ACTIVE.toString()) //unused stale only gets killed
                     ),
                 Arrays.asList(
                         ec2("id1", new Date()),
@@ -850,11 +852,14 @@ public class CyclingECSSchedulerTest {
         when(mocked.describeAutoScalingGroup(anyString())).thenReturn(asg);
     }
     
-    static ContainerInstance ci(String ec2Id, String arn, boolean connected, int usedMemPercentage, int usedCpuPercentage) {
+    static ContainerInstance ci(
+            String ec2Id, String arn, boolean connected, int usedMemPercentage, int usedCpuPercentage, String status
+    ) {
         return new ContainerInstance()
                 .withEc2InstanceId(ec2Id)
                 .withContainerInstanceArn(arn)
                 .withAgentConnected(connected)
+                .withStatus(status)
                 .withRegisteredResources(
                         new Resource().withName("MEMORY").withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getMemory()),
                         new Resource().withName("CPU").withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getCpu()))

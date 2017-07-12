@@ -16,6 +16,8 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
+
 import java.time.Duration;
 
 import java.util.ArrayList;
@@ -98,8 +100,13 @@ public final class DockerHosts {
     }
 
     private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
-        // Java pls
-        return dockerHosts.stream().collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.isPresentInASG() && dockerHost.ageMillis() < stalePeriod.toMillis()));
+        return dockerHosts.stream().collect(Collectors.partitioningBy(
+                (DockerHost dockerHost) ->
+                        dockerHost.isPresentInASG() &&
+                        dockerHost.ageMillis() < stalePeriod.toMillis() &&
+                        !dockerHost.getStatus().equals(ContainerInstanceStatus.DRAINING.toString())
+                )
+        );
     }
 
     AutoScalingGroup getASG() {

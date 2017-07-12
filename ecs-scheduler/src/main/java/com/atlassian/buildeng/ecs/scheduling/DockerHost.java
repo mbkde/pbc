@@ -18,6 +18,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.Attribute;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 
@@ -40,19 +41,31 @@ public class DockerHost {
     private final int registeredCpu;
     private final String containerInstanceArn;
     private final String instanceId;
+    private final String status;
     private final Date launchTime;
     private final boolean agentConnected;
     private boolean presentInASG = true;
     private final List<Attribute> attributes;
 
     @TestOnly
-    DockerHost(int remainingMemory, int remainingCpu, int registeredMemory, int registeredCpu, String containerInstanceArn, String instanceId, Date launchTime, boolean agentConnected, String instanceType) {
+    DockerHost(int remainingMemory,
+               int remainingCpu,
+               int registeredMemory,
+               int registeredCpu,
+               String containerInstanceArn,
+               String instanceId,
+               String status,
+               Date launchTime,
+               boolean agentConnected,
+               String instanceType
+    ) {
         this.remainingMemory = remainingMemory;
         this.remainingCpu = remainingCpu;
         this.registeredMemory = registeredMemory;
         this.registeredCpu = registeredCpu;
         this.containerInstanceArn = containerInstanceArn;
         this.instanceId = instanceId;
+        this.status = status;
         this.launchTime = launchTime;
         this.agentConnected = agentConnected;
         this.attributes = new ArrayList<>();
@@ -65,6 +78,7 @@ public class DockerHost {
         registeredCpu    = getIntegralResource(containerInstance, false, "CPU");
         containerInstanceArn = containerInstance.getContainerInstanceArn();
         instanceId = containerInstance.getEc2InstanceId();
+        status = containerInstance.getStatus();
         launchTime = instance.getLaunchTime();
         agentConnected = containerInstance.isAgentConnected();
         presentInASG = inASG;
@@ -164,6 +178,10 @@ public class DockerHost {
 
     public String getInstanceId() {
         return instanceId;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     @Override
