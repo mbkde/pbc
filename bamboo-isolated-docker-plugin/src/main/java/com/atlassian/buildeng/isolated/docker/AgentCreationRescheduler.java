@@ -15,6 +15,8 @@
  */
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
+import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
@@ -88,12 +90,16 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                     // ECSWatchDogJob
                     if (buildKey == null || !buildKey.equals(t.getView().getBuildKey().getKey())) {
                         LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
-                        eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
+                        if (t.getView() instanceof BuildContext) {
+                            eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
+                        }
+                        else if (t.getView() instanceof DeploymentContext) {
+                            eventPublisher.publish(new DeploymentTriggeredEvent((DeploymentContext) t.getView()));
+                        }
                     }
                 }
              }
         });
-        
     }
 
     @Override
