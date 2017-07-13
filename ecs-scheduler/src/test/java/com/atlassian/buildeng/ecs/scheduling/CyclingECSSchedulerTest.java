@@ -17,7 +17,9 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -855,6 +857,7 @@ public class CyclingECSSchedulerTest {
                 .withEc2InstanceId(ec2Id)
                 .withContainerInstanceArn(arn)
                 .withAgentConnected(connected)
+                .withStatus(ContainerInstanceStatus.ACTIVE.toString())
                 .withRegisteredResources(
                         new Resource().withName("MEMORY").withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getMemory()),
                         new Resource().withName("CPU").withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getCpu()))
@@ -863,7 +866,13 @@ public class CyclingECSSchedulerTest {
                         new Resource().withName("CPU").withIntegerValue(cpu(100 - usedCpuPercentage)));
         
     }
-    
+
+    static ContainerInstance ci(
+            String ec2Id, String arn, boolean connected, int usedMemPercentage, int usedCpuPercentage, String status
+    ) {
+        return ci(ec2Id, arn, connected, usedMemPercentage, usedCpuPercentage).withStatus(status);
+    }
+
     static Instance ec2(String ec2id, Date launchTime) {
         return new Instance().withInstanceId(ec2id).withLaunchTime(launchTime).withInstanceType(ECSInstance.DEFAULT_INSTANCE.getName());
     }

@@ -15,6 +15,8 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.pholser.junit.quickcheck.generator.GenerationStatus;
 import com.pholser.junit.quickcheck.generator.Generator;
 import com.pholser.junit.quickcheck.generator.java.lang.StringGenerator;
@@ -45,6 +47,7 @@ public class DockerHostGenerator extends Generator<DockerHost> {
         Date launchTime = new DateGenerator().generate(r, status);
         boolean agentConnected = r.nextBoolean();
         return new DockerHost(remainingMemory, remainingCpu, registeredMemory, registeredCpu, 
-                containerInstanceArn, instanceId, launchTime, agentConnected, "m4.10xlarge");
+                containerInstanceArn, instanceId, ContainerInstanceStatus.ACTIVE.toString(), launchTime,
+                agentConnected, "m4.10xlarge");
     }
 }
