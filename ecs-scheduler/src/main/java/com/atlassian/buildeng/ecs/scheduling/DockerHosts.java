@@ -104,7 +104,7 @@ public final class DockerHosts {
                 (DockerHost dockerHost) ->
                         dockerHost.isPresentInASG() &&
                         dockerHost.ageMillis() < stalePeriod.toMillis() &&
-                        !dockerHost.getStatus().equals(ContainerInstanceStatus.DRAINING.toString())
+                        !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())
                 )
         );
     }
