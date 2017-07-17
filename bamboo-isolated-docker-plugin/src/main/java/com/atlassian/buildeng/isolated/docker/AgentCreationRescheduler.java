@@ -89,7 +89,7 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                     // else, the docker agent for this one is either coming up online or will be dumped/stopped by
                     // ECSWatchDogJob
                     if (buildKey == null || !buildKey.equals(t.getView().getBuildKey().getKey())) {
-                        LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
+                        LOG.info("Refire build/deployment event for {} after plugin restart.", t.getView().getResultKey());
                         if (t.getView() instanceof BuildContext) {
                             eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
                         }
