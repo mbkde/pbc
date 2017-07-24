@@ -16,23 +16,21 @@
 
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
-import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
+import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction.stagePBCExecutions;
-import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction.stagePBCJobResultKeys;
+import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.lang.StringUtils;
@@ -43,9 +41,6 @@ import org.slf4j.Logger;
  */
 public class PostJobActionImpl implements PostJobAction {
     private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
-    //key in customBuildData to store the build key that is only available in CommonContexts
-    //only set in buildResultsSummary.getCustomBuildData() when the future reservation was set beforehand in ReserveFutureCapacityPreJobAction
-    static final String FUTURE_RESERVE_PBCBUILD_KEY = "pbc.buildKey";
 
     private final AgentRemovals agentRemovals;
     private final AgentManager agentManager;
@@ -59,17 +54,15 @@ public class PostJobActionImpl implements PostJobAction {
 
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
-        //cleanup future reservations in case of failure.
-        String futureBuildKey = buildResultsSummary.getCustomBuildData().get(FUTURE_RESERVE_PBCBUILD_KEY);
-        if (futureBuildKey != null && !buildResultsSummary.isSuccessful()) {
-            Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
-            Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
-            if (nextStageCpu > 0 || nextStageMem > 0) {
-                LOG.info("Resetting reservation " + futureBuildKey +  " due to failed build result " + buildResultsSummary.getPlanResultKey());
-                isoService.reserveCapacity(new BuildKeyReplica(futureBuildKey),
-                        stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
-                        0, 0);
-            }
+        //cleanup future reservations in case of failure. We do it here because we want to reset the reservation as soon as possible.
+        ReserveFutureCapacityPostStageAction.FutureState state = ReserveFutureCapacityPostStageAction.retrieveFutureState(stageExecution);
+        if (ReserveFutureCapacityPostStageAction.FutureState.RESERVED.equals(state)
+                && !buildResultsSummary.isSuccessful()) {
+            BuildKey futureBuildKey = ReserveFutureCapacityPreStageAction.findBuildKey(stageExecution);
+            LOG.info("Resetting reservation " + futureBuildKey +  " due to failed build result " + buildResultsSummary.getPlanResultKey());
+            isoService.reserveCapacity(futureBuildKey,
+                    stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
+                    0, 0);
         }
         Configuration config = AccessConfiguration.forBuildResultSummary(buildResultsSummary);
         if (config.isEnabled()) {
@@ -116,28 +109,5 @@ public class PostJobActionImpl implements PostJobAction {
             }
             return test;
         }
-    }
-
-    //because BuildKey in bamboo can't be recreated from string and we need to store it
-    // in string, string map and recreate
-    private static class BuildKeyReplica implements Key {
-
-        private final String key;
-
-        public BuildKeyReplica(String key) {
-            this.key = key;
-        }
-
-
-        @Override
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public String toString() {
-            return getKey();
-        }
-
     }
 }

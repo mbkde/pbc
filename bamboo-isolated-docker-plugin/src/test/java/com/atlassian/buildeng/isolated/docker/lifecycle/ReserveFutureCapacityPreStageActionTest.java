@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ReserveFutureCapacityPreJobActionTest {
+public class ReserveFutureCapacityPreStageActionTest {
     @Mock
     private IsolatedAgentService isoService;
     @Mock
@@ -52,7 +52,7 @@ public class ReserveFutureCapacityPreJobActionTest {
     private CachedPlanManager cachedPlanManager;
 
     @InjectMocks
-    private ReserveFutureCapacityPreJobAction action;
+    private ReserveFutureCapacityPreStageAction action;
 
     @Test
     public void testNoResults() {
