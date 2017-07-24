@@ -44,7 +44,8 @@ import org.slf4j.Logger;
 public class PostJobActionImpl implements PostJobAction {
     private static final Logger LOG = LoggerFactory.getLogger(PostJobActionImpl.class);
     //key in customBuildData to store the build key that is only available in CommonContexts
-    static final String PBCBUILD_KEY = "pbc.buildKey";
+    //only set in buildResultsSummary.getCustomBuildData() when the future reservation was set beforehand in ReserveFutureCapacityPreJobAction
+    static final String FUTURE_RESERVE_PBCBUILD_KEY = "pbc.buildKey";
 
     private final AgentRemovals agentRemovals;
     private final AgentManager agentManager;
@@ -59,12 +60,13 @@ public class PostJobActionImpl implements PostJobAction {
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job, @NotNull BuildResultsSummary buildResultsSummary) {
         //cleanup future reservations in case of failure.
-        if (!buildResultsSummary.isSuccessful()) {
+        String futureBuildKey = buildResultsSummary.getCustomBuildData().get(FUTURE_RESERVE_PBCBUILD_KEY);
+        if (futureBuildKey != null && !buildResultsSummary.isSuccessful()) {
             Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
             Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
             if (nextStageCpu > 0 || nextStageMem > 0) {
-                LOG.info("Resetting reservation " + buildResultsSummary.getCustomBuildData().get(PBCBUILD_KEY) +  " due to failed build result " + buildResultsSummary.getPlanResultKey());
-                isoService.reserveCapacity(new BuildKeyReplica(buildResultsSummary.getCustomBuildData().get(PBCBUILD_KEY)),
+                LOG.info("Resetting reservation " + futureBuildKey +  " due to failed build result " + buildResultsSummary.getPlanResultKey());
+                isoService.reserveCapacity(new BuildKeyReplica(futureBuildKey),
                         stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                         0, 0);
             }
