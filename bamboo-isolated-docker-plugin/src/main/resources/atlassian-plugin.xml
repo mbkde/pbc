@@ -30,9 +30,11 @@ limitations under the License.
         <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </preBuildAction>
 
-<!-- Job that communicates with the predator service to get the global config into the build context -->
-    <preJobAction key="reserveFutureCapacityPreJob" class="com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreJobAction">
-    </preJobAction>
+    <preStageAction key="reserveFutureCapacityPreStage" class="com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction">
+    </preStageAction>
+
+    <postStageAction key="reserveFutureCapacityPostStage" class="com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPostStageAction">
+    </postStageAction>
 
 
     <buildProcessor key="stopContainerAgent" name="Stop Container Agent"

@@ -20,7 +20,7 @@ import com.atlassian.bamboo.builder.BuildState;
 import com.atlassian.bamboo.chains.BuildExecution;
 import com.atlassian.bamboo.chains.ChainExecution;
 import com.atlassian.bamboo.chains.StageExecution;
-import com.atlassian.bamboo.chains.plugins.PreJobAction;
+import com.atlassian.bamboo.chains.plugins.PreStageAction;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
@@ -28,6 +28,8 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryCriteria;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.BuildKey;
+import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -39,25 +41,25 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReserveFutureCapacityPreJobAction implements PreJobAction {
+public class ReserveFutureCapacityPreStageAction implements PreStageAction {
 
     private static final int MINIMUM_SUCCESS_PERCENTAGE = 50;
     private static final int MINIMUM_RESULT_COUNT = 5;
     private static final int TOTAL_RESULT_COUNT = 10;
 
-    private final static Logger logger = LoggerFactory.getLogger(ReserveFutureCapacityPreJobAction.class);
+    private final static Logger logger = LoggerFactory.getLogger(ReserveFutureCapacityPreStageAction.class);
     private final IsolatedAgentService isoService;
     private final ResultsSummaryManager resultsSummaryManager;
     private final CachedPlanManager cachedPlanManager;
 
-    public ReserveFutureCapacityPreJobAction(IsolatedAgentService isoService, ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager) {
+    public ReserveFutureCapacityPreStageAction(IsolatedAgentService isoService, ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager) {
         this.isoService = isoService;
         this.resultsSummaryManager = resultsSummaryManager;
         this.cachedPlanManager = cachedPlanManager;
     }
 
     @Override
-    public void execute(StageExecution stageExecution, BuildContext buildContext) {
+    public void execute(StageExecution stageExecution) throws InterruptedException, Exception {
         Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
         Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
         Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
@@ -67,18 +69,30 @@ public class ReserveFutureCapacityPreJobAction implements PreJobAction {
         if (diffMem > 0 || diffCpu > 0) {
             long seconds = stageSuccessfulCompletionAvg(stageExecution);
             if (seconds != -1) { //for now ignore the time it takes, only care about succ/fail ratio
-                //set the buildKey in customData because we are not having a way to retrieve it in postJobAction otherwise
-                buildContext.getBuildResult().getCustomBuildData().put(PostJobActionImpl.FUTURE_RESERVE_PBCBUILD_KEY, buildContext.getBuildKey().getKey());
-                logger.info("Adding future reservation for " + buildContext.getBuildKey().getKey() + " " + buildContext.getPlanResultKey());
-                //TODO we should coalesce multiple calls for buildKey+resultKeys into single call.
-                isoService.reserveCapacity(buildContext.getBuildKey(),
+                BuildKey key = findBuildKey(stageExecution);
+                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, ReserveFutureCapacityPostStageAction.FutureState.RESERVED);
+                logger.info("Adding future reservation for {} {} ", key, stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex()));
+                isoService.reserveCapacity(key,
                     stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                     diffMem, diffCpu);
+            } else {
+                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, ReserveFutureCapacityPostStageAction.FutureState.NOT_RESERVED);
             }
+        } else {
+            ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, ReserveFutureCapacityPostStageAction.FutureState.NOT_APPLICABLE);
         }
     }
 
-    static Stream<Configuration> stagePBCExecutions(ChainExecution chainExecution, int stageIndex) {
+
+
+    static BuildKey findBuildKey(StageExecution stageExecution) {
+        return stageExecution.getBuilds().stream()
+                .findAny()
+                .map((BuildExecution t) -> t.getBuildContext().getBuildKey())
+                .orElseThrow(() -> new IllegalStateException("Stage should have at least one job"));
+    }
+
+    private Stream<Configuration> stagePBCExecutions(ChainExecution chainExecution, int stageIndex) {
         Stream<Configuration> stream = chainExecution.getStages().stream()
                 .filter((StageExecution t) -> t.getStageIndex() == stageIndex)
                 .flatMap((StageExecution t) -> t.getBuilds().stream())
@@ -138,6 +152,7 @@ public class ReserveFutureCapacityPreJobAction implements PreJobAction {
             return -1;
         }
     }
+
 
     private class Stats {
         final int count;
