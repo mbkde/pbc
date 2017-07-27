@@ -29,6 +29,7 @@ public class GlobalConfiguration {
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
     static String BANDANA_SERVER_URL_KEY = "com.atlassian.buildeng.pbc.kubernetes.server";
     static String BANDANA_NAMESPACE_KEY = "com.atlassian.buildeng.pbc.kubernetes.namespace";
+    static String BANDANA_POD_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.podtemplate";
 
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -38,7 +39,8 @@ public class GlobalConfiguration {
         this.admConfAccessor = admConfAccessor;
     }
 
-    public String getBambooBaseUrl() {
+    public String getBambooBaseUrl()
+    {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
     }
 
@@ -58,6 +60,10 @@ public class GlobalConfiguration {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_NAMESPACE_KEY);
     }
 
+    public synchronized String getPodTemplateAsString() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE);
+    }
+
     public synchronized void persist(String sidekick, @Nullable String awsRole, String url, String namespace) {
         Preconditions.checkArgument(StringUtils.isNotBlank(url));
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
@@ -70,5 +76,10 @@ public class GlobalConfiguration {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_NAMESPACE_KEY, namespace);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, url);
+    }
+
+    public synchronized void persistTemplate(String podtemplate) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(podtemplate));
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podtemplate);
     }
 }

@@ -69,4 +69,26 @@ public class Rest {
         configuration.persist(config.getSidekickImage(), config.getAwsRole(), config.getServerUrl(), config.getNamespace());
         return Response.noContent().build();
     }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/template")
+    public Response getTemplate() {
+        String template = configuration.getPodTemplateAsString();
+        if (template == null) {
+            template = "apiVersion: v1\n" +
+                        "kind: Pod";
+        }
+        return Response.ok(template).build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/template")
+    public Response setTemplate(String template) {
+        configuration.persistTemplate(template);
+        return Response.noContent().build();
+    }
+
 }

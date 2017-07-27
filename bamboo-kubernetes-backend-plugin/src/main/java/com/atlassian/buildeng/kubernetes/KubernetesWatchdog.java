@@ -19,7 +19,11 @@ import com.atlassian.sal.api.scheduling.PluginJob;
 import static com.google.common.base.Preconditions.checkNotNull;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import java.util.List;
@@ -35,10 +39,17 @@ import java.util.stream.Collectors;
  */
 public class KubernetesWatchdog implements PluginJob {
 
+    static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration) throws KubernetesClientException {
+        Config config = new ConfigBuilder()
+                .withMasterUrl(globalConfiguration.getKubernetesURL())
+                .build();
+        KubernetesClient client = new DefaultKubernetesClient(config);
+        return client;
+    }
     @Override
     public void execute(Map<String, Object> jobDataMap) {
         GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
-        try (KubernetesClient client = KubernetesIsolatedDockerImpl.createKubernetesClient(globalConfiguration)) {
+        try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
             //TODO do we want to repeatedly query or 'watch' for changes?
             //client.pods().watch();
             System.out.println("watchdog");

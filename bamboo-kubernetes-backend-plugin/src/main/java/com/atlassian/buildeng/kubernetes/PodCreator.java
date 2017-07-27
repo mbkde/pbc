@@ -18,15 +18,8 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.ExecAction;
-import io.fabric8.kubernetes.api.model.ExecActionBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,118 +56,51 @@ public class PodCreator {
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
 
-    static Pod create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
+    static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Configuration c = r.getConfiguration();
+        Map<String, Object> root = new HashMap<>();
+        root.put("apiVersion", "v1");
+        root.put("kind", "Pod");
+        root.put("metadata", createMetadata(globalConfiguration, r));
+        root.put("spec", createSpec(globalConfiguration, r));
+        return root;
+    }
+
+    private static Map<String, String> createAnnotations(GlobalConfiguration globalConfiguration) {
         Map<String, String> annotations = new HashMap<>();
         if (globalConfiguration.getIAMRole() != null) {
             annotations.put("iam.amazonaws.com/role", globalConfiguration.getIAMRole());
         }
+        return annotations;
+    }
+
+    private static Map<String, String> createLabels(IsolatedDockerAgentRequest r) {
         Map<String, String> labels = new HashMap<>();
         labels.put("pbc", "true");
         labels.put("pbc.resultId", r.getResultKey());
         labels.put("pbc.uuid",  r.getUniqueIdentifier().toString());
-        List<EnvVar> mainContainerExtraEnvVars = new ArrayList<>();
-        Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream().filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage())).findFirst();
-        if (optDind.isPresent()) {
-            EnvVar var = new EnvVar();
-            var.setName("DOCKER_HOST");
-            var.setValue("tcp://" + optDind.get().getName() + ":2375");
-            mainContainerExtraEnvVars.add(var);
-        }
-
-        PodBuilder pb = new PodBuilder()
-            .withNewMetadata()
-                .withNamespace(globalConfiguration.getKubernetesNamespace())
-                .withName(r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString())
-                .withLabels(labels)
-                .withAnnotations(annotations)
-            .endMetadata()
-            .withNewSpec()
-                .withRestartPolicy("Never")
-                .addNewContainer()
-                    .withName("bamboo-agent-sidekick")
-                    //more or less same data as regular sidekick, just extending alpine to be able to
-                    // run shell scripts inside + /kubernetes.sh script to copy to shared directory
-                    .withImage(globalConfiguration.getCurrentSidekick())
-                    //kubernetes fails to pull from docker.a.io and this skips the container. ??
-                    .withImagePullPolicy("Always")
-                    .addNewVolumeMount("/buildeng-data", "bamboo-agent-sidekick", false, "")
-                    //copies data from /buildeng-data to /buildeng + the /buildeng/kubernetes flag file
-                    .withCommand("sh", "-c", "cp -r /buildeng/* /buildeng-data;touch /buildeng-data/kubernetes")
-                .endContainer()
-                .addNewContainer()
-                    .withName(CONTAINER_NAME_BAMBOOAGENT)
-                    .withImage(c.getDockerImage())
-                    .withImagePullPolicy("Always")
-                    .withWorkingDir(WORK_DIR)
-                    // containers in pod don't have startup ordering and don't wait for each other. We need to do manually
-                    .withCommand("sh", "-c", "while [ ! -f /buildeng/kubernetes ]; do sleep 1; done; /buildeng/run-agent.sh")
-                    .addNewEnv().withName(ENV_VAR_IMAGE).withValue(c.getDockerImage()).endEnv()
-                    .addNewEnv().withName(ENV_VAR_RESULT_ID).withValue(r.getResultKey()).endEnv()
-                    .addNewEnv().withName(ENV_VAR_SERVER).withValue(globalConfiguration.getBambooBaseUrl()).endEnv()
-                    .addNewEnv().withName("QUEUE_TIMESTAMP").withValue("" + r.getQueueTimestamp()).endEnv()
-                    .addNewEnv().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()).endEnv()
-                    .addAllToEnv(mainContainerExtraEnvVars)
-                    .addNewVolumeMount(WORK_DIR, "bamboo-agent-sidekick", false, "")
-                    .addNewVolumeMount(BUILD_DIR, "workdir", false, "")
-                    .withNewResources()
-                        .addToRequests("memory", new Quantity("" + c.getSize().memory() + "Mi"))
-                        .addToLimits("memory", new Quantity("" + (long)(c.getSize().memory()  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"))
-                        .addToRequests("cpu", new Quantity("" + c.getSize().cpu() + "m"))
-//                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
-                    .endResources()
-                    .editOrNewReadinessProbe()
-                        .withPeriodSeconds(5)
-                        .withInitialDelaySeconds(5)
-                        .withExec(hostNameModificationExecAction(r.getConfiguration(), CONTAINER_NAME_BAMBOOAGENT))
-                    .endReadinessProbe()
-                .endContainer()
-                .addAllToContainers(createExtraContainers(r.getConfiguration()))
-                .addNewVolume()
-                    .withName("bamboo-agent-sidekick")
-                    .withNewEmptyDir().endEmptyDir()
-                .endVolume()
-                .addNewVolume()
-                    .withName("workdir")
-                    .withNewEmptyDir().endEmptyDir()
-                .endVolume()
-            .endSpec();
-
-
-        return pb.build();
+        return labels;
     }
 
     public static boolean isDockerInDockerImage(String image) {
         return image.startsWith("docker:") && image.endsWith("dind");
     }
 
-    private static List<Container> createExtraContainers(Configuration c) {
+    private static List<Map<String, Object>> createExtraContainers(Configuration c) {
         return c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
-            return new ContainerBuilder()
-                .withName(t.getName())
-                .withImage(t.getImage())
-                .withImagePullPolicy("Always")
-                .addNewVolumeMount(BUILD_DIR, "workdir", false, "")
-                .withCommand(t.getCommands())
-                .withEnv(t.getEnvVariables().stream()
-                        .map((Configuration.EnvVariable t1) -> new EnvVarBuilder().withName(t1.getName()).withValue(t1.getValue()).build())
-                        .collect(Collectors.toList()))
-                .withNewResources()
-                    .addToRequests("memory", new Quantity("" + t.getExtraSize().memory() + "Mi"))
-                    .addToLimits("memory", new Quantity("" + (long)(t.getExtraSize().memory()  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"))
-                    .addToRequests("cpu", new Quantity("" + t.getExtraSize().cpu() + "m"))
-//                        .addToLimits("cpu", new Quantity("" + c.getSize().cpu() * SOFT_TO_HARD_LIMIT_RATIO + "m"))
-                .endResources()
-                    .editOrNewReadinessProbe()
-                        .withPeriodSeconds(5)
-                        .withInitialDelaySeconds(5)
-                        .withExec(hostNameModificationExecAction(c, t.getName()))
-                    .endReadinessProbe()
-
-                .withNewSecurityContext()
-                    .withPrivileged(isDockerInDockerImage(t.getImage()))
-                .endSecurityContext()
-                .build();
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", t.getName());
+            map.put("image", t.getImage());
+            map.put("imagePullPolicy", "Always");
+            map.put("resources", createResources(t.getExtraSize().memory(), t.getExtraSize().cpu()));
+            map.put("securityContext", ImmutableMap.of("privileged", isDockerInDockerImage(t.getImage())));
+            map.put("command", t.getCommands());
+            map.put("env", t.getEnvVariables().stream()
+                        .map((Configuration.EnvVariable t1) -> ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
+                        .collect(Collectors.toList()));
+            map.put("volumeMounts", ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false));
+            map.put("readinessProbe", createReadinessProbe(c, t.getName()));
+            return map;
         }).collect(Collectors.toList());
     }
 
@@ -183,16 +109,96 @@ public class PodCreator {
                 .collect(Collectors.toList());
     }
 
-    private static ExecAction hostNameModificationExecAction(Configuration c, String currentName) {
-        //compatibility with ecs, each extra container has a hostname
-        final ExecActionBuilder readinessProbeExec = new ExecActionBuilder().addToCommand("/bin/sh", "-c");
+    private static Map<String, Object> createReadinessProbe(Configuration c, String currentName) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("periodSeconds", 5);
+        map.put("initialDelaySeconds", 5);
         StringBuilder cmd = new StringBuilder();
         cmd.append("if [ -f /touch-").append(currentName).append(" ]; then { echo exists;} else {");
         containerNames(c).forEach(t -> {
             cmd.append(" echo '127.0.0.1 ").append(t).append("' >> /etc/hosts; ");
         });
         cmd.append(" touch /touch-").append(currentName).append("; } fi");
-        readinessProbeExec.addToCommand(cmd.toString());
-        return readinessProbeExec.build();
+        map.put("exec", ImmutableList.of("/bin/sh", "-c", cmd.toString()));
+        return map;
+    }
+
+    private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("namespace", globalConfiguration.getKubernetesNamespace());
+        map.put("name", r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString());
+        map.put("labels", createLabels(r));
+        map.put("annotations", createAnnotations(globalConfiguration));
+        return map;
+    }
+
+    private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("restartPolicy", "Never");
+        map.put("volumes", createVolumes());
+        map.put("containers", createContainers(globalConfiguration, r));
+        return map;
+    }
+
+    private static List<Map<String, Object>> createVolumes() {
+        return ImmutableList.of(
+            ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()),
+            ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
+    }
+
+    private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+        ArrayList<Map<String, Object>> toRet = new ArrayList<>();
+        toRet.add(createSidekick(globalConfiguration.getCurrentSidekick()));
+        toRet.addAll(createExtraContainers(r.getConfiguration()));
+        toRet.add(createMainContainer(globalConfiguration, r));
+        return toRet;
+    }
+
+    private static Map<String, Object> createSidekick(String currentSidekick) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", "bamboo-agent-sidekick");
+        map.put("image", currentSidekick);
+        map.put("imagePullPolicy", "Always");
+        map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data;touch /buildeng-data/kubernetes"));
+        map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", "false")));
+        return map;
+    }
+
+    private static Map<String, Object> createResources(int memory, int cpu) {
+        return ImmutableMap.of(
+                "limits", ImmutableMap.of("memory", "" + (long)(memory  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"),
+                "requests", ImmutableMap.of("memory", "" + memory + "Mi", "cpu", "" + cpu + "m")
+                );
+    }
+
+    private static Map<String, Object> createMainContainer(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", CONTAINER_NAME_BAMBOOAGENT);
+        map.put("image", r.getConfiguration().getDockerImage());
+        map.put("imagePullPolicy", "Always");
+        map.put("workingDir", WORK_DIR);
+        map.put("command", ImmutableList.of("sh", "-c", "while [ ! -f /buildeng/kubernetes ]; do sleep 1; done; /buildeng/run-agent.sh"));
+        map.put("env", createMainContainerEnvs(globalConfiguration, r));
+        map.put("volumeMounts", ImmutableList.of(
+                ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false),
+                ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)
+                ));
+        map.put("resources", createResources(r.getConfiguration().getSize().memory(), r.getConfiguration().getSize().cpu()));
+        map.put("readinessProbe", createReadinessProbe(r.getConfiguration(), CONTAINER_NAME_BAMBOOAGENT));
+        return map;
+    }
+
+    private static Object createMainContainerEnvs(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+        List<Map<String, Object>> envs = new ArrayList<>();
+        Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream().filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage())).findFirst();
+        if (optDind.isPresent()) {
+            envs.add(ImmutableMap.of("name", "DOCKER_HOST", "value", "tcp://" + optDind.get().getName() + ":2375"));
+        }
+        envs.add(ImmutableMap.of("name", ENV_VAR_IMAGE, "value", r.getConfiguration().getDockerImage()));
+        envs.add(ImmutableMap.of("name", ENV_VAR_RESULT_ID, "value", r.getResultKey()));
+        envs.add(ImmutableMap.of("name", ENV_VAR_SERVER, "value", globalConfiguration.getBambooBaseUrl()));
+        envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
+        envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
+        return envs;
     }
 }
