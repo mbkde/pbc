@@ -119,7 +119,7 @@ public class PodCreator {
             cmd.append(" echo '127.0.0.1 ").append(t).append("' >> /etc/hosts; ");
         });
         cmd.append(" touch /touch-").append(currentName).append("; } fi");
-        map.put("exec", ImmutableList.of("/bin/sh", "-c", cmd.toString()));
+        map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
         return map;
     }
 
@@ -160,7 +160,7 @@ public class PodCreator {
         map.put("image", currentSidekick);
         map.put("imagePullPolicy", "Always");
         map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data;touch /buildeng-data/kubernetes"));
-        map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", "false")));
+        map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
         return map;
     }
 
