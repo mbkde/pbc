@@ -24,6 +24,9 @@ limitations under the License.
     </parent>
     <artifactId>bamboo-kubernetes-backend-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
+    <properties>
+        <pbc.kubectl.path>kubectl</pbc.kubectl.path>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -31,6 +34,11 @@ limitations under the License.
                 <artifactId>maven-bamboo-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <systemProperties>
+                        <!-- sort of a thing that will make Milos' life easier.
+                        On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
+                        <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
+                    </systemProperties>
                     <pluginArtifacts>
                         <pluginArtifact>
                             <groupId>${project.groupId}</groupId>

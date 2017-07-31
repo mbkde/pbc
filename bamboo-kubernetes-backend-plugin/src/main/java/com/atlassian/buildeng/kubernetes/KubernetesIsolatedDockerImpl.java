@@ -16,7 +16,9 @@
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
@@ -30,6 +32,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +55,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
+    //0-10 threads, destroyed after a minute if not used.
+    final ExecutorService executor = new ThreadPoolExecutor(0, 10,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<>());
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
         this.pluginScheduler = pluginScheduler;
@@ -56,19 +66,30 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
-    public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
+    public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+        executor.submit(() -> {
+            exec(request, callback);
+        });
+    }
+
+    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         Map<String, Object> template = loadTemplatePod();
         Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
         Map<String, Object> finalPod = mergeMap(template, podDefinition);
         try {
-            //TODO this need stream processing and hardening.
             File podFile = createPodFile(finalPod);
-            ProcessBuilder pb = new ProcessBuilder("kubectl", "-f", podFile.getAbsolutePath(), "-o", "json");
-            pb.inheritIO();
-            Process process = pb.start();
-            process.waitFor();
+            KubectlExecutor.Result ret = KubectlExecutor.startPod(podFile);
+            if (ret.getResultCode() == 0) {
+                callback.handle(new IsolatedDockerAgentResult()
+                        .withCustomResultData("name", ret.getPodName())
+                        .withCustomResultData("uid", ret.getPodUID()));
+            } else {
+                callback.handle(new IsolatedDockerAgentResult().withError("kubectl process exited with " + ret.getResultCode()));
+            }
+            logger.info("KUBECTL: Ret value= " + ret);
         } catch (IOException | InterruptedException e) {
-
+            logger.error("error", e);
+            callback.handle(new IsolatedDockerAgentException(e));
         }
     }
 
