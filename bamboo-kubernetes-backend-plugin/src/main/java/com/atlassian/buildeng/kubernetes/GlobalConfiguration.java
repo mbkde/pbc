@@ -39,8 +39,7 @@ public class GlobalConfiguration {
         this.admConfAccessor = admConfAccessor;
     }
 
-    public String getBambooBaseUrl()
-    {
+    public String getBambooBaseUrl() {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
     }
 
