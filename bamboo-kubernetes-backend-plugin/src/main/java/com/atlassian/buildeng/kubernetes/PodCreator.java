@@ -68,9 +68,6 @@ public class PodCreator {
 
     private static Map<String, String> createAnnotations(GlobalConfiguration globalConfiguration) {
         Map<String, String> annotations = new HashMap<>();
-        if (globalConfiguration.getIAMRole() != null) {
-            annotations.put("iam.amazonaws.com/role", globalConfiguration.getIAMRole());
-        }
         return annotations;
     }
 
@@ -125,7 +122,6 @@ public class PodCreator {
 
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
-        map.put("namespace", globalConfiguration.getKubernetesNamespace());
         map.put("name", r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString());
         map.put("labels", createLabels(r));
         map.put("annotations", createAnnotations(globalConfiguration));

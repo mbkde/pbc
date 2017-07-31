@@ -25,10 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class GlobalConfiguration {
 
-    static String BANDANA_AWS_ROLE_KEY = "com.atlassian.buildeng.pbc.kubernetes.awsrole";
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
-    static String BANDANA_SERVER_URL_KEY = "com.atlassian.buildeng.pbc.kubernetes.server";
-    static String BANDANA_NAMESPACE_KEY = "com.atlassian.buildeng.pbc.kubernetes.namespace";
     static String BANDANA_POD_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.podtemplate";
 
     private final BandanaManager bandanaManager;
@@ -47,38 +44,20 @@ public class GlobalConfiguration {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
-    public synchronized String getIAMRole() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
-    }
-
-    public synchronized String getKubernetesURL() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY);
-    }
-
-    public synchronized String getKubernetesNamespace() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_NAMESPACE_KEY);
-    }
-
     public synchronized String getPodTemplateAsString() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE);
-    }
-
-    public synchronized void persist(String sidekick, @Nullable String awsRole, String url, String namespace) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(url));
-        Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
-        Preconditions.checkArgument(StringUtils.isNotBlank(namespace));
-        if (StringUtils.isBlank(awsRole)) {
-            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
-        } else {
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, awsRole);
+        String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE);
+        if (template == null) {
+            return "apiVersion: v1\n" +
+                    "kind: Pod";
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_NAMESPACE_KEY, namespace);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, url);
+        return template;
     }
 
-    public synchronized void persistTemplate(String podtemplate) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(podtemplate));
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podtemplate);
+    public synchronized void persist(String sidekick, String podTemplate) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
+        Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate));
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
     }
+
 }

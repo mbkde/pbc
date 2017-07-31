@@ -19,18 +19,14 @@ package com.atlassian.buildeng.kubernetes.rest;
 public class Config {
 
     public String sidekickImage;
-    public String serverUrl;
-    public String awsRole;
-    public String namespace;
+    public String podTemplate;
 
     public Config() {
     }
 
-    public Config(String sidekickImage, String serverUrl, String awsRole, String namespace) {
+    public Config(String sidekickImage, String podTemplate) {
         this.sidekickImage = sidekickImage;
-        this.serverUrl = serverUrl;
-        this.awsRole = awsRole;
-        this.namespace = namespace;
+        this.podTemplate = podTemplate;
     }
 
     public String getSidekickImage() {
@@ -41,30 +37,11 @@ public class Config {
         this.sidekickImage = sidekickImage;
     }
 
-    public String getServerUrl() {
-        return serverUrl;
+    public String getPodTemplate() {
+        return podTemplate;
     }
 
-    public void setServerUrl(String serverUrl) {
-        this.serverUrl = serverUrl;
+    public void setPodTemplate(String podTemplate) {
+        this.podTemplate = podTemplate;
     }
-
-    public String getAwsRole() {
-        return awsRole;
-    }
-
-    public void setAwsRole(String awsRole) {
-        this.awsRole = awsRole;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    
-
 }

@@ -40,10 +40,7 @@ import java.util.stream.Collectors;
 public class KubernetesWatchdog implements PluginJob {
 
     static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration) throws KubernetesClientException {
-        Config config = new ConfigBuilder()
-                .withMasterUrl(globalConfiguration.getKubernetesURL())
-                .build();
-        KubernetesClient client = new DefaultKubernetesClient(config);
+        KubernetesClient client = new DefaultKubernetesClient();
         return client;
     }
     @Override
@@ -53,7 +50,7 @@ public class KubernetesWatchdog implements PluginJob {
             //TODO do we want to repeatedly query or 'watch' for changes?
             //client.pods().watch();
             System.out.println("watchdog");
-            List<Pod> pods = client.pods().inNamespace(globalConfiguration.getKubernetesNamespace()).list().getItems();
+            List<Pod> pods = client.pods().list().getItems();
             List<Pod> agentDied = pods.stream().filter(new Predicate<Pod>() {
                 @Override
                 public boolean test(Pod t) {
