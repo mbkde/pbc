@@ -157,7 +157,7 @@ public class PodCreator {
         map.put("name", "bamboo-agent-sidekick");
         map.put("image", currentSidekick);
         map.put("imagePullPolicy", "Always");
-        map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data;touch /buildeng-data/kubernetes"));
+        map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data"));
         map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
         return map;
     }
