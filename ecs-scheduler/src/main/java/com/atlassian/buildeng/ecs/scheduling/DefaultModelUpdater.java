@@ -142,7 +142,13 @@ public class DefaultModelUpdater implements ModelUpdater {
             //    environment variable value for RESULT_ID
             eventPublisher.publish(new DockerAgentEcsDisconnectedPurgeEvent(selectedToKill));
         }
-        return terminateInstances(selectedToKill, hosts.getASGName(), false, hosts.getClusterName());
+        if (Boolean.getBoolean("pbc.instance.termination.policy.draining")) {
+            schedulerBackend.drainInstances(selectedToKill, hosts.getClusterName());
+            return 0;
+        }
+        else {
+            return terminateInstances(selectedToKill, hosts.getASGName(), false, hosts.getClusterName());
+        }
     }
 
     private List<DockerHost> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {

@@ -34,8 +34,10 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
+import com.amazonaws.services.ecs.model.AmazonECSException;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.DeregisterContainerInstanceRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
@@ -49,6 +51,7 @@ import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import com.amazonaws.services.ecs.model.TaskOverride;
+import com.amazonaws.services.ecs.model.UpdateContainerInstancesStateRequest;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Lists;
@@ -239,6 +242,19 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         }
     }
 
+    @Override
+    public void drainInstances(List<DockerHost> hosts, String clusterName) {
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        try {
+            ecsClient.updateContainerInstancesState(new UpdateContainerInstancesStateRequest()
+                    .withStatus(ContainerInstanceStatus.DRAINING)
+                    .withCluster(clusterName)
+                    .withContainerInstances(hosts.stream().map(DockerHost::getContainerInstanceArn).collect(Collectors.toList()))
+            );
+        } catch (AmazonECSException e) {
+            logger.error("Failed to drain container instances", e);
+        }
+    }
 
     private void deregisterInstance(String containerInstanceArn, String cluster) {
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();

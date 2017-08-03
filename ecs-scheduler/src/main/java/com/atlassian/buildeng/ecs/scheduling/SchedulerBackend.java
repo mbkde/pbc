@@ -70,6 +70,13 @@ public interface SchedulerBackend {
      */
     void terminateInstances(List<String> instanceIds) throws ECSException;
 
+    /**
+     * set the listed EC2 instances to "draining" state
+     * @param hosts
+     * @param clusterName
+     */
+    void drainInstances(List<DockerHost> hosts, String clusterName);
+
     SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
     
     /**
