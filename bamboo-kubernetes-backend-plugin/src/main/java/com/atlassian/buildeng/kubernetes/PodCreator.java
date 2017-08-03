@@ -66,9 +66,8 @@ public class PodCreator {
         return root;
     }
 
-    private static Map<String, String> createAnnotations(GlobalConfiguration globalConfiguration) {
-        Map<String, String> annotations = new HashMap<>();
-        return annotations;
+    private static Map<String, String> createAnnotations() {
+        return new HashMap<>();
     }
 
     private static Map<String, String> createLabels(IsolatedDockerAgentRequest r) {
@@ -124,7 +123,7 @@ public class PodCreator {
         Map<String, Object> map = new HashMap<>();
         map.put("name", r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString());
         map.put("labels", createLabels(r));
-        map.put("annotations", createAnnotations(globalConfiguration));
+        map.put("annotations", createAnnotations());
         return map;
     }
 
