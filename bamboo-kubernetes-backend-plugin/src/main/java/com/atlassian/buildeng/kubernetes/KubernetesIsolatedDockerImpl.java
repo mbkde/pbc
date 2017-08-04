@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -48,9 +49,9 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * @author mkleint
  */
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
-    private final static Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
 
-    private final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
+    private static final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
 
     private final GlobalConfiguration globalConfiguration;
@@ -86,7 +87,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             } else {
                 callback.handle(new IsolatedDockerAgentResult().withError("kubectl process exited with " + ret.getResultCode()));
             }
-            logger.info("KUBECTL: Ret value= " + ret);
+            logger.debug("KUBECTL: Ret value= " + ret);
         } catch (IOException | InterruptedException e) {
             logger.error("error", e);
             callback.handle(new IsolatedDockerAgentException(e));
@@ -122,10 +123,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         options.setIndent(4);
         options.setCanonical(false);
         Yaml yaml = new Yaml(options);
+        logger.debug("YAML----------");
+        logger.debug(yaml.dump(finalPod));
+        logger.debug("YAMLEND----------");
         File f = File.createTempFile("pod", "yaml");
-        logger.info("YAML----------");
-        logger.info(yaml.dump(finalPod));
-        logger.info("YAMLEND----------");
         FileUtils.write(f, yaml.dump(finalPod), "UTF-8");
         return f;
     }
