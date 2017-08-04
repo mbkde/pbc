@@ -110,7 +110,7 @@ export PATH="$(pwd)/${volume_path}/jre/bin:$PATH"
 ###################################
 # Download and pre-warm the agent #
 ###################################
-download_if_not_cached atlassian-bamboo-agent.jar "https://maven.atlassian.com/repository/public/com/atlassian/bamboo/bamboo-agent/${bamboo_version}/bamboo-agent-${bamboo_version}.jar"
+download_if_not_cached atlassian-bamboo-agent.jar "https://packages.atlassian.com/maven/repository/public/com/atlassian/bamboo/bamboo-agent/${bamboo_version}/bamboo-agent-${bamboo_version}.jar"
 cp 'output/atlassian-bamboo-agent.jar' "${volume_path}"
 # Pre-warm the agent if we know the instance
 mkdir -p output/bamboo-agent-home
