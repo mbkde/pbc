@@ -132,6 +132,9 @@ public class PodCreator {
         map.put("restartPolicy", "Never");
         map.put("volumes", createVolumes());
         map.put("containers", createContainers(globalConfiguration, r));
+        List<Map<String, Object>> initContainersList = new ArrayList<>();
+        initContainersList.add(createSidekick(globalConfiguration.getCurrentSidekick()));
+        map.put("initContainers", initContainersList);
         return map;
     }
 
@@ -143,7 +146,6 @@ public class PodCreator {
 
     private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
         ArrayList<Map<String, Object>> toRet = new ArrayList<>();
-        toRet.add(createSidekick(globalConfiguration.getCurrentSidekick()));
         toRet.addAll(createExtraContainers(r.getConfiguration()));
         toRet.add(createMainContainer(globalConfiguration, r));
         return toRet;
@@ -154,7 +156,7 @@ public class PodCreator {
         map.put("name", "bamboo-agent-sidekick");
         map.put("image", currentSidekick);
         map.put("imagePullPolicy", "Always");
-        map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data;touch /buildeng-data/kubernetes"));
+        map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data"));
         map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
         return map;
     }
@@ -172,7 +174,7 @@ public class PodCreator {
         map.put("image", r.getConfiguration().getDockerImage());
         map.put("imagePullPolicy", "Always");
         map.put("workingDir", WORK_DIR);
-        map.put("command", ImmutableList.of("sh", "-c", "while [ ! -f /buildeng/kubernetes ]; do sleep 1; done; /buildeng/run-agent.sh"));
+        map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false),
