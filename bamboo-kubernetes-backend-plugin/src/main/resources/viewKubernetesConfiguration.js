@@ -29,18 +29,14 @@
 
     function processConfig(response) {
         updateStatus("");
-        AJS.$("#serviceUrl").val(response.serverUrl);
         AJS.$("#sidekickToUse").val(response.sidekickImage);
-        AJS.$("#roleToUse").val(response.awsRole);
-        AJS.$("#namespaceToUse").val(response.namespace);
+        AJS.$("#podTemplate").val(response.podTemplate);
     }
 
     function setRemoteConfig() {
         var config = {};
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
-        config.awsRole = AJS.$("#roleToUse").val().trim();
-        config.serverUrl = AJS.$("#serviceUrl").val().trim();
-        config.namespace = AJS.$("#namespaceToUse").val().trim();
+        config.podTemplate = AJS.$("#podTemplate").val().trim();
 
         updateStatus("Saving...");
 

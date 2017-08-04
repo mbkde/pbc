@@ -16,7 +16,7 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
 <div id="errorMessage">
 </div>
 
-<form id="setBambooSidekick" class="aui">
+<form id="setRemoteConfig" class="aui">
     <fieldset>
 
         <div class="field-group">
@@ -25,24 +25,10 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                     placeholder=""></input>
         </div>
         <div class="field-group">
-            <label for="serviceUrl">Service URL</label>
-            <input type="text" class="text long-field" id="serviceUrl"></input>
-            <div class="description" id="desc-serviceUrl">
-                Kubernetes cluster URL
-            </div>
-        </div>
-        <div class="field-group">
-            <label for="namespaceToUse">Kubernetes Namespace</label>
-            <input type="text" class="text long-field" id="namespaceToUse"></input>
-            <div class="description" id="desc-namespaceToUse">
-                Schedule agents in this Kubernetes namespace
-            </div>
-        </div>
-        <div class="field-group">
-            <label for="roleToUse">AWS IAM Role to use</label>
-            <input type="text" class="text long-field" id="roleToUse"</input>
-            <div class="description" id="desc-roleToUse">
-                The bamboo agents will assume this AWS IAM role when running (assumes https://github.com/jtblin/kube2iam to be configured on the cluster)
+            <label for="podTemplate">Pod Template</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="podTemplate"></textarea>
+            <div class="description" id="desc-podTemplate">
+                Add your pod configuration here
             </div>
         </div>
 

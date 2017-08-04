@@ -45,10 +45,8 @@ public class Rest {
     @Path("/config")
     public Response getConfig() {
         Config c = new Config();
-        c.setAwsRole(configuration.getIAMRole());
-        c.setServerUrl(configuration.getKubernetesURL());
         c.setSidekickImage(configuration.getCurrentSidekick());
-        c.setNamespace(configuration.getKubernetesNamespace());
+        c.setPodTemplate(configuration.getPodTemplateAsString());
         return Response.ok(c).build();
     }
 
@@ -57,16 +55,11 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/config")
     public Response setConfig(Config config) {
-        if (StringUtils.isBlank(config.getServerUrl())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("serverUrl is mandatory").build();
-        }
         if (StringUtils.isBlank(config.getSidekickImage())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
         }
-        if (StringUtils.isBlank(config.getNamespace())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("namespace is mandatory").build();
-        }
-        configuration.persist(config.getSidekickImage(), config.getAwsRole(), config.getServerUrl(), config.getNamespace());
+        configuration.persist(config.getSidekickImage(), config.getPodTemplate());
         return Response.noContent().build();
     }
+
 }

@@ -13,45 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.kubernetes;
 
-import com.amazonaws.util.StringInputStream;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
-import io.fabric8.kubernetes.api.model.Job;
-import io.fabric8.kubernetes.api.model.JobBuilder;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import java.io.UnsupportedEncodingException;
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  *
  * @author mkleint
  */
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
-    private final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
+    private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
+
+    private static final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
 
     private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
+    //0-10 threads, destroyed after a minute if not used.
+    final ExecutorService executor = new ThreadPoolExecutor(0, 10,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<>());
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
         this.pluginScheduler = pluginScheduler;
@@ -59,40 +67,37 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
-    public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
-        Pod pod = PodCreator.create(request, globalConfiguration);
-        Map<String, String> labels = new HashMap<>();
-        labels.put("pbc.resultId", request.getResultKey());
-        labels.put("pbc.uuid", request.getUniqueIdentifier().toString());
+    public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+        executor.submit(() -> {
+            exec(request, callback);
+        });
+    }
 
-        JobBuilder jb = new JobBuilder()
-                .withApiVersion("batch/v1")
-                .withNewMetadata()
-                    .withNamespace(globalConfiguration.getKubernetesNamespace())
-                    .withName(request.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + request.getUniqueIdentifier().toString())
-                .   withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                    .withCompletions(1)
-                    .withNewTemplate().withNewSpecLike(pod.getSpec()).endSpec().endTemplate()
-                .endSpec();
-
-            System.out.println("Pod:" + Serialization.asYaml(pod));
-        try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
-                Pod podd = client.pods().create(pod);
-                System.out.println("podd=" + podd);
-//            client.extensions().jobs().create(jb.build());
-//            System.out.println("-------------------------------");
-//            client.load(new StringInputStream(Serialization.asJson(jb.build()))).inNamespace(globalConfiguration.getKubernetesNamespace()).createOrReplace();
+    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+        Map<String, Object> template = loadTemplatePod();
+        Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
+        Map<String, Object> finalPod = mergeMap(template, podDefinition);
+        try {
+            File podFile = createPodFile(finalPod);
+            KubectlExecutor.Result ret = KubectlExecutor.startPod(podFile);
+            if (ret.getResultCode() == 0) {
+                callback.handle(new IsolatedDockerAgentResult()
+                        .withCustomResultData("name", ret.getPodName())
+                        .withCustomResultData("uid", ret.getPodUID()));
+            } else {
+                callback.handle(new IsolatedDockerAgentResult().withError("kubectl process exited with " + ret.getResultCode()));
+            }
+            logger.debug("KUBECTL: Ret value= " + ret);
+        } catch (IOException | InterruptedException e) {
+            logger.error("error", e);
+            callback.handle(new IsolatedDockerAgentException(e));
         }
     }
 
-    static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration) throws KubernetesClientException {
-        Config config = new ConfigBuilder()
-                .withMasterUrl(globalConfiguration.getKubernetesURL())
-                .build();
-        KubernetesClient client = new DefaultKubernetesClient(config);
-        return client;
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadTemplatePod() {
+        Yaml yaml =  new Yaml(new SafeConstructor());
+        return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
     }
 
     @Override
@@ -110,6 +115,38 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @Override
     public void onStop() {
         pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
+    }
+
+    private File createPodFile(Map<String, Object> finalPod) throws IOException {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setIndent(4);
+        options.setCanonical(false);
+        Yaml yaml = new Yaml(options);
+        logger.debug("YAML----------");
+        logger.debug(yaml.dump(finalPod));
+        logger.debug("YAMLEND----------");
+        File f = File.createTempFile("pod", "yaml");
+        FileUtils.write(f, yaml.dump(finalPod), "UTF-8");
+        return f;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> mergeMap(Map<String, Object> template, Map<String, Object> overrides) {
+        final Map<String, Object> merged = new HashMap<>(template);
+        overrides.forEach((String t, Object u) -> {
+            Object originalEntry = merged.get(t);
+            if (originalEntry instanceof Map && u instanceof Map) {
+                merged.put(t, mergeMap((Map)originalEntry, (Map)u));
+            } else if (originalEntry instanceof Collection && u instanceof Collection) {
+                ArrayList<Object> lst = new ArrayList<>((Collection)originalEntry);
+                lst.addAll((Collection)u);
+                merged.put(t, lst);
+            } else {
+                merged.put(t, u);
+            }
+        });
+        return merged;
     }
     
 }
