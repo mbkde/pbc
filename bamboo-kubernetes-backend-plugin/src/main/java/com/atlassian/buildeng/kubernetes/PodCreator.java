@@ -121,10 +121,14 @@ public class PodCreator {
 
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
-        map.put("name", r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString());
+        map.put("name", createPodName(r));
         map.put("labels", createLabels(r));
         map.put("annotations", createAnnotations());
         return map;
+    }
+
+    private static String createPodName(IsolatedDockerAgentRequest r) {
+        return r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString();
     }
 
     private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
@@ -196,6 +200,7 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", ENV_VAR_SERVER, "value", globalConfiguration.getBambooBaseUrl()));
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
+        envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
         return envs;
     }
 }
