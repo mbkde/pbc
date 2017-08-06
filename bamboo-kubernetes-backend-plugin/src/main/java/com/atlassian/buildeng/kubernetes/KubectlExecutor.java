@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class KubectlExecutor {
-    private final static Logger logger = LoggerFactory.getLogger(KubectlExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(KubectlExecutor.class);
 
     private static final String KUBECTL_EXECUTABLE = System.getProperty("pbc.kubectl.path", "kubectl");
 
@@ -50,6 +50,7 @@ public class KubectlExecutor {
         try {
             responseBody = parser.parse(sb.toString());
         } catch (JsonParseException ex) {
+            logger.debug("Failed to parse response, likely an error", ex);
         }
         int ret = process.waitFor();
         return new Result(responseBody, ret, sb.toString());
@@ -79,7 +80,7 @@ public class KubectlExecutor {
             return resultCode;
         }
 
-        public String getPodUID() {
+        public String getPodUid() {
             if (response != null) {
                 JsonObject metadata = response.getAsJsonObject().getAsJsonObject("metadata");
                 return metadata.getAsJsonPrimitive("uid").getAsString();
@@ -97,7 +98,9 @@ public class KubectlExecutor {
 
         @Override
         public String toString() {
-            return "Result{" + "response=" + response + ", rawResponse=" + rawResponse + ", resultCode=" + resultCode + '}';
+            return "Result{" + "response=" + response 
+                    + ", rawResponse=" + rawResponse
+                    + ", resultCode=" + resultCode + '}';
         }
     }
 }

@@ -20,7 +20,6 @@ import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bandana.BandanaManager;
 import com.google.common.base.Preconditions;
-import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 
 public class GlobalConfiguration {
@@ -31,7 +30,8 @@ public class GlobalConfiguration {
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
 
-    public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
+    public GlobalConfiguration(BandanaManager bandanaManager,
+                               AdministrationConfigurationAccessor admConfAccessor) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
     }
@@ -47,8 +47,8 @@ public class GlobalConfiguration {
     public synchronized String getPodTemplateAsString() {
         String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE);
         if (template == null) {
-            return "apiVersion: v1\n" +
-                    "kind: Pod";
+            return "apiVersion: v1\n"
+                  + "kind: Pod";
         }
         return template;
     }
