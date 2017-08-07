@@ -27,7 +27,7 @@ Usage: $0 [OPTION]...
 Build and deploy PBC.
 
   -s,    Stage [ build | deploy ]
-  -p,    Plugin - Which plugin or group of plugins to deploy [ isolated-docker-spi | bamboo-remote-ecs-backend-plugin | bamboo-isolated-docker-plugin | bamboo-ecs-metrics-plugin | all-remote | all-local ]
+  -p,    Plugin - Which plugin or group of plugins to deploy [ isolated-docker-spi | bamboo-remote-ecs-backend-plugin | bamboo-isolated-docker-plugin | bamboo-ecs-metrics-plugin | bamboo-kubernetes-backend-plugin | all-remote | all-local | all-kube ]
   -t,    Target - Address of Bamboo server to deploy to.
   -u,    Username - Bamboo username to use
   -w,    Password - Bamboo password to use
@@ -80,6 +80,11 @@ deploy() {
         done
     elif [[ "$plugin" = "all-remote" ]]; then
         for x in isolated-docker-spi bamboo-isolated-docker-plugin bamboo-remote-ecs-backend-plugin bamboo-ecs-metrics-plugin; do
+            plugin=$x
+            deploy
+        done
+    elif [[ "$plugin" = "all-kube" ]]; then
+        for x in isolated-docker-spi bamboo-isolated-docker-plugin bamboo-kubernetes-backend-plugin; do
             plugin=$x
             deploy
         done
