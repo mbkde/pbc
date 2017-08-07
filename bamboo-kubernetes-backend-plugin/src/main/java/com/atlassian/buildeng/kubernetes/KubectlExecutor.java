@@ -37,6 +37,8 @@ public class KubectlExecutor {
     public static Result startPod(File podFile) throws InterruptedException, IOException, JsonIOException {
         ProcessBuilder pb = new ProcessBuilder(KUBECTL_EXECUTABLE, "create", "-f", podFile.getAbsolutePath(), "-o", "json");
         pb.redirectErrorStream(true);
+        //kubectl requires HOME env to find the config, but the bamboo server jvm might nto have it setup.
+        pb.environment().put("HOME", System.getProperty("user.home"));
         Process process = pb.start();
         JsonParser parser = new JsonParser();
         BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
