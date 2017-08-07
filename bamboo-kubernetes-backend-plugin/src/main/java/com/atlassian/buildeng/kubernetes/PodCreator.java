@@ -95,7 +95,7 @@ public class PodCreator {
                         .map((Configuration.EnvVariable t1) ->
                                 ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
                         .collect(Collectors.toList()));
-            map.put("volumeMounts", ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false));
+            map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)));
             map.put("readinessProbe", createReadinessProbe(c, t.getName()));
             return map;
         }).collect(Collectors.toList());
