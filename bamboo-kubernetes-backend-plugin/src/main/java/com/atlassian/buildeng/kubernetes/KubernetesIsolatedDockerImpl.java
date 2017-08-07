@@ -45,7 +45,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- *
+ * Kubernetes implementation of backend PBC service.
  * @author mkleint
  */
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
@@ -83,7 +83,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             if (ret.getResultCode() == 0) {
                 callback.handle(new IsolatedDockerAgentResult()
                         .withCustomResultData("name", ret.getPodName())
-                        .withCustomResultData("uid", ret.getPodUID()));
+                        .withCustomResultData("uid", ret.getPodUid()));
             } else {
                 callback.handle(new IsolatedDockerAgentResult().withError("kubectl process exited with " + ret.getResultCode()));
             }

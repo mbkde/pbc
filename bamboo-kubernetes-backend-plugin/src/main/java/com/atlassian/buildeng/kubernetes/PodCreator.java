@@ -31,17 +31,17 @@ import java.util.stream.Stream;
 
 public class PodCreator {
     /**
-     * The environment variable to override on the agent per image
+     * The environment variable to override on the agent per image.
      */
     static String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
-     * The environment variable to override on the agent per server
+     * The environment variable to override on the agent per server.
      */
     static String ENV_VAR_SERVER = "BAMBOO_SERVER";
 
     /**
-     * The environment variable to set the result spawning up the agent
+     * The environment variable to set the result spawning up the agent.
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
 
