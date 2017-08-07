@@ -34,8 +34,12 @@ public class KubectlExecutor {
 
     private static final String KUBECTL_EXECUTABLE = System.getProperty("pbc.kubectl.path", "kubectl");
 
+    /**
+     * Takes the pod definition file and runs kubectl to start the pod.
+     */
     public static Result startPod(File podFile) throws InterruptedException, IOException, JsonIOException {
-        ProcessBuilder pb = new ProcessBuilder(KUBECTL_EXECUTABLE, "create", "-f", podFile.getAbsolutePath(), "-o", "json");
+        ProcessBuilder pb = new ProcessBuilder(KUBECTL_EXECUTABLE,
+                "create", "-f", podFile.getAbsolutePath(), "-o", "json");
         pb.redirectErrorStream(true);
         Process process = pb.start();
         JsonParser parser = new JsonParser();
@@ -61,7 +65,7 @@ public class KubectlExecutor {
         private final String rawResponse;
         private final int resultCode;
 
-        public Result(JsonElement response, int resultCode, String rawResponse) {
+        private Result(JsonElement response, int resultCode, String rawResponse) {
             this.response = response;
             this.resultCode = resultCode;
             this.rawResponse = rawResponse;
@@ -80,6 +84,9 @@ public class KubectlExecutor {
             return resultCode;
         }
 
+        /**
+         * The created pod's uid if returned.
+         */
         public String getPodUid() {
             if (response != null) {
                 JsonObject metadata = response.getAsJsonObject().getAsJsonObject("metadata");
@@ -88,6 +95,9 @@ public class KubectlExecutor {
             return "";
         }
 
+        /**
+         * The created pod's name if returned.
+         */
         public String getPodName() {
             if (response != null) {
                 JsonObject metadata = response.getAsJsonObject().getAsJsonObject("metadata");

@@ -92,7 +92,8 @@ public class PodCreator {
             map.put("securityContext", ImmutableMap.of("privileged", isDockerInDockerImage(t.getImage())));
             map.put("command", t.getCommands());
             map.put("env", t.getEnvVariables().stream()
-                        .map((Configuration.EnvVariable t1) -> ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
+                        .map((Configuration.EnvVariable t1) ->
+                                ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
                         .collect(Collectors.toList()));
             map.put("volumeMounts", ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false));
             map.put("readinessProbe", createReadinessProbe(c, t.getName()));
@@ -101,7 +102,8 @@ public class PodCreator {
     }
 
     private static List<String> containerNames(Configuration config) {
-        return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT), config.getExtraContainers().stream().map(t -> t.getName()))
+        return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT), config.getExtraContainers().stream()
+                .map(t -> t.getName()))
                 .collect(Collectors.toList());
     }
 
@@ -119,7 +121,8 @@ public class PodCreator {
         return map;
     }
 
-    private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+    private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
+            IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
         map.put("labels", createLabels(r));
@@ -148,7 +151,8 @@ public class PodCreator {
             ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
     }
 
-    private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+    private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration,
+            IsolatedDockerAgentRequest r) {
         ArrayList<Map<String, Object>> toRet = new ArrayList<>();
         toRet.addAll(createExtraContainers(r.getConfiguration()));
         toRet.add(createMainContainer(globalConfiguration, r));
@@ -161,7 +165,8 @@ public class PodCreator {
         map.put("image", currentSidekick);
         map.put("imagePullPolicy", "Always");
         map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data"));
-        map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
+        map.put("volumeMounts", ImmutableList.of(
+                ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
         return map;
     }
 
@@ -172,7 +177,8 @@ public class PodCreator {
                 );
     }
 
-    private static Map<String, Object> createMainContainer(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+    private static Map<String, Object> createMainContainer(GlobalConfiguration globalConfiguration,
+            IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", CONTAINER_NAME_BAMBOOAGENT);
         map.put("image", r.getConfiguration().getDockerImage());
@@ -184,14 +190,18 @@ public class PodCreator {
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false),
                 ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)
                 ));
-        map.put("resources", createResources(r.getConfiguration().getSize().memory(), r.getConfiguration().getSize().cpu()));
+        map.put("resources", createResources(r.getConfiguration().getSize().memory(),
+                r.getConfiguration().getSize().cpu()));
         map.put("readinessProbe", createReadinessProbe(r.getConfiguration(), CONTAINER_NAME_BAMBOOAGENT));
         return map;
     }
 
-    private static Object createMainContainerEnvs(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+    private static Object createMainContainerEnvs(GlobalConfiguration globalConfiguration,
+            IsolatedDockerAgentRequest r) {
         List<Map<String, Object>> envs = new ArrayList<>();
-        Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream().filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage())).findFirst();
+        Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream()
+                .filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage()))
+                .findFirst();
         if (optDind.isPresent()) {
             envs.add(ImmutableMap.of("name", "DOCKER_HOST", "value", "tcp://" + optDind.get().getName() + ":2375"));
         }
