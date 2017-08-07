@@ -85,7 +85,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                         .withCustomResultData("name", ret.getPodName())
                         .withCustomResultData("uid", ret.getPodUid()));
             } else {
-                callback.handle(new IsolatedDockerAgentResult().withError("kubectl process exited with " + ret.getResultCode()));
+                callback.handle(new IsolatedDockerAgentResult()
+                        .withError("kubectl process exited with " + ret.getResultCode()));
             }
             logger.debug("KUBECTL: Ret value= " + ret);
         } catch (IOException | InterruptedException e) {
@@ -109,7 +110,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     public void onStart() {
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
-        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
+        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class,
+                config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
 
     @Override

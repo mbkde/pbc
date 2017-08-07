@@ -40,6 +40,9 @@ public class Rest {
         this.configuration = configuration;
     }
 
+    /**
+     * GET configuration rest endpoint.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/config")
@@ -50,6 +53,9 @@ public class Rest {
         return Response.ok(c).build();
     }
 
+    /**
+     * POST configuration rest endpoint.
+     */
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)

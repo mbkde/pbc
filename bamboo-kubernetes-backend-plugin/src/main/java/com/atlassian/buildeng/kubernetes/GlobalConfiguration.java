@@ -44,8 +44,13 @@ public class GlobalConfiguration {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
+    /**
+     * Returns the template yaml file that encodes the server/cluster specific parts of pod definition.
+     * @return string representation of yaml
+     */
     public synchronized String getPodTemplateAsString() {
-        String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE);
+        String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_POD_TEMPLATE);
         if (template == null) {
             return "apiVersion: v1\n"
                   + "kind: Pod";
@@ -53,6 +58,9 @@ public class GlobalConfiguration {
         return template;
     }
 
+    /**
+     * Saves changes to the configuration.
+     */
     public synchronized void persist(String sidekick, String podTemplate) {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate));

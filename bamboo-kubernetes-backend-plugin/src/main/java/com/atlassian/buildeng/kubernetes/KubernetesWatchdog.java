@@ -35,14 +35,16 @@ import java.util.stream.Collectors;
  */
 public class KubernetesWatchdog implements PluginJob {
 
-    static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration) throws KubernetesClientException {
+    static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration)
+            throws KubernetesClientException {
         KubernetesClient client = new DefaultKubernetesClient();
         return client;
     }
     
     @Override
     public void execute(Map<String, Object> jobDataMap) {
-        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
+        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
+                "globalConfiguration", jobDataMap);
         try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
             //TODO do we want to repeatedly query or 'watch' for changes?
             //client.pods().watch();
@@ -50,7 +52,8 @@ public class KubernetesWatchdog implements PluginJob {
             List<Pod> pods = client.pods().list().getItems();
             List<Pod> agentDied = pods.stream().filter((Pod t) -> t.getStatus().getContainerStatuses().stream()
                 .filter((ContainerStatus t1) -> PodCreator.CONTAINER_NAME_BAMBOOAGENT.equals(t1.getName()))
-                .filter((ContainerStatus t1) -> t1.getState().getTerminated() != null).findFirst().isPresent()).collect(Collectors.toList());
+                .filter((ContainerStatus t1) -> t1.getState().getTerminated() != null)
+                .findFirst().isPresent()).collect(Collectors.toList());
             if (!agentDied.isEmpty()) {
 //                System.out.println("agents died, remove pods:" + Serialization.asYaml(agentDied));
 //                for (Pod dead : agentDied) {
@@ -69,7 +72,8 @@ public class KubernetesWatchdog implements PluginJob {
     }
     
     protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-        final Object obj = checkNotNull(jobDataMap.get(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
+        final Object obj = checkNotNull(jobDataMap.get(serviceKey),
+                "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
     }
     
