@@ -42,7 +42,9 @@ public final class DockerHosts {
 
     DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod, AutoScalingGroup asg, String clusterName) {
         usable = allHosts.stream().filter((DockerHost t) -> t.getAgentConnected()).collect(Collectors.toList());
-        agentDisconnected = allHosts.stream().filter((DockerHost t) -> !t.getAgentConnected()).collect(Collectors.toSet());
+        agentDisconnected = allHosts.stream()
+                .filter((DockerHost t) -> !ContainerInstanceStatus.DRAINING.toString().equals(t.getStatus()))
+                .filter((DockerHost t) -> !t.getAgentConnected()).collect(Collectors.toSet());
         Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(usable, stalePeriod);
         freshHosts = partitionedHosts.get(true);
         unusedStaleHosts = unusedStaleInstances(partitionedHosts.get(false));
@@ -63,8 +65,7 @@ public final class DockerHosts {
     }
     
     /**
-     * all instances that actually have agent connected and have associated ec2 instance
-     * @return 
+     * all instances that actually have agent connected and have associated ec2 instance.
      */
     public Collection<DockerHost> allUsable() {
         return Collections.unmodifiableCollection(usable);
@@ -89,7 +90,7 @@ public final class DockerHosts {
     }
 
     /**
-     * Stream stale hosts not running any tasks
+     * Stream stale hosts not running any tasks.
      */
     List<DockerHost> unusedStaleInstances(List<DockerHost> staleHosts) {
         return staleHosts.stream().filter(DockerHost::runningNothing).collect(Collectors.toList());
