@@ -107,12 +107,5 @@ public class KubectlExecutor {
             }
             return "";
         }
-
-        @Override
-        public String toString() {
-            return "Result{" + "response=" + response 
-                    + ", rawResponse=" + rawResponse
-                    + ", resultCode=" + resultCode + '}';
-        }
     }
 }
