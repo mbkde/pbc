@@ -86,9 +86,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                         .withCustomResultData("uid", ret.getPodUid()));
             } else {
                 callback.handle(new IsolatedDockerAgentResult()
-                        .withError("kubectl process exited with " + ret.getResultCode()));
+                        .withError("kubectl process exited with " + ret));
             }
-            logger.debug("KUBECTL: Ret value= " + ret);
         } catch (IOException | InterruptedException e) {
             logger.error("error", e);
             callback.handle(new IsolatedDockerAgentException(e));
