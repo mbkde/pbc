@@ -18,10 +18,9 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import java.util.Collections;
 import java.util.List;
-
-import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 public final class Configuration {
     
@@ -73,7 +72,8 @@ public final class Configuration {
     }
     
     public int getMemoryTotal() {
-        return size.memory() + DOCKER_MINIMUM_MEMORY + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().memory).sum();
+        return size.memory() + DOCKER_MINIMUM_MEMORY
+                + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().memory).sum();
     }
 
     public List<ExtraContainer> getExtraContainers() {
@@ -114,7 +114,8 @@ public final class Configuration {
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
-        storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS, ConfigurationPersistence.toJson(getExtraContainers()).toString());
+        storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
+                ConfigurationPersistence.toJson(getExtraContainers()).toString());
     }
     
     public static void removeFrom(Map<String, ? super String> storageMap) {

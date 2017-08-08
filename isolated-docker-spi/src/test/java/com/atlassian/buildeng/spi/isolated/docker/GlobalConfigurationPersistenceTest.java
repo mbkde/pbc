@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
+import java.util.Collections;
 import org.junit.Test;
 
-/**
- *
- * @author mkleint
- */
 public class GlobalConfigurationPersistenceTest {
      
     

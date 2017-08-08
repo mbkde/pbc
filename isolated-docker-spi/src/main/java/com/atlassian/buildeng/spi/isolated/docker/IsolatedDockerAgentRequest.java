@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.spi.isolated.docker;
 
 import java.util.UUID;
@@ -31,7 +32,8 @@ public final class IsolatedDockerAgentRequest {
      * @param uniqueIdentifier - something to uniquely identifier the request with
      * @param originalQueingTimestamp - timestamp of when the job was originally queued in bamboo. Only relevant for monitoring purposes.
      */
-    public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier, long originalQueingTimestamp, String buildKey) {
+    public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier,
+            long originalQueingTimestamp, String buildKey) {
         this.configuration = configuration;
         this.resultKey = resultKey;
         this.uniqueIdentifier = uniqueIdentifier;

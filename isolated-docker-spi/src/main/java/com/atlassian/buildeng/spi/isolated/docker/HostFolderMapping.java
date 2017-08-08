@@ -29,7 +29,9 @@ package com.atlassian.buildeng.spi.isolated.docker;
 public interface HostFolderMapping {
 
     String getVolumeName();
+
     String getHostPath();
+    
     String getContainerPath();
     
 }

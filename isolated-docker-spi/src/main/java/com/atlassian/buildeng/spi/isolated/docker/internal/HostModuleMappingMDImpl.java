@@ -21,7 +21,8 @@ import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMappingModuleDescriptor;
 import com.atlassian.plugin.module.ModuleFactory;
 
-public class HostModuleMappingMDImpl extends AbstractBambooModuleDescriptor<HostFolderMapping> implements HostFolderMappingModuleDescriptor {
+public class HostModuleMappingMDImpl extends AbstractBambooModuleDescriptor<HostFolderMapping>
+        implements HostFolderMappingModuleDescriptor {
 
     public HostModuleMappingMDImpl(ModuleFactory moduleFactory) {
         super(moduleFactory);

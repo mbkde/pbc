@@ -20,35 +20,27 @@ import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.fugue.Iterables;
+import com.google.common.base.Functions;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- *
- * @author mkleint
- */
 public final class DockerAgentBuildQueue {
     public static final String BUILD_KEY = "custom.isolated.docker.buildkey";
-
 
     /**
      * the method will reliably return a list of currently scheduled PBC jobs.
      * It will only return those that have been queued AND initially processed by PBC plugins.
      * To be used by parts of implementation plugin's background scheduled jobs instead of the
      * Bamboo's own QueueManagerView.
-     * @param buildQueueManager
-     * @return
      */
     public static Stream<CommonContext> currentlyQueued(BuildQueueManager buildQueueManager) {
-        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, new com.google.common.base.Function<BuildQueueManager.QueueItemView<CommonContext>, BuildQueueManager.QueueItemView<CommonContext>>() {
-            @Override
-            public BuildQueueManager.QueueItemView<CommonContext> apply(BuildQueueManager.QueueItemView<CommonContext> input) {
-                return input;
-            }
-        });
+        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager,
+                Functions.<BuildQueueManager.QueueItemView<CommonContext>>identity());
+
         return StreamSupport.stream(queue.getQueueView(Iterables.emptyIterable()).spliterator(), false)
                 .map((BuildQueueManager.QueueItemView<CommonContext> t) -> t.getView())
                 //this filter is crutial for BUILDENG-12837
-                .filter((CommonContext t) -> t.getBuildKey().getKey().equals(t.getCurrentResult().getCustomBuildData().get(BUILD_KEY)));
+                .filter((CommonContext t) ->
+                        t.getBuildKey().getKey().equals(t.getCurrentResult().getCustomBuildData().get(BUILD_KEY)));
     }
 }

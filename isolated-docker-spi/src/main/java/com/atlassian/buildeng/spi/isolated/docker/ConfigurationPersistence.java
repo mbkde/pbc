@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.google.gson.JsonArray;
@@ -28,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 public class ConfigurationPersistence {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigurationPersistence.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfigurationPersistence.class);
 
     public static Configuration toConfiguration(String source) {
         JsonParser p = new JsonParser();
@@ -41,7 +42,7 @@ public class ConfigurationPersistence {
                 try {
                     bld.withImageSize(Configuration.ContainerSize.valueOf(size.getAsString()));
                 } catch (IllegalArgumentException x) {
-                    LOG.error("Wrong size was persisted: {}", size);
+                    logger.error("Wrong size was persisted: {}", size);
                     //ok to skip and do nothing, the default value is REGULAR
                 }
             }
@@ -59,14 +60,6 @@ public class ConfigurationPersistence {
             return bld.build();
         }
         return null;
-    }
-
-    public static JsonObject toJson(Configuration conf) {
-        JsonObject el = new JsonObject();
-        el.addProperty("image", conf.getDockerImage());
-        el.addProperty("size", conf.getSize().name());
-        el.add("extraContainers", ConfigurationPersistence.toJson(conf.getExtraContainers()));
-        return el;
     }
 
     public static Configuration.ExtraContainer from(JsonObject obj) {
@@ -94,7 +87,8 @@ public class ConfigurationPersistence {
                 List<Configuration.EnvVariable> vars = new ArrayList<>();
                 envvars.forEach((JsonElement t) -> {
                     JsonObject to = t.getAsJsonObject();
-                    vars.add(new Configuration.EnvVariable(to.getAsJsonPrimitive("name").getAsString(), to.getAsJsonPrimitive("value").getAsString()));
+                    vars.add(new Configuration.EnvVariable(to.getAsJsonPrimitive("name").getAsString(),
+                            to.getAsJsonPrimitive("value").getAsString()));
                 });
                 toRet.setEnvVariables(vars);
             }
@@ -119,8 +113,17 @@ public class ConfigurationPersistence {
                 });
             }
         } catch (JsonParseException ex) {
+            logger.debug("failed to parse json", ex);
         }
         return toRet;
+    }
+    
+    public static JsonObject toJson(Configuration conf) {
+        JsonObject el = new JsonObject();
+        el.addProperty("image", conf.getDockerImage());
+        el.addProperty("size", conf.getSize().name());
+        el.add("extraContainers", ConfigurationPersistence.toJson(conf.getExtraContainers()));
+        return el;
     }
 
     static JsonArray toJson(List<Configuration.ExtraContainer> extraContainers) {
