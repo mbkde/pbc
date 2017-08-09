@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_EXTRA_CONTAINERS;
+import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE;
+import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
+import static com.atlassian.buildeng.spi.isolated.docker.Configuration.ENABLED_FOR_JOB;
+
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
@@ -25,10 +30,6 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_EXTRA_CONTAINERS;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.ENABLED_FOR_JOB;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -38,8 +39,10 @@ public class AccessConfiguration {
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
         return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
                     .withEnabled(Boolean.parseBoolean(cc.getOrDefault(ENABLED_FOR_JOB, "false")))
-                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
-                    .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]")))
+                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE,
+                            Configuration.ContainerSize.REGULAR.name())))
+                    .withExtraContainers(
+                            ConfigurationPersistence.fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]")))
                     .build();
     }
 
@@ -68,8 +71,11 @@ public class AccessConfiguration {
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
         return ConfigurationBuilder.create(config.getString(Configuration.DOCKER_IMAGE))
                 .withEnabled(config.getBoolean(Configuration.ENABLED_FOR_JOB))
-                .withImageSize(Configuration.ContainerSize.valueOf(config.getString(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(config.getString(Configuration.DOCKER_IMAGE_SIZE,
+                        Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(
+                        ConfigurationPersistence.fromJsonString(
+                                config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                 .build();
     }
 
@@ -93,8 +99,12 @@ public class AccessConfiguration {
         Map<String, String> cc = taskDefinition.getConfiguration();
         return ConfigurationBuilder.create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
                 .withEnabled(taskDefinition.isEnabled())
-                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(
+                        cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
+                                Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(
+                        ConfigurationPersistence.fromJsonString(cc.getOrDefault(
+                                Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
                 .build();
     }
 

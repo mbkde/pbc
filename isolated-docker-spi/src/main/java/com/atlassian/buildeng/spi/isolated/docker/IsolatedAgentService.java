@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.Key;
@@ -24,16 +25,16 @@ import org.jetbrains.annotations.NotNull;
 
 public interface IsolatedAgentService {
     /**
-     * Start an isolated docker agent to handle the build request
+     * Start an isolated docker agent to handle the build request.
      *
      * @param request - request object
      * @param callback callback to process the result
      */
     void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback);
 
-   /**
-    * optional method listing all known docker images for use in the UI
-    */
+    /**
+     * optional method listing all known docker images for use in the UI.
+     */
     default List<String> getKnownDockerImages() {
         return Collections.emptyList();
     }
@@ -50,13 +51,14 @@ public interface IsolatedAgentService {
     }
 
     /**
-     * optional way to announce future requirements
+     * optional way to announce future requirements.
      * @param buildKey
      * @param jobResultKeys
      * @param excessMemoryCapacity
      * @param excessCpuCapacity
      */
-    default void reserveCapacity(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+    default void reserveCapacity(Key buildKey, List<String> jobResultKeys,
+            long excessMemoryCapacity, long excessCpuCapacity) {
     }
 
 }
