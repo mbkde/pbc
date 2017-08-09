@@ -149,6 +149,8 @@ public class PreBuildQueuedEventListener {
                             errorUpdateHandler.recordError(event.getContext().getEntityKey(), "Build was not queued due to error:" + error);
                         } else {
                             jmx.incrementScheduled();
+                            LOG.info("Scheduled {} with custom data: {}", event.getContext().getEntityKey(),
+                                    result.getCustomResultData());
                         }
                     }
 
