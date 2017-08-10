@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
@@ -35,6 +36,12 @@ public interface Constants {
      */
     String storage_driver = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay");
 
+    /**
+     * System property to drain instances with disconnected agents rather than killing the outright.
+     * Requires closer observation when set, some instances won't drain on their own ever.
+     */
+    String PROPERTY_DRAIN_DISCONNECTED = "pbc.instance.termination.policy.draining";
+
     // ECS
 
     // The name of the sidekick docker image and sidekick container
@@ -56,17 +63,17 @@ public interface Constants {
     String DOCKER_SOCKET_VOLUME_NAME = "docker_socket";
 
     /**
-     * The environment variable to override on the agent per image
+     * The environment variable to override on the agent per image.
      */
     String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
-     * The environment variable to override on the agent per server
+     * The environment variable to override on the agent per server.
      */
     String ENV_VAR_SERVER = "BAMBOO_SERVER";
     
     /**
-     * The environment variable to set the result spawning up the agent
+     * The environment variable to set the result spawning up the agent.
      */
     String ENV_VAR_RESULT_ID = "RESULT_ID";
 
