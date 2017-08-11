@@ -37,8 +37,8 @@ public class DockerWatchdogJob implements PluginJob {
     public void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Throwable t) {
-            logger.error("Throwable catched and swallowed to preserve rescheduling of the task", t);
+        } catch (Exception t) {
+            logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
         }
     }
 

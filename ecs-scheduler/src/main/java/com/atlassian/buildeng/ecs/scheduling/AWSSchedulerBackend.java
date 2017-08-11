@@ -182,7 +182,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     if (t.getAgentConnected()) {
                         deregisterInstance(t.getContainerInstanceArn(), clusterName);
                     }
-                } catch (Throwable th) {
+                } catch (Exception th) {
                     logger.error("Failed deregistering ecs container instance, we survive but suspicious", th);
                 }
             });
