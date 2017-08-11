@@ -18,15 +18,36 @@ package com.atlassian.buildeng.kubernetes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.atlassian.bamboo.builder.LifeCycleState;
+import com.atlassian.bamboo.deployments.execution.DeploymentContext;
+import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
+import com.atlassian.bamboo.deployments.results.DeploymentResult;
+import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
+import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.security.ImpersonationHelper;
+import com.atlassian.bamboo.utils.BambooRunnables;
+import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.CommonContext;
+import com.atlassian.bamboo.v2.build.CurrentResult;
+import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.sal.api.scheduling.PluginJob;
+import com.atlassian.spring.container.ContainerManager;
+import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import java.util.List;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -34,47 +55,95 @@ import java.util.stream.Collectors;
  * @author mkleint
  */
 public class KubernetesWatchdog implements PluginJob {
+    private static final String RESULT_ERROR = "custom.isolated.docker.error";
+    private static final String RESULT_PREFIX = "result.isolated.docker.";
+    private static final Long MAX_QUEUE_TIME_MINUTES = 100L;
+    private static final String NAME = "name";
 
-    static KubernetesClient createKubernetesClient(GlobalConfiguration globalConfiguration)
-            throws KubernetesClientException {
-        KubernetesClient client = new DefaultKubernetesClient();
-        return client;
-    }
-    
+    private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
+
     @Override
     public void execute(Map<String, Object> jobDataMap) {
-        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
-                "globalConfiguration", jobDataMap);
-        try (KubernetesClient client = createKubernetesClient(globalConfiguration)) {
-            //TODO do we want to repeatedly query or 'watch' for changes?
-            //client.pods().watch();
-            System.out.println("watchdog");
-            List<Pod> pods = client.pods().list().getItems();
-            List<Pod> agentDied = pods.stream().filter((Pod t) -> t.getStatus().getContainerStatuses().stream()
-                .filter((ContainerStatus t1) -> PodCreator.CONTAINER_NAME_BAMBOOAGENT.equals(t1.getName()))
-                .filter((ContainerStatus t1) -> t1.getState().getTerminated() != null)
-                .findFirst().isPresent()).collect(Collectors.toList());
-            if (!agentDied.isEmpty()) {
-//                System.out.println("agents died, remove pods:" + Serialization.asYaml(agentDied));
-//                for (Pod dead : agentDied) {
-//                    LogWatch watch = client.pods().inNamespace(globalConfiguration.getKubernetesNamespace()).withName(dead.getMetadata().getName()).tailingLines(100).watchLog(System.out);
-//                }
-//                try {
-//                    Thread.sleep(20000);
-//                } catch (InterruptedException ex) {
-//                    Logger.getLogger(KubernetesWatchdog.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//                client.pods().delete(agentDied);
-//                TODO if job still queued, remove from bamboo queue. + add error
+        BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
+        ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
+        KubernetesClient client = new DefaultKubernetesClient();
+        PodList pods = client.pods().list();
+
+        // delete pods which have had the bamboo-agent container terminated
+        for (Pod pod : pods.getItems()) {
+            Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
+                    .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
+            ContainerStatus agentContainer = currentContainers.get("bamboo-agent");
+            // if agentContainer == null then the pod is still initializing
+            if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
+                logger.info("Killing pod {} with terminated agent container: {}",
+                        KubernetesHelper.getName(pod), agentContainer.getState());
+                Boolean deleted = client.resource(pod).delete();
             }
-            
+        }
+
+        // Kill queued jobs waiting on pods that no longer exist or which have been queued for too long
+        DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
+            CurrentResult current = context.getCurrentResult();
+            String podName = current.getCustomBuildData().get(RESULT_PREFIX + NAME);
+            if (podName != null) {
+                Pod pod = retrievePod(podName);
+                if (pod == null) {
+                    logger.info("Stopping job {} because pod {} no longer exists", context.getResultKey(), podName);
+                    errorUpdateHandler.recordError(
+                            context.getEntityKey(), "Build was not queued due to pod deletion: " + podName);
+                    current.getCustomBuildData().put(RESULT_ERROR, "build killed as pod was terminated");
+                    killBuild(buildQueueManager, context, current);
+                } else {
+                    Date creationTime = Date.from(Instant.parse(pod.getMetadata().getCreationTimestamp()));
+                    if (Duration.ofMillis(
+                            System.currentTimeMillis() - creationTime.getTime()).toMinutes() > MAX_QUEUE_TIME_MINUTES) {
+                        errorUpdateHandler.recordError(
+                                context.getEntityKey(), "Build was not queued after " + MAX_QUEUE_TIME_MINUTES
+                                        + "podName: " + podName);
+                        current.getCustomBuildData().put(RESULT_ERROR, "build terminated for queuing for too long");
+                        killBuild(buildQueueManager, context, current);
+                    }
+                }
+            }
+        });
+    }
+
+    private Pod retrievePod(String podName) {
+        try (KubernetesClient client = new DefaultKubernetesClient()) {
+            return client.pods().withName(podName).get();
         }
     }
-    
-    protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-        final Object obj = checkNotNull(jobDataMap.get(serviceKey),
-                "Expected value for key '" + serviceKey + "', found nothing.");
+
+
+    private void killBuild(BuildQueueManager buildQueueManager, CommonContext context, CurrentResult current) {
+        DeploymentExecutionService deploymentExecutionService = getService(
+                DeploymentExecutionService.class, "deploymentExecutionService");
+        DeploymentResultService deploymentResultService = getService(
+                DeploymentResultService.class, "deploymentResultService");
+
+        if (context instanceof BuildContext) {
+            current.setLifeCycleState(LifeCycleState.NOT_BUILT);
+            buildQueueManager.removeBuildFromQueue(context.getResultKey());
+        } else if (context instanceof DeploymentContext) {
+            DeploymentContext dc = (DeploymentContext) context;
+            ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
+                //without runWithSystemAuthority() this call terminates execution with a log entry only
+                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(
+                        dc.getDeploymentResultId());
+                if (deploymentResult != null) {
+                    deploymentExecutionService.stop(deploymentResult, null);
+                }
+            });
+        } else {
+            logger.error("unknown type of CommonContext {}", context.getClass());
+        }
+    }
+
+    private <T> T getService(Class<T> type, String serviceKey) {
+        final Object obj = checkNotNull(
+                ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing."
+        );
         return type.cast(obj);
     }
-    
 }
