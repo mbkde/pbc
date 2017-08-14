@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.utils.Pair;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -25,6 +27,9 @@ import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,9 +42,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -50,6 +59,13 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  */
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
+
+    private static final String RESULT_PREFIX = "result.isolated.docker.";
+    private static final String URL_POD_NAME = "POD_NAME";
+    private static final String URL_CONTAINER_NAME = "CONTAINER_NAME";
+    private static final String BAMBOO_AGENT_CONTAINER = "bamboo-agent";
+    private static final String UID = "uid";
+    private static final String NAME = "name";
 
     private static final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
@@ -82,8 +98,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             KubectlExecutor.Result ret = KubectlExecutor.startPod(podFile);
             if (ret.getResultCode() == 0) {
                 callback.handle(new IsolatedDockerAgentResult()
-                        .withCustomResultData("name", ret.getPodName())
-                        .withCustomResultData("uid", ret.getPodUid()));
+                        .withCustomResultData(NAME, ret.getPodName())
+                        .withCustomResultData(UID, ret.getPodUid()));
             } else {
                 callback.handle(new IsolatedDockerAgentResult()
                         .withError("kubectl:" + ret.getRawResponse()));
@@ -150,5 +166,29 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         });
         return merged;
     }
+    
+
+    @Override
+    public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
+        String url = globalConfiguration.getPodLogsUrl();
+        String podName = customData.get(RESULT_PREFIX + NAME);
+        if (StringUtils.isBlank(url) || StringUtils.isBlank(podName)) {
+            return Collections.emptyMap();
+        }
+        Stream<String> s = Stream.concat(Stream.of(BAMBOO_AGENT_CONTAINER),configuration.getExtraContainers().stream()
+                        .map((Configuration.ExtraContainer t) -> t.getName()));
+        return s.map((String t) -> {
+            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+            try {
+                URIBuilder bb = new URIBuilder(resolvedUrl);
+                return Pair.make(t, bb.build().toURL());
+            } catch (URISyntaxException | MalformedURLException ex) {
+                logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                return Pair.make(t, (URL)null);
+            }
+        }).filter((Pair t) -> t.getSecond() != null)
+          .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+    }
+    
     
 }

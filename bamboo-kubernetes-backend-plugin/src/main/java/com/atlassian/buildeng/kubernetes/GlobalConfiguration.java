@@ -26,6 +26,7 @@ public class GlobalConfiguration {
 
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
     static String BANDANA_POD_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.podtemplate";
+    static String BANDANA_POD_LOGS_URL = "com.atlassian.buildeng.pbc.kubernetes.podlogurl";
 
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -57,15 +58,25 @@ public class GlobalConfiguration {
         }
         return template;
     }
+    
+    public synchronized String getPodLogsUrl() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_POD_LOGS_URL);
+    }
 
     /**
      * Saves changes to the configuration.
      */
-    public synchronized void persist(String sidekick, String podTemplate) {
+    public synchronized void persist(String sidekick, String podTemplate, String podLogUrl) {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate));
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
+        if (StringUtils.isBlank(podLogUrl)) {
+            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL);
+        } else {
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
+        }
     }
 
 }
