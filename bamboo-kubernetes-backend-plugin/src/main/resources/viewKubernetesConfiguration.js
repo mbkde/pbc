@@ -31,12 +31,14 @@
         updateStatus("");
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#podTemplate").val(response.podTemplate);
+        AJS.$("#podLogsUrl").val(response.podLogsUrl);
     }
 
     function setRemoteConfig() {
         var config = {};
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.podTemplate = AJS.$("#podTemplate").val().trim();
+        config.podLogsUrl = AJS.$("#podLogsUrl").val().trim();
 
         updateStatus("Saving...");
 

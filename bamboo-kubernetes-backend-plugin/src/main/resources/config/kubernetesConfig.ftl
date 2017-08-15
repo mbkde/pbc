@@ -31,6 +31,15 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                 Add your pod configuration here
             </div>
         </div>
+        <div class="field-group">
+            <label for="podLogsUrl">Container Logs URL</label>
+            <input type="text" class="text long-field" id="podLogsUrl"
+                    placeholder=""></input>
+            <div class="description" id="desc-podLogsUrl">
+                URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants 
+                in the URL will be replaced with actual values.
+            </div>
+        </div>
 
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"/>
