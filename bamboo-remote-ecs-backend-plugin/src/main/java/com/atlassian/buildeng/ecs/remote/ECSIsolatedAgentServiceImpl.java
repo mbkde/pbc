@@ -111,7 +111,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         } catch (ClientHandlerException che) {
             logger.error("Error connecting to ECS:", che);
             callback.handle(new IsolatedDockerAgentResult().withRetryRecoverable(che.getMessage()));
-        } catch (Throwable t) {
+        } catch (Exception t) {
             logger.error("unknown error", t);
             callback.handle(new IsolatedDockerAgentException(t));
         }
@@ -174,7 +174,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 logger.error("Error contacting ECS wrt future:" + code + " " + s, e);
             } catch (ClientHandlerException che) {
                 logger.error("Error connecting to ECS wrt future:", che);
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 logger.error("unknown error", t);
             }
         }

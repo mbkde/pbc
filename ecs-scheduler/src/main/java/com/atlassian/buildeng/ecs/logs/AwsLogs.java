@@ -108,7 +108,7 @@ public class AwsLogs {
                 final String logStreamName = "pbc-ec2-instance-stale/" + t;
                 logs.createLogStream(new CreateLogStreamRequest(driver.getLogGroupName(), logStreamName));
                 logs.putLogEvents(new PutLogEventsRequest().withLogGroupName(driver.getLogGroupName()).withLogStreamName(logStreamName).withLogEvents(new InputLogEvent().withMessage(result.getDecodedOutput()).withTimestamp(System.currentTimeMillis())));
-            } catch (Throwable th) {
+            } catch (Exception th) {
                 //we are fine swallowing any errors, has no direct influence on proper function.
                 logger.error("failed to retrieve ec2 instance logs or send them to cloudwatch", th);
             }
