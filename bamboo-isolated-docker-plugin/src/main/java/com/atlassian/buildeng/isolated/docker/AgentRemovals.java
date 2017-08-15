@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AgentRemovals {
-    private final static Logger logger = LoggerFactory.getLogger(AgentRemovals.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentRemovals.class);
 
     private final AgentManager agentManager;
     private final AgentCommandSender agentCommandSender;

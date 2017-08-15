@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.deployment;
 
 import com.atlassian.bamboo.collections.ActionParametersMap;
@@ -23,9 +24,9 @@ import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.struts.TextProvider;
 import com.google.common.collect.Sets;
@@ -33,17 +34,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import java.util.Arrays;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class RequirementTaskConfigurator extends AbstractTaskConfigurator implements TaskRequirementSupport
-{
+
+public class RequirementTaskConfigurator extends AbstractTaskConfigurator implements TaskRequirementSupport {
 
     @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
@@ -51,8 +51,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
 
     // ---------------------------------------------------------------------------------------------------- Constructors
 
-    private RequirementTaskConfigurator(TextProvider textProvider)
-    {
+    private RequirementTaskConfigurator(TextProvider textProvider) {
         this.textProvider = textProvider;
     }
 
@@ -62,24 +61,27 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
 
     @NotNull
     @Override
-    public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params, @Nullable TaskDefinition previousTaskDefinition)
-    {
+    public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params, 
+            @Nullable TaskDefinition previousTaskDefinition) {
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
         configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
         configMap.put(Configuration.TASK_DOCKER_IMAGE_SIZE, params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
+        configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
+                params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
         return configMap;
     }
 
     @Override
-    public void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull TaskDefinition taskDefinition)
-    {
+    public void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull TaskDefinition taskDefinition) {
         super.populateContextForEdit(context, taskDefinition);
         context.putAll(taskDefinition.getConfiguration());
-        context.put(Configuration.TASK_DOCKER_IMAGE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE));
+        context.put(Configuration.TASK_DOCKER_IMAGE, 
+                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE));
         context.put("imageSizes", CustomPreBuildActionImpl.getImageSizes());
-        context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
+        context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
+                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
+        context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
+                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
 
     @Override
@@ -90,23 +92,23 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     }
 
     @Override
-    public void validate(@NotNull ActionParametersMap params, @NotNull ErrorCollection errorCollection)
-    {
+    public void validate(@NotNull ActionParametersMap params, @NotNull ErrorCollection errorCollection) {
         super.validate(params, errorCollection);
         
         String v = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         validateExtraContainers(v, errorCollection);
 
-        if (StringUtils.isBlank(params.getString(Configuration.TASK_DOCKER_IMAGE)))
-        {
-            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, textProvider.getText("requirement.error.emptyImage"));
+        if (StringUtils.isBlank(params.getString(Configuration.TASK_DOCKER_IMAGE))) {
+            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, 
+                    textProvider.getText("requirement.error.emptyImage"));
         }
         
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
         try {
             Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
         } catch (IllegalArgumentException e) {
-            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE_SIZE, "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
+            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE_SIZE, 
+                    "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
         }
     }
 
@@ -134,7 +136,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
                                 }
                                 for (Configuration.EnvVariable env : v2.getEnvVariables()) {
                                     if (StringUtils.isBlank(env.getName())) {
-                                        errorCollection.addErrorMessage("Extra container requires non empty environment variable name.");
+                                        errorCollection.addErrorMessage(
+                                                "Extra container requires non empty environment variable name.");
                                     }
                                 }
                             }
@@ -153,8 +156,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
 
     @NotNull
     @Override
-    public Set<Requirement> calculateRequirements(@NotNull TaskDefinition taskDefinition)
-    {
+    public Set<Requirement> calculateRequirements(@NotNull TaskDefinition taskDefinition) {
         Set<Requirement> requirementSet = Sets.newHashSet();
         Configuration config = AccessConfiguration.forTaskConfiguration(taskDefinition);
         if (config.isEnabled()) {

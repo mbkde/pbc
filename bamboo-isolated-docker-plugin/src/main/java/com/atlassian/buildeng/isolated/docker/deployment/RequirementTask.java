@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.deployment;
 
 import com.atlassian.bamboo.task.CommonTaskContext;
@@ -24,8 +25,7 @@ import com.atlassian.bamboo.v2.build.agent.ExecutableBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.AgentContext;
 import org.jetbrains.annotations.NotNull;
 
-public class RequirementTask implements CommonTaskType
-{
+public class RequirementTask implements CommonTaskType {
 
     private final AgentContext agentContext;
 
@@ -34,8 +34,7 @@ public class RequirementTask implements CommonTaskType
     }
     
     @Override
-    public TaskResult execute(@NotNull CommonTaskContext commonTaskContext) throws TaskException
-    {
+    public TaskResult execute(@NotNull CommonTaskContext commonTaskContext) throws TaskException {
         ExecutableBuildAgent agent = agentContext.getBuildAgent();
         if (agent != null) {
             agent.stopNicely();

@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.plan.PlanResultKey;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
 import java.io.IOException;
@@ -47,7 +48,8 @@ public class SummaryPanel implements WebPanel {
         BuildContext buildcontext = map.get(summary.getPlanResultKey());
         
         //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-        Configuration configuration = buildcontext != null ? AccessConfiguration.forContext(buildcontext) : AccessConfiguration.forBuildResultSummary(summary);
+        Configuration configuration = buildcontext != null ? AccessConfiguration.forContext(buildcontext) 
+                : AccessConfiguration.forBuildResultSummary(summary);
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
             ret.append("<h2>Built with Per-build Container Agent</h2>")

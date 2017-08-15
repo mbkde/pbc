@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
@@ -24,6 +23,8 @@ import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;

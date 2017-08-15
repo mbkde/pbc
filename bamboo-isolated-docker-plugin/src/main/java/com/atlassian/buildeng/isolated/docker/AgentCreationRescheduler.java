@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
-import com.atlassian.bamboo.v2.build.BuildContext;
-import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.bamboo.executor.NamedExecutors;
+import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
+import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
@@ -36,15 +37,12 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author mkleint
- */
 public class AgentCreationRescheduler implements LifecycleAware  {
     private final Logger LOG = LoggerFactory.getLogger(AgentCreationRescheduler.class);
     private final EventPublisher eventPublisher;
     private final BuildQueueManager buildQueueManager;
-    private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, "Docker Agent Retry Pool");
+    private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, 
+            "Docker Agent Retry Pool");
     private static final int MAX_RETRY_COUNT = 90;
     private static final int RETRY_DELAY = 20; //20 seconds times 90 = 30 minutes
     private static final String KEY = "custom.isolated.docker.waiting";
