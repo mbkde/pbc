@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.agent.AgentType;
@@ -40,7 +41,8 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     private static final Logger log = LoggerFactory.getLogger(TheMightyAgentFilter.class);
 
     @Override
-    public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
+    public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, 
+            MinimalRequirementSet requirements) {
         log.debug("have {} agents for {}", agents.size(), context.getResultKey());
         if (isPBCContext(context)) {
             for (BuildAgent agent : agents) {
@@ -66,7 +68,7 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
             for (BuildAgent agent : agents) {
                 if (AgentType.REMOTE.equals(agent.getType())) {
                     //only check remote agents
-                    CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
+                    CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent);
                     if (capabilitySet != null) {
                         if (capabilitySet.getCapability(Constants.CAPABILITY_RESULT) != null) {
                             continue;

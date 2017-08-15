@@ -17,10 +17,6 @@
 package com.atlassian.buildeng.isolated.docker.compose;
 
 import com.atlassian.bamboo.build.PlanResultsAction;
-import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.plan.cache.ImmutableJob;
-import com.atlassian.bamboo.resultsummary.ResultsSummary;
-import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.opensymphony.xwork2.Preparable;
