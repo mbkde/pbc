@@ -31,6 +31,23 @@ public interface Constants {
     String STORAGE_DRIVER_PROPERTY = "pbc.dind.storage.driver";
 
     /**
+     * System property that allows overriding specific Docker in Docker images with another version
+     */
+    String PROPERTY_DIND_OVERRIDE_POLICY = "pbc.dind.override.policy";
+
+    /**
+     * The versions of Docker in Docker specified in this system property (as a comma separated list,
+     * e.g., "docker:1.12-dind,docker:1.11-dind") will be overridden with a newer version that
+     * matches the system property below.
+     */
+    String PROPERTY_DIND_OVERRIDE_IMAGES = "pbc.dind.override.versions";
+
+    /**
+     * This is the version of Docker in Docker that will override the versions specified above
+     */
+    String PROPERTY_DIND_IMAGE = "pbc.dind.version";
+
+    /**
      * the storage driver used with docker on the ec2 instances in ecs. For docker-in-docker to work
      * we need to use this one in place of the default vfs that is terribly slow.
      */
