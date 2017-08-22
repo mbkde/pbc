@@ -66,7 +66,7 @@ public class ReaperJob implements PluginJob {
 
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
-        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQuery(reqs));
+        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQueryWithoutAssignments(reqs));
         Collection<BuildAgent> relevantAgents = new ArrayList<>();
 
         // Only care about agents which are remote, idle and 'old'
