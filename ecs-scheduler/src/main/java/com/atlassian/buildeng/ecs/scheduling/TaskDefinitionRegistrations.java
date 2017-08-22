@@ -135,11 +135,11 @@ public class TaskDefinitionRegistrations {
                     .withEssential(false), globalConfiguration);
             if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
-                if (Boolean.getBoolean(Constants.PROPERTY_DIND_OVERRIDE_POLICY)) {
-                    List<String> overrideVersions = Arrays.asList(System.getProperty(Constants.PROPERTY_DIND_OVERRIDE_IMAGES).split(","));
-                    if (overrideVersions.contains(t.getImage())) {
-                        d.setImage(System.getProperty(Constants.PROPERTY_DIND_IMAGE));
-                    }
+                List<String> overrideVersions = Arrays.asList(System.getProperty(
+                        Constants.PROPERTY_DIND_OVERRIDE_IMAGES
+                ).split(","));
+                if (overrideVersions.contains(t.getImage())) {
+                    d.setImage(System.getProperty(Constants.PROPERTY_DIND_IMAGE));
                 }
                 //TODO align storage driver with whatever we are using? (overlay)
                 //default is vfs safest but slowest option.

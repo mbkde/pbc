@@ -31,11 +31,6 @@ public interface Constants {
     String STORAGE_DRIVER_PROPERTY = "pbc.dind.storage.driver";
 
     /**
-     * System property that allows overriding specific Docker in Docker images with another version
-     */
-    String PROPERTY_DIND_OVERRIDE_POLICY = "pbc.dind.override.policy";
-
-    /**
      * The versions of Docker in Docker specified in this system property (as a comma separated list,
      * e.g., "docker:1.12-dind,docker:1.11-dind") will be overridden with a newer version that
      * matches the system property below.
