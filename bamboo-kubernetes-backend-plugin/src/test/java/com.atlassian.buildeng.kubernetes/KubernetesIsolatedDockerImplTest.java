@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.kubernetes;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
@@ -24,6 +25,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class KubernetesIsolatedDockerImplTest {
     @Test
@@ -36,7 +38,7 @@ public class KubernetesIsolatedDockerImplTest {
                 "  name: aws-cli\n" +
                 "spec:\n" +
                 "  containers:\n" +
-                "    - name: mycontainer\n" +
+                "    - name: myContainer\n" +
                 "      volumeMounts:\n" +
                 "          - name: secrets\n" +
                 "            mountPath: /root/.aws\n" +
@@ -52,7 +54,7 @@ public class KubernetesIsolatedDockerImplTest {
                 "        iam.amazonaws.com/role: arn:aws:iam::123456678912:role/staging-bamboo\n" +
                 "spec:\n" +
                 "  containers:\n" +
-                "    - name: mycontainer\n" +
+                "    - name: myContainer\n" +
                 "      image: xueshanf/awscli:latest\n" +
                 "  volumes:\n" +
                 "    - name: myvolume\n";
@@ -61,7 +63,11 @@ public class KubernetesIsolatedDockerImplTest {
         Map<String, Object> overrides = (Map<String, Object>) yaml.load(os);
         Map<String, Object> merged = KubernetesIsolatedDockerImpl.mergeMap(template, overrides);
         Map<String, Object> spec = (Map<String, Object>) merged.get("spec");
-        assertEquals(((Collection) spec.get("containers")).size(), 1);
-        assertEquals(((Collection) spec.get("volumes")).size(), 2);
+        assertEquals(1, ((Collection) spec.get("containers")).size());
+        assertEquals(2, ((Collection) spec.get("volumes")).size());
+
+        Map myContainer = (Map) ((List) spec.get("containers")).get(0);
+        assertNotEquals(null, myContainer.get("image"));
+        assertNotEquals(null, myContainer.get("volumeMounts"));
     }
 }
