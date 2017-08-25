@@ -150,15 +150,34 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> mergeMap(Map<String, Object> template, Map<String, Object> overrides) {
+    static Map<String, Object> mergeMap(Map<String, Object> template, Map<String, Object> overrides) {
         final Map<String, Object> merged = new HashMap<>(template);
         overrides.forEach((String t, Object u) -> {
             Object originalEntry = merged.get(t);
             if (originalEntry instanceof Map && u instanceof Map) {
                 merged.put(t, mergeMap((Map)originalEntry, (Map)u));
             } else if (originalEntry instanceof Collection && u instanceof Collection) {
-                ArrayList<Object> lst = new ArrayList<>((Collection)originalEntry);
-                lst.addAll((Collection)u);
+                ArrayList<Object> lst = new ArrayList<>();
+
+                if (t.equals("containers")) {
+                    Map<String, Object> containers1 = ((Collection<Map<String, Object>>) originalEntry)
+                            .stream().collect(Collectors.toMap(x -> (String) x.get("name"), x -> x));
+                    Map<String, Object> containers2 = ((Collection<Map<String, Object>>) u)
+                            .stream().collect(Collectors.toMap(x -> (String) x.get("name"), x -> x));
+
+                    containers1.forEach((String name, Object container1) -> {
+                        Map<String, Object> container2 = (Map<String, Object>) containers2.remove(name);
+                        if (container2 != null) {
+                            lst.add(mergeMap((Map<String, Object>) container1, container2));
+                        } else {
+                            lst.add(container1);
+                        }
+                    });
+                    lst.addAll(containers2.entrySet());
+                } else {
+                    lst.addAll((Collection) originalEntry);
+                    lst.addAll((Collection) u);
+                }
                 merged.put(t, lst);
             } else {
                 merged.put(t, u);
@@ -166,7 +185,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         });
         return merged;
     }
-    
 
     @Override
     public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
