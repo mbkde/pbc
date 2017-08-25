@@ -157,23 +157,23 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             if (originalEntry instanceof Map && u instanceof Map) {
                 merged.put(t, mergeMap((Map)originalEntry, (Map)u));
             } else if (originalEntry instanceof Collection && u instanceof Collection) {
-                ArrayList<Object> lst = new ArrayList<>();
+                ArrayList<Map<String, Object>> lst = new ArrayList<>();
 
                 if (t.equals("containers")) {
-                    Map<String, Object> containers1 = ((Collection<Map<String, Object>>) originalEntry)
+                    Map<String, Map<String, Object>> containers1 = ((Collection<Map<String, Object>>) originalEntry)
                             .stream().collect(Collectors.toMap(x -> (String) x.get("name"), x -> x));
-                    Map<String, Object> containers2 = ((Collection<Map<String, Object>>) u)
+                    Map<String, Map<String, Object>> containers2 = ((Collection<Map<String, Object>>) u)
                             .stream().collect(Collectors.toMap(x -> (String) x.get("name"), x -> x));
 
-                    containers1.forEach((String name, Object container1) -> {
-                        Map<String, Object> container2 = (Map<String, Object>) containers2.remove(name);
+                    containers1.forEach((String name, Map<String, Object> container1) -> {
+                        Map<String, Object> container2 = containers2.remove(name);
                         if (container2 != null) {
-                            lst.add(mergeMap((Map<String, Object>) container1, container2));
+                            lst.add(mergeMap(container1, container2));
                         } else {
                             lst.add(container1);
                         }
                     });
-                    lst.addAll(containers2.entrySet());
+                    lst.addAll(containers2.values());
                 } else {
                     lst.addAll((Collection) originalEntry);
                     lst.addAll((Collection) u);
