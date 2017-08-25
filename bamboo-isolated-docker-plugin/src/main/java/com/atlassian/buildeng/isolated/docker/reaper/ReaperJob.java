@@ -51,7 +51,9 @@ public class ReaperJob implements PluginJob {
     public void executeImpl(Map<String, Object> jobDataMap) {
 
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
-        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(Reaper.REAPER_AGENTS_HELPER_KEY);
+        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(
+                Reaper.REAPER_AGENTS_HELPER_KEY
+        );
         AgentRemovals agentRemovals = (AgentRemovals) jobDataMap.get(Reaper.REAPER_REMOVALS_KEY);
         UnmetRequirements unmetRequirement = (UnmetRequirements) jobDataMap.get(Reaper.REAPER_UNMET_KEY);
         
@@ -66,7 +68,9 @@ public class ReaperJob implements PluginJob {
 
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
-        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQuery(reqs));
+        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
+                ExecutorQuery.newQueryWithoutAssignments(reqs)
+        );
         Collection<BuildAgent> relevantAgents = new ArrayList<>();
 
         // Only care about agents which are remote, idle and 'old'
