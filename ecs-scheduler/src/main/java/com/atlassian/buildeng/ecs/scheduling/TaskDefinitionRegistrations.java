@@ -39,6 +39,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -134,6 +135,14 @@ public class TaskDefinitionRegistrations {
                     .withEssential(false), globalConfiguration);
             if (isDockerInDockerImage(t.getImage())) {
                 //https://hub.docker.com/_/docker/
+                String versions = System.getProperty(Constants.PROPERTY_DIND_OVERRIDE_IMAGES);
+                if (versions != null) {
+                    List<String> overrideVersions = Arrays.asList(versions.split(","));
+                    String image = System.getProperty(Constants.PROPERTY_DIND_IMAGE);
+                    if (overrideVersions.contains(t.getImage()) && image != null) {
+                        d.setImage(image);
+                    }
+                }
                 //TODO align storage driver with whatever we are using? (overlay)
                 //default is vfs safest but slowest option.
                 d.setPrivileged(Boolean.TRUE);
