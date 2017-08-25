@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -38,10 +40,12 @@ public class KubernetesIsolatedDockerImplTest {
                 "  name: aws-cli\n" +
                 "spec:\n" +
                 "  containers:\n" +
-                "    - name: myContainer\n" +
+                "    - name: main\n" +
                 "      volumeMounts:\n" +
                 "          - name: secrets\n" +
                 "            mountPath: /root/.aws\n" +
+                "    - name: myContainer2\n" +
+                "      image: xueshanf/awscli:latest\n" +
                 "  restartPolicy: Never\n" +
                 "  volumes:\n" +
                 "    - name: secrets\n" +
@@ -54,7 +58,9 @@ public class KubernetesIsolatedDockerImplTest {
                 "        iam.amazonaws.com/role: arn:aws:iam::123456678912:role/staging-bamboo\n" +
                 "spec:\n" +
                 "  containers:\n" +
-                "    - name: myContainer\n" +
+                "    - name: main\n" +
+                "      image: xueshanf/awscli:latest\n" +
+                "    - name: myContainer3\n" +
                 "      image: xueshanf/awscli:latest\n" +
                 "  volumes:\n" +
                 "    - name: myvolume\n";
@@ -63,11 +69,16 @@ public class KubernetesIsolatedDockerImplTest {
         Map<String, Object> overrides = (Map<String, Object>) yaml.load(os);
         Map<String, Object> merged = KubernetesIsolatedDockerImpl.mergeMap(template, overrides);
         Map<String, Object> spec = (Map<String, Object>) merged.get("spec");
-        assertEquals(1, ((Collection) spec.get("containers")).size());
+        assertEquals(3, ((Collection) spec.get("containers")).size());
         assertEquals(2, ((Collection) spec.get("volumes")).size());
 
-        Map myContainer = (Map) ((List) spec.get("containers")).get(0);
-        assertNotEquals(null, myContainer.get("image"));
-        assertNotEquals(null, myContainer.get("volumeMounts"));
+        List<Map<String, Object>> containers = ((List<Map<String, Object>>) spec.get("containers"));
+        assertEquals(1, containers.stream().filter(c -> c.containsValue("main")).collect(toList()).size());
+        for (Map<String, Object> container : containers) {
+            if (container.containsValue("main")) {
+                assertNotEquals(null, container.get("image"));
+                assertNotEquals(null, container.get("volumeMounts"));
+            }
+        }
     }
 }
