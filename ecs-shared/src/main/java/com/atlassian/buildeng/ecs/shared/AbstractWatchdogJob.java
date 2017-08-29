@@ -183,12 +183,12 @@ public abstract class AbstractWatchdogJob implements PluginJob {
         return arns;
     }
 
-    protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
+    protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
         final Object obj = checkNotNull(jobDataMap.get(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
     }
 
-    protected final <T> T getService(Class<T> type, String serviceKey) {
+    protected <T> T getService(Class<T> type, String serviceKey) {
         final Object obj = checkNotNull(ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
     }
