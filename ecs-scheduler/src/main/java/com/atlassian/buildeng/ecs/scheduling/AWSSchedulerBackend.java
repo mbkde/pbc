@@ -250,7 +250,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 ecsClient.updateContainerInstancesState(new UpdateContainerInstancesStateRequest()
                         .withStatus(ContainerInstanceStatus.DRAINING)
                         .withCluster(clusterName)
-                        .withContainerInstances(hosts.stream().map(DockerHost::getContainerInstanceArn).collect(Collectors.toList()))
+                        .withContainerInstances(hosts.stream().map(
+                                DockerHost::getContainerInstanceArn).collect(Collectors.toList()))
                 );
             } catch (AmazonECSException e) {
                 logger.error("Failed to drain container instances", e);
