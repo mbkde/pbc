@@ -244,15 +244,17 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Override
     public void drainInstances(List<DockerHost> hosts, String clusterName) {
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        try {
-            ecsClient.updateContainerInstancesState(new UpdateContainerInstancesStateRequest()
-                    .withStatus(ContainerInstanceStatus.DRAINING)
-                    .withCluster(clusterName)
-                    .withContainerInstances(hosts.stream().map(DockerHost::getContainerInstanceArn).collect(Collectors.toList()))
-            );
-        } catch (AmazonECSException e) {
-            logger.error("Failed to drain container instances", e);
+        if (!hosts.isEmpty()) {
+            AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+            try {
+                ecsClient.updateContainerInstancesState(new UpdateContainerInstancesStateRequest()
+                        .withStatus(ContainerInstanceStatus.DRAINING)
+                        .withCluster(clusterName)
+                        .withContainerInstances(hosts.stream().map(DockerHost::getContainerInstanceArn).collect(Collectors.toList()))
+                );
+            } catch (AmazonECSException e) {
+                logger.error("Failed to drain container instances", e);
+            }
         }
     }
 
