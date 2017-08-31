@@ -55,6 +55,11 @@ public class PodCreator {
     
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
+    public static final String LABEL_PBC_MARKER = "pbc";
+    public static final String LABEL_RESULTID = "pbc.resultId";
+    public static final String LABEL_UUID = "pbc.uuid";
+    public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
+    
 
     static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Configuration c = r.getConfiguration();
@@ -70,13 +75,15 @@ public class PodCreator {
         return new HashMap<>();
     }
 
-    private static Map<String, String> createLabels(IsolatedDockerAgentRequest r) {
+    private static Map<String, String> createLabels(IsolatedDockerAgentRequest r, GlobalConfiguration c) {
         Map<String, String> labels = new HashMap<>();
-        labels.put("pbc", "true");
-        labels.put("pbc.resultId", r.getResultKey());
-        labels.put("pbc.uuid",  r.getUniqueIdentifier().toString());
+        labels.put(LABEL_PBC_MARKER, "true");
+        labels.put(LABEL_RESULTID, r.getResultKey());
+        labels.put(LABEL_UUID,  r.getUniqueIdentifier().toString());
+        labels.put(LABEL_BAMBOO_SERVER, c.getBambooBaseUrlAskKubeLabel());
         return labels;
     }
+    
 
     public static boolean isDockerInDockerImage(String image) {
         return image.startsWith("docker:") && image.endsWith("dind");
@@ -95,7 +102,8 @@ public class PodCreator {
                         .map((Configuration.EnvVariable t1) ->
                                 ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
                         .collect(Collectors.toList()));
-            map.put("volumeMounts", ImmutableList.of(ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)));
+            map.put("volumeMounts", ImmutableList.of(
+                    ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)));
             map.put("readinessProbe", createReadinessProbe(c, t.getName()));
             return map;
         }).collect(Collectors.toList());
@@ -125,7 +133,7 @@ public class PodCreator {
             IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
-        map.put("labels", createLabels(r));
+        map.put("labels", createLabels(r, globalConfiguration));
         map.put("annotations", createAnnotations());
         return map;
     }

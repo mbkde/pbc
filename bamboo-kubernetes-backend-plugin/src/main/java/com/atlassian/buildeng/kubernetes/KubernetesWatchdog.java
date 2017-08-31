@@ -52,13 +52,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Background job checking the state of the cluster.
- * @author mkleint
  */
 public class KubernetesWatchdog implements PluginJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
-    private static final String RESULT_PREFIX = "result.isolated.docker.";
     private static final Long MAX_QUEUE_TIME_MINUTES = 100L;
-    private static final String NAME = "name";
 
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
@@ -66,14 +63,19 @@ public class KubernetesWatchdog implements PluginJob {
     public void execute(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
+        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class, 
+                "globalConfiguration", jobDataMap);
+        
         KubernetesClient client = new DefaultKubernetesClient();
-        PodList pods = client.pods().list();
+        PodList pods = client.pods()
+                .withLabel(PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel())
+                .list();
 
         // delete pods which have had the bamboo-agent container terminated
         for (Pod pod : pods.getItems()) {
             Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
                     .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
-            ContainerStatus agentContainer = currentContainers.get("bamboo-agent");
+            ContainerStatus agentContainer = currentContainers.get(PodCreator.CONTAINER_NAME_BAMBOOAGENT);
             // if agentContainer == null then the pod is still initializing
             if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
                 logger.info("Killing pod {} with terminated agent container: {}",
@@ -85,7 +87,8 @@ public class KubernetesWatchdog implements PluginJob {
         // Kill queued jobs waiting on pods that no longer exist or which have been queued for too long
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
             CurrentResult current = context.getCurrentResult();
-            String podName = current.getCustomBuildData().get(RESULT_PREFIX + NAME);
+            String podName = current.getCustomBuildData().get(KubernetesIsolatedDockerImpl.RESULT_PREFIX
+                    + KubernetesIsolatedDockerImpl.NAME);
             if (podName != null) {
                 Pod pod = retrievePod(podName);
                 if (pod == null) {
@@ -146,4 +149,10 @@ public class KubernetesWatchdog implements PluginJob {
         );
         return type.cast(obj);
     }
+    
+    protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
+        final Object obj = checkNotNull(jobDataMap.get(serviceKey), 
+                "Expected value for key '" + serviceKey + "', found nothing.");
+        return type.cast(obj);
+    }    
 }
