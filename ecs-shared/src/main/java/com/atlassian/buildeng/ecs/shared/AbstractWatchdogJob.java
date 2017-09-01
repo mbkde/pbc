@@ -16,15 +16,9 @@
 
 package com.atlassian.buildeng.ecs.shared;
 
-import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
-import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
-import com.atlassian.bamboo.security.ImpersonationHelper;
-import com.atlassian.bamboo.utils.BambooRunnables;
-import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
@@ -35,10 +29,8 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
+import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.sal.api.scheduling.PluginJob;
-import com.atlassian.spring.container.ContainerManager;
-import static com.google.common.base.Preconditions.checkNotNull;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -56,7 +48,7 @@ import org.slf4j.LoggerFactory;
 //this class is very similar to ECSWatchDogJob
 //we currently don't have a place to put the shared code between these 2 plugins
 //but we eventually should, effectively we need another project/jar
-public abstract class AbstractWatchdogJob implements PluginJob {
+public abstract class AbstractWatchdogJob extends WatchdogJob {
     private static final String RESULT_PART_TASKARN = "TaskARN";
     private static final String RESULT_PREFIX = "result.isolated.docker.";
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
@@ -135,21 +127,8 @@ public abstract class AbstractWatchdogJob implements PluginJob {
                             errorUpdateHandler.recordError(t.getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(RESULT_ERROR, error);
                             generateRemoteFailEvent(t, error, tsk, isolatedAgentService, eventPublisher);
-                            if (t instanceof BuildContext) {
-                                current.setLifeCycleState(LifeCycleState.NOT_BUILT);
-                                buildQueueManager.removeBuildFromQueue(t.getResultKey());
-                            } else if (t instanceof DeploymentContext) {
-                                DeploymentContext dc = (DeploymentContext) t;
-                                ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
-                                    //without runWithSystemAuthority() this call terminates execution with a log entry only
-                                    DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
-                                    if (deploymentResult != null) {
-                                        deploymentExecutionService.stop(deploymentResult, null);
-                                    }
-                                });
-                            } else {
-                                logger.error("unknown type of CommonContext {}", t.getClass());
-                            }
+                            killBuild(deploymentExecutionService, deploymentResultService, logger,
+                                    buildQueueManager, t, current);
                         }
                     }
                 }
@@ -182,16 +161,6 @@ public abstract class AbstractWatchdogJob implements PluginJob {
             }
         });
         return arns;
-    }
-
-    protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-        final Object obj = checkNotNull(jobDataMap.get(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
-        return type.cast(obj);
-    }
-
-    protected <T> T getService(Class<T> type, String serviceKey) {
-        final Object obj = checkNotNull(ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
-        return type.cast(obj);
     }
 
     private Map<String, Date> getMissingTasksArn(Map<String, Object> data) {

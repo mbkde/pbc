@@ -16,23 +16,14 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
-import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
-import com.atlassian.bamboo.security.ImpersonationHelper;
-import com.atlassian.bamboo.utils.BambooRunnables;
-import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
-import com.atlassian.sal.api.scheduling.PluginJob;
-import com.atlassian.spring.container.ContainerManager;
+import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -55,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Background job checking the state of the cluster.
  */
-public class KubernetesWatchdog implements PluginJob {
+public class KubernetesWatchdog extends WatchdogJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     private static final Long MAX_QUEUE_TIME_MINUTES = 100L;
 
@@ -67,6 +58,11 @@ public class KubernetesWatchdog implements PluginJob {
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
         GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
                 "globalConfiguration", jobDataMap);
+        DeploymentExecutionService deploymentExecutionService = getService(
+                DeploymentExecutionService.class, "deploymentExecutionService");
+        DeploymentResultService deploymentResultService = getService(
+                DeploymentResultService.class, "deploymentResultService");
+
 
         KubernetesClient client = new DefaultKubernetesClient();
         List<Pod> pods = client.pods()
@@ -112,7 +108,8 @@ public class KubernetesWatchdog implements PluginJob {
                         errorMessage = errorMessage + " with bamboo-agent container state: " + terminationReason;
                     }
                     current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                    killBuild(buildQueueManager, context, current);
+                    killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
+                            context, current);
                 } else {
                     Date creationTime = Date.from(Instant.parse(pod.getMetadata().getCreationTimestamp()));
                     if (Duration.ofMillis(
@@ -121,48 +118,12 @@ public class KubernetesWatchdog implements PluginJob {
                                 context.getEntityKey(), "Build was not queued after " + MAX_QUEUE_TIME_MINUTES
                                         + "podName: " + podName);
                         current.getCustomBuildData().put(RESULT_ERROR, "build terminated for queuing for too long");
-                        killBuild(buildQueueManager, context, current);
+                        killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
+                                context, current);
                         client.resource(pod).delete();
                     }
                 }
             }
         });
-    }
-
-    private void killBuild(BuildQueueManager buildQueueManager, CommonContext context, CurrentResult current) {
-        DeploymentExecutionService deploymentExecutionService = getService(
-                DeploymentExecutionService.class, "deploymentExecutionService");
-        DeploymentResultService deploymentResultService = getService(
-                DeploymentResultService.class, "deploymentResultService");
-
-        if (context instanceof BuildContext) {
-            current.setLifeCycleState(LifeCycleState.NOT_BUILT);
-            buildQueueManager.removeBuildFromQueue(context.getResultKey());
-        } else if (context instanceof DeploymentContext) {
-            DeploymentContext dc = (DeploymentContext) context;
-            ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
-                //without runWithSystemAuthority() this call terminates execution with a log entry only
-                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(
-                        dc.getDeploymentResultId());
-                if (deploymentResult != null) {
-                    deploymentExecutionService.stop(deploymentResult, null);
-                }
-            });
-        } else {
-            logger.error("unknown type of CommonContext {}", context.getClass());
-        }
-    }
-
-    private <T> T getService(Class<T> type, String serviceKey) {
-        final Object obj = checkNotNull(
-                ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing."
-        );
-        return type.cast(obj);
-    }
-
-    protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-        final Object obj = checkNotNull(jobDataMap.get(serviceKey),
-                "Expected value for key '" + serviceKey + "', found nothing.");
-        return type.cast(obj);
     }
 }
