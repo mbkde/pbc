@@ -50,7 +50,7 @@ public class GlobalConfiguration {
     }
     
     static String stripLabelValue(String value) {
-        return value.replaceAll("[^A-Za-z0-9_\\-\\.]", "");
+        return value.replaceAll("[^-A-Za-z0-9_.]", "");
     }
 
     public synchronized String getCurrentSidekick() {
