@@ -36,13 +36,15 @@ import com.atlassian.spring.container.ContainerManager;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -63,16 +65,18 @@ public class KubernetesWatchdog implements PluginJob {
     public void execute(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
-        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class, 
+        GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
                 "globalConfiguration", jobDataMap);
-        
+
         KubernetesClient client = new DefaultKubernetesClient();
-        PodList pods = client.pods()
+        List<Pod> pods = client.pods()
                 .withLabel(PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel())
-                .list();
+                .list().getItems();
+        Map<String, String> terminationReasons = new HashMap<>();
+        List<Pod> killed = new ArrayList<>();
 
         // delete pods which have had the bamboo-agent container terminated
-        for (Pod pod : pods.getItems()) {
+        for (Pod pod : pods) {
             Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
                     .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
             ContainerStatus agentContainer = currentContainers.get(PodCreator.CONTAINER_NAME_BAMBOOAGENT);
@@ -81,21 +85,33 @@ public class KubernetesWatchdog implements PluginJob {
                 logger.info("Killing pod {} with terminated agent container: {}",
                         KubernetesHelper.getName(pod), agentContainer.getState());
                 Boolean deleted = client.resource(pod).delete();
+                if (deleted) {
+                    terminationReasons.put(KubernetesHelper.getName(pod), agentContainer.getState().toString());
+                    killed.add(pod);
+                }
             }
         }
+        pods.removeAll(killed);
 
+        Map<String, Pod> nameToPod = pods.stream().collect(Collectors.toMap(KubernetesHelper::getName, x -> x));
         // Kill queued jobs waiting on pods that no longer exist or which have been queued for too long
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
             CurrentResult current = context.getCurrentResult();
             String podName = current.getCustomBuildData().get(KubernetesIsolatedDockerImpl.RESULT_PREFIX
                     + KubernetesIsolatedDockerImpl.NAME);
             if (podName != null) {
-                Pod pod = retrievePod(podName);
+                Pod pod = nameToPod.get(podName);
                 if (pod == null) {
                     logger.info("Stopping job {} because pod {} no longer exists", context.getResultKey(), podName);
                     errorUpdateHandler.recordError(
                             context.getEntityKey(), "Build was not queued due to pod deletion: " + podName);
-                    current.getCustomBuildData().put(RESULT_ERROR, "build killed as pod was terminated");
+
+                    String errorMessage = "build killed as pod was terminated";
+                    String terminationReason = terminationReasons.get(podName);
+                    if (terminationReason != null) {
+                        errorMessage = errorMessage + " with bamboo-agent container state: " + terminationReason;
+                    }
+                    current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                     killBuild(buildQueueManager, context, current);
                 } else {
                     Date creationTime = Date.from(Instant.parse(pod.getMetadata().getCreationTimestamp()));
@@ -106,18 +122,12 @@ public class KubernetesWatchdog implements PluginJob {
                                         + "podName: " + podName);
                         current.getCustomBuildData().put(RESULT_ERROR, "build terminated for queuing for too long");
                         killBuild(buildQueueManager, context, current);
+                        client.resource(pod).delete();
                     }
                 }
             }
         });
     }
-
-    private Pod retrievePod(String podName) {
-        try (KubernetesClient client = new DefaultKubernetesClient()) {
-            return client.pods().withName(podName).get();
-        }
-    }
-
 
     private void killBuild(BuildQueueManager buildQueueManager, CommonContext context, CurrentResult current) {
         DeploymentExecutionService deploymentExecutionService = getService(
@@ -149,10 +159,10 @@ public class KubernetesWatchdog implements PluginJob {
         );
         return type.cast(obj);
     }
-    
+
     protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-        final Object obj = checkNotNull(jobDataMap.get(serviceKey), 
+        final Object obj = checkNotNull(jobDataMap.get(serviceKey),
                 "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
-    }    
+    }
 }
