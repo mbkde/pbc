@@ -40,6 +40,18 @@ public class GlobalConfiguration {
     public String getBambooBaseUrl() {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
     }
+    
+    /**
+     * Strips characters from bamboo baseurl to conform to kubernetes label values.
+     * @return value conforming to kube label value constraints.
+     */
+    public String getBambooBaseUrlAskKubeLabel() {
+        return stripLabelValue(getBambooBaseUrl());
+    }
+    
+    static String stripLabelValue(String value) {
+        return value.replaceAll("[^-A-Za-z0-9_.]", "");
+    }
 
     public synchronized String getCurrentSidekick() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);

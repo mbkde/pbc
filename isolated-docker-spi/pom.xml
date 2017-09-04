@@ -36,22 +36,30 @@ limitations under the License.
                         <Export-Package>
                             com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}",
                             com.atlassian.plugin.*
+
                         </Export-Package>
                         <Import-Package>
+                            com.atlassian.bamboo.builder.*,
                             com.atlassian.bamboo.build.*,
                             com.atlassian.bamboo.v2.build.queue.*,
                             com.atlassian.bamboo.deployments.execution.*,
+                            com.atlassian.bamboo.deployments.execution.service.*,
                             com.atlassian.bamboo.deployments.results.*,
+                            com.atlassian.bamboo.deployments.results.service.*,
                             com.atlassian.bamboo.plan.cache.*,
                             com.atlassian.bamboo.resultsummary.*,
                             com.atlassian.bamboo.task.*,
                             com.atlassian.bamboo.task.runtime.*,
                             com.atlassian.bamboo.utils.error.*,
+                            com.atlassian.bamboo.utils.*,
                             com.atlassian.bamboo.v2.build.*,
                             com.atlassian.bamboo.ww2.actions.build.admin.create.*,
                             com.atlassian.plugin.*,
                             com.atlassian.plugin.module.*,
                             com.atlassian.bamboo.plugin.descriptor.*,
+                            com.atlassian.sal.api.scheduling.*,
+                            com.atlassian.bamboo.security.*,
+                            com.atlassian.spring.container.*;
                             com.google.common.collect.*,
                             com.google.common.base.*,
                             com.google.gson.*,

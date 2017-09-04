@@ -60,12 +60,11 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
 
-    private static final String RESULT_PREFIX = "result.isolated.docker.";
+    static final String RESULT_PREFIX = "result.isolated.docker.";
     private static final String URL_POD_NAME = "POD_NAME";
     private static final String URL_CONTAINER_NAME = "CONTAINER_NAME";
-    private static final String BAMBOO_AGENT_CONTAINER = "bamboo-agent";
-    private static final String UID = "uid";
-    private static final String NAME = "name";
+    static final String UID = "uid";
+    static final String NAME = "name";
 
     private static final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
@@ -193,7 +192,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         if (StringUtils.isBlank(url) || StringUtils.isBlank(podName)) {
             return Collections.emptyMap();
         }
-        Stream<String> s = Stream.concat(Stream.of(BAMBOO_AGENT_CONTAINER),configuration.getExtraContainers().stream()
+        Stream<String> s = Stream.concat(Stream.of(PodCreator.CONTAINER_NAME_BAMBOOAGENT),configuration.getExtraContainers().stream()
                         .map((Configuration.ExtraContainer t) -> t.getName()));
         return s.map((String t) -> {
             String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
