@@ -57,12 +57,14 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -245,16 +247,19 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public void drainInstances(List<DockerHost> hosts, String clusterName) {
         if (!hosts.isEmpty()) {
+            List<String> instances = hosts.stream()
+                    .map(DockerHost::getContainerInstanceArn)
+                    .filter(StringUtils::isNotEmpty)
+                    .collect(Collectors.toList());
             AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
             try {
                 ecsClient.updateContainerInstancesState(new UpdateContainerInstancesStateRequest()
                         .withStatus(ContainerInstanceStatus.DRAINING)
                         .withCluster(clusterName)
-                        .withContainerInstances(hosts.stream().map(
-                                DockerHost::getContainerInstanceArn).collect(Collectors.toList()))
+                        .withContainerInstances(instances)
                 );
             } catch (AmazonECSException e) {
-                logger.error("Failed to drain container instances", e);
+                logger.error("Failed to drain container instances: " + Arrays.toString(instances.toArray()), e);
             }
         }
     }
