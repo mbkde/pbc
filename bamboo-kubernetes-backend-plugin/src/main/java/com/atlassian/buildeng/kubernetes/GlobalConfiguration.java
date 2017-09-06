@@ -18,8 +18,13 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.bamboo.persister.AuditLogEntry;
+import com.atlassian.bamboo.persister.AuditLogMessage;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.google.common.base.Preconditions;
+import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 
 public class GlobalConfiguration {
@@ -30,11 +35,16 @@ public class GlobalConfiguration {
 
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
+    private final AuditLogService auditLogService;
+    private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager,
-                               AdministrationConfigurationAccessor admConfAccessor) {
+    public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
+                               AdministrationConfigurationAccessor admConfAccessor, 
+                               BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
+        this.auditLogService = auditLogService;
+        this.authenticationContext = authenticationContext;
     }
 
     public String getBambooBaseUrl() {
@@ -82,13 +92,28 @@ public class GlobalConfiguration {
     public void persist(String sidekick, String podTemplate, String podLogUrl) {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate));
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
-        if (StringUtils.isBlank(podLogUrl)) {
-            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL);
-        } else {
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
+        if (!StringUtils.equals(sidekick, getCurrentSidekick())) {
+            auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), sidekick);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
+        }
+        if (!StringUtils.equals(podTemplate, getPodTemplateAsString())) {
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
+            auditLogEntry("PBC Kubernetes Pod Template", getPodTemplateAsString(), podTemplate);
+        }
+        if (!StringUtils.equals(podLogUrl, getPodLogsUrl())) {
+            auditLogEntry("PBC Kubernetes Container Logs URL", getPodLogsUrl(), podLogUrl);
+            if (StringUtils.isBlank(podLogUrl)) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
+            }
         }
     }
 
+    private void auditLogEntry(String name, String oldValue, String newValue) {
+        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, 
+                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+        auditLogService.log(ent);
+    }
+    
 }

@@ -17,8 +17,13 @@
 package com.atlassian.buildeng.simple.backend;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
+import com.atlassian.bamboo.persister.AuditLogEntry;
+import com.atlassian.bamboo.persister.AuditLogMessage;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.simple.backend.rest.Config;
+import java.util.Date;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,16 +35,33 @@ public class GlobalConfiguration {
     private static final String BANDANA_SIDEKICK_IMAGE = "com.atlassian.buildeng.simple.backend.sidekickImage";
  
     private final BandanaManager bandanaManager;
+    private final AuditLogService auditLogService;
+    private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager) {
+    public GlobalConfiguration(BandanaManager bandanaManager,AuditLogService auditLogService,
+            BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
+        this.auditLogService = auditLogService;
+        this.authenticationContext = authenticationContext;
     }
     
     public void setDockerConfig(Config config) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL, config.url);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH, config.certPath);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION, config.apiVersion);
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK, config.sidekick);
+        if (!StringUtils.equals(config.url, getDockerConfig().getUrl())) {
+            auditLogEntry("PBC Docker Daemon URL", getDockerConfig().getUrl(), config.url);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL, config.url);
+        }
+        if (!StringUtils.equals(config.certPath, getDockerConfig().getCertPath())) {
+            auditLogEntry("PBC Docker Cert Path", getDockerConfig().getCertPath(), config.certPath);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH, config.certPath);
+        }
+        if (!StringUtils.equals(config.apiVersion, getDockerConfig().getApiVersion())) {
+            auditLogEntry("PBC Docker API Version", getDockerConfig().getApiVersion(), config.apiVersion);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION, config.apiVersion);
+        }
+        if (!StringUtils.equals(config.getSidekick(), getDockerConfig().sidekick)) {
+            auditLogEntry("PBC Sidekick", getDockerConfig().getSidekick(), config.sidekick);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK, config.sidekick);
+        }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE, config.sidekickImage);
     }
     
@@ -71,4 +93,11 @@ public class GlobalConfiguration {
         }
         return pb;
     }
+    
+    private void auditLogEntry(String name, String oldValue, String newValue) {
+        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, 
+                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+        auditLogService.log(ent);
+    }
+    
 }

@@ -18,9 +18,14 @@ package com.atlassian.buildeng.ecs.remote;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.bamboo.persister.AuditLogEntry;
+import com.atlassian.bamboo.persister.AuditLogMessage;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.ecs.remote.rest.Config;
 import com.google.common.base.Preconditions;
+import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 
 public class GlobalConfiguration {
@@ -32,10 +37,15 @@ public class GlobalConfiguration {
 
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
+    private final AuditLogService auditLogService;
+    private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor) {
+    public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor,
+            AuditLogService auditLogService, BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
+        this.auditLogService = auditLogService;
+        this.authenticationContext = authenticationContext;
     }
 
     public String getBambooBaseUrl() {
@@ -56,17 +66,31 @@ public class GlobalConfiguration {
 
     public void persist(Config config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getServerUrl()));
-        if (StringUtils.isBlank(config.getAwsRole())) {
-            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
-        } else {
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, config.getAwsRole());
+        if (!StringUtils.equals(config.getAwsRole(), getCurrentRole())) {
+            auditLogEntry("PBC AWS Role", getCurrentRole(), config.getAwsRole());
+            if (StringUtils.isBlank(config.getAwsRole())) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, 
+                        config.getAwsRole());
+            }
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, 
-                config.getSidekickImage());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, 
-                config.getServerUrl());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, 
-                config.isPreemptiveScaling());
+        if (!StringUtils.equals(config.getSidekickImage(), getCurrentSidekick())) {
+            auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), config.getSidekickImage());
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, 
+                    config.getSidekickImage());
+        }
+        if (!StringUtils.equals(config.getServerUrl(), getCurrentServer())) {
+            auditLogEntry("PBC Remote Service URL", getCurrentServer(), config.getServerUrl());
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, 
+                    config.getServerUrl());
+        }
+        boolean newPremptive = config.isPreemptiveScaling();
+        if (isPreemptiveScaling() != newPremptive) {
+            auditLogEntry("PBC Preemptive scaling", "" + isPreemptiveScaling(), "" + newPremptive);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, 
+                    config.isPreemptiveScaling());
+        }
     }
 
     public boolean isPreemptiveScaling() {
@@ -74,4 +98,10 @@ public class GlobalConfiguration {
         return val != null ? val : false;
     }
 
+    private void auditLogEntry(String name, String oldValue, String newValue) {
+        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, 
+                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+        auditLogService.log(ent);
+    }
+    
 }

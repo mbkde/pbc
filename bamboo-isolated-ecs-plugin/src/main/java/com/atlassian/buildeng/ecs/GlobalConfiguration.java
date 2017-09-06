@@ -263,10 +263,13 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         }
         Config.LogConfiguration lc = config.getLogConfiguration();
         String driver = lc != null ? lc.getDriver() : null;
-        if (StringUtils.isBlank(driver)) {
-            bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
-        } else {
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, driver);
+        if (!StringUtils.equals(getLoggingDriver(), driver)) {
+            auditLogEntry("PBC Docker Log Driver", getLoggingDriver(), driver);
+            if (StringUtils.isBlank(driver)) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, driver);
+            }
         }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY, 
                 lc != null ? lc.getOptions() : Collections.emptyMap());
