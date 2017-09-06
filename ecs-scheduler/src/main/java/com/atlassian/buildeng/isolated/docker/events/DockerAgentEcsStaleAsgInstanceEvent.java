@@ -16,7 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker.events;
 
-public class DockerAgentEcsStaleAsgInstanceEvent {
+public class DockerAgentEcsStaleAsgInstanceEvent extends DockerAgentEvent {
 
     private final String instance;
 

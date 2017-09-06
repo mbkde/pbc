@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ * Copyright 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
+import java.util.List;
 
-/**
- * event intended to be sent to datadog via the monitoring plugin.
- * @author mkleint
- */
-public class DockerAgentTimeoutEvent {
-
+public class DockerAgentNonMatchedRequirementEvent extends DockerAgentEvent {
     private final Key key;
-    private final int retryCount;
+    private final List<String> missingReqKeys;
 
-    public DockerAgentTimeoutEvent(int retryCount, Key key) {
-        this.retryCount = retryCount;
-        this.key = key;
+    public DockerAgentNonMatchedRequirementEvent(Key entityKey, List<String> missingReqKeys) {
+        this.key = entityKey;
+        this.missingReqKeys =  missingReqKeys;
     }
 
     @Override
     public String toString() {
-        return "DockerAgentTimeoutEvent{" + "key=" + key + ", retryCount=" + retryCount + '}';
+        return "DockerAgentNonMatchedRequirementEvent{" + "key=" + key + ",requirements:" + missingReqKeys + "}";
     }
-    
-    
+
 }

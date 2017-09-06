@@ -21,8 +21,7 @@ import com.atlassian.bamboo.Key;
  * event intended to be sent to datadog via the monitoring plugin.
  * @author mkleint
  */
-public final class DockerAgentRemoteSilentRetryEvent {
-
+public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
     private final String errorMessage;
     private final Key key;
     private final String taskArn;
@@ -43,7 +42,7 @@ public final class DockerAgentRemoteSilentRetryEvent {
             return "%%% \\n" +
                     "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n" +
                     "Container ARN:" + containerArn + "\\n" +
-                    DockerAgentRemoteFailEvent.escape(errorMessage) + "\\n" +
+                    escape(errorMessage) + "\\n" +
                     "\\n %%%";
         }
 

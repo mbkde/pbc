@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-public class DockerAgentEcsDisconnectedPurgeEvent {
+public class DockerAgentEcsDisconnectedPurgeEvent extends DockerAgentEvent {
 
     private final List<DockerHost> selectedToKill;
 

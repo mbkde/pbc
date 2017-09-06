@@ -21,22 +21,20 @@ import com.atlassian.bamboo.Key;
  * event intended to be sent to datadog via the monitoring plugin.
  * @author mkleint
  */
-public final class DockerAgentFailEvent {
+public class DockerAgentTimeoutEvent extends DockerAgentEvent {
 
-    private final String errorMessage;
     private final Key key;
+    private final int retryCount;
 
-
-    public DockerAgentFailEvent(String errorMessage, Key key) {
-        this.errorMessage = errorMessage;
+    public DockerAgentTimeoutEvent(int retryCount, Key key) {
+        this.retryCount = retryCount;
         this.key = key;
     }
 
     @Override
     public String toString() {
-        return "DockerAgentFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + '}';
+        return "DockerAgentTimeoutEvent{" + "key=" + key + ", retryCount=" + retryCount + '}';
     }
-
     
     
 }

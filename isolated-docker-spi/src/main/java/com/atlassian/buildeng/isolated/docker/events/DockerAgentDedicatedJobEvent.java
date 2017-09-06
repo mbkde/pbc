@@ -18,12 +18,13 @@ package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
 
-public class DockerAgentDedicatedJobEvent {
+public class DockerAgentDedicatedJobEvent extends DockerAgentEvent {
     private final Key key;
 
     public DockerAgentDedicatedJobEvent(Key key) {
         this.key = key;
     }
+
     @Override
     public String toString() {
         return "DockerAgentDedicatedJobEvent{" + "key=" + key + '}';

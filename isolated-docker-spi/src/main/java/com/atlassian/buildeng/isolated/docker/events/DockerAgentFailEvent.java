@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.isolated.docker.events;
 
-import com.atlassian.buildeng.ecs.scheduling.DockerHost;
-import java.util.Collection;
-import java.util.stream.Collectors;
+import com.atlassian.bamboo.Key;
+
+/**
+ * event intended to be sent to datadog via the monitoring plugin.
+ * @author mkleint
+ */
+public final class DockerAgentFailEvent extends DockerAgentEvent {
+    private final String errorMessage;
+    private final Key key;
 
 
-public class DockerAgentEcsDisconnectedEvent {
-
-    private final Collection<DockerHost> disconnected;
-
-    public DockerAgentEcsDisconnectedEvent(Collection<DockerHost> disconnected) {
-        this.disconnected = disconnected;
+    public DockerAgentFailEvent(String errorMessage, Key key) {
+        this.errorMessage = errorMessage;
+        this.key = key;
     }
 
     @Override
     public String toString() {
-        return "DockerAgentEcsDisconnectedEvent{" + "disconnectedAgents=" + disconnected.stream().map((DockerHost t) -> t.getInstanceId()).collect(Collectors.toList()) + '}';
+        return "DockerAgentFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + '}';
     }
-
 }

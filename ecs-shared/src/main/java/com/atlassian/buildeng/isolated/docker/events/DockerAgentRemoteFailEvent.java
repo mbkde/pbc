@@ -23,7 +23,7 @@ import java.util.Map;
  * event intended to be sent to datadog via the monitoring plugin.
  * @author mkleint
  */
-public final class DockerAgentRemoteFailEvent {
+public final class DockerAgentRemoteFailEvent extends DockerAgentEvent {
 
     private final String errorMessage;
     private final Key key;
@@ -56,29 +56,4 @@ public final class DockerAgentRemoteFailEvent {
         return "DockerAgentRemoteFailEvent{task=" + taskArn +  ", container=" + containerArn + ", key=" + key  + ",containerLogs=" + markdownLinks +  ",message=" + errorMessage +  "}";
     }
 
-    private String generateMarkdownLinks(Map<String, URL> markdownLinks) {
-        StringBuilder sb = new StringBuilder();
-        markdownLinks.forEach((String t, URL u) -> {
-            sb.append("[").append(t).append("](").append(u.toString()).append(") ");
-        });
-        return sb.toString();
-    }
-
-    static String escape(String text) {
-        return text.replace("\\", "\\\\")
-                   .replace("`", "\\`")
-                   .replace("*", "\\*")
-                   .replace("_", "\\_")
-                   .replace("#", "\\#")
-                   .replace("-", "\\-")
-                   .replace(".", "\\.")
-                   .replace("!", "\\!")
-                   .replace("[", "\\[")
-                   .replace("]", "\\]")
-                   .replace("(", "\\(")
-                   .replace(")", "\\)")
-                   .replace("{", "\\{")
-                   .replace("}", "\\}")
-                ;
-    }
 }
