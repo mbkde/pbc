@@ -103,7 +103,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
      * @return The current sidekick repository
      */
     @Override
-    public synchronized String getCurrentSidekick() {
+    public String getCurrentSidekick() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
@@ -124,7 +124,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
      * @return The current cluster name
      */
     @Override
-    public synchronized String getCurrentCluster() {
+    public String getCurrentCluster() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY);
         return name == null ? Constants.DEFAULT_CLUSTER : name;
     }
@@ -149,7 +149,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
      * @return the custom logging driver or null of none defined.
      */
     @Override
-    public synchronized String getLoggingDriver() {
+    public String getLoggingDriver() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY);
     }
 
@@ -159,14 +159,14 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
      * @return The current cluster nam
      */
     @Override
-    public synchronized Map<String, String> getLoggingDriverOpts() {
+    public Map<String, String> getLoggingDriverOpts() {
         Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
                 BANDANA_LOGGING_OPTS_KEY);
         return map != null ? map : new HashMap<>();
     }
 
     @Override
-    public synchronized Map<String, String> getEnvVars() {
+    public Map<String, String> getEnvVars() {
         Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_ENVS_KEY);
         return map != null ? map : new HashMap<>();
@@ -193,21 +193,21 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
      * @return All the docker image:identifier pairs this service has registered
      */
     @Override
-    public synchronized Map<Configuration, Integer> getAllRegistrations() {
+    public Map<Configuration, Integer> getAllRegistrations() {
         Map<String, Integer> values = (Map<String, Integer>) bandanaManager.getValue(
                 PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         return values == null ? new HashMap<>() : convertFromPersisted(values);
     }
 
     @Override
-    public synchronized Map<String, Integer> getAllECSTaskRegistrations() {
+    public Map<String, Integer> getAllECSTaskRegistrations() {
         Map<String, Integer> ret = (Map<String, Integer>) bandanaManager.getValue(
                 PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY);
         return ret == null ? new HashMap<>() : ret;
     }
     
     @Override
-    public synchronized String getCurrentASG() {
+    public String getCurrentASG() {
         String name = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY);
         return name == null ? "" : name;
     }
@@ -238,7 +238,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         return newMap;
     }
 
-    synchronized void setConfig(Config config) {
+    void setConfig(Config config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getAutoScalingGroupName()));
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getEcsClusterName()));
         if (!StringUtils.equals(config.getEcsClusterName(), getCurrentCluster())) {

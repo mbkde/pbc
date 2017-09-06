@@ -42,19 +42,19 @@ public class GlobalConfiguration {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
     }
 
-    public synchronized String getCurrentSidekick() {
+    public String getCurrentSidekick() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
-    public synchronized String getCurrentRole() {
+    public String getCurrentRole() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
     }
 
-    public synchronized String getCurrentServer() {
+    public String getCurrentServer() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY);
     }
 
-    public synchronized void persist(Config config) {
+    public void persist(Config config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getServerUrl()));
         if (StringUtils.isBlank(config.getAwsRole())) {
             bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
@@ -69,7 +69,7 @@ public class GlobalConfiguration {
                 config.isPreemptiveScaling());
     }
 
-    public synchronized boolean isPreemptiveScaling() {
+    public boolean isPreemptiveScaling() {
         Boolean val = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY);
         return val != null ? val : false;
     }

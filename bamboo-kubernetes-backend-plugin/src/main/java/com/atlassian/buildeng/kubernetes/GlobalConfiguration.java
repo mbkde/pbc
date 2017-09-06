@@ -53,7 +53,7 @@ public class GlobalConfiguration {
         return value.replaceAll("[^-A-Za-z0-9_.]", "");
     }
 
-    public synchronized String getCurrentSidekick() {
+    public String getCurrentSidekick() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
@@ -61,7 +61,7 @@ public class GlobalConfiguration {
      * Returns the template yaml file that encodes the server/cluster specific parts of pod definition.
      * @return string representation of yaml
      */
-    public synchronized String getPodTemplateAsString() {
+    public String getPodTemplateAsString() {
         String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_POD_TEMPLATE);
         if (template == null) {
@@ -71,7 +71,7 @@ public class GlobalConfiguration {
         return template;
     }
     
-    public synchronized String getPodLogsUrl() {
+    public String getPodLogsUrl() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_POD_LOGS_URL);
     }
@@ -79,7 +79,7 @@ public class GlobalConfiguration {
     /**
      * Saves changes to the configuration.
      */
-    public synchronized void persist(String sidekick, String podTemplate, String podLogUrl) {
+    public void persist(String sidekick, String podTemplate, String podLogUrl) {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate));
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
