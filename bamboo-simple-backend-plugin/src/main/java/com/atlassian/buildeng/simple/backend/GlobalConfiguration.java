@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -21,10 +22,6 @@ import com.atlassian.buildeng.simple.backend.rest.Config;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
-/**
- *
- * @author mkleint
- */
 public class GlobalConfiguration {
     private static final String BANDANA_CERTPATH = "com.atlassian.buildeng.simple.backend.certPath";
     private static final String BANDANA_URL = "com.atlassian.buildeng.simple.backend.url";
@@ -47,11 +44,16 @@ public class GlobalConfiguration {
     }
     
     public Config getDockerConfig() {
-        String api = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION), "");
-        String url = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL), "");
-        String certPath = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
-        String sidekick = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
-        boolean image = BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE), true);
+        String api = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                BANDANA_API_VERSION), "");
+        String url = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                BANDANA_URL), "");
+        String certPath = StringUtils.defaultString((String)bandanaManager.getValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
+        String sidekick = StringUtils.defaultString((String)bandanaManager.getValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
+        boolean image = BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE), true);
         return new Config(api, certPath, url, sidekick, image);
     }
     

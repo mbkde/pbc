@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.remote;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -60,9 +61,12 @@ public class GlobalConfiguration {
         } else {
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, config.getAwsRole());
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, config.getSidekickImage());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, config.getServerUrl());
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, config.isPreemptiveScaling());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, 
+                config.getSidekickImage());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, 
+                config.getServerUrl());
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, 
+                config.isPreemptiveScaling());
     }
 
     public synchronized boolean isPreemptiveScaling() {
