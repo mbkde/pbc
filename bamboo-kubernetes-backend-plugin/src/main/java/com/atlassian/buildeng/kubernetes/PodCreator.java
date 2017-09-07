@@ -45,6 +45,13 @@ public class PodCreator {
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
 
+    /**
+     * Sidekick container limits. Specific to Kubernetes as we have to run the container and copy files
+     * into the pod volume, something not necessary for ECS as they use regular Docker volumes.
+     */
+    static final int SIDEKICK_MEMORY = 100;
+    static final int SIDEKICK_CPU  = 500;
+
     // The working directory of isolated agents
     static final String WORK_DIR = "/buildeng";
     // The working directory for builds
@@ -175,6 +182,7 @@ public class PodCreator {
         map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data"));
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
+        map.put("resources", createResources(SIDEKICK_MEMORY, SIDEKICK_CPU));
         return map;
     }
 
