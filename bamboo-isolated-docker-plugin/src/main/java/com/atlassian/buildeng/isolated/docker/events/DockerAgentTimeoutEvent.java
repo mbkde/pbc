@@ -21,7 +21,7 @@ import com.atlassian.bamboo.Key;
  * event intended to be sent to datadog via the monitoring plugin.
  * @author mkleint
  */
-public class DockerAgentTimeoutEvent {
+public class DockerAgentTimeoutEvent extends DockerAgentEvent {
 
     private final Key key;
     private final int retryCount;

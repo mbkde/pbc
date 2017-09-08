@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-public class DockerAgentEcsDisconnectedPurgeEvent {
+public class DockerAgentEcsDisconnectedPurgeEvent extends DockerAgentEvent {
 
     private final List<DockerHost> selectedToKill;
 
@@ -31,7 +31,10 @@ public class DockerAgentEcsDisconnectedPurgeEvent {
 
     @Override
     public String toString() {
-        return "DockerAgentEcsDisconnectedPurgeEvent{" + "selectedToKill=" + selectedToKill.stream().map((DockerHost t) -> t.getInstanceId()).collect(Collectors.toList()) + '}';
+        return "DockerAgentEcsDisconnectedPurgeEvent{"
+                + "selectedToKill="
+                + selectedToKill.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())
+                + '}';
     }
 
 }

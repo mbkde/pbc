@@ -17,39 +17,44 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
+import java.net.URL;
+import java.util.Map;
 
-/**
- * event intended to be sent to datadog via the monitoring plugin.
- * @author mkleint
- */
-public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
+public final class DockerAgentKubeFailEvent extends DockerAgentEvent {
+
     private final String errorMessage;
     private final Key key;
-    private final String taskArn;
-    private final String containerArn;
+    private final String podName;
+    private final Map<String, URL> markdownLinks;
+
+    private static boolean ddmarkdown = Boolean.parseBoolean(System.getProperty("pbc.event.tostring.datadog", "true"));
 
 
-    public DockerAgentRemoteSilentRetryEvent(String errorMessage, Key key, String taskArn, String containerArn) {
+    /**
+     * Event sent to Datadog for when a pod fails to queue, for any reason.
+     */
+    public DockerAgentKubeFailEvent(
+            String errorMessage, Key key, String podName, Map<String, URL> markdownLinks) {
         this.errorMessage = errorMessage;
         this.key = key;
-        this.taskArn = taskArn;
-        this.containerArn = containerArn;
+        this.podName = podName;
+        this.markdownLinks = markdownLinks;
     }
 
     @Override
     public String toString() {
-        if (DockerAgentRemoteFailEvent.ddmarkdown) {
+        if (ddmarkdown) {
             //http://docs.datadoghq.com/guides/markdown/
             return "%%% \\n"
-                    + "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n"
-                    + "Container ARN:" + containerArn + "\\n"
+                    + "Key:**" + key.getKey() + "\\n"
+                    + "Pod name:" + podName + "\\n"
+                    + "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n"
                     + escape(errorMessage) + "\\n"
                     + "\\n %%%";
         }
-
-        return "DockerAgentRemoteSilentRetryEvent{"
-                + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn
-                + "}";
+        return "DockerAgentRemoteFailEvent{podName="
+                + podName + ", key=" + key  + ",containerLogs=" + markdownLinks +  ",message=" + errorMessage
+                +  "}";
     }
-    
+
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
@@ -23,7 +24,7 @@ import java.util.Map;
  * event intended to be sent to datadog via the monitoring plugin.
  * @author mkleint
  */
-public final class DockerAgentRemoteFailEvent {
+public final class DockerAgentRemoteFailEvent extends DockerAgentEvent {
 
     private final String errorMessage;
     private final Key key;
@@ -34,7 +35,8 @@ public final class DockerAgentRemoteFailEvent {
     static boolean ddmarkdown = Boolean.parseBoolean(System.getProperty("pbc.event.tostring.datadog", "true"));
 
 
-    public DockerAgentRemoteFailEvent(String errorMessage, Key key, String taskArn, String containerArn, Map<String, URL> markdownLinks) {
+    public DockerAgentRemoteFailEvent(
+            String errorMessage, Key key, String taskArn, String containerArn, Map<String, URL> markdownLinks) {
         this.errorMessage = errorMessage;
         this.key = key;
         this.taskArn = taskArn;
@@ -46,39 +48,17 @@ public final class DockerAgentRemoteFailEvent {
     public String toString() {
         if (ddmarkdown) {
             //http://docs.datadoghq.com/guides/markdown/
-            return "%%% \\n" +
-                    "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n" +
-                    "Container ARN:" + containerArn + "\\n" +
-                    "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n" +
-                    escape(errorMessage) + "\\n" +
-                    "\\n %%%";
+            return "%%% \\n"
+                    + "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n"
+                    + "Container ARN:" + containerArn + "\\n"
+                    + "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n"
+                    + escape(errorMessage) + "\\n"
+                    + "\\n %%%";
         }
-        return "DockerAgentRemoteFailEvent{task=" + taskArn +  ", container=" + containerArn + ", key=" + key  + ",containerLogs=" + markdownLinks +  ",message=" + errorMessage +  "}";
+        return "DockerAgentRemoteFailEvent{task="
+                + taskArn +  ", container=" + containerArn + ", key=" + key  + ",containerLogs=" + markdownLinks
+                +  ",message=" + errorMessage
+                +  "}";
     }
 
-    private String generateMarkdownLinks(Map<String, URL> markdownLinks) {
-        StringBuilder sb = new StringBuilder();
-        markdownLinks.forEach((String t, URL u) -> {
-            sb.append("[").append(t).append("](").append(u.toString()).append(") ");
-        });
-        return sb.toString();
-    }
-
-    static String escape(String text) {
-        return text.replace("\\", "\\\\")
-                   .replace("`", "\\`")
-                   .replace("*", "\\*")
-                   .replace("_", "\\_")
-                   .replace("#", "\\#")
-                   .replace("-", "\\-")
-                   .replace(".", "\\.")
-                   .replace("!", "\\!")
-                   .replace("[", "\\[")
-                   .replace("]", "\\]")
-                   .replace("(", "\\(")
-                   .replace(")", "\\)")
-                   .replace("{", "\\{")
-                   .replace("}", "\\}")
-                ;
-    }
 }

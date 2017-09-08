@@ -21,8 +21,7 @@ import com.atlassian.bamboo.Key;
  * event intended to be sent to datadog via the monitoring plugin.
  * @author mkleint
  */
-public final class DockerAgentFailEvent {
-
+public final class DockerAgentFailEvent extends DockerAgentEvent {
     private final String errorMessage;
     private final Key key;
 
@@ -36,7 +35,4 @@ public final class DockerAgentFailEvent {
     public String toString() {
         return "DockerAgentFailEvent{" + "errorMessage=" + errorMessage + ", key=" + key + '}';
     }
-
-    
-    
 }

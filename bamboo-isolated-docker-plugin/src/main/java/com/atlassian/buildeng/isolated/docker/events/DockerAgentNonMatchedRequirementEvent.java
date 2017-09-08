@@ -19,10 +19,9 @@ package com.atlassian.buildeng.isolated.docker.events;
 import com.atlassian.bamboo.Key;
 import java.util.List;
 
-public class DockerAgentNonMatchedRequirementEvent {
+public class DockerAgentNonMatchedRequirementEvent extends DockerAgentEvent {
     private final Key key;
     private final List<String> missingReqKeys;
-
 
     public DockerAgentNonMatchedRequirementEvent(Key entityKey, List<String> missingReqKeys) {
         this.key = entityKey;

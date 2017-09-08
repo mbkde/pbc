@@ -22,14 +22,20 @@ import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeFailEvent;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
+import com.atlassian.event.api.EventPublisher;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -56,12 +62,15 @@ public class KubernetesWatchdog extends WatchdogJob {
     public void execute(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
+        EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
         GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
                 "globalConfiguration", jobDataMap);
         DeploymentExecutionService deploymentExecutionService = getService(
                 DeploymentExecutionService.class, "deploymentExecutionService");
         DeploymentResultService deploymentResultService = getService(
                 DeploymentResultService.class, "deploymentResultService");
+        IsolatedAgentService isolatedAgentService = getService(
+                IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
 
 
         KubernetesClient client = new DefaultKubernetesClient();
@@ -108,6 +117,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                         errorMessage = errorMessage + " with bamboo-agent container state: " + terminationReason;
                     }
                     current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
+                    generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
+
                     killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                             context, current);
                 } else {
@@ -117,7 +128,10 @@ public class KubernetesWatchdog extends WatchdogJob {
                         errorUpdateHandler.recordError(
                                 context.getEntityKey(), "Build was not queued after " + MAX_QUEUE_TIME_MINUTES
                                         + "podName: " + podName);
-                        current.getCustomBuildData().put(RESULT_ERROR, "build terminated for queuing for too long");
+                        String errorMessage = "build terminated for queuing for too long";
+                        current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
+                        generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
+
                         killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                 context, current);
                         client.resource(pod).delete();
@@ -125,5 +139,16 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
         });
+    }
+
+    private void generateRemoteFailEvent(CommonContext context, String error, String podName,
+                                         IsolatedAgentService isolatedAgentService, EventPublisher eventPublisher) {
+        Configuration config = AccessConfiguration.forContext(context);
+        Map<String, String> customData = new HashMap<>(context.getCurrentResult().getCustomBuildData());
+        customData.entrySet().removeIf(
+            (Map.Entry<String, String> tt) -> !tt.getKey().startsWith(KubernetesIsolatedDockerImpl.RESULT_PREFIX));
+        Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(config, customData);
+
+        eventPublisher.publish(new DockerAgentKubeFailEvent(error, context.getEntityKey(), podName, containerLogs));
     }
 }
