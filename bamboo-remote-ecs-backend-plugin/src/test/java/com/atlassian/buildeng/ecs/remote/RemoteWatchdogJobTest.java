@@ -16,40 +16,35 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import com.atlassian.buildeng.ecs.shared.StoppedState;
 import com.sun.jersey.api.client.Client;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import org.junit.Test;
 
-import static java.util.stream.Collectors.toList;
-import static org.mockito.Mockito.mock;
-
-import static org.junit.Assert.assertEquals;
 
 public class RemoteWatchdogJobTest {
     @Test
     public void testRetrieveStoppedTasksBatched() throws Exception {
         RemoteWatchdogJob watchdogJob = new RemoteWatchdogJobMock();
+        GlobalConfiguration globalConfig = mock(GlobalConfiguration.class);
+        HashMap jobData = new HashMap();
+        jobData.put("globalConfiguration", globalConfig);
 
-        List<StoppedState> tasks = watchdogJob.retrieveStoppedTasksByArn(Collections.nCopies(85, ""), new HashMap<>());
+        List<StoppedState> tasks = watchdogJob.retrieveStoppedTasksByArn(Collections.nCopies(85, ""), jobData);
         assertEquals(85, tasks.size());
-        tasks = watchdogJob.retrieveStoppedTasksByArn(Collections.nCopies(40, ""), new HashMap<>());
+        tasks = watchdogJob.retrieveStoppedTasksByArn(Collections.nCopies(40, ""), jobData);
         assertEquals(40, tasks.size());
-        tasks = watchdogJob.retrieveStoppedTasksByArn(Collections.nCopies(10, ""), new HashMap<>());
+        tasks = watchdogJob.retrieveStoppedTasksByArn(Collections.nCopies(10, ""), jobData);
         assertEquals(10, tasks.size());
     }
 
     public static class RemoteWatchdogJobMock extends RemoteWatchdogJob {
-        GlobalConfiguration globalConfig = mock(GlobalConfiguration.class);
-
-        @Override
-        protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-            return type.cast(globalConfig);
-        }
 
         @Override
         protected List<StoppedState> queryStoppedTasksByArn(
