@@ -1,4 +1,22 @@
+/*
+ * Copyright 2016 - 2017 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.atlassian.buildeng.spi.isolated.docker;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
@@ -13,14 +31,13 @@ import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
+import java.util.Map;
 import org.slf4j.Logger;
 
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class WatchdogJob implements PluginJob {
-    protected void killBuild(
+
+    protected final void killBuild(
             DeploymentExecutionService deploymentExecutionService,
             DeploymentResultService deploymentResultService,
             Logger logger,
@@ -46,14 +63,14 @@ public abstract class WatchdogJob implements PluginJob {
         }
     }
 
-    protected  <T> T getService(Class<T> type, String serviceKey) {
+    protected final <T> T getService(Class<T> type, String serviceKey) {
         final Object obj = checkNotNull(
                 ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing."
         );
         return type.cast(obj);
     }
 
-    protected <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
+    protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
         final Object obj = checkNotNull(jobDataMap.get(serviceKey),
                 "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
