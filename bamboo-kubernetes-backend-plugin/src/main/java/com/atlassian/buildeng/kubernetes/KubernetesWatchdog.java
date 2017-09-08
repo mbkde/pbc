@@ -59,7 +59,16 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
     @Override
-    public void execute(Map<String, Object> jobDataMap) {
+    public final void execute(Map<String, Object> jobDataMap) {
+        try {
+            executeImpl(jobDataMap);
+        } catch (Exception t) {
+            logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
+        }
+
+    }
+
+    private void executeImpl(Map<String, Object> jobDataMap) {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
