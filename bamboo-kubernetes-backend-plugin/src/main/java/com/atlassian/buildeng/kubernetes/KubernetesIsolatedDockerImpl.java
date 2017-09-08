@@ -125,6 +125,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     public void onStart() {
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
+        config.put("isolatedAgentService", this);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class,
                 config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
