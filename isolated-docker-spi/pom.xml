@@ -35,6 +35,7 @@ limitations under the License.
                     <instructions>
                         <Export-Package>
                             com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}",
+                            com.atlassian.buildeng.spi.isolated.docker.events.*;version="${project.version}",
                             com.atlassian.plugin.*
 
                         </Export-Package>

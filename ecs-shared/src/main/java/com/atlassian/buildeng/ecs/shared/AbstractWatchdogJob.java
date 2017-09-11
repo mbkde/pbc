@@ -57,13 +57,16 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
     private static final String KEY_MISSING_ARNS_MAP = "MISSING_ARNS_MAP";
 
 
-    private final static Logger logger = LoggerFactory.getLogger(AbstractWatchdogJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractWatchdogJob.class);
 
     @Override
     public final void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Exception t) {
+        } catch (Throwable t) { 
+            //this is throwable because of NoClassDefFoundError and alike. 
+            // These are not Exception subclasses and actually
+            // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
         }
     }
