@@ -27,10 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ECSWatchdogJob extends AbstractWatchdogJob {
-    private final static Logger logger = LoggerFactory.getLogger(ECSWatchdogJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(ECSWatchdogJob.class);
 
     @Override
-    protected List<StoppedState> retrieveStoppedTasksByArn(List<String> arns, Map<String, Object> jobDataMap) throws Exception {
+    protected List<StoppedState> retrieveStoppedTasksByArn(List<String> arns, Map<String, Object> jobDataMap) 
+            throws Exception {
         GlobalConfiguration globalConfig = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
         SchedulerBackend backend = getService(SchedulerBackend.class, "schedulerBackend", jobDataMap);
         return backend.checkStoppedTasks(globalConfig.getCurrentCluster(), arns).stream()
