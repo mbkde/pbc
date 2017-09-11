@@ -28,9 +28,6 @@ public final class DockerAgentKubeFailEvent extends DockerAgentEvent {
     private final String podName;
     private final Map<String, URL> markdownLinks;
 
-    private static boolean ddmarkdown = Boolean.parseBoolean(System.getProperty("pbc.event.tostring.datadog", "true"));
-
-
     /**
      * Event sent to Datadog for when a pod fails to queue, for any reason.
      */
@@ -47,13 +44,13 @@ public final class DockerAgentKubeFailEvent extends DockerAgentEvent {
         if (ddmarkdown) {
             //http://docs.datadoghq.com/guides/markdown/
             return "%%% \\n"
-                    + "Key:**" + key.getKey() + "\\n"
+                    + "Key:**" + key.getKey() + "**\\n"
                     + "Pod name:" + podName + "\\n"
                     + "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n"
                     + escape(errorMessage) + "\\n"
                     + "\\n %%%";
         }
-        return "DockerAgentRemoteFailEvent{podName="
+        return "DockerAgentKubeFailEvent{podName="
                 + podName + ", key=" + key  + ",containerLogs=" + markdownLinks +  ",message=" + errorMessage
                 +  "}";
     }

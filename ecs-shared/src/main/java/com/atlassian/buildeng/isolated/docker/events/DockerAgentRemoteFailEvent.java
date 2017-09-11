@@ -16,8 +16,8 @@
 
 package com.atlassian.buildeng.isolated.docker.events;
 
-import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 import com.atlassian.bamboo.Key;
+import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 import java.net.URL;
 import java.util.Map;
 
@@ -32,9 +32,6 @@ public final class DockerAgentRemoteFailEvent extends DockerAgentEvent {
     private final String taskArn;
     private final String containerArn;
     private final Map<String, URL> markdownLinks;
-
-    static boolean ddmarkdown = Boolean.parseBoolean(System.getProperty("pbc.event.tostring.datadog", "true"));
-
 
     public DockerAgentRemoteFailEvent(
             String errorMessage, Key key, String taskArn, String containerArn, Map<String, URL> markdownLinks) {
