@@ -62,7 +62,10 @@ public class KubernetesWatchdog extends WatchdogJob {
     public final void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Exception t) {
+        } catch (Throwable t) { 
+            //this is throwable because of NoClassDefFoundError and alike. 
+            // These are not Exception subclasses and actually
+            // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
 

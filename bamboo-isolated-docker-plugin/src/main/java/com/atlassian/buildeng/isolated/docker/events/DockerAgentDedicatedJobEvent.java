@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
+import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 
 public class DockerAgentDedicatedJobEvent extends DockerAgentEvent {
     private final Key key;

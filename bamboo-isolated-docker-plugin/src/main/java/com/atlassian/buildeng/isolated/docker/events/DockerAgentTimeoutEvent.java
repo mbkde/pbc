@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
+import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.

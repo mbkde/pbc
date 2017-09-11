@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
 
 import com.atlassian.sal.api.scheduling.PluginJob;
@@ -26,18 +27,17 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author mkleint
- */
 public class DockerWatchdogJob implements PluginJob {
-    private final static Logger logger = LoggerFactory.getLogger(DockerWatchdogJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(DockerWatchdogJob.class);
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Exception t) {
+        } catch (Throwable t) { 
+            //this is throwable because of NoClassDefFoundError and alike. 
+            // These are not Exception subclasses and actually
+            // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
         }
     }

@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker.events;
 
+import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 import com.atlassian.buildeng.ecs.scheduling.DockerHost;
 import java.util.List;
 import java.util.stream.Collectors;

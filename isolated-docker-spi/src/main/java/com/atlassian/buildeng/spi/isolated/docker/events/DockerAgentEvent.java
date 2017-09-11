@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.isolated.docker.events;
+package com.atlassian.buildeng.spi.isolated.docker.events;
 
 import java.net.URL;
 import java.util.Map;
@@ -25,7 +25,7 @@ import java.util.Map;
 public abstract class DockerAgentEvent {
     public abstract String toString();
 
-    static String generateMarkdownLinks(Map<String, URL> markdownLinks) {
+    protected final String generateMarkdownLinks(Map<String, URL> markdownLinks) {
         StringBuilder sb = new StringBuilder();
         markdownLinks.forEach((String t, URL u) -> {
             sb.append("[").append(t).append("](").append(u.toString()).append(") ");
@@ -33,7 +33,7 @@ public abstract class DockerAgentEvent {
         return sb.toString();
     }
 
-    static String escape(String text) {
+    protected final String escape(String text) {
         return text.replace("\\", "\\\\")
                 .replace("`", "\\`")
                 .replace("*", "\\*")

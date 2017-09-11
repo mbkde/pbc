@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
+import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 import java.net.URL;
 import java.util.Map;
 
