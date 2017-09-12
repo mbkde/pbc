@@ -23,6 +23,10 @@ import java.util.Map;
  * Base class for events sent to Datadog via the monitoring plugin.
  */
 public abstract class DockerAgentEvent {
+    
+    protected static final boolean ddmarkdown = Boolean.parseBoolean(
+            System.getProperty("pbc.event.tostring.datadog", "true"));
+    
     public abstract String toString();
 
     protected final String generateMarkdownLinks(Map<String, URL> markdownLinks) {
