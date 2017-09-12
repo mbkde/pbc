@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.buildqueue.PipelineDefinition;
@@ -22,9 +23,9 @@ import com.atlassian.bamboo.plan.ExecutableAgentsHelper.ExecutorQuery;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
-import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
+import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
 import com.atlassian.sal.api.scheduling.PluginJob;
 
@@ -37,18 +38,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReaperJob implements PluginJob {
-    private final static Logger logger = LoggerFactory.getLogger(ReaperJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReaperJob.class);
 
     @Override
     public void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Exception t) {
+        } catch (Throwable t) {
+            //this is throwable because of NoClassDefFoundError and alike. 
+            // These are not Exception subclasses and actually
+            // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
         }
     }
 
-    public void executeImpl(Map<String, Object> jobDataMap) {
+    void executeImpl(Map<String, Object> jobDataMap) {
 
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
         ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(
