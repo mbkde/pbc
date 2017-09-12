@@ -49,7 +49,7 @@ public class PodCreator {
      * Sidekick container limits. Specific to Kubernetes as we have to run the container and copy files
      * into the pod volume, something not necessary for ECS as they use regular Docker volumes.
      */
-    static final int SIDEKICK_MEMORY = 350;
+    static final int SIDEKICK_MEMORY = 500;
     static final int SIDEKICK_CPU  = 500;
 
     // The working directory of isolated agents
