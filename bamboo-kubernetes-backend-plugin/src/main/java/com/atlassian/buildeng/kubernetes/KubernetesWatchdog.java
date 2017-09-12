@@ -139,7 +139,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                             System.currentTimeMillis() - creationTime.getTime()).toMinutes() > MAX_QUEUE_TIME_MINUTES) {
                         errorUpdateHandler.recordError(
                                 context.getEntityKey(), "Build was not queued after " + MAX_QUEUE_TIME_MINUTES
-                                        + "podName: " + podName);
+                                        + " minutes." + " podName: " + podName);
                         String errorMessage = "build terminated for queuing for too long";
                         current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                         generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
