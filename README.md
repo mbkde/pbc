@@ -30,7 +30,7 @@ The most battle hardened are the ones backed by AWS ECS. Download all binaries i
 * [bamboo-remote-ecs-backend-plugin](bamboo-remote-ecs-backend-plugin/README.md) - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
 requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
-* bamboo-kubernetes-backend-plugin - Experimental backend that schedules agents on Kubernetes cluster.
+* [bamboo-kubernetes-backend-plugin](bamboo-kubernetes-backend-plugin/README.md) - Alpha backend that schedules agents on Kubernetes cluster.
 
 In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use. See individual plugin's documentation for details.
 
@@ -46,7 +46,7 @@ Installation
 
 * First and foremost, you need an existing Bamboo installation.
 * Then you need to decide what Docker clustering solution to use (where your builds will be running).
-We recommend AWS ECS right now as it's the most (the only one) battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
+We recommend AWS ECS right now as it's the most battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
 * Generate a [sidekick](sidekick/README.md) Docker image and push to your Docker registry.
 * Then install the appropriate Bamboo plugins and configure them. Follow the links in the __Usage__ section to learn how to setup each plugin.
 * Create a bamboo plan with a simple echo script task job, configure it to be run on `ubuntu:16.04` in [Job's Miscellaneous tab](bamboo-isolated-docker-plugin/README.md) and run the build!
