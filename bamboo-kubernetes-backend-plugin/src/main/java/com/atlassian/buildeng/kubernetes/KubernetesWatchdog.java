@@ -55,6 +55,8 @@ import org.slf4j.LoggerFactory;
 public class KubernetesWatchdog extends WatchdogJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     private static final Long MAX_QUEUE_TIME_MINUTES = 100L;
+    private static final String KEY_MISSING_PODS_MAP = "MISSING_PODS_MAP";
+    private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
 
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
@@ -84,6 +86,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         IsolatedAgentService isolatedAgentService = getService(
                 IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
 
+        Map<String, Date> missingPodsStartTime = getMissingPodsStartTime(jobDataMap);
 
         KubernetesClient client = new DefaultKubernetesClient();
         List<Pod> pods = client.pods()
@@ -119,20 +122,31 @@ public class KubernetesWatchdog extends WatchdogJob {
             if (podName != null) {
                 Pod pod = nameToPod.get(podName);
                 if (pod == null) {
-                    logger.info("Stopping job {} because pod {} no longer exists", context.getResultKey(), podName);
-                    errorUpdateHandler.recordError(
-                            context.getEntityKey(), "Build was not queued due to pod deletion: " + podName);
+                    // very similar logic is also done for ECS (see AbstractWatchdogJob)
+                    Date firstTimeMissing = missingPodsStartTime.get(podName);
+                    if (firstTimeMissing == null
+                            || Duration.ofMillis(System.currentTimeMillis() - firstTimeMissing.getTime()).toMinutes()
+                                    < MISSING_POD_GRACE_PERIOD_MINUTES) {
+                        if (firstTimeMissing == null) {
+                            missingPodsStartTime.put(podName, new Date());
+                        }
+                        logger.debug("Pod {} missing, still in grace period, not stopping the build.", podName);
+                    } else {
+                        logger.info("Stopping job {} because pod {} no longer exists", context.getResultKey(), podName);
+                        errorUpdateHandler.recordError(
+                                context.getEntityKey(), "Build was not queued due to pod deletion: " + podName);
 
-                    String errorMessage = "build killed as pod was terminated";
-                    String terminationReason = terminationReasons.get(podName);
-                    if (terminationReason != null) {
-                        errorMessage = errorMessage + " with bamboo-agent container state: " + terminationReason;
+                        String errorMessage = "build killed as pod was terminated";
+                        String terminationReason = terminationReasons.get(podName);
+                        if (terminationReason != null) {
+                            errorMessage = errorMessage + " with bamboo-agent container state: " + terminationReason;
+                        }
+                        current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
+                        generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
+
+                        killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
+                                context, current);
                     }
-                    current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                    generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
-
-                    killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
-                            context, current);
                 } else {
                     Date creationTime = Date.from(Instant.parse(pod.getMetadata().getCreationTimestamp()));
                     if (Duration.ofMillis(
@@ -162,5 +176,19 @@ public class KubernetesWatchdog extends WatchdogJob {
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(config, customData);
 
         eventPublisher.publish(new DockerAgentKubeFailEvent(error, context.getEntityKey(), podName, containerLogs));
+    }
+
+    private Map<String, Date> getMissingPodsStartTime(Map<String, Object> data) {
+        @SuppressWarnings("unchecked")
+        Map<String, Date> map = (Map<String, Date>) data.get(KEY_MISSING_PODS_MAP);
+        if (map == null) {
+            map = new HashMap<>();
+            data.put(KEY_MISSING_PODS_MAP, map);
+        }
+        // trim values that are too old to have
+        map.entrySet().removeIf(next ->
+                Duration.ofMillis(System.currentTimeMillis() - next.getValue().getTime()).toMinutes()
+                        > CACHE_CLEANUP_TIMEOUT_MINUTES);
+        return map;
     }
 }
