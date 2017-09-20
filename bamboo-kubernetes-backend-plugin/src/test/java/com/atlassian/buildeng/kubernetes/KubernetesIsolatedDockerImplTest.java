@@ -37,7 +37,13 @@ public class KubernetesIsolatedDockerImplTest {
               + "metadata:\n"
               + "  name: aws-cli\n"
               + "spec:\n"
-                
+              + "  hostAliases:\n"
+              + "    - ip: 192.168.1.1\n"
+              + "      hostnames:\n"
+              + "          - wifi\n"  
+              + "    - ip: 127.0.0.1\n"
+              + "      hostnames:\n"
+              + "          - me.local\n"  
               + "  containers:\n"
               + "    - name: main\n"
               + "      volumeMounts:\n"
@@ -56,6 +62,13 @@ public class KubernetesIsolatedDockerImplTest {
               + "    annotations:\n"
               + "        iam.amazonaws.com/role: arn:aws:iam::123456678912:role/staging-bamboo\n"
               + "spec:\n"
+              + "  hostAliases:\n"
+              + "    - ip: 100.100.0.1\n"
+              + "      hostnames:\n"
+              + "          - remote\n"  
+              + "    - ip: 127.0.0.1\n"
+              + "      hostnames:\n"
+              + "          - bamboo-agent\n"  
               + "  containers:\n"
               + "    - name: main\n"
               + "      image: xueshanf/awscli:latest\n"
@@ -70,6 +83,7 @@ public class KubernetesIsolatedDockerImplTest {
         Map<String, Object> spec = (Map<String, Object>) merged.get("spec");
         assertEquals(3, ((Collection) spec.get("containers")).size());
         assertEquals(2, ((Collection) spec.get("volumes")).size());
+        assertEquals(3, ((Collection) spec.get("hostAliases")).size());
 
         List<Map<String, Object>> containers = ((List<Map<String, Object>>) spec.get("containers"));
         assertEquals(1, containers.stream().filter(c -> c.containsValue("main")).collect(toList()).size());
@@ -79,5 +93,11 @@ public class KubernetesIsolatedDockerImplTest {
                 assertNotEquals(null, container.get("volumeMounts"));
             }
         }
+        List<Map<String, Object>> hostAliases = ((List<Map<String, Object>>) spec.get("hostAliases"));
+        assertEquals(2, hostAliases.stream()
+                .filter((Map<String, Object> t) -> "127.0.0.1".equals(t.get("ip")))
+                .flatMap((Map<String, Object> t) -> ((List<String>) t.get("hostnames")).stream())
+                .count());
+        
     }
 }

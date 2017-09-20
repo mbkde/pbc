@@ -43,7 +43,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -160,20 +159,11 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 ArrayList<Map<String, Object>> lst = new ArrayList<>();
 
                 if (t.equals("containers")) {
-                    Map<String, Map<String, Object>> containers1 = ((Collection<Map<String, Object>>) originalEntry)
-                            .stream().collect(Collectors.toMap(x -> (String) x.get("name"), x -> x));
-                    Map<String, Map<String, Object>> containers2 = ((Collection<Map<String, Object>>) u)
-                            .stream().collect(Collectors.toMap(x -> (String) x.get("name"), x -> x));
-
-                    containers1.forEach((String name, Map<String, Object> container1) -> {
-                        Map<String, Object> container2 = containers2.remove(name);
-                        if (container2 != null) {
-                            lst.add(mergeMap(container1, container2));
-                        } else {
-                            lst.add(container1);
-                        }
-                    });
-                    lst.addAll(containers2.values());
+                    mergeById("name", lst, 
+                            (Collection<Map<String, Object>>)originalEntry, (Collection<Map<String, Object>>)u);
+                } else if (t.equals("hostAliases")) {
+                    mergeById("ip", lst, 
+                            (Collection<Map<String, Object>>)originalEntry, (Collection<Map<String, Object>>)u);
                 } else {
                     lst.addAll((Collection) originalEntry);
                     lst.addAll((Collection) u);
@@ -185,6 +175,24 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         });
         return merged;
     }
+    
+    private static void mergeById(String id, ArrayList<Map<String, Object>> lst, 
+            Collection<Map<String, Object>> originalEntry, Collection<Map<String, Object>> u) {
+        Map<String, Map<String, Object>> containers1 = originalEntry
+                .stream().collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
+        Map<String, Map<String, Object>> containers2 = u
+                .stream().collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
+
+        containers1.forEach((String name, Map<String, Object> container1) -> {
+            Map<String, Object> container2 = containers2.remove(name);
+            if (container2 != null) {
+                lst.add(mergeMap(container1, container2));
+            } else {
+                lst.add(container1);
+            }
+        });
+        lst.addAll(containers2.values());
+    }
 
     @Override
     public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
@@ -193,9 +201,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         if (StringUtils.isBlank(url) || StringUtils.isBlank(podName)) {
             return Collections.emptyMap();
         }
-        Stream<String> s = Stream.concat(Stream.of(PodCreator.CONTAINER_NAME_BAMBOOAGENT),configuration.getExtraContainers().stream()
-                        .map((Configuration.ExtraContainer t) -> t.getName()));
-        return s.map((String t) -> {
+        return PodCreator.containerNames(configuration).stream().map((String t) -> {
             String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
             try {
                 URIBuilder bb = new URIBuilder(resolvedUrl);
