@@ -111,29 +111,14 @@ public class PodCreator {
                         .collect(Collectors.toList()));
             map.put("volumeMounts", ImmutableList.of(
                     ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)));
-            map.put("readinessProbe", createReadinessProbe(c, t.getName()));
             return map;
         }).collect(Collectors.toList());
     }
 
-    private static List<String> containerNames(Configuration config) {
+    static List<String> containerNames(Configuration config) {
         return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT), config.getExtraContainers().stream()
                 .map(t -> t.getName()))
                 .collect(Collectors.toList());
-    }
-
-    private static Map<String, Object> createReadinessProbe(Configuration c, String currentName) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("periodSeconds", 5);
-        map.put("initialDelaySeconds", 5);
-        StringBuilder cmd = new StringBuilder();
-        cmd.append("if [ -f /touch-").append(currentName).append(" ]; then { echo exists;} else {");
-        containerNames(c).forEach(t -> {
-            cmd.append(" echo '127.0.0.1 ").append(t).append("' >> /etc/hosts; ");
-        });
-        cmd.append(" touch /touch-").append(currentName).append("; } fi");
-        map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
-        return map;
     }
 
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
@@ -157,6 +142,7 @@ public class PodCreator {
         List<Map<String, Object>> initContainersList = new ArrayList<>();
         initContainersList.add(createSidekick(globalConfiguration.getCurrentSidekick()));
         map.put("initContainers", initContainersList);
+        map.put("hostAliases", createLocalhostAliases(r.getConfiguration()));
         return map;
     }
 
@@ -208,7 +194,6 @@ public class PodCreator {
                 ));
         map.put("resources", createResources(r.getConfiguration().getSize().memory(),
                 r.getConfiguration().getSize().cpu()));
-        map.put("readinessProbe", createReadinessProbe(r.getConfiguration(), CONTAINER_NAME_BAMBOOAGENT));
         return map;
     }
 
@@ -228,5 +213,13 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
         return envs;
+    }
+
+    private static Object createLocalhostAliases(Configuration c) {
+        List<Map<String, Object>> ips = new ArrayList<>();
+        ips.add(ImmutableMap.of(
+                "ip", "127.0.0.1", 
+                "hostnames", containerNames(c)));
+        return ips;
     }
 }
