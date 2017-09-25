@@ -1,0 +1,100 @@
+/*
+ * Copyright 2017 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.atlassian.buildeng.kubernetes;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesList;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class KubernetesClient {
+    private static final Logger logger = LoggerFactory.getLogger(KubernetesClient.class);
+
+    private static final String KUBECTL_EXECUTABLE = System.getProperty("pbc.kubectl.path", "kubectl");
+    private final GlobalConfiguration globalConfiguration;
+
+    KubernetesClient(GlobalConfiguration globalConfiguration) {
+        this.globalConfiguration = globalConfiguration;
+    }
+
+    private Object executeKubectl(boolean loadJson, String... args)
+            throws InterruptedException, IOException, KubectlException {
+        List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
+        kubectlArgs.add(0, KUBECTL_EXECUTABLE);
+        // TODO: error handling for NullPointerException raised when current context not set in config
+        kubectlArgs.addAll(Arrays.asList("--context", globalConfiguration.getCurrentContext()));
+        if (loadJson) {
+            kubectlArgs.addAll(Arrays.asList("-o", "json"));
+        }
+
+        ProcessBuilder pb = new ProcessBuilder(kubectlArgs);
+        // kubectl requires HOME env to find the config, but the Bamboo server JVM might not have it setup.
+        pb.environment().put("HOME", System.getProperty("user.home"));
+        Process process = pb.start();
+        String errors = IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8);
+
+        Object model = loadJson ? KubernetesHelper.loadJson(process.getInputStream()) : null;
+
+        int ret = process.waitFor();
+        if (ret != 0) {
+            throw new KubectlException("kubectl returned non-zero exit code. Error stream: " + errors);
+        }
+        return model;
+    }
+
+    @SuppressWarnings("unchecked")
+    List<Pod> getPods(String labelName, String labelValue)
+            throws InterruptedException, IOException, KubectlException {
+        String label = labelName + '=' + labelValue;
+        // --show-all displays "Completed" status pods as well
+        return ((KubernetesList) executeKubectl(true, "get", "pods", "--selector", label, "--show-all"))
+                .getItems().stream().map((HasMetadata pod) -> (Pod) pod).collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    Pod createPod(File podFile) throws InterruptedException, IOException, KubectlException {
+        return (Pod) executeKubectl(true, "create", "-f", podFile.getAbsolutePath());
+    }
+
+    boolean deletePod(Pod pod) {
+        try {
+            executeKubectl(false, "delete", "pod", KubernetesHelper.getName(pod));
+        } catch (Exception e) {
+            logger.error("Failed to delete pod with name: " + KubernetesHelper.getName(pod));
+            return false;
+        }
+        return true;
+    }
+
+    class KubectlException extends Exception {
+        KubectlException(String message) {
+            super(message);
+        }
+    }
+}

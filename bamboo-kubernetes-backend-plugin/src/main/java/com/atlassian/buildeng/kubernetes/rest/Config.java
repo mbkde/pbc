@@ -21,12 +21,14 @@ public class Config {
     public String sidekickImage;
     public String podTemplate;
     public String podLogsUrl;
+    public String currentContext;
 
     public Config() {
     }
 
-    public Config(String sidekickImage, String podTemplate, String podLogsUrl) {
+    public Config(String sidekickImage, String currentContext, String podTemplate, String podLogsUrl) {
         this.sidekickImage = sidekickImage;
+        this.currentContext = currentContext;
         this.podTemplate = podTemplate;
         this.podLogsUrl = podLogsUrl;
     }
@@ -37,6 +39,14 @@ public class Config {
 
     public void setSidekickImage(String sidekickImage) {
         this.sidekickImage = sidekickImage;
+    }
+
+    public String getCurrentContext() {
+        return currentContext;
+    }
+
+    public void setCurrentContext(String currentContext) {
+        this.currentContext = currentContext;
     }
 
     public String getPodTemplate() {

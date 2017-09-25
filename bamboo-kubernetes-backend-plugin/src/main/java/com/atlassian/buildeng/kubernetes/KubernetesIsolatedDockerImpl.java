@@ -25,6 +25,8 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -43,6 +45,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -93,16 +96,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         Map<String, Object> finalPod = mergeMap(template, podDefinition);
         try {
             File podFile = createPodFile(finalPod);
-            KubectlExecutor.Result ret = KubectlExecutor.startPod(podFile);
-            if (ret.getResultCode() == 0) {
-                callback.handle(new IsolatedDockerAgentResult()
-                        .withCustomResultData(NAME, ret.getPodName())
-                        .withCustomResultData(UID, ret.getPodUid()));
-            } else {
-                callback.handle(new IsolatedDockerAgentResult()
-                        .withError("kubectl:" + ret.getRawResponse()));
-                logger.error("kubectl:" + ret.getRawResponse());
-            }
+            Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
+            callback.handle(new IsolatedDockerAgentResult()
+                    .withCustomResultData(NAME, KubernetesHelper.getName(pod))
+                    .withCustomResultData(UID, pod.getMetadata().getUid()));
+
+        } catch (KubernetesClient.KubectlException e) {
+            callback.handle(new IsolatedDockerAgentResult()
+                    .withError(e.getMessage()));
+            logger.error(e.getMessage());
+
         } catch (IOException | InterruptedException e) {
             logger.error("error", e);
             callback.handle(new IsolatedDockerAgentException(e));

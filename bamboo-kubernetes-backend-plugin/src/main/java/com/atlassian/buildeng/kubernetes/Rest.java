@@ -49,6 +49,7 @@ public class Rest {
     public Response getConfig() {
         Config c = new Config();
         c.setSidekickImage(configuration.getCurrentSidekick());
+        c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
         return Response.ok(c).build();
@@ -65,7 +66,8 @@ public class Rest {
         if (StringUtils.isBlank(config.getSidekickImage())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
         }
-        configuration.persist(config.getSidekickImage(), config.getPodTemplate(), config.getPodLogsUrl());
+        configuration.persist(
+                config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(), config.getPodLogsUrl());
         return Response.noContent().build();
     }
 

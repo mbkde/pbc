@@ -32,9 +32,8 @@ import com.atlassian.event.api.EventPublisher;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 
+import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -73,7 +72,8 @@ public class KubernetesWatchdog extends WatchdogJob {
 
     }
 
-    private void executeImpl(Map<String, Object> jobDataMap) {
+    private void executeImpl(Map<String, Object> jobDataMap)
+            throws InterruptedException, IOException, KubernetesClient.KubectlException {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
@@ -88,10 +88,9 @@ public class KubernetesWatchdog extends WatchdogJob {
 
         Map<String, Date> missingPodsStartTime = getMissingPodsStartTime(jobDataMap);
 
-        KubernetesClient client = new DefaultKubernetesClient();
-        List<Pod> pods = client.pods()
-                .withLabel(PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel())
-                .list().getItems();
+        KubernetesClient client = new KubernetesClient(globalConfiguration);
+        List<Pod> pods = client.getPods(
+                PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
         Map<String, String> terminationReasons = new HashMap<>();
         List<Pod> killed = new ArrayList<>();
 
@@ -104,11 +103,9 @@ public class KubernetesWatchdog extends WatchdogJob {
             if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
                 logger.info("Killing pod {} with terminated agent container: {}",
                         KubernetesHelper.getName(pod), agentContainer.getState());
-                Boolean deleted = client.resource(pod).delete();
-                if (deleted) {
-                    terminationReasons.put(KubernetesHelper.getName(pod), agentContainer.getState().toString());
-                    killed.add(pod);
-                }
+                client.deletePod(pod);
+                terminationReasons.put(KubernetesHelper.getName(pod), agentContainer.getState().toString());
+                killed.add(pod);
             }
         }
         pods.removeAll(killed);
@@ -160,7 +157,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                 context, current);
-                        client.resource(pod).delete();
+                        client.deletePod(pod);
                     }
                 }
             }
