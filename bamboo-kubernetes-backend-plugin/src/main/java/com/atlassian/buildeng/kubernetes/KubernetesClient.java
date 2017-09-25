@@ -47,8 +47,9 @@ class KubernetesClient {
             throws InterruptedException, IOException, KubectlException {
         List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
         kubectlArgs.add(0, KUBECTL_EXECUTABLE);
-        // TODO: error handling for NullPointerException raised when current context not set in config
-        kubectlArgs.addAll(Arrays.asList("--context", globalConfiguration.getCurrentContext()));
+        if (globalConfiguration.getCurrentContext() != null) {
+            kubectlArgs.addAll(Arrays.asList("--context", globalConfiguration.getCurrentContext()));
+        }
         if (loadJson) {
             kubectlArgs.addAll(Arrays.asList("-o", "json"));
         }
@@ -86,7 +87,7 @@ class KubernetesClient {
         try {
             executeKubectl(false, "delete", "pod", KubernetesHelper.getName(pod));
         } catch (Exception e) {
-            logger.error("Failed to delete pod with name: " + KubernetesHelper.getName(pod));
+            logger.error("Failed to delete pod with name: " + KubernetesHelper.getName(pod) + e);
             return false;
         }
         return true;

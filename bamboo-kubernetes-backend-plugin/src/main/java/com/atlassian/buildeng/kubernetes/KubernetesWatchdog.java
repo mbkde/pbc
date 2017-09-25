@@ -103,9 +103,11 @@ public class KubernetesWatchdog extends WatchdogJob {
             if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
                 logger.info("Killing pod {} with terminated agent container: {}",
                         KubernetesHelper.getName(pod), agentContainer.getState());
-                client.deletePod(pod);
-                terminationReasons.put(KubernetesHelper.getName(pod), agentContainer.getState().toString());
-                killed.add(pod);
+                boolean deleted = client.deletePod(pod);
+                if (deleted) {
+                    terminationReasons.put(KubernetesHelper.getName(pod), agentContainer.getState().toString());
+                    killed.add(pod);
+                }
             }
         }
         pods.removeAll(killed);
