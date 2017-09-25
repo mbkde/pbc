@@ -114,6 +114,15 @@ public class GlobalConfiguration {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
             }
         }
+        persistCurrentContext(currentContext);
+    }
+
+    /**
+     * There is a REST endpoint to specifically update current context as this needs to be done automatically across
+     * multiple Bamboo servers.
+     */
+    public void persistCurrentContext(String currentContext) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext));
         if (!StringUtils.equals(currentContext, getCurrentContext())) {
             auditLogEntry("PBC Kubernetes Current Context", getCurrentContext(), currentContext);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT, currentContext);

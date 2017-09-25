@@ -71,4 +71,15 @@ public class Rest {
         return Response.noContent().build();
     }
 
+    /**
+     * POST Kubernetes currentContext rest endpoint.
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/config/currentContext")
+    public Response setCurrentContext(String currentContext) {
+        configuration.persistCurrentContext(currentContext);
+        return Response.noContent().build();
+    }
 }
