@@ -30,6 +30,7 @@
     function processConfig(response) {
         updateStatus("");
         AJS.$("#sidekickToUse").val(response.sidekickImage);
+        AJS.$("#currentContext").val(response.currentContext);
         AJS.$("#podTemplate").val(response.podTemplate);
         AJS.$("#podLogsUrl").val(response.podLogsUrl);
     }
@@ -37,6 +38,7 @@
     function setRemoteConfig() {
         var config = {};
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
+        config.currentContext = AJS.$("#currentContext").val().trim();
         config.podTemplate = AJS.$("#podTemplate").val().trim();
         config.podLogsUrl = AJS.$("#podLogsUrl").val().trim();
 

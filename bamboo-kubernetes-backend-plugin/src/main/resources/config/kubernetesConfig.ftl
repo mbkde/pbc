@@ -25,6 +25,11 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                     placeholder=""></input>
         </div>
         <div class="field-group">
+            <label for="curentContext">Current Context</label>
+            <input type="text" class="text long-field" id="currentContext"
+                   placeholder=""></input>
+        </div>
+        <div class="field-group">
             <label for="podTemplate">Pod Template</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="podTemplate"></textarea>
             <div class="description" id="desc-podTemplate">

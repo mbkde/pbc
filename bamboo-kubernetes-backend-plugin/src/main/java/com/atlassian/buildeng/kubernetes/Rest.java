@@ -25,7 +25,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @WebSudoRequired
@@ -49,6 +48,7 @@ public class Rest {
     public Response getConfig() {
         Config c = new Config();
         c.setSidekickImage(configuration.getCurrentSidekick());
+        c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
         return Response.ok(c).build();
@@ -62,11 +62,28 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/config")
     public Response setConfig(Config config) {
-        if (StringUtils.isBlank(config.getSidekickImage())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
+        try {
+            configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
+                    config.getPodLogsUrl());
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
-        configuration.persist(config.getSidekickImage(), config.getPodTemplate(), config.getPodLogsUrl());
         return Response.noContent().build();
     }
 
+    /**
+     * POST Kubernetes currentContext rest endpoint.
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/config/currentContext")
+    public Response setCurrentContext(String currentContext) {
+        try {
+            configuration.persistCurrentContext(currentContext);
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
+        return Response.noContent().build();
+    }
 }
