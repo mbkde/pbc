@@ -95,9 +95,9 @@ public class GlobalConfiguration {
      * Saves changes to the configuration.
      */
     public void persist(String sidekick, String currentContext, String podTemplate, String podLogUrl) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(sidekick));
-        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext));
-        Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate));
+        Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
+        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext), "Current context is mandatory");
+        Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         if (!StringUtils.equals(sidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), sidekick);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
@@ -122,7 +122,7 @@ public class GlobalConfiguration {
      * multiple Bamboo servers.
      */
     public void persistCurrentContext(String currentContext) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext));
+        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext), "Current context is mandatory");
         if (!StringUtils.equals(currentContext, getCurrentContext())) {
             auditLogEntry("PBC Kubernetes Current Context", getCurrentContext(), currentContext);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT, currentContext);

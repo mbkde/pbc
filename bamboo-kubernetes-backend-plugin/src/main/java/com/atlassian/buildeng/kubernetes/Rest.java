@@ -25,7 +25,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @WebSudoRequired
@@ -63,11 +62,12 @@ public class Rest {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/config")
     public Response setConfig(Config config) {
-        if (StringUtils.isBlank(config.getSidekickImage())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
+        try {
+            configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
+                    config.getPodLogsUrl());
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
-        configuration.persist(
-                config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(), config.getPodLogsUrl());
         return Response.noContent().build();
     }
 
@@ -79,7 +79,11 @@ public class Rest {
     @Consumes(MediaType.TEXT_PLAIN)
     @Path("/config/currentContext")
     public Response setCurrentContext(String currentContext) {
-        configuration.persistCurrentContext(currentContext);
+        try {
+            configuration.persistCurrentContext(currentContext);
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
         return Response.noContent().build();
     }
 }
