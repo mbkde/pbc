@@ -176,7 +176,8 @@ public class PreBuildQueuedEventListener {
             DeploymentContext dc = (DeploymentContext)context;
             ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
                 //without runWithSystemAuthority() this call terminates execution with a log entry only
-                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
+                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(
+                        dc.getDeploymentResultId());
                 if (deploymentResult != null) {
                     deploymentExecutionService.stop(deploymentResult, null);
                 }
@@ -206,12 +207,14 @@ public class PreBuildQueuedEventListener {
     //2 events related to deployment environments
     @EventListener
     public void deploymentTriggered(DeploymentTriggeredEvent event) {
-        LOG.info("deployment triggered event:" + event);
+        LOG.info("deployment triggered event for " + event.getResultKey()
+                + " " + event.getContext().getDeploymentProjectName() + ":" + event.getContext().getEnvironmentName());
         DeploymentContext context = event.getContext();
         Configuration config = AccessConfiguration.forContext(context);
         if (config.isEnabled()) {
             if (!dockerSoxService.checkSoxCompliance(config)) {
-                String message = "PBC Docker image(s) used by " + event.getContext().getResultKey() +  " not SOX compliant";
+                String message = "PBC Docker image(s) used by " 
+                        + event.getContext().getResultKey() +  " not SOX compliant";
                 errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
                 terminateBuild(message, context);
                 return;
