@@ -55,18 +55,17 @@ class KubernetesClient {
         }
 
         ProcessBuilder pb = new ProcessBuilder(kubectlArgs);
+        pb.redirectErrorStream(true);
         // kubectl requires HOME env to find the config, but the Bamboo server JVM might not have it setup.
         pb.environment().put("HOME", System.getProperty("user.home"));
         Process process = pb.start();
-        String errors = IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8);
-
-        Object model = loadJson ? KubernetesHelper.loadJson(process.getInputStream()) : null;
+        String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
 
         int ret = process.waitFor();
         if (ret != 0) {
-            throw new KubectlException("kubectl returned non-zero exit code. Error stream: " + errors);
+            throw new KubectlException("kubectl returned non-zero exit code. Output: " + output);
         }
-        return model;
+        return loadJson ? KubernetesHelper.loadJson(output) : null;
     }
 
     @SuppressWarnings("unchecked")
