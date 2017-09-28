@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +77,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     //0-10 threads, destroyed after a minute if not used.
     final ExecutorService executor = new ThreadPoolExecutor(0, 10,
                                       60L, TimeUnit.SECONDS,
-                                      new SynchronousQueue<>());
+                                      new LinkedBlockingQueue<>());
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
         this.pluginScheduler = pluginScheduler;
@@ -85,18 +86,21 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+        logger.debug("Kubernetes received request for " + request.getResultKey());
         executor.submit(() -> {
             exec(request, callback);
         });
     }
 
     private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+        logger.debug("Kubernetes processing request for " + request.getResultKey());
         Map<String, Object> template = loadTemplatePod();
         Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
         Map<String, Object> finalPod = mergeMap(template, podDefinition);
         try {
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
+            logger.debug("Kubernetes successfully processed request for " + request.getResultKey());
             callback.handle(new IsolatedDockerAgentResult()
                     .withCustomResultData(NAME, KubernetesHelper.getName(pod))
                     .withCustomResultData(UID, pod.getMetadata().getUid()));
