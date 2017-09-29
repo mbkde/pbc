@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
+import static com.atlassian.bamboo.v2.build.queue.BuildQueueManager.QueueItemView;
+
 import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.plan.PlanKey;
@@ -45,21 +47,22 @@ public class PbcStatisticsRest {
     private final QueueManagerView<CommonContext, CommonContext> queueManagerView;
 
     public PbcStatisticsRest(@NotNull BuildQueueManager queueManager) {
-        this.queueManagerView = QueueManagerView.newView(queueManager, (BuildQueueManager.QueueItemView<CommonContext> ctx) -> ctx);
+        this.queueManagerView = QueueManagerView.newView(queueManager,
+            (BuildQueueManager.QueueItemView<CommonContext> ctx) -> ctx);
     }
 
     /**
-     *
+     * Return current queued pbc builds/deployments.
      * @return Current queued pbc builds/deployments
      */
     @Path("/queuedBuilds")
     @Produces(MediaType.APPLICATION_JSON)
     @GET
-    public Response getQueuedPBCBuilds() {
+    public Response getQueuedPbcBuilds() {
 
         List<Map<String, String>> plans = Lists.newArrayList();
         List<Map<String, Object>> deployments = Lists.newArrayList();
-        queueManagerView.getQueueView(Collections.emptyList()).forEach((BuildQueueManager.QueueItemView<CommonContext> item) ->{
+        queueManagerView.getQueueView(Collections.emptyList()).forEach((QueueItemView<CommonContext> item) -> {
             CommonContext ctx = item.getView();
             Configuration configuration = AccessConfiguration.forContext(ctx);
             if (configuration.isEnabled()) {
@@ -75,7 +78,8 @@ public class PbcStatisticsRest {
                         long projectId = deploymentContext.getDeploymentProjectId();
                         long environId = deploymentContext.getEnvironmentId();
                         long versionId = deploymentContext.getDeploymentVersion().getId();
-                        deployments.add(ImmutableMap.of("projectId", projectId, "environmentId", environId, "versionId", versionId, "resultKey", resultKey.toString()));
+                        deployments.add(ImmutableMap.of("projectId", projectId, "environmentId", environId,
+                                "versionId", versionId, "resultKey", resultKey.toString()));
                     }
                 }
             }
