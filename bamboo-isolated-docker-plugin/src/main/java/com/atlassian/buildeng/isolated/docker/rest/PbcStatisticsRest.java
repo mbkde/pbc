@@ -29,48 +29,49 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 @Path("/statistics")
-public class PBCStatisticsRest {
+public class PbcStatisticsRest {
 
-    private PlanManager planManager;
-    private final BuildQueueManager queueManager;
     private final QueueManagerView<CommonContext, CommonContext> queueManagerView;
 
-    public PBCStatisticsRest(@NotNull BuildQueueManager queueManager) {
-        this.queueManager = queueManager;
+    public PbcStatisticsRest(@NotNull BuildQueueManager queueManager) {
         this.queueManagerView = QueueManagerView.newView(queueManager, (BuildQueueManager.QueueItemView<CommonContext> ctx) -> ctx);
     }
+
+    /**
+     *
+     * @return Current queued pbc builds/deployments
+     */
     @Path("/queuedBuilds")
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     public Response getQueuedPBCBuilds() {
-        List<?> result = Lists.newArrayList();
 
         List<Map<String, String>> plans = Lists.newArrayList();
         List<Map<String, Object>> deployments = Lists.newArrayList();
         queueManagerView.getQueueView(Collections.emptyList()).forEach((BuildQueueManager.QueueItemView<CommonContext> item ) -> {
             CommonContext ctx = item.getView();
             Configuration configuration = AccessConfiguration.forContext(ctx);
-            if(configuration.isEnabled()) {
+            if (configuration.isEnabled()) {
                 BuildContext buildContext = Narrow.downTo(ctx, BuildContext.class);
-                if(buildContext != null) {
+                if (buildContext != null) {
                     ResultKey resultKey = buildContext.getResultKey();
                     PlanKey planKey = buildContext.getParentBuildContext().getTypedPlanKey();
                     plans.add(ImmutableMap.of("planKey", planKey.toString(), "resultKey", resultKey.toString()));
                 } else {
                     DeploymentContext deploymentContext = Narrow.downTo(ctx, DeploymentContext.class);
-                    if(deploymentContext != null) {
+                    if (deploymentContext != null) {
                         ResultKey resultKey = deploymentContext.getResultKey();
                         long projectId = deploymentContext.getDeploymentProjectId();
                         long environId = deploymentContext.getEnvironmentId();
