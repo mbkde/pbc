@@ -19,7 +19,6 @@ package com.atlassian.buildeng.isolated.docker.rest;
 import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.plan.PlanKey;
-import com.atlassian.bamboo.plan.PlanManager;
 import com.atlassian.bamboo.util.Narrow;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
@@ -60,7 +59,7 @@ public class PbcStatisticsRest {
 
         List<Map<String, String>> plans = Lists.newArrayList();
         List<Map<String, Object>> deployments = Lists.newArrayList();
-        queueManagerView.getQueueView(Collections.emptyList()).forEach((BuildQueueManager.QueueItemView<CommonContext> item ) -> {
+        queueManagerView.getQueueView(Collections.emptyList()).forEach((BuildQueueManager.QueueItemView<CommonContext> item) ->{
             CommonContext ctx = item.getView();
             Configuration configuration = AccessConfiguration.forContext(ctx);
             if (configuration.isEnabled()) {
