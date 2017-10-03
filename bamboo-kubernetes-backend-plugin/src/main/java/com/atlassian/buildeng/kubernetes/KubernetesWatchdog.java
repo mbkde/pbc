@@ -30,6 +30,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
 import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 
@@ -105,12 +106,23 @@ public class KubernetesWatchdog extends WatchdogJob {
             if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
                 logger.info("Killing pod {} with terminated agent container: {}",
                         KubernetesHelper.getName(pod), agentContainer.getState());
-                boolean deleted = client.deletePod(pod);
+                boolean deleted = deletePod(
+                        client, pod, terminationReasons, agentContainer.getState().getTerminated().getReason());
                 if (deleted) {
-                    terminationReasons.put(
-                            KubernetesHelper.getName(pod),
-                            new ImmutablePair<>(new Date(), agentContainer.getState().getTerminated().getReason()));
                     killed.add(pod);
+                }
+            }
+            for (ContainerStatus container : pod.getStatus().getContainerStatuses()) {
+                ContainerStateWaiting statusWaiting = container.getState().getWaiting();
+                if (statusWaiting != null && "ImagePullBackOff".equals(statusWaiting.getReason())) {
+                    logger.info("Killing pod {} with container in ImagePullBackOff state",
+                            KubernetesHelper.getName(pod));
+                    boolean deleted = deletePod(
+                            client, pod, terminationReasons,
+                            "Container '" + container.getName() + "' image pull failed");
+                    if (deleted) {
+                        killed.add(pod);
+                    }
                 }
             }
         }
@@ -176,6 +188,19 @@ public class KubernetesWatchdog extends WatchdogJob {
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(config, customData);
 
         eventPublisher.publish(new DockerAgentKubeFailEvent(error, context.getEntityKey(), podName, containerLogs));
+    }
+
+    private boolean deletePod(
+            KubernetesClient client, Pod pod,
+            Map<String, Pair<Date, String>> terminationReasons, String terminationReason) {
+        boolean deleted = client.deletePod(pod);
+        if (deleted) {
+            terminationReasons.put(
+                    KubernetesHelper.getName(pod),
+                    new ImmutablePair<>(new Date(), terminationReason));
+            return true;
+        }
+        return false;
     }
 
     private Map<String, Pair<Date, String>> getPodTerminationReasons(Map<String, Object> data) {
