@@ -53,6 +53,7 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
     private static final String RESULT_PREFIX = "result.isolated.docker.";
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     private static final int MISSING_TASK_GRACE_PERIOD_MINUTES = 5;
+    private static final int CACHE_CLEANUP_TIMEOUT_MINUTES = 30;
     private static final String KEY_MISSING_ARNS_MAP = "MISSING_ARNS_MAP";
 
 

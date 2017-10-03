@@ -188,7 +188,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         // trim values that are too old to have
         map.entrySet().removeIf(next ->
                 Duration.ofMillis(System.currentTimeMillis() - next.getValue().getLeft().getTime()).toMinutes()
-                        > CACHE_CLEANUP_TIMEOUT_MINUTES);
+                        >= MISSING_POD_GRACE_PERIOD_MINUTES);
         return map;
     }
 }

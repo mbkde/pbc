@@ -36,8 +36,6 @@ import org.slf4j.Logger;
 
 
 public abstract class WatchdogJob implements PluginJob {
-    protected static final int CACHE_CLEANUP_TIMEOUT_MINUTES = 30;
-
     protected final void killBuild(
             DeploymentExecutionService deploymentExecutionService,
             DeploymentResultService deploymentResultService,
