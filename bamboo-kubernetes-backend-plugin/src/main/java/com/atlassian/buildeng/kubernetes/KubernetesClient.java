@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 class KubernetesClient {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesClient.class);
 
-    private static final String KUBECTL_EXECUTABLE = System.getProperty("pbc.kubectl.path", "kubectl");
     private final GlobalConfiguration globalConfiguration;
 
     KubernetesClient(GlobalConfiguration globalConfiguration) {
@@ -46,7 +45,7 @@ class KubernetesClient {
     private Object executeKubectl(boolean loadJson, String... args)
             throws InterruptedException, IOException, KubectlException {
         List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
-        kubectlArgs.add(0, KUBECTL_EXECUTABLE);
+        kubectlArgs.add(0, Constants.KUBECTL_EXECUTABLE);
         if (globalConfiguration.getCurrentContext() != null) {
             kubectlArgs.addAll(Arrays.asList("--context", globalConfiguration.getCurrentContext()));
         }
