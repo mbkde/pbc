@@ -46,7 +46,7 @@ public interface Constants {
      * the storage driver used with docker on the ec2 instances in ecs. For docker-in-docker to work
      * we need to use this one in place of the default vfs that is terribly slow.
      */
-    String storage_driver = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay");
+    String storage_driver = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay2");
 
     /**
      * System property to drain instances with disconnected agents rather than killing the outright.

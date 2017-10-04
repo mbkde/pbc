@@ -22,12 +22,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 
 public class PodCreator {
     /**
@@ -51,7 +53,7 @@ public class PodCreator {
      */
     static final int SIDEKICK_MEMORY = 500;
     static final int SIDEKICK_CPU  = 500;
-
+    
     // The working directory of isolated agents
     static final String WORK_DIR = "/buildeng";
     // The working directory for builds
@@ -103,8 +105,12 @@ public class PodCreator {
             map.put("image", t.getImage());
             map.put("imagePullPolicy", "Always");
             map.put("resources", createResources(t.getExtraSize().memory(), t.getExtraSize().cpu()));
-            map.put("securityContext", ImmutableMap.of("privileged", isDockerInDockerImage(t.getImage())));
-            map.put("command", t.getCommands());
+            if (isDockerInDockerImage(t.getImage())) {
+                map.put("securityContext", ImmutableMap.of("privileged", Boolean.TRUE));
+                map.put("args", adjustCommandsForDind(t.getCommands()));
+            } else {
+                map.put("args", t.getCommands());
+            }
             map.put("env", t.getEnvVariables().stream()
                         .map((Configuration.EnvVariable t1) ->
                                 ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
@@ -114,6 +120,28 @@ public class PodCreator {
             return map;
         }).collect(Collectors.toList());
     }
+    
+    /**
+     * adjust the list of commands if required, eg. in case of storage-driver switch for
+     * docker in docker images.
+     */
+    static List<String> adjustCommandsForDind(List<String> commands) {
+        List<String> cmds = new ArrayList<>(commands);
+        Iterator<String> it = cmds.iterator();
+        while (it.hasNext()) {
+            String s = it.next().trim();
+            if (s.startsWith("-s") || s.startsWith("--storage-driver") || s.startsWith("--storage-opt")) {
+                it.remove();
+                if (!s.contains("=") && it.hasNext()) {
+                    it.next();
+                    it.remove();
+                }
+            }
+        }
+        cmds.add("--storage-driver=" + Constants.STORAGE_DRIVER);
+        return cmds;
+    }
+    
 
     static List<String> containerNames(Configuration config) {
         return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT), config.getExtraContainers().stream()
