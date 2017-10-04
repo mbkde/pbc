@@ -221,6 +221,7 @@ public class PreBuildQueuedEventListener {
             }
             config.copyTo(context.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
+            setQueueTimestamp(context);
             retry(new RetryAgentStartupEvent(config, context));
         } else {
             //when a rerun happens and docker agents were disabled.
