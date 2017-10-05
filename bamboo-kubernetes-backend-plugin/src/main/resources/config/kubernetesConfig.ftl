@@ -27,7 +27,10 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
         <div class="field-group">
             <label for="curentContext">Current Context</label>
             <input type="text" class="text long-field" id="currentContext"
-                   placeholder=""></input>
+                   placeholder="Default context"></input>
+            <div class="description" id="desc-currentContext">
+                Explicitly set kubernetes context to use by the plugin. Empty value is to rely on default context.
+            </div>
         </div>
         <div class="field-group">
             <label for="podTemplate">Pod Template</label>

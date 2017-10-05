@@ -68,6 +68,9 @@ public class GlobalConfiguration {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY);
     }
 
+    /**
+     * get current context. Null value means to rely on default context.
+     */
     public String getCurrentContext() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT);
     }
@@ -96,7 +99,6 @@ public class GlobalConfiguration {
      */
     public void persist(String sidekick, String currentContext, String podTemplate, String podLogUrl) {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
-        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext), "Current context is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         if (!StringUtils.equals(sidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), sidekick);
@@ -114,18 +116,31 @@ public class GlobalConfiguration {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
             }
         }
-        persistCurrentContext(currentContext);
+        if (currentContext != null) {
+            persistCurrentContext(currentContext);
+        } else {
+            //in this case we ignore the value and don't change it.
+        }
     }
 
     /**
      * There is a REST endpoint to specifically update current context as this needs to be done automatically across
      * multiple Bamboo servers.
+     * 
+     * @param currentContext non null value of the new context, empty/blank value means reset 
+     *                       to whatever is the default context
      */
     public void persistCurrentContext(String currentContext) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext), "Current context is mandatory");
+        Preconditions.checkArgument(currentContext != null, "Current context is mandatory");
         if (!StringUtils.equals(currentContext, getCurrentContext())) {
             auditLogEntry("PBC Kubernetes Current Context", getCurrentContext(), currentContext);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT, currentContext);
+            if (StringUtils.isNotBlank(currentContext))  {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                        BANDANA_CURRENT_CONTEXT, currentContext.trim());
+            } else {
+                //rely on default context in .kube/config.
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT);
+            }
         }
     }
 
