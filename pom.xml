@@ -149,6 +149,8 @@
         <module>ecs-scheduler-service</module>
         <module>bamboo-remote-ecs-backend-plugin</module>
         <module>ecs-shared</module>
+        <module>metrics-shared</module>
         <module>bamboo-ecs-metrics-plugin</module>
+        <module>bamboo-kubernetes-metrics-plugin</module>
     </modules>
 </project>

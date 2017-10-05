@@ -20,9 +20,9 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>1.173-SNAPSHOT</version>
+        <version>1.168-SNAPSHOT</version>
     </parent>
-    <artifactId>bamboo-ecs-metrics-plugin</artifactId>
+    <artifactId>bamboo-kubernetes-metrics-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
     <build>
         <plugins>

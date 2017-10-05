@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="View PBC ECS Metrics Plugin" plugins-version="2">
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="View PBC Kubernetes Metrics Plugin" plugins-version="2">
     <plugin-info>
         <description>Adds a tab to job results with PBC container graphs</description>
         <version>${project.version}</version>
@@ -21,27 +21,27 @@ limitations under the License.
     </plugin-info>
 
     <!-- add our i18n resource -->
-    <resource type="i18n" name="i18n" location="ecs-metrics-plugin"/>
+    <resource type="i18n" name="i18n" location="kubernetes-metrics-plugin"/>
 
     <buildProcessor key="generateImages" name="Generate Container Metrics images"
-                    class="com.atlassian.buildeng.ecs.metrics.MetricsBuildProcessor">
+                    class="com.atlassian.buildeng.kubernetes.metrics.MetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
-    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.ecs.metrics.PreJobActionImpl">
+    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.kubernetes.metrics.PreJobActionImpl">
     </preJobAction>
     
     <xwork key="viewMetrics" name="Show Metrics for containers">
         <package name="viewMetrics" extends="buildResultView">
-            <action name="viewMetrics" class="com.atlassian.buildeng.ecs.metrics.ViewMetricsAction">
+            <action name="viewMetrics" class="com.atlassian.buildeng.kubernetes.metrics.ViewMetricsAction">
                 <result name="success" type="freemarker">/viewMetrics.ftl</result>
             </action>
         </package>
     </xwork>
-    <web-item key="ECSMETRICS:${buildKey}-${buildNumber}" name="Container Metrics" section="results.subMenu/results" weight="67">
+    <web-item key="METRICS:${buildKey}-${buildNumber}" name="Container Metrics" section="results.subMenu/results" weight="67">
         <label key="Container Metrics"/>
-        <link linkId="ECSMETRICS:${buildKey}-${buildNumber}">/build/result/viewMetrics.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
+        <link linkId="METRICS:${buildKey}-${buildNumber}">/build/result/viewMetrics.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
         <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
     </web-item>
-    <hostFolderMapping key="metrics" class="com.atlassian.buildeng.metrics.shared.MetricHostFolderMapping">
+    <hostFolderMapping key="metrics" class="com.atlassian.buildeng.kubernetes.metrics.MetricHostFolderMapping">
     </hostFolderMapping>
 </atlassian-plugin>

@@ -148,7 +148,7 @@ limitations under the License.
   <web-item key="PBC:${buildKey}-${buildNumber}" name="PBC" section="results.subMenu/results" weight="65">
     <label key="PBC"/>
     <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
-    <condition class="com.atlassian.buildeng.isolated.docker.compose.IsConfiguredCondition"/>
+    <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
   </web-item>
     
 </atlassian-plugin>

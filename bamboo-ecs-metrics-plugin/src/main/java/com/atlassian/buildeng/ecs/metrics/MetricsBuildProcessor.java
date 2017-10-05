@@ -29,6 +29,7 @@ import com.atlassian.bamboo.v2.build.BuildContextHelper;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.metrics.shared.MetricHostFolderMapping;
 import com.google.common.base.Joiner;
 import java.awt.Color;
 import java.io.File;

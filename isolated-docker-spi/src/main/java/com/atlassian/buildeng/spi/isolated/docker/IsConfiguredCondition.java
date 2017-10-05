@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.ecs.metrics;
+package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;

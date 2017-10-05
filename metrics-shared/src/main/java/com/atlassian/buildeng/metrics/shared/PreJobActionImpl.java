@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.ecs.metrics;
+package com.atlassian.buildeng.metrics.shared;
 
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PreJobAction;
