@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
@@ -31,13 +31,12 @@
         <url>https://bitbucket.org/atlassian/per-build-container</url>
         <tag>HEAD</tag>
     </scm>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <bamboo.version>6.2.0</bamboo.version>
-        <amps.version>6.1.2</amps.version>
+        <amps.version>6.2.11</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>3.0.4</platform.version>
         <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
@@ -46,7 +45,6 @@
         <atlassian.codestyle>buildeng:1.0.4</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -90,7 +88,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <build>
         <plugins>
             <plugin>
