@@ -96,7 +96,6 @@ public class GlobalConfiguration {
      */
     public void persist(String sidekick, String currentContext, String podTemplate, String podLogUrl) {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
-        Preconditions.checkArgument(StringUtils.isNotBlank(currentContext), "Current context is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         if (!StringUtils.equals(sidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), sidekick);
@@ -114,7 +113,9 @@ public class GlobalConfiguration {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
             }
         }
-        persistCurrentContext(currentContext);
+        if (StringUtils.isNotBlank(currentContext)) {
+            persistCurrentContext(currentContext);
+        }
     }
 
     /**
