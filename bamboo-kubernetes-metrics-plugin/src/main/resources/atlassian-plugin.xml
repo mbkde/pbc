@@ -23,11 +23,11 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="kubernetes-metrics-plugin"/>
 
-    <buildProcessor key="generateImages" name="Generate Container Metrics images"
+    <buildProcessor key="retreiveMetrics" name="Retreive Container Metrics from Prometheus"
                     class="com.atlassian.buildeng.kubernetes.metrics.MetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
-    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.kubernetes.metrics.PreJobActionImpl">
+    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.metrics.metrics.PreJobActionImpl">
     </preJobAction>
     
     <xwork key="viewMetrics" name="Show Metrics for containers">
@@ -42,6 +42,4 @@ limitations under the License.
         <link linkId="METRICS:${buildKey}-${buildNumber}">/build/result/viewMetrics.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
         <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
     </web-item>
-    <hostFolderMapping key="metrics" class="com.atlassian.buildeng.kubernetes.metrics.MetricHostFolderMapping">
-    </hostFolderMapping>
 </atlassian-plugin>

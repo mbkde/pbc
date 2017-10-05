@@ -27,7 +27,7 @@ limitations under the License.
                     class="com.atlassian.buildeng.ecs.metrics.MetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
-    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.ecs.metrics.PreJobActionImpl">
+    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.metrics.shared.PreJobActionImpl">
     </preJobAction>
     
     <xwork key="viewMetrics" name="Show Metrics for containers">
