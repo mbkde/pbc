@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.atlassian.buildeng.kubernetes.metrics;
+
+package com.atlassian.buildeng.metrics.shared;
 
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomBuildProcessor;
@@ -23,22 +24,19 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * After the build extracts the rrd files from a source directory and generates the
- * images and uploads them as artifacts.
+ * Base metrics build processor.
  */
-public class MetricsBuildProcessor  implements CustomBuildProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(MetricsBuildProcessor.class);
+public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
+    protected static final String RESULT_PREFIX = "result.isolated.docker.";
 
-    private final BuildLoggerManager buildLoggerManager;
-    private BuildContext buildContext;
-    private final ArtifactManager artifactManager;
+    protected final BuildLoggerManager buildLoggerManager;
+    protected BuildContext buildContext;
+    protected final ArtifactManager artifactManager;
 
 
-    private MetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
+    protected MetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         this.buildLoggerManager = buildLoggerManager;
         this.artifactManager = artifactManager;
     }
@@ -52,16 +50,15 @@ public class MetricsBuildProcessor  implements CustomBuildProcessor {
     @Override
     public BuildContext call() {
         Configuration config = AccessConfiguration.forContext(buildContext);
-    
+
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
-            generateMetricsGraphs(buildLogger);
+            generateMetricsGraphs(buildLogger, config);
         }
 
         return buildContext;
     }
 
-    private void generateMetricsGraphs(BuildLogger buildLogger) {
-    }
+    protected abstract void generateMetricsGraphs(BuildLogger buildLogger, Configuration config);
 
 }

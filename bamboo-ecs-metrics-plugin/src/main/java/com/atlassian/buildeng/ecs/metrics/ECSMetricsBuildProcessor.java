@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.metrics;
 
 import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
-import com.atlassian.bamboo.build.CustomBuildProcessor;
 import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
@@ -27,9 +27,9 @@ import com.atlassian.bamboo.security.SecureToken;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildContextHelper;
 import com.atlassian.bamboo.v2.build.CommonContext;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
+import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.metrics.shared.MetricHostFolderMapping;
 import com.google.common.base.Joiner;
 import java.awt.Color;
 import java.io.File;
@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
 import org.rrd4j.ConsolFun;
 import org.rrd4j.core.RrdDb;
 import org.rrd4j.core.RrdSafeFileBackendFactory;
@@ -51,45 +50,24 @@ import org.slf4j.LoggerFactory;
  * After the build extracts the rrd files from a source directory and generates the
  * images and uploads them as artifacts.
  */
-public class MetricsBuildProcessor  implements CustomBuildProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(MetricsBuildProcessor.class);
+public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
+    private static final Logger logger = LoggerFactory.getLogger(ECSMetricsBuildProcessor.class);
+
+    private static final String TASK_ARN = "TaskARN";
     Color COLOR_GREEN = Color.decode("0x29C30B");
     Color COLOR_RED = Color.decode("0xF71C31");
     Color COLOR_YELLOW = Color.decode("0xDBDE00");
     Color COLOR_ORANGE = Color.decode("0xF7B71C");
     Color COLOR_BLUE = Color.decode("0x0B80C3");
 
-    private final BuildLoggerManager buildLoggerManager;
-    private BuildContext buildContext;
-    private final ArtifactManager artifactManager;
-
-
-    private MetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
-        this.buildLoggerManager = buildLoggerManager;
-        this.artifactManager = artifactManager;
+    private ECSMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
+        super(buildLoggerManager, artifactManager);
     }
 
     @Override
-    public void init(@NotNull BuildContext buildContext) {
-        this.buildContext = buildContext;
-    }
-
-    @NotNull
-    @Override
-    public BuildContext call() {
-        Configuration config = AccessConfiguration.forContext(buildContext);
-    
-        if (config.isEnabled()) {
-            BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
-            generateMetricsGraphs(buildLogger);
-        }
-
-        return buildContext;
-    }
-
-    private void generateMetricsGraphs(BuildLogger buildLogger) {
-        String token = buildContext.getCurrentResult().getCustomBuildData().remove("secureToken");
-        String taskArn = buildContext.getCurrentResult().getCustomBuildData().get("result.isolated.docker.TaskARN");
+    protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
+        String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
+        String taskArn = buildContext.getCurrentResult().getCustomBuildData().get(RESULT_PREFIX + TASK_ARN);
         if (taskArn != null && token != null) {
             //arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
             String taskId = taskArn.substring(taskArn.indexOf("/"));

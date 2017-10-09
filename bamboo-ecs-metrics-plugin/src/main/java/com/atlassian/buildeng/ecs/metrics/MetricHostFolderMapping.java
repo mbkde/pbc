@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.metrics.shared;
+package com.atlassian.buildeng.ecs.metrics;
 
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 

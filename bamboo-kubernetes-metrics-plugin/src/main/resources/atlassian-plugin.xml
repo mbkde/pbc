@@ -24,7 +24,7 @@ limitations under the License.
     <resource type="i18n" name="i18n" location="kubernetes-metrics-plugin"/>
 
     <buildProcessor key="retreiveMetrics" name="Retreive Container Metrics from Prometheus"
-                    class="com.atlassian.buildeng.kubernetes.metrics.MetricsBuildProcessor">
+                    class="com.atlassian.buildeng.kubernetes.metrics.KubernetesMetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
     <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.metrics.metrics.PreJobActionImpl">

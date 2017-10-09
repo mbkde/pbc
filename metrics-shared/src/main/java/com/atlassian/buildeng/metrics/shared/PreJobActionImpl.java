@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 public class PreJobActionImpl implements PreJobAction {
     private static final Logger log = Logger.getLogger(PreJobActionImpl.class);
+    public static final String SECURE_TOKEN = "secureToken";
 
     public PreJobActionImpl() {
     }
@@ -33,7 +34,9 @@ public class PreJobActionImpl implements PreJobAction {
     public void execute(StageExecution stageExecution, BuildContext buildContext) {
         //secureTokenService not available for plugins via injection but still used by ArtifactDownloaderRuntimeDataProvider in plugin.
         SecureTokenService secureTokenService = ContainerManager.getComponent("secureTokenService", SecureTokenService.class);
-        buildContext.getBuildResult().getCustomBuildData().put("secureToken", secureTokenService.generate(buildContext.getBuildKey()).getToken());
+        buildContext.getBuildResult().getCustomBuildData().put(
+                SECURE_TOKEN, secureTokenService.generate(buildContext.getBuildKey()).getToken()
+        );
     }
 
 }
