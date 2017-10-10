@@ -104,8 +104,10 @@ public class KubernetesWatchdog extends WatchdogJob {
             ContainerStatus agentContainer = currentContainers.get(PodCreator.CONTAINER_NAME_BAMBOOAGENT);
             // if agentContainer == null then the pod is still initializing
             if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
-                logger.info("Killing pod {} with terminated agent container: {}",
-                        KubernetesHelper.getName(pod), agentContainer.getState());
+                logger.info("Killing pod {} with terminated agent container. Container states: {}",
+                        KubernetesHelper.getName(pod),
+                        pod.getStatus().getContainerStatuses().stream()
+                                .map(t -> t.getState()).collect(Collectors.toList()));
                 boolean deleted = deletePod(
                         client, pod, terminationReasons, agentContainer.getState().getTerminated().getReason());
                 if (deleted) {
