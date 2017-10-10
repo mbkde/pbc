@@ -33,6 +33,7 @@ You can effectively use any Linux image as your agent container, though we have 
 * Your image must have bash, as we use it in our run script
 * glibc needs to be installed for oracle-java8 JRE to run. That's the JRE the agent is currently running with.
 That limits usage of alpine based images.
+* On kubernetes, all images (including those for sidecontainers) need to provide flock.
 
 ## Capabilities
 
