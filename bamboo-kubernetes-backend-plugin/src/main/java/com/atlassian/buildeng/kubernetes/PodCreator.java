@@ -36,17 +36,24 @@ public class PodCreator {
     /**
      * The environment variable to override on the agent per image.
      */
-    static String ENV_VAR_IMAGE = "IMAGE_ID";
+    static final String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
      * The environment variable to override on the agent per server.
      */
-    static String ENV_VAR_SERVER = "BAMBOO_SERVER";
+    static final String ENV_VAR_SERVER = "BAMBOO_SERVER";
 
     /**
      * The environment variable to set the result spawning up the agent.
      */
-    static String ENV_VAR_RESULT_ID = "RESULT_ID";
+    static final String ENV_VAR_RESULT_ID = "RESULT_ID";
+    
+    /**
+     * The environment variable with newline separated list of container names in the pod.
+     * used by the sidekick run_agent script to wait until all containers started up.
+     */
+    static final String KUBE_EXTRA_CONTAINER_NAMES = "KUBE_EXTRA_CONTAINER_NAMES";
+    
 
     /**
      * Sidekick container limits. Specific to Kubernetes as we have to run the container and copy files
@@ -250,7 +257,7 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
-        envs.add(ImmutableMap.of("name", "KUBE_EXTRA_CONTAINER_NAMES", 
+        envs.add(ImmutableMap.of("name", KUBE_EXTRA_CONTAINER_NAMES, 
                 "value", StringUtils.join(containerNames(r.getConfiguration()), "\\n")));
         return envs;
     }
