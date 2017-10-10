@@ -22,7 +22,6 @@ import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.util.BambooIterables;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -55,7 +54,8 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
 
     @Override
     public void prepare() throws Exception {
-        String artifactNames = resultsSummary.getCustomBuildData().get("image_artifacts");
+        String artifactNames = resultsSummary.getCustomBuildData()
+                .get(KubernetesMetricsBuildProcessor.ARTIFACT_BUILD_DATA_KEY);
         if (artifactNames != null) {
             Splitter.on(",").splitToList(artifactNames).forEach((String t) -> {
                 Artifact artifact = createArtifact(t, resultsSummary.getPlanResultKey(), resultsSummary.getCustomBuildData().get("image_artifacts_type"));

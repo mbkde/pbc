@@ -21,7 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 //TODO eventually these paths could be configurable in the UI.
 public class MetricHostFolderMapping implements HostFolderMapping {
 
-    public static final String CONTAINER_METRICS_PATH = "/buildeng-metrics";
+    static final String CONTAINER_METRICS_PATH = "/buildeng-metrics";
 
     @Override
     public String getVolumeName() {
