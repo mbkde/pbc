@@ -279,9 +279,7 @@ public class PodCreator {
     private static Map<String, Object> createContainerLifecycle(String containerName) {
         Map<String, Object> map = new HashMap<>();
         StringBuilder cmd = new StringBuilder();
-        // we assume flock is present on all containers and the default lock is exclusive
-        cmd.append("flock ").append(STARTUP_LOCK_FILE)
-                .append(" echo ").append(containerName).append(" >> ").append(STARTUP_LOCK_FILE).append(";");
+        cmd.append(" echo ").append(containerName).append(" >> ").append(STARTUP_LOCK_FILE).append(";");
         map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
         return Collections.singletonMap("postStart", map);
     }    
