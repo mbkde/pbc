@@ -28,6 +28,8 @@ import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.base.Joiner;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,15 +37,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.glassfish.jersey.logging.LoggingFeature;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.glassfish.jersey.logging.LoggingFeature;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -53,10 +57,11 @@ import javax.ws.rs.core.MediaType;
 public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesMetricsBuildProcessor.class);
 
-    private static final String NAME = "name";
+    private static final String PROMETHEUS_MEMORY_METRIC = "container_memory_usage_bytes";
+    private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
     private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP"));
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
-    private static final String PROPERTY_PROMETHEUS_HTTP_API_SERVER = "pbc.metrics.prometheus.url";
+    private static final String PROMETHEUS_SERVER = System.getProperty("pbc.metrics.prometheus.url");
     private static final String METRICS_FOLDER = ".pbc-metrics";
     static final String ARTIFACT_BUILD_DATA_KEY = "metrics_artifacts";
 
@@ -84,42 +89,85 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                     .stream()
                     .map(Configuration.ExtraContainer::getName)
                     .collect(Collectors.toList())) {
+
                 Path targetDir = buildWorkingDirectory.resolve(METRICS_FOLDER);
                 String cpuName = container + "-cpu";
                 String memoryName = container + "-memory";
-                generateCpuMetricsFile(targetDir.resolve(cpuName), container, buildLogger);
-                generateMemoryMetricsFile(targetDir.resolve(memoryName), container, buildLogger);
+
+                generateMetricsFile(targetDir.resolve(cpuName), PROMETHEUS_CPU_METRIC, container, buildLogger);
+                generateMetricsFile(targetDir.resolve(memoryName), PROMETHEUS_MEMORY_METRIC, container, buildLogger);
+
                 publishMetrics(cpuName, secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
                 publishMetrics(memoryName, secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
+
                 names.add("pbc-metrics-" + cpuName);
                 names.add("pbc-metrics-" + memoryName);
             }
+
             buildContext.getCurrentResult().getCustomBuildData()
                     .put(ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
         }
     }
 
-    private void generateCpuMetricsFile(Path location, String containerName, BuildLogger buildLogger) {
+    private void generateMetricsFile(Path location, String metric, String containerName, BuildLogger buildLogger) {
         Client client = ClientBuilder
                 .newBuilder()
                 .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
                 .build();
         WebTarget webTarget = client
-                .target(System.getProperty(PROPERTY_PROMETHEUS_HTTP_API_SERVER))
+                .target(System.getProperty(PROMETHEUS_SERVER))
                 .path("api/v1/query_range")
                 .queryParam("query",
-                        String.format("container_memory_usage_bytes{pod_name=\"%s\",container_name=\"%s\"}",
-                                KUBE_POD_NAME, containerName))
+                        String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+                                metric, KUBE_POD_NAME, containerName))
                 .queryParam("step", "15s")
                 .queryParam("start", SUBMIT_TIMESTAMP)
                 .queryParam("end", Instant.now().getEpochSecond());
-        JSONObject response = webTarget.request(MediaType.APPLICATION_JSON).get(JSONObject.class);
-//        Files.write(location, data);
+        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
+            buildLogger.addErrorLogEntry(
+                    String.format("Error when querying Prometheus server: %s. Response %s",
+                            PROMETHEUS_SERVER, response.readEntity(String.class)));
+            return;
+        }
+        JSONObject jsonResponse = response.readEntity(JSONObject.class);
+        JSONArray values = jsonResponse
+                .getJSONObject("data")
+                .getJSONArray("result")
+                .getJSONObject(0)
+                .getJSONArray("values");
+
+        try {
+            Files.write(location, createJsonArtifact(values).getBytes());
+        } catch (IOException e) {
+            buildLogger.addErrorLogEntry(String.format("Error when attempting to write metrics file to %s", location));
+        }
     }
 
-    private void generateMemoryMetricsFile(Path containerFolder, String containerName, BuildLogger buildLogger) {
+    /**
+     * This massages the values obtained from Prometheus into the format that Rickshaw.js expects.
+     */
+    private String createJsonArtifact(JSONArray values) {
+        JSONArray metrics = new JSONArray();
+        JSONObject series = new JSONObject();
+        JSONArray data = new JSONArray();
+        series.put("data", data);
+        metrics.put(series);
 
+        for (int i = 0; i < values.length(); i++) {
+            JSONArray value = values.getJSONArray(i);
+            data.put(createDataPoint(value.getInt(0), value.getInt(1)));
+        }
+        return metrics.toString();
     }
+
+    private JSONObject createDataPoint(int x, int y) {
+        JSONObject point = new JSONObject();
+        point.put("x", x);
+        point.put("y", y);
+        return point;
+    }
+
 }

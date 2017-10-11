@@ -19,12 +19,14 @@ package com.atlassian.buildeng.spi.isolated.docker;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.plugin.PluginParseException;
 import com.atlassian.plugin.web.Condition;
 import java.util.Map;
 
+/**
+ * Can be used by plugins in atlassian-plugin.xml to condition a web-item module to only display
+ * if the build is a PBC build.
+ */
 public class IsConfiguredCondition implements Condition {
 
     private final ResultsSummaryManager resultsSummaryManager;
