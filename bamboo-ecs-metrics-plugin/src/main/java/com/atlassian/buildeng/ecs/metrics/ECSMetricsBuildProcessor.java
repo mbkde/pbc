@@ -99,14 +99,14 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                         endTime = 0;
                         buildLogger.addErrorLogEntry("Error while processing rrd files", ex);
                     }
-                    File targetDir = new File(buildWorkingDirectory, ".pbc-metrics");
+                    File targetDir = new File(buildWorkingDirectory, METRICS_FOLDER);
                     targetDir.mkdirs();
                     String cpuName = containerFolder.getName() + "-cpu";
                     String memoryName = containerFolder.getName() + "-memory";
                     generateCpuPng(createGraphDef(startTime, endTime, containerFolder.getName() + " CPU Usage", "CPU Cores", targetDir, cpuName + ".png"), containerFolder, buildLogger);
                     generateMemoryPng(createGraphDef(startTime, endTime, containerFolder.getName() + " Memory Usage", "Memory Usage", targetDir, memoryName + ".png"), containerFolder, buildLogger);
-                    publishImage(cpuName, secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
-                    publishImage(memoryName, secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
+                    publishMetrics(cpuName, ".png", secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
+                    publishMetrics(memoryName, ".png", secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
                     names.add("pbc-metrics-" + cpuName);
                     names.add("pbc-metrics-"+ memoryName);
                 }
@@ -115,21 +115,6 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                 buildLogger.addBuildLogEntry("Folder with metrics data not mounted");
             }
         }
-    }
-
-    private void publishImage(String name, SecureToken secureToken, BuildLogger buildLogger, File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration, BuildContext buildContext) {
-        ArtifactDefinitionContextImpl artifact = new ArtifactDefinitionContextImpl("pbc-metrics-" + name, false, secureToken);
-        artifact.setCopyPattern(name + ".png");
-        artifact.setLocation(".pbc-metrics");
-        final ArtifactPublishingResult publishingResult =
-                artifactManager.publish(buildLogger,
-                        buildContext.getPlanResultKey(),
-                        buildWorkingDirectory,
-                        artifact,
-                        artifactHandlerConfiguration,
-                        0);
-        buildContext.getCurrentResult().getCustomBuildData().put("image_artifacts_type", publishingResult.getSuccessfulPublishingResults().stream().findAny().map((ArtifactHandlerPublishingResult t) -> t.getArtifactHandlerKey()).orElse(Artifact.SYSTEM_LINK_TYPE));
-        buildLogger.addBuildLogEntry("Generated and published '" + name + "' container performance image.");
     }
 
     private void generateCpuPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {

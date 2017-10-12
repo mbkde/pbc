@@ -16,20 +16,29 @@
 
 package com.atlassian.buildeng.metrics.shared;
 
+import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomBuildProcessor;
+import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
+import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionContextImpl;
+import com.atlassian.bamboo.plan.artifact.ArtifactPublishingResult;
+import com.atlassian.bamboo.security.SecureToken;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
+import java.util.Map;
 
 /**
  * Base metrics build processor.
  */
 public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
     protected static final String RESULT_PREFIX = "result.isolated.docker.";
+    protected static final String METRICS_FOLDER = ".pbc-metrics";
 
     protected final BuildLoggerManager buildLoggerManager;
     protected BuildContext buildContext;
@@ -57,6 +66,24 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
         }
 
         return buildContext;
+    }
+
+    protected void publishMetrics(
+            String name, String fileExtension, SecureToken secureToken, BuildLogger buildLogger,
+            File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration,
+            BuildContext buildContext) {
+        ArtifactDefinitionContextImpl artifact = new ArtifactDefinitionContextImpl("pbc-metrics-" + name, false, secureToken);
+        artifact.setCopyPattern(name + fileExtension);
+        artifact.setLocation(METRICS_FOLDER);
+        final ArtifactPublishingResult publishingResult =
+                artifactManager.publish(buildLogger,
+                        buildContext.getPlanResultKey(),
+                        buildWorkingDirectory,
+                        artifact,
+                        artifactHandlerConfiguration,
+                        0);
+        buildContext.getCurrentResult().getCustomBuildData().put("image_artifacts_type", publishingResult.getSuccessfulPublishingResults().stream().findAny().map((ArtifactHandlerPublishingResult t) -> t.getArtifactHandlerKey()).orElse(Artifact.SYSTEM_LINK_TYPE));
+        buildLogger.addBuildLogEntry("Generated and published '" + name + "' container performance image.");
     }
 
     protected abstract void generateMetricsGraphs(BuildLogger buildLogger, Configuration config);

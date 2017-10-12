@@ -16,9 +16,13 @@
 
 package com.atlassian.buildeng.kubernetes.metrics;
 
+import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
+import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
+import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionContextImpl;
+import com.atlassian.bamboo.plan.artifact.ArtifactPublishingResult;
 import com.atlassian.bamboo.security.SecureToken;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildContextHelper;
@@ -62,16 +66,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP"));
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String PROMETHEUS_SERVER = System.getProperty("pbc.metrics.prometheus.url");
-    private static final String METRICS_FOLDER = ".pbc-metrics";
     static final String ARTIFACT_BUILD_DATA_KEY = "metrics_artifacts";
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
-    }
-
-    private void publishMetrics(
-            String name, SecureToken secureToken, BuildLogger buildLogger, File buildWorkingDirectory,
-            final Map<String, String> artifactHandlerConfiguration, BuildContext buildContext) {
     }
 
     @Override
@@ -94,12 +92,14 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 String cpuName = container + "-cpu";
                 String memoryName = container + "-memory";
 
-                generateMetricsFile(targetDir.resolve(cpuName), PROMETHEUS_CPU_METRIC, container, buildLogger);
-                generateMetricsFile(targetDir.resolve(memoryName), PROMETHEUS_MEMORY_METRIC, container, buildLogger);
+                generateMetricsFile(
+                        targetDir.resolve(cpuName + ".json"), PROMETHEUS_CPU_METRIC, container, buildLogger);
+                generateMetricsFile(
+                        targetDir.resolve(memoryName + ".json"), PROMETHEUS_MEMORY_METRIC, container, buildLogger);
 
-                publishMetrics(cpuName, secureToken, buildLogger, buildWorkingDirectory.toFile(),
+                publishMetrics(cpuName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
-                publishMetrics(memoryName, secureToken, buildLogger, buildWorkingDirectory.toFile(),
+                publishMetrics(memoryName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
 
                 names.add("pbc-metrics-" + cpuName);
@@ -111,6 +111,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         }
     }
 
+    /**
+     * Create a JSON file containing the metrics by querying Prometheus and massaging its output.
+     * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
+     */
     private void generateMetricsFile(Path location, String metric, String containerName, BuildLogger buildLogger) {
         Client client = ClientBuilder
                 .newBuilder()
