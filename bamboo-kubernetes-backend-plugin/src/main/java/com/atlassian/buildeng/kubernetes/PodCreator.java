@@ -21,6 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,23 +30,30 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 public class PodCreator {
     /**
      * The environment variable to override on the agent per image.
      */
-    static String ENV_VAR_IMAGE = "IMAGE_ID";
+    static final String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
      * The environment variable to override on the agent per server.
      */
-    static String ENV_VAR_SERVER = "BAMBOO_SERVER";
+    static final String ENV_VAR_SERVER = "BAMBOO_SERVER";
 
     /**
      * The environment variable to set the result spawning up the agent.
      */
-    static String ENV_VAR_RESULT_ID = "RESULT_ID";
+    static final String ENV_VAR_RESULT_ID = "RESULT_ID";
+    
+    /**
+     * The environment variable with newline separated list of container names in the pod.
+     * used by the sidekick run_agent script to wait until all containers started up.
+     */
+    static final String KUBE_EXTRA_CONTAINER_NAMES = "KUBE_EXTRA_CONTAINER_NAMES";
+    
 
     /**
      * Sidekick container limits. Specific to Kubernetes as we have to run the container and copy files
@@ -58,6 +66,13 @@ public class PodCreator {
     static final String WORK_DIR = "/buildeng";
     // The working directory for builds
     static final String BUILD_DIR = WORK_DIR + "/bamboo-agent-home/xml-data/build-dir";
+    
+    /**
+     * the lock file that all containers write to during postStart hook under exclusive lock.
+     * the purpose is to have the agent container wait until all side containers have written to the file.
+     */
+    static final String STARTUP_LOCK_FILE = BUILD_DIR + "/.pbc_kube_lock";
+
 
     // Ratio between soft and hard limits
     static final Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
@@ -117,6 +132,7 @@ public class PodCreator {
                         .collect(Collectors.toList()));
             map.put("volumeMounts", ImmutableList.of(
                     ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)));
+            map.put("lifecycle", createContainerLifecycle(t.getName()));
             return map;
         }).collect(Collectors.toList());
     }
@@ -148,7 +164,7 @@ public class PodCreator {
                 .map(t -> t.getName()))
                 .collect(Collectors.toList());
     }
-
+    
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
             IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
@@ -222,6 +238,7 @@ public class PodCreator {
                 ));
         map.put("resources", createResources(r.getConfiguration().getSize().memory(),
                 r.getConfiguration().getSize().cpu()));
+        map.put("lifecycle", createContainerLifecycle(CONTAINER_NAME_BAMBOOAGENT));
         return map;
     }
 
@@ -240,6 +257,8 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
+        envs.add(ImmutableMap.of("name", KUBE_EXTRA_CONTAINER_NAMES, 
+                "value", StringUtils.join(containerNames(r.getConfiguration()), "\\n")));
         return envs;
     }
 
@@ -250,4 +269,18 @@ public class PodCreator {
                 "hostnames", containerNames(c)));
         return ips;
     }
+    
+    /**
+     * Add a postStart lifecycle hook that logs that the container has started.
+     * The final user of the outcome is the agent container startup script that
+     * needs to wait for all side containers to start up, avoiding the case when the build actually starts/finishes
+     * but side containers haven't even started yet.
+     */
+    private static Map<String, Object> createContainerLifecycle(String containerName) {
+        Map<String, Object> map = new HashMap<>();
+        StringBuilder cmd = new StringBuilder();
+        cmd.append(" echo ").append(containerName).append(" >> ").append(STARTUP_LOCK_FILE).append(";");
+        map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
+        return Collections.singletonMap("postStart", map);
+    }    
 }
