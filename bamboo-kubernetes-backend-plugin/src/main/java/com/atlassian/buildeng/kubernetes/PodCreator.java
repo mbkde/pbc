@@ -74,8 +74,6 @@ public class PodCreator {
     static final String STARTUP_LOCK_FILE = BUILD_DIR + "/.pbc_kube_lock";
 
 
-    // Ratio between soft and hard limits
-    static final Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
     
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
@@ -218,7 +216,7 @@ public class PodCreator {
 
     private static Map<String, Object> createResources(int memory, int cpu) {
         return ImmutableMap.of(
-                "limits", ImmutableMap.of("memory", "" + (long)(memory  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"),
+                "limits", ImmutableMap.of("memory", "" + (long)(memory  * Constants.SOFT_TO_HARD_LIMIT_RATIO) + "Mi"),
                 "requests", ImmutableMap.of("memory", "" + memory + "Mi", "cpu", "" + cpu + "m")
                 );
     }
