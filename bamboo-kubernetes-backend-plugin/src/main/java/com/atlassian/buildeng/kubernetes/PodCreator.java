@@ -59,8 +59,6 @@ public class PodCreator {
     // The working directory for builds
     static final String BUILD_DIR = WORK_DIR + "/bamboo-agent-home/xml-data/build-dir";
 
-    // Ratio between soft and hard limits
-    static final Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
     
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
@@ -202,7 +200,7 @@ public class PodCreator {
 
     private static Map<String, Object> createResources(int memory, int cpu) {
         return ImmutableMap.of(
-                "limits", ImmutableMap.of("memory", "" + (long)(memory  * SOFT_TO_HARD_LIMIT_RATIO) + "Mi"),
+                "limits", ImmutableMap.of("memory", "" + (long)(memory  * Constants.SOFT_TO_HARD_LIMIT_RATIO) + "Mi"),
                 "requests", ImmutableMap.of("memory", "" + memory + "Mi", "cpu", "" + cpu + "m")
                 );
     }
