@@ -16,22 +16,16 @@
 
 package com.atlassian.buildeng.kubernetes.metrics;
 
-import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
-import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
-import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionContextImpl;
-import com.atlassian.bamboo.plan.artifact.ArtifactPublishingResult;
 import com.atlassian.bamboo.security.SecureToken;
-import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildContextHelper;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.base.Joiner;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,10 +57,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
     private static final String PROMETHEUS_MEMORY_METRIC = "container_memory_usage_bytes";
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
-    private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP"));
+    private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP")) / 1000;
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String PROMETHEUS_SERVER = System.getProperty("pbc.metrics.prometheus.url");
-    static final String ARTIFACT_BUILD_DATA_KEY = "metrics_artifacts";
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);

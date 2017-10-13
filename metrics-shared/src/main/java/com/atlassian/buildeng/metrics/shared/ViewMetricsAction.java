@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.atlassian.buildeng.ecs.metrics;
+
+package com.atlassian.buildeng.metrics.shared;
 
 import com.atlassian.bamboo.archive.ArchiverType;
 import com.atlassian.bamboo.artifact.Artifact;
@@ -22,7 +23,6 @@ import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.util.BambooIterables;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -37,14 +37,10 @@ import org.slf4j.LoggerFactory;
 public class ViewMetricsAction extends PlanResultsAction implements Preparable {
 
     Logger log = LoggerFactory.getLogger(ViewMetricsAction.class);
-//    private final ResultsSummaryManager resultsSummaryManager;
 
     private Configuration configuration;
     private List<String> urls = new ArrayList<>();
 
-//    public LocalExecAction(ResultsSummaryManager resultsSummaryManager) {
-//        this.resultsSummaryManager = resultsSummaryManager;
-//    }
     public Configuration getConfiguration() {
         return configuration;
     }
@@ -55,11 +51,14 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
 
     @Override
     public void prepare() throws Exception {
-        String artifactNames = resultsSummary.getCustomBuildData().get("image_artifacts");
+        String artifactNames = resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_BUILD_DATA_KEY);
         if (artifactNames != null) {
             Splitter.on(",").splitToList(artifactNames).forEach((String t) -> {
-                Artifact artifact = createArtifact(t, resultsSummary.getPlanResultKey(), resultsSummary.getCustomBuildData().get("image_artifacts_type"));
-                ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
+                Artifact artifact = createArtifact(
+                        t, resultsSummary.getPlanResultKey(),
+                        resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
+                ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(
+                        artifact);
                 if (artifactLinkDataProvider == null) {
                     addActionError("Unable to find artifact link data provider for artifact link");
                     return;

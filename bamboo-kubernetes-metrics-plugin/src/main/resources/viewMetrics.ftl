@@ -8,10 +8,12 @@
 </head>
 
 <body>
+<script src="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/d3_v4.js"></script>
+<script src="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/rickshaw.js"></script>
 <h1>PBC Container Metrics</h1>
-<p>Shows CPU and memory unitization of PBC containers used in the build. If absent, the images were likely not generated or data is missing.</p>
+<p>Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing.</p>
 [#list bambooAgentUrls.iterator() as url]
-    <img src="${url}" alt="Container usage image"/>
+    <p>"${url}"</p>
 [/#list]
 
 
