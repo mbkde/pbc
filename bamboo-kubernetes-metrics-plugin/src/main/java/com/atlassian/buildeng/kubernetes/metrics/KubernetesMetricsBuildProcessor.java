@@ -59,7 +59,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
     private static final String PROMETHEUS_MEMORY_METRIC = "container_memory_usage_bytes";
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
-    private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP")) / 1000;
+    private static final long SUBMIT_TIMESTAMP = Long.parseLong(System.getenv("SUBMIT_TIMESTAMP")) / 1000;
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     // TODO: Pull this from somewhere
     private static final String PROMETHEUS_SERVER = "http://prometheus.monitoring.svc.cluster.local:9090";
