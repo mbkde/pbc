@@ -27,6 +27,8 @@ import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.base.Joiner;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -59,7 +61,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
     private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP")) / 1000;
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
-    private static final String PROMETHEUS_SERVER = System.getProperty("pbc.metrics.prometheus.url");
+    // TODO: Pull this from somewhere
+    private static final String PROMETHEUS_SERVER = "http://prometheus.monitoring.svc.cluster.local:9090";
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
@@ -113,15 +116,23 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 .newBuilder()
                 .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
                 .build();
+
+        String query;
+        try {
+            query = URLEncoder.encode(String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+                    metric, KUBE_POD_NAME, containerName), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return;
+        }
+
         WebTarget webTarget = client
-                .target(System.getProperty(PROMETHEUS_SERVER))
+                .target(PROMETHEUS_SERVER)
                 .path("api/v1/query_range")
-                .queryParam("query",
-                        String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
-                                metric, KUBE_POD_NAME, containerName))
+                .queryParam("query", query)
                 .queryParam("step", "15s")
                 .queryParam("start", SUBMIT_TIMESTAMP)
                 .queryParam("end", Instant.now().getEpochSecond());
+
         Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
         if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
             buildLogger.addErrorLogEntry(
@@ -129,7 +140,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                             PROMETHEUS_SERVER, response.readEntity(String.class)));
             return;
         }
-        JSONObject jsonResponse = response.readEntity(JSONObject.class);
+
+        JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
         JSONArray values = jsonResponse
                 .getJSONObject("data")
                 .getJSONArray("result")
