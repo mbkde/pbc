@@ -211,7 +211,7 @@ public class PodCreator {
         map.put("imagePullPolicy", "Always");
         map.put("command", ImmutableList.of("sh", "-c", 
                           "cp -r /buildeng/* /buildeng-data;"
-                        + "mkdir -p " + PBC_DIR + ";"
+                        + "mkdir " + PBC_DIR + ";"
                         + "touch " + STARTUP_LOCK_FILE + ";"        
                         + "chmod a+w " + PBC_DIR + ";"
                         + "chmod a+w " + STARTUP_LOCK_FILE));
