@@ -72,7 +72,7 @@ public class PodCreator {
      * the purpose is to have the agent container wait until all side containers have written to the file.
      */
     static final String PBC_DIR = "/pbc/kube";
-    static final String STARTUP_LOCK_FILE = PBC_DIR + "/.pbc_kube_lock";
+    static final String STARTUP_LOCK_FILE = PBC_DIR + "/.pbc_kube_state";
     
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
@@ -213,7 +213,7 @@ public class PodCreator {
                           "cp -r /buildeng/* /buildeng-data;"
                         + "mkdir " + PBC_DIR + ";"
                         + "touch " + STARTUP_LOCK_FILE + ";"        
-                        + "chmod a+w " + PBC_DIR + ";"
+                        + "chmod a+wt " + PBC_DIR + ";"
                         + "chmod a+w " + STARTUP_LOCK_FILE));
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
