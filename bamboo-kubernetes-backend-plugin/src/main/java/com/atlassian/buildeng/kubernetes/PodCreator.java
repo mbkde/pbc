@@ -71,9 +71,8 @@ public class PodCreator {
      * the lock file that all containers write to during postStart hook under exclusive lock.
      * the purpose is to have the agent container wait until all side containers have written to the file.
      */
-    static final String STARTUP_LOCK_FILE = BUILD_DIR + "/.pbc_kube_lock";
-
-
+    static final String PBC_DIR = "/pbc/kube";
+    static final String STARTUP_LOCK_FILE = PBC_DIR + "/.pbc_kube_state";
     
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
@@ -129,7 +128,9 @@ public class PodCreator {
                                 ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
                         .collect(Collectors.toList()));
             map.put("volumeMounts", ImmutableList.of(
-                    ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)));
+                    ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
+                    ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)
+                    ));
             map.put("lifecycle", createContainerLifecycle(t.getName()));
             return map;
         }).collect(Collectors.toList());
@@ -191,6 +192,7 @@ public class PodCreator {
     private static List<Map<String, Object>> createVolumes() {
         return ImmutableList.of(
             ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()),
+            ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()),
             ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
     }
 
@@ -207,9 +209,15 @@ public class PodCreator {
         map.put("name", "bamboo-agent-sidekick");
         map.put("image", currentSidekick);
         map.put("imagePullPolicy", "Always");
-        map.put("command", ImmutableList.of("sh", "-c", "cp -r /buildeng/* /buildeng-data"));
+        map.put("command", ImmutableList.of("sh", "-c", 
+                          "cp -r /buildeng/* /buildeng-data;"
+                        + "mkdir " + PBC_DIR + ";"
+                        + "touch " + STARTUP_LOCK_FILE + ";"        
+                        + "chmod a+wt " + PBC_DIR + ";"
+                        + "chmod a+w " + STARTUP_LOCK_FILE));
         map.put("volumeMounts", ImmutableList.of(
-                ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false)));
+                ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
+                ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)));
         map.put("resources", createResources(SIDEKICK_MEMORY, SIDEKICK_CPU));
         return map;
     }
@@ -232,7 +240,8 @@ public class PodCreator {
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false),
-                ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false)
+                ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
+                ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)
                 ));
         map.put("resources", createResources(r.getConfiguration().getSize().memory(),
                 r.getConfiguration().getSize().cpu()));
