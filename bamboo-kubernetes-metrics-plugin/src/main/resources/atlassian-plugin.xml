@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="View PBC Kubernetes Metrics Plugin" plugins-version="2">
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container Kubernetes Metrics Plugin" plugins-version="2">
     <plugin-info>
         <description>Adds a tab to job results with PBC container graphs</description>
         <version>${project.version}</version>
@@ -27,12 +27,12 @@ limitations under the License.
                     class="com.atlassian.buildeng.kubernetes.metrics.KubernetesMetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
-    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.metrics.metrics.PreJobActionImpl">
+    <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.metrics.shared.PreJobActionImpl">
     </preJobAction>
     
     <xwork key="viewMetrics" name="Show Metrics for containers">
         <package name="viewMetrics" extends="buildResultView">
-            <action name="viewMetrics" class="com.atlassian.buildeng.kubernetes.metrics.ViewMetricsAction">
+            <action name="viewMetrics" class="com.atlassian.buildeng.kubernetes.metrics.KubernetesViewMetricsAction">
                 <result name="success" type="freemarker">/viewMetrics.ftl</result>
             </action>
         </package>
@@ -42,4 +42,8 @@ limitations under the License.
         <link linkId="METRICS:${buildKey}-${buildNumber}">/build/result/viewMetrics.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
         <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
     </web-item>
+    <web-resource key="kubernetes-metrics-resources" name="Kubernetes Metrics Resources">
+        <resource type="download" name="d3_v4.js" location="js/d3_v4.js" />
+        <resource type="download" name="rickshaw.js" location="js/rickshaw.js" />
+    </web-resource>
 </atlassian-plugin>

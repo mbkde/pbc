@@ -16,23 +16,19 @@
 
 package com.atlassian.buildeng.kubernetes.metrics;
 
-import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
-import com.atlassian.bamboo.build.artifact.ArtifactHandlerPublishingResult;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
-import com.atlassian.bamboo.plan.artifact.ArtifactDefinitionContextImpl;
-import com.atlassian.bamboo.plan.artifact.ArtifactPublishingResult;
 import com.atlassian.bamboo.security.SecureToken;
-import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildContextHelper;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.base.Joiner;
-import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -40,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -63,10 +60,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
     private static final String PROMETHEUS_MEMORY_METRIC = "container_memory_usage_bytes";
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
-    private static final long SUBMIT_TIMESTAMP = Integer.parseInt(System.getenv("SUBMIT_TIMESTAMP"));
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
-    private static final String PROMETHEUS_SERVER = System.getProperty("pbc.metrics.prometheus.url");
-    static final String ARTIFACT_BUILD_DATA_KEY = "metrics_artifacts";
+    private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
+    // TODO: Pull this from somewhere
+    private static final String PROMETHEUS_SERVER = "http://prometheus.monitoring.svc.cluster.local:9090";
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
@@ -75,20 +72,28 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     @Override
     protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
         String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
-        if (KUBE_POD_NAME != null && token != null) {
+        if (KUBE_POD_NAME != null && token != null && SUBMIT_TIMESTAMP != null) {
             final Map<String, String> artifactHandlerConfiguration = BuildContextHelper
                     .getArtifactHandlerConfiguration(buildContext);
-            Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext)buildContext)
+
+            Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext)
                     .toPath();
+            Path targetDir = buildWorkingDirectory.resolve(METRICS_FOLDER);
+            try {
+                Files.createDirectories(targetDir);
+            } catch (IOException e) {
+                buildLogger.addBuildLogEntry("Unable to create metrics folder: " + targetDir);
+                return;
+            }
+
             final SecureToken secureToken = SecureToken.createFromString(token);
 
             List<String> names = new ArrayList<>();
-            for (String container : config.getExtraContainers()
-                    .stream()
-                    .map(Configuration.ExtraContainer::getName)
+            for (String container : Stream.concat(
+                    config.getExtraContainers().stream().map(Configuration.ExtraContainer::getName),
+                    Stream.of("bamboo-agent"))
                     .collect(Collectors.toList())) {
 
-                Path targetDir = buildWorkingDirectory.resolve(METRICS_FOLDER);
                 String cpuName = container + "-cpu";
                 String memoryName = container + "-memory";
 
@@ -107,7 +112,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
-                    .put(ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
+                    .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
         }
     }
 
@@ -120,15 +125,26 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 .newBuilder()
                 .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
                 .build();
+
+        String unencoded = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+                metric, KUBE_POD_NAME, containerName);
+        String query;
+        try {
+            query = URLEncoder.encode(unencoded, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            buildLogger.addBuildLogEntry("Unable to parse Prometheus query string: " + unencoded);
+            return;
+        }
+
+        long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
         WebTarget webTarget = client
-                .target(System.getProperty(PROMETHEUS_SERVER))
+                .target(PROMETHEUS_SERVER)
                 .path("api/v1/query_range")
-                .queryParam("query",
-                        String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
-                                metric, KUBE_POD_NAME, containerName))
+                .queryParam("query", query)
                 .queryParam("step", "15s")
-                .queryParam("start", SUBMIT_TIMESTAMP)
+                .queryParam("start", submitTimestamp)
                 .queryParam("end", Instant.now().getEpochSecond());
+
         Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
         if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
             buildLogger.addErrorLogEntry(
@@ -136,7 +152,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                             PROMETHEUS_SERVER, response.readEntity(String.class)));
             return;
         }
-        JSONObject jsonResponse = response.readEntity(JSONObject.class);
+
+        JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
         JSONArray values = jsonResponse
                 .getJSONObject("data")
                 .getJSONArray("result")
@@ -162,15 +179,15 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
         for (int i = 0; i < values.length(); i++) {
             JSONArray value = values.getJSONArray(i);
-            data.put(createDataPoint(value.getInt(0), value.getInt(1)));
+            data.put(createDataPoint(value.getInt(0), value.getString(1)));
         }
         return metrics.toString();
     }
 
-    private JSONObject createDataPoint(int x, int y) {
+    private JSONObject createDataPoint(int x, String y) {
         JSONObject point = new JSONObject();
         point.put("x", x);
-        point.put("y", y);
+        point.put("y", Float.parseFloat(y));
         return point;
     }
 
