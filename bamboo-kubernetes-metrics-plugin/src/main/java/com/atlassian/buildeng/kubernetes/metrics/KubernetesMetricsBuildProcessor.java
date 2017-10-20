@@ -112,7 +112,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
-                    .put(ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
+                    .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
         }
     }
 

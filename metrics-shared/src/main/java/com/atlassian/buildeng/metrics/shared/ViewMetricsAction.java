@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ViewMetricsAction extends PlanResultsAction implements Preparable {
+public abstract class ViewMetricsAction extends PlanResultsAction implements Preparable {
 
     Logger log = LoggerFactory.getLogger(ViewMetricsAction.class);
 
@@ -49,9 +49,11 @@ public class ViewMetricsAction extends PlanResultsAction implements Preparable {
         return urls;
     }
 
+    protected abstract String getArtifactBuildDataKey();
+
     @Override
     public void prepare() throws Exception {
-        String artifactNames = resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_BUILD_DATA_KEY);
+        String artifactNames = resultsSummary.getCustomBuildData().get(getArtifactBuildDataKey());
         if (artifactNames != null) {
             Splitter.on(",").splitToList(artifactNames).forEach((String t) -> {
                 Artifact artifact = createArtifact(

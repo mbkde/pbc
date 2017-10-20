@@ -32,7 +32,7 @@ limitations under the License.
     
     <xwork key="viewMetrics" name="Show Metrics for containers">
         <package name="viewMetrics" extends="buildResultView">
-            <action name="viewMetrics" class="com.atlassian.buildeng.metrics.shared.ViewMetricsAction">
+            <action name="viewMetrics" class="com.atlassian.buildeng.kubernetes.metrics.KubernetesViewMetricsAction">
                 <result name="success" type="freemarker">/viewMetrics.ftl</result>
             </action>
         </package>

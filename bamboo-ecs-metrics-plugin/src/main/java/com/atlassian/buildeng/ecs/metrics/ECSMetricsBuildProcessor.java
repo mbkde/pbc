@@ -106,7 +106,7 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                     names.add("pbc-metrics-"+ memoryName);
                 }
                 buildContext.getCurrentResult().getCustomBuildData().put(
-                        ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
+                        ECSViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
             } else {
                 buildLogger.addBuildLogEntry("Folder with metrics data not mounted");
             }

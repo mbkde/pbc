@@ -40,7 +40,6 @@ import org.jetbrains.annotations.NotNull;
 public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
     protected static final String RESULT_PREFIX = "result.isolated.docker.";
     protected static final String METRICS_FOLDER = ".pbc-metrics";
-    protected static final String ARTIFACT_BUILD_DATA_KEY = "metrics_artifacts";
     protected static final String ARTIFACT_TYPE_BUILD_DATA_KEY = "metrics_artifacts_type";
 
     protected final BuildLoggerManager buildLoggerManager;
