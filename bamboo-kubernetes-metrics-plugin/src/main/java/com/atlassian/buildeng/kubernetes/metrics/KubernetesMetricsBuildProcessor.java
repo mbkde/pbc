@@ -107,8 +107,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 publishMetrics(memoryName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
 
-                names.add("pbc-metrics-" + cpuName);
-                names.add("pbc-metrics-" + memoryName);
+                names.add(ARTIFACT_PREFIX + cpuName);
+                names.add(ARTIFACT_PREFIX + memoryName);
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
@@ -171,17 +171,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * This massages the values obtained from Prometheus into the format that Rickshaw.js expects.
      */
     private String createJsonArtifact(JSONArray values) {
-        JSONArray metrics = new JSONArray();
-        JSONObject series = new JSONObject();
         JSONArray data = new JSONArray();
-        series.put("data", data);
-        metrics.put(series);
 
         for (int i = 0; i < values.length(); i++) {
             JSONArray value = values.getJSONArray(i);
             data.put(createDataPoint(value.getInt(0), value.getString(1)));
         }
-        return metrics.toString();
+        return data.toString();
     }
 
     private JSONObject createDataPoint(int x, String y) {
