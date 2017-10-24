@@ -10,43 +10,65 @@
 <body>
 <script src="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/d3_v2.js"></script>
 <script src="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/rickshaw.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-<link type="text/css" rel="stylesheet" href="https://code.shutterstock.com/rickshaw/src/css/graph.css">
-<link type="text/css" rel="stylesheet" href="https://code.shutterstock.com/rickshaw/src/css/detail.css">
+<link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/rickshaw_graph.css">
+<link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/rickshaw_detail.css">
+<link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/graph.css">
 <h1>PBC Container Metrics</h1>
 Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing.
 [#list containerList.iterator() as containerName]
-    <h2>${containerName} container</h2>
-    <h3>Memory usage</h3>
-    <div id="${containerName}-memory-chart"></div>
-    <h3>CPU usage</h3>
-    <div id="${containerName}-cpu-chart"></div>
+<h2>${containerName} container</h2>
+<h3>Memory usage</h3>
+<div class="chartContainer">
+    <div class="yAxis" id="${containerName}-y-axis-memory"></div>
+    <div class="chart" id="${containerName}-memory-chart"></div>
+</div>
+<h3>CPU usage</h3>
+<div class="chartContainer">
+    <div class="yAxis" id="${containerName}-y-axis-cpu"></div>
+    <div class="chart" id="${containerName}-cpu-chart"></div>
+</div>
 [/#list]
 
 <script type="text/javascript">
 [#list containerList.iterator() as containerName]
-    var memoryGraph = new Rickshaw.Graph( {
-        element: document.querySelector("#${containerName}-memory-chart"),
-        renderer: 'line',
-        series: [{"color": "steelblue", "data": ${memoryMap[containerName]}}],
-        onData: function(d) { d[0].data[0].y = 80; return d },
-        onComplete: function(transport) {
-            var graph = transport.graph;
-            var detail = new Rickshaw.Graph.HoverDetail({ graph: graph });
-        },
-    });
-    var cpuGraph = new Rickshaw.Graph( {
-        element: document.querySelector("#${containerName}-cpu-chart"),
-        renderer: 'line',
-        series: [{"color": "steelblue", "data": ${cpuMap[containerName]}}],
-        onData: function(d) { d[0].data[0].y = 80; return d },
-        onComplete: function(transport) {
-            var graph = transport.graph;
-            var detail = new Rickshaw.Graph.HoverDetail({ graph: graph });
-        },
-    });
-    memoryGraph.render();
-    cpuGraph.render();
+var memoryGraph = new Rickshaw.Graph( {
+    element: document.querySelector("#${containerName}-memory-chart"),
+    renderer: 'line',
+    series: [{"color": "steelblue", "name": "memory", "data": ${memoryMap[containerName]}}],
+});
+var cpuGraph = new Rickshaw.Graph( {
+    element: document.querySelector("#${containerName}-cpu-chart"),
+    renderer: 'line',
+    series: [{"color": "steelblue", "name": "cpu", "data": ${cpuMap[containerName]}}],
+});
+
+var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
+var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
+
+var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
+    graph: memoryGraph,
+    orientation: 'left',
+    tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+    element: document.getElementById('${containerName}-y-axis-memory'),
+} );
+var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
+    graph: cpuGraph,
+    orientation: 'left',
+    tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+    element: document.getElementById('${containerName}-y-axis-cpu'),
+} );
+var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
+    graph: memoryGraph,
+    yFormatter: function(y) { return y + " bytes" }
+} );
+var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
+    graph: cpuGraph,
+    yFormatter: function(y) { return y + " percent" }
+} );
+
+
+memoryGraph.render();
+cpuGraph.render();
 
 [/#list]
 

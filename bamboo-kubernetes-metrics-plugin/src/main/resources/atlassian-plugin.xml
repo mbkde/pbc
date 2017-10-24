@@ -43,7 +43,10 @@ limitations under the License.
         <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
     </web-item>
     <web-resource key="kubernetes-metrics-resources" name="Kubernetes Metrics Resources">
+        <resource type="download" name="graph.css" location="css/graph.css" />
         <resource type="download" name="d3_v2.js" location="js/d3_v2.js" />
         <resource type="download" name="rickshaw.js" location="js/rickshaw.js" />
+        <resource type="download" name="rickshaw_graph.css" location="css/rickshaw_graph.css" />
+        <resource type="download" name="rickshaw_detail.css" location="css/rickshaw_detail.css" />
     </web-resource>
 </atlassian-plugin>
