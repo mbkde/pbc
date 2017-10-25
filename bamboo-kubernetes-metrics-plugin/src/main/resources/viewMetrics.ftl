@@ -14,7 +14,7 @@
 <link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/rickshaw_detail.css">
 <link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/graph.css">
 <h1>PBC Container Metrics</h1>
-Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing.
+Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing. Look for an error at the very end of the build log: "Failed to execute plugin 'Retreive Container Metrics from Prometheus' with error: ...".
 [#list containerList.iterator() as containerName]
 <h2>${containerName} container</h2>
 <h3>Memory usage</h3>
@@ -63,7 +63,7 @@ var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
 } );
 var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
     graph: cpuGraph,
-    yFormatter: function(y) { return y + " percent" }
+    yFormatter: function(y) { return y + " cores" }
 } );
 
 

@@ -89,6 +89,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
                     WebTarget webTarget = client.target(single.getUrl());
 
+                    // We have to directly retrieve the artifact here instead of passing the URL to the user due to
+                    // same-origin policy.
                     Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
                     if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
                         addActionError(
