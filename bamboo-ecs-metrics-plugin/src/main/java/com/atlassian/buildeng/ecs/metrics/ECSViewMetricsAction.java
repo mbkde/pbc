@@ -50,8 +50,7 @@ public class ECSViewMetricsAction extends ViewMetricsAction {
                     addActionError("Unable to find artifact link data provider for artifact link");
                     return;
                 }
-                final String sanitisedTag = "";
-                Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects(sanitisedTag);
+                Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
                 ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
                 if (single != null) {
                     urls.add(single.getUrl());

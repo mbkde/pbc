@@ -74,8 +74,7 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                     addActionError("Unable to find artifact link data provider for artifact link");
                     return;
                 }
-                final String sanitisedTag = "";
-                Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects(sanitisedTag);
+                Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
                 ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
                 if (single != null) {
                     if (!containerList.contains(containerName)) {
