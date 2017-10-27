@@ -48,7 +48,15 @@ var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
 var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
     graph: memoryGraph,
     orientation: 'left',
-    tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+    tickFormat: function(y) {
+        var abs_y = Math.abs(y);
+        if (abs_y >= 1000000000) { return y / 1000000000 + "GB" }
+        else if (abs_y >= 1000000)    { return y / 1000000 + "MB" }
+        else if (abs_y >= 1000)       { return y / 1000 + "KB" }
+        else if (abs_y < 1 && abs_y > 0)  { return y.toFixed(2) }
+        else if (abs_y === 0)         { return '' }
+        else                      { return y }
+    },
     element: document.getElementById('${containerName}-y-axis-memory'),
 } );
 var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
@@ -59,11 +67,11 @@ var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
 } );
 var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
     graph: memoryGraph,
-    yFormatter: function(y) { return y + " bytes" }
+    yFormatter: function(y) { return (y/1000000).toFixed(2) + " MB" }
 } );
 var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
     graph: cpuGraph,
-    yFormatter: function(y) { return y + " cores" }
+    yFormatter: function(y) { return y.toFixed(2) + " cores" }
 } );
 
 
