@@ -46,7 +46,6 @@ limitations under the License.
         <resource type="download" name="graph.css" location="css/graph.css" />
         <resource type="download" name="d3_v3.js" location="js/d3_v3.js" />
         <resource type="download" name="rickshaw.js" location="js/rickshaw.js" />
-        <resource type="download" name="rickshaw_graph.css" location="css/rickshaw_graph.css" />
-        <resource type="download" name="rickshaw_detail.css" location="css/rickshaw_detail.css" />
+        <resource type="download" name="rickshaw.css" location="css/rickshaw.css" />
     </web-resource>
 </atlassian-plugin>
