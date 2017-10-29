@@ -64,6 +64,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     // TODO: Pull this from somewhere
     private static final String PROMETHEUS_SERVER = "http://prometheus.monitoring.svc.cluster.local:9090";
+    private static final String STEP_PERIOD = "15s";
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
@@ -97,18 +98,23 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 String cpuName = container + "-cpu";
                 String memoryName = container + "-memory";
 
+                String queryCpu = String.format("sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                        PROMETHEUS_CPU_METRIC, KUBE_POD_NAME, container);
                 generateMetricsFile(
-                        targetDir.resolve(cpuName + ".json"), PROMETHEUS_CPU_METRIC, container, buildLogger);
+                        targetDir.resolve(cpuName + ".json"), queryCpu, container, buildLogger);
+
+                String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+                        PROMETHEUS_MEMORY_METRIC, KUBE_POD_NAME, container);
                 generateMetricsFile(
-                        targetDir.resolve(memoryName + ".json"), PROMETHEUS_MEMORY_METRIC, container, buildLogger);
+                        targetDir.resolve(memoryName + ".json"), queryMemory, container, buildLogger);
 
                 publishMetrics(cpuName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
                 publishMetrics(memoryName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
 
-                names.add("pbc-metrics-" + cpuName);
-                names.add("pbc-metrics-" + memoryName);
+                names.add(ARTIFACT_PREFIX + cpuName);
+                names.add(ARTIFACT_PREFIX + memoryName);
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
@@ -120,19 +126,16 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * Create a JSON file containing the metrics by querying Prometheus and massaging its output.
      * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
      */
-    private void generateMetricsFile(Path location, String metric, String containerName, BuildLogger buildLogger) {
+    private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger) {
         Client client = ClientBuilder
                 .newBuilder()
                 .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
                 .build();
 
-        String unencoded = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
-                metric, KUBE_POD_NAME, containerName);
-        String query;
         try {
-            query = URLEncoder.encode(unencoded, "UTF-8");
+            query = URLEncoder.encode(query, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            buildLogger.addBuildLogEntry("Unable to parse Prometheus query string: " + unencoded);
+            buildLogger.addBuildLogEntry("Unable to parse Prometheus query string: " + query);
             return;
         }
 
@@ -141,7 +144,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 .target(PROMETHEUS_SERVER)
                 .path("api/v1/query_range")
                 .queryParam("query", query)
-                .queryParam("step", "15s")
+                .queryParam("step", STEP_PERIOD)
                 .queryParam("start", submitTimestamp)
                 .queryParam("end", Instant.now().getEpochSecond());
 
@@ -171,17 +174,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * This massages the values obtained from Prometheus into the format that Rickshaw.js expects.
      */
     private String createJsonArtifact(JSONArray values) {
-        JSONArray metrics = new JSONArray();
-        JSONObject series = new JSONObject();
         JSONArray data = new JSONArray();
-        series.put("data", data);
-        metrics.put(series);
 
         for (int i = 0; i < values.length(); i++) {
             JSONArray value = values.getJSONArray(i);
             data.put(createDataPoint(value.getInt(0), value.getString(1)));
         }
-        return metrics.toString();
+        return data.toString();
     }
 
     private JSONObject createDataPoint(int x, String y) {

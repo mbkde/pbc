@@ -16,14 +16,46 @@
 
 package com.atlassian.buildeng.ecs.metrics;
 
+import com.atlassian.bamboo.artifact.Artifact;
+import com.atlassian.bamboo.build.artifact.ArtifactFileData;
+import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
+import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
+import com.google.common.base.Splitter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ECSViewMetricsAction extends ViewMetricsAction {
     static final String ARTIFACT_BUILD_DATA_KEY = "ecs_metrics_artifacts";
 
+    private List<String> urls = new ArrayList<>();
+
+    public List<String> getBambooAgentUrls() {
+        return urls;
+    }
+
     @Override
-    protected final String getArtifactBuildDataKey() {
-        return ARTIFACT_BUILD_DATA_KEY;
+    public void prepare() throws Exception {
+        String artifactNames = resultsSummary.getCustomBuildData().get(ARTIFACT_BUILD_DATA_KEY);
+        if (artifactNames != null) {
+            Splitter.on(",").splitToList(artifactNames).forEach((String t) -> {
+                Artifact artifact = createArtifact(
+                        t, resultsSummary.getPlanResultKey(),
+                        resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
+                ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(
+                        artifact);
+                if (artifactLinkDataProvider == null) {
+                    addActionError("Unable to find artifact link data provider for artifact link");
+                    return;
+                }
+                Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
+                ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
+                if (single != null) {
+                    urls.add(single.getUrl());
+                }
+            });
+        }
     }
 }

@@ -102,8 +102,8 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                     generateMemoryPng(createGraphDef(startTime, endTime, containerFolder.getName() + " Memory Usage", "Memory Usage", targetDir, memoryName + ".png"), containerFolder, buildLogger);
                     publishMetrics(cpuName, ".png", secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
                     publishMetrics(memoryName, ".png", secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
-                    names.add("pbc-metrics-" + cpuName);
-                    names.add("pbc-metrics-"+ memoryName);
+                    names.add(ARTIFACT_PREFIX + cpuName);
+                    names.add(ARTIFACT_PREFIX + memoryName);
                 }
                 buildContext.getCurrentResult().getCustomBuildData().put(
                         ECSViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));

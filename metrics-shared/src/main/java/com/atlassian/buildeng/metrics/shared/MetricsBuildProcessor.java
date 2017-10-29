@@ -40,7 +40,8 @@ import org.jetbrains.annotations.NotNull;
 public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
     protected static final String RESULT_PREFIX = "result.isolated.docker.";
     protected static final String METRICS_FOLDER = ".pbc-metrics";
-    protected static final String ARTIFACT_TYPE_BUILD_DATA_KEY = "metrics_artifacts_type";
+    public static final String ARTIFACT_TYPE_BUILD_DATA_KEY = "metrics_artifacts_type";
+    public static final String ARTIFACT_PREFIX = "pbc-metrics-";
 
     protected final BuildLoggerManager buildLoggerManager;
     protected BuildContext buildContext;
@@ -75,7 +76,7 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
             File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration,
             BuildContext buildContext) {
         ArtifactDefinitionContextImpl artifact = new ArtifactDefinitionContextImpl(
-                "pbc-metrics-" + name, false, secureToken);
+                ARTIFACT_PREFIX + name, false, secureToken);
         artifact.setCopyPattern(name + fileExtension);
         artifact.setLocation(METRICS_FOLDER);
         final ArtifactPublishingResult publishingResult =
