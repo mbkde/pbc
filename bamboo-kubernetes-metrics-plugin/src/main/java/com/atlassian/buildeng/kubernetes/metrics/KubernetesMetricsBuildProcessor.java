@@ -73,7 +73,11 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     @Override
     protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
         String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
-        if (KUBE_POD_NAME != null && token != null && SUBMIT_TIMESTAMP != null) {
+        if (KUBE_POD_NAME != null && SUBMIT_TIMESTAMP != null) {
+            if (token == null) {
+                buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
+                return;
+            }
             final Map<String, String> artifactHandlerConfiguration = BuildContextHelper
                     .getArtifactHandlerConfiguration(buildContext);
 
@@ -157,11 +161,16 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         }
 
         JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
-        JSONArray values = jsonResponse
+        JSONArray result = jsonResponse
                 .getJSONObject("data")
-                .getJSONArray("result")
-                .getJSONObject(0)
-                .getJSONArray("values");
+                .getJSONArray("result");
+        if (result.length() == 0) {
+            buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
+                    + " This can occur when the build time is too short for metrics to appear in Prometheus.",
+                    containerName));
+            return;
+        }
+        JSONArray values = result.getJSONObject(0).getJSONArray("values");
 
         try {
             Files.write(location, createJsonArtifact(values).getBytes());
