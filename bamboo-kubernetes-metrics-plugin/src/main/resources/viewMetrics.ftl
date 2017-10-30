@@ -14,31 +14,31 @@
 <link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/graph.css">
 <h1>PBC Container Metrics</h1>
 Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing. Look for an error at the very end of the build log: "Failed to execute plugin 'Retreive Container Metrics from Prometheus' with error: ...".
-[#list containerList.iterator() as containerName]
-<h2>${containerName} container</h2>
+[#list containerList as container]
+<h2>${container.name} container</h2>
 <h3>Memory usage</h3>
 <div class="chartContainer">
-    <div class="yAxis" id="${containerName}-y-axis-memory"></div>
-    <div class="chart" id="${containerName}-memory-chart"></div>
+    <div class="yAxis" id="${container.name}-y-axis-memory"></div>
+    <div class="chart" id="${container.name}-memory-chart"></div>
 </div>
 <h3>CPU usage</h3>
 <div class="chartContainer">
-    <div class="yAxis" id="${containerName}-y-axis-cpu"></div>
-    <div class="chart" id="${containerName}-cpu-chart"></div>
+    <div class="yAxis" id="${container.name}-y-axis-cpu"></div>
+    <div class="chart" id="${container.name}-cpu-chart"></div>
 </div>
 [/#list]
 
 <script type="text/javascript">
-[#list containerList.iterator() as containerName]
+[#list containerList as container]
 var memoryGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${containerName}-memory-chart"),
+    element: document.querySelector("#${container.name}-memory-chart"),
     renderer: 'line',
-    series: [{"color": "steelblue", "name": "memory", "data": ${memoryMap[containerName]}}],
+    series: [{"color": "steelblue", "name": "memory", "data": ${container.memoryMetrics}}],
 });
 var cpuGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${containerName}-cpu-chart"),
+    element: document.querySelector("#${container.name}-cpu-chart"),
     renderer: 'line',
-    series: [{"color": "steelblue", "name": "cpu", "data": ${cpuMap[containerName]}}],
+    series: [{"color": "steelblue", "name": "cpu", "data": ${container.cpuMetrics}}],
 });
 
 var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
@@ -56,13 +56,13 @@ var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
         else if (abs_y === 0)         { return '' }
         else                      { return y }
     },
-    element: document.getElementById('${containerName}-y-axis-memory'),
+    element: document.getElementById('${container.name}-y-axis-memory'),
 } );
 var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
     graph: cpuGraph,
     orientation: 'left',
     tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-    element: document.getElementById('${containerName}-y-axis-cpu'),
+    element: document.getElementById('${container.name}-y-axis-cpu'),
 } );
 var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
     graph: memoryGraph,
