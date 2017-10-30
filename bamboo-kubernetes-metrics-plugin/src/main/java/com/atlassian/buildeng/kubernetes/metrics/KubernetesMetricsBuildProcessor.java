@@ -72,8 +72,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
     @Override
     protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
-        String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
         if (KUBE_POD_NAME != null && SUBMIT_TIMESTAMP != null) {
+            String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
             if (token == null) {
                 buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
                 return;

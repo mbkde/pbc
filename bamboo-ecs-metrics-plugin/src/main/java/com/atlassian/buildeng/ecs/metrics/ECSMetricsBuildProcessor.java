@@ -61,9 +61,13 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
 
     @Override
     protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
-        String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
         String taskArn = buildContext.getCurrentResult().getCustomBuildData().get(RESULT_PREFIX + TASK_ARN);
-        if (taskArn != null && token != null) {
+        if (taskArn != null) {
+            String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
+            if (token == null) {
+                buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
+                return;
+            }
             //arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
             String taskId = taskArn.substring(taskArn.indexOf("/"));
             File rootFolder = new File(MetricHostFolderMapping.CONTAINER_METRICS_PATH  + "/tasks");
