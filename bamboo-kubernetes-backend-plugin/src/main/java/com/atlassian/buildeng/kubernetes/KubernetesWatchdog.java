@@ -140,7 +140,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                         MAX_BACKOFF_SECONDS < Duration.ofMillis(currentTime - t.creationTime.getTime()).getSeconds())
                 .forEach((BackoffCache t) -> {
                     Pod pod = pods.stream()
-                            .filter((Pod pod1) -> pod1.getMetadata().getName().equals(t.podName))
+                            .filter((Pod pod1) -> KubernetesHelper.getName(pod1).equals(t.podName))
                             .findFirst().get();
                     if (pod != null) {
                         logger.info("Killing pod {} with container in ImagePullBackOff state: {}",
@@ -275,10 +275,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
         @Override
         public int hashCode() {
-            int hash = 7;
-            hash = 83 * hash + Objects.hashCode(this.podName);
-            hash = 83 * hash + Objects.hashCode(this.containerName);
-            return hash;
+            return Objects.hash(podName, containerName);
         }
 
         @Override
