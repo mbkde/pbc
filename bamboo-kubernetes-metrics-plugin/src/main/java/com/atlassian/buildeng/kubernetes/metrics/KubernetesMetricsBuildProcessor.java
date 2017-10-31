@@ -72,7 +72,11 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
     @Override
     protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
-        if (KUBE_POD_NAME != null && SUBMIT_TIMESTAMP != null) {
+        if (KUBE_POD_NAME != null) {
+            if (SUBMIT_TIMESTAMP == null) {
+                buildLogger.addErrorLogEntry("No SUBMIT_TIMESTAMP environment variable found in custom build data.");
+                return;
+            }
             String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
             if (token == null) {
                 buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
