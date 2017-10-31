@@ -16,18 +16,16 @@
 
 package com.atlassian.buildeng.kubernetes.metrics;
 
+import static com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor.ARTIFACT_PREFIX;
+
 import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
-import com.google.common.base.Splitter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -37,9 +35,6 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import scala.util.parsing.json.JSON;
-
-import static com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor.ARTIFACT_PREFIX;
 
 
 public class KubernetesViewMetricsAction extends ViewMetricsAction {
@@ -50,7 +45,7 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         private int memoryLimit;
         private int cpuLimit;
 
-        public ContainerMetrics(String containerName, int cpuLimit, int memoryLimit) {
+        ContainerMetrics(String containerName, int cpuLimit, int memoryLimit) {
             this.containerName = containerName;
             this.cpuLimit = cpuLimit;
             this.memoryLimit = memoryLimit;
