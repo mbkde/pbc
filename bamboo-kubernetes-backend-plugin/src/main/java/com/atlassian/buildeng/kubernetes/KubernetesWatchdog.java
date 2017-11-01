@@ -143,7 +143,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                             .filter((Pod pod1) -> KubernetesHelper.getName(pod1).equals(t.podName))
                             .findFirst().orElse(null);
                     if (pod != null) {
-                        logger.info("Killing pod {} with container in ImagePullBackOff state: {}",
+                        logger.warn("Killing pod {} with container in ImagePullBackOff state: {}",
                                 t.podName, t.message);
                         boolean deleted = deletePod(
                                 client, pod, terminationReasons,
