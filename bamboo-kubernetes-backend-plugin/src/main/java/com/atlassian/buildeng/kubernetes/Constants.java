@@ -27,7 +27,7 @@ public interface Constants {
      * The ratio between hard and soft memory limit.
      * The reservation is used for scheduling, the hard limit is when containers or their processes get killed.
      */
-    Double SOFT_TO_HARD_LIMIT_RATIO = Double.parseDouble(System.getProperty(KUBE_HARD_LIMIT_RATION_PROPERTY, "3.0"));
+    Double SOFT_TO_HARD_LIMIT_RATIO = Double.parseDouble(System.getProperty(KUBE_HARD_LIMIT_RATION_PROPERTY, "1.25"));
 
     /**
      * name of system property that denotes the path to kubectl binary.
