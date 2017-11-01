@@ -25,14 +25,12 @@ import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,6 +42,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -97,11 +97,15 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
             final SecureToken secureToken = SecureToken.createFromString(token);
 
-            List<String> names = new ArrayList<>();
-            for (String container : Stream.concat(
-                    config.getExtraContainers().stream().map(Configuration.ExtraContainer::getName),
-                    Stream.of("bamboo-agent"))
-                    .collect(Collectors.toList())) {
+            JSONArray artifactsJsonDetails = new JSONArray();
+            List<Pair<String, Enum>> containers = Stream.concat(
+                    config.getExtraContainers().stream().map(
+                        (Configuration.ExtraContainer e) ->
+                                    new ImmutablePair<>(e.getName(), (Enum) e.getExtraSize())),
+                    Stream.of(new ImmutablePair<>("bamboo-agent", (Enum) config.getSize())))
+                    .collect(Collectors.toList());
+            for (Pair<String, Enum> containerPair : containers) {
+                String container = containerPair.getLeft();
 
                 String cpuName = container + "-cpu";
                 String memoryName = container + "-memory";
@@ -121,12 +125,11 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 publishMetrics(memoryName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
 
-                names.add(ARTIFACT_PREFIX + cpuName);
-                names.add(ARTIFACT_PREFIX + memoryName);
+                artifactsJsonDetails.put(generateArtifactDetailsJson(container, containerPair.getRight()));
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
-                    .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
+                    .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, artifactsJsonDetails.toString());
         }
     }
 
@@ -203,4 +206,24 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         return point;
     }
 
+    private JSONObject generateArtifactDetailsJson(String name, Enum containerSize) {
+        int cpuRequest;
+        int memoryRequest;
+        if ("bamboo-agent".equals(name)) {
+            Configuration.ContainerSize size = (Configuration.ContainerSize) containerSize;
+            cpuRequest = size.cpu();
+            memoryRequest = size.memory();
+
+        } else {
+            Configuration.ExtraContainerSize size = (Configuration.ExtraContainerSize) containerSize;
+            cpuRequest = size.cpu();
+            memoryRequest = size.memory();
+        }
+
+        JSONObject artifactDetails = new JSONObject();
+        artifactDetails.put("name", name);
+        artifactDetails.put("cpuRequest", cpuRequest);
+        artifactDetails.put("memoryRequest", memoryRequest);
+        return artifactDetails;
+    }
 }
