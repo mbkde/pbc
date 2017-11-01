@@ -30,7 +30,6 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
 import io.fabric8.kubernetes.api.KubernetesHelper;
-import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 
@@ -41,8 +40,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -60,6 +62,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final Long MAX_QUEUE_TIME_MINUTES = 100L;
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
+    private static final int MAX_BACKOFF_SECONDS = 100;
 
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
@@ -96,8 +99,9 @@ public class KubernetesWatchdog extends WatchdogJob {
                 PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
         Map<String, Pair<Date, String>> terminationReasons = getPodTerminationReasons(jobDataMap);
         List<Pod> killed = new ArrayList<>();
-
+        
         // delete pods which have had the bamboo-agent container terminated
+        Set<BackoffCache> newBackedOff = new HashSet<>();
         for (Pod pod : pods) {
             Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
                     .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
@@ -114,20 +118,45 @@ public class KubernetesWatchdog extends WatchdogJob {
                     killed.add(pod);
                 }
             }
-            for (ContainerStatus container : pod.getStatus().getContainerStatuses()) {
-                ContainerStateWaiting statusWaiting = container.getState().getWaiting();
-                if (statusWaiting != null && "ImagePullBackOff".equals(statusWaiting.getReason())) {
-                    logger.info("Killing pod {} with container in ImagePullBackOff state",
-                            KubernetesHelper.getName(pod));
-                    boolean deleted = deletePod(
-                            client, pod, terminationReasons,
-                            "Container '" + container.getName() + "' image pull failed");
-                    if (deleted) {
-                        killed.add(pod);
-                    }
-                }
-            }
+            //identify if pod is stuck in "imagePullBackOff' loop.
+            newBackedOff.addAll(pod.getStatus().getContainerStatuses().stream()
+                    .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
+                    .filter((ContainerStatus t) -> 
+                            "ImagePullBackOff".equals(t.getState().getWaiting().getReason())
+                         || "ErrImagePull".equals(t.getState().getWaiting().getReason()))
+                    .map((ContainerStatus t) -> 
+                            new BackoffCache(KubernetesHelper.getName(pod), t.getName(), 
+                                    t.getState().getWaiting().getMessage()))
+                    .collect(Collectors.toList()));
         }
+        Set<BackoffCache> backoffCache = getImagePullBackOffCache(jobDataMap);
+        //retain only those pods that are still stuck in backoff
+        backoffCache.retainAll(newBackedOff);
+        backoffCache.addAll(newBackedOff);
+        
+        long currentTime = System.currentTimeMillis();
+        backoffCache.stream()
+                .filter((BackoffCache t) ->
+                        MAX_BACKOFF_SECONDS < Duration.ofMillis(currentTime - t.creationTime.getTime()).getSeconds())
+                .forEach((BackoffCache t) -> {
+                    Pod pod = pods.stream()
+                            .filter((Pod pod1) -> KubernetesHelper.getName(pod1).equals(t.podName))
+                            .findFirst().orElse(null);
+                    if (pod != null) {
+                        logger.warn("Killing pod {} with container in ImagePullBackOff state: {}",
+                                t.podName, t.message);
+                        boolean deleted = deletePod(
+                                client, pod, terminationReasons,
+                            "Container '" + t.containerName + "' image pull failed");
+                        if (deleted) {
+                            killed.add(pod);
+                        }
+                    } else {
+                        logger.warn("Could not find pod {} in the current list.", t.podName);
+                    }
+                });
+        
+        
         pods.removeAll(killed);
 
         Map<String, Pod> nameToPod = pods.stream().collect(Collectors.toMap(KubernetesHelper::getName, x -> x));
@@ -180,6 +209,16 @@ public class KubernetesWatchdog extends WatchdogJob {
             }
         });
     }
+    
+    
+    Set<BackoffCache> getImagePullBackOffCache(Map<String, Object> jobDataMap) {
+        Set<BackoffCache> list = (Set<BackoffCache>) jobDataMap.get("ImagePullBackOffCache");
+        if (list == null) {
+            list = new HashSet<>();
+            jobDataMap.put("ImagePullBackOffCache", list);
+        }
+        return list;
+    }
 
     private void generateRemoteFailEvent(CommonContext context, String error, String podName,
                                          IsolatedAgentService isolatedAgentService, EventPublisher eventPublisher) {
@@ -217,5 +256,45 @@ public class KubernetesWatchdog extends WatchdogJob {
                 Duration.ofMillis(System.currentTimeMillis() - next.getValue().getLeft().getTime()).toMinutes()
                         >= MISSING_POD_GRACE_PERIOD_MINUTES);
         return map;
+    }
+
+    private static class BackoffCache {
+        private final String podName;
+        private final Date creationTime;
+        private final String containerName;
+        private final String message;
+        
+        BackoffCache(String podName, String containerName, String message) {
+            this.podName = podName;
+            this.creationTime = new Date();
+            this.containerName = containerName;
+            this.message = message;
+        }
+
+        //for hashcode and equals, only consider podName + container name, not date, for easier cache manipulation.
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(podName, containerName);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final BackoffCache other = (BackoffCache) obj;
+            if (!Objects.equals(this.podName, other.podName)) {
+                return false;
+            }
+            return Objects.equals(this.containerName, other.containerName);
+        }
+        
     }
 }
