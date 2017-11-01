@@ -141,7 +141,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                 .forEach((BackoffCache t) -> {
                     Pod pod = pods.stream()
                             .filter((Pod pod1) -> KubernetesHelper.getName(pod1).equals(t.podName))
-                            .findFirst().get();
+                            .findFirst().orElse(null);
                     if (pod != null) {
                         logger.info("Killing pod {} with container in ImagePullBackOff state: {}",
                                 t.podName, t.message);
