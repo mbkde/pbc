@@ -42,15 +42,19 @@ class KubernetesClient {
         this.globalConfiguration = globalConfiguration;
     }
 
-    private Object executeKubectl(boolean loadJson, String... args)
+    private Object executeKubectlAsJson(String... args)
+            throws InterruptedException, IOException, KubectlException {
+        List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
+        kubectlArgs.addAll(Arrays.asList("-o", "json"));
+        return KubernetesHelper.loadJson(executeKubectl(kubectlArgs.toArray(new String[0])));
+    }
+
+    private String executeKubectl(String... args)
             throws InterruptedException, IOException, KubectlException {
         List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
         kubectlArgs.add(0, Constants.KUBECTL_EXECUTABLE);
         if (globalConfiguration.getCurrentContext() != null) {
             kubectlArgs.addAll(Arrays.asList("--context", globalConfiguration.getCurrentContext()));
-        }
-        if (loadJson) {
-            kubectlArgs.addAll(Arrays.asList("-o", "json"));
         }
 
         ProcessBuilder pb = new ProcessBuilder(kubectlArgs);
@@ -64,7 +68,7 @@ class KubernetesClient {
         if (ret != 0) {
             throw new KubectlException("kubectl returned non-zero exit code. Output: " + output);
         }
-        return loadJson ? KubernetesHelper.loadJson(output) : output;
+        return output;
     }
 
     @SuppressWarnings("unchecked")
@@ -72,23 +76,23 @@ class KubernetesClient {
             throws InterruptedException, IOException, KubectlException {
         String label = labelName + '=' + labelValue;
         // --show-all displays "Completed" status pods as well
-        return ((KubernetesList) executeKubectl(true, "get", "pods", "--selector", label, "--show-all"))
+        return ((KubernetesList) executeKubectlAsJson("get", "pods", "--selector", label, "--show-all"))
                 .getItems().stream().map((HasMetadata pod) -> (Pod) pod).collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
     Pod createPod(File podFile) throws InterruptedException, IOException, KubectlException {
-        return (Pod) executeKubectl(true, "create", "-f", podFile.getAbsolutePath());
+        return (Pod) executeKubectlAsJson("create", "-f", podFile.getAbsolutePath());
     }
 
     String describePod(Pod pod)
             throws InterruptedException, IOException, KubectlException {
-        return (String) executeKubectl(false, "describe", "pod", KubernetesHelper.getName(pod));
+        return executeKubectl("describe", "pod", KubernetesHelper.getName(pod));
     }
 
     boolean deletePod(Pod pod) {
         try {
-            executeKubectl(false, "delete", "pod", KubernetesHelper.getName(pod));
+            executeKubectl("delete", "pod", KubernetesHelper.getName(pod));
         } catch (Exception e) {
             logger.error("Failed to delete pod with name: " + KubernetesHelper.getName(pod) + e);
             return false;
