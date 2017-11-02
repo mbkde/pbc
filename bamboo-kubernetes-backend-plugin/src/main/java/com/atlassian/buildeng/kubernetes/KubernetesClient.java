@@ -64,7 +64,7 @@ class KubernetesClient {
         if (ret != 0) {
             throw new KubectlException("kubectl returned non-zero exit code. Output: " + output);
         }
-        return loadJson ? KubernetesHelper.loadJson(output) : null;
+        return loadJson ? KubernetesHelper.loadJson(output) : output;
     }
 
     @SuppressWarnings("unchecked")
@@ -79,6 +79,11 @@ class KubernetesClient {
     @SuppressWarnings("unchecked")
     Pod createPod(File podFile) throws InterruptedException, IOException, KubectlException {
         return (Pod) executeKubectl(true, "create", "-f", podFile.getAbsolutePath());
+    }
+
+    String describePod(Pod pod)
+            throws InterruptedException, IOException, KubectlException {
+        return (String) executeKubectl(false, "describe", "pod", KubernetesHelper.getName(pod));
     }
 
     boolean deletePod(Pod pod) {
