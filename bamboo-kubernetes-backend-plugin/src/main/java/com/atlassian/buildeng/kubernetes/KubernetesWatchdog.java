@@ -242,7 +242,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
         boolean deleted = client.deletePod(pod);
         if (deleted) {
-            logger.info("Pod {} successfully deleted. Final state: {}", KubernetesHelper.getName(pod), describePod);
+            logger.info("Pod {} successfully deleted. Final state:\n{}", KubernetesHelper.getName(pod), describePod);
             terminationReasons.put(
                     KubernetesHelper.getName(pod),
                     new ImmutablePair<>(new Date(), terminationReason));
