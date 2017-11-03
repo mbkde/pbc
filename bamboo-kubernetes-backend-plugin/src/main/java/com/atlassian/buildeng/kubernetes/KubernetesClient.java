@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.google.common.collect.Lists;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesList;
@@ -44,9 +45,7 @@ class KubernetesClient {
 
     private Object executeKubectlAsJson(String... args)
             throws InterruptedException, IOException, KubectlException {
-        List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
-        kubectlArgs.addAll(Arrays.asList("-o", "json"));
-        return KubernetesHelper.loadJson(executeKubectl(kubectlArgs.toArray(new String[0])));
+        return KubernetesHelper.loadJson(executeKubectl(Lists.asList("-o", "json", args).toArray(new String[0])));
     }
 
     private String executeKubectl(String... args)
