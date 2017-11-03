@@ -234,12 +234,21 @@ public class KubernetesWatchdog extends WatchdogJob {
     private boolean deletePod(
             KubernetesClient client, Pod pod,
             Map<String, Pair<Date, String>> terminationReasons, String terminationReason) {
+        String describePod = "";
+        try {
+            describePod = client.describePod(pod);
+        } catch (IOException | KubernetesClient.KubectlException | InterruptedException e) {
+            logger.error("Could not describe pod {}", KubernetesHelper.getName(pod));
+        }
         boolean deleted = client.deletePod(pod);
         if (deleted) {
+            logger.info("Pod {} successfully deleted. Final state:\n{}", KubernetesHelper.getName(pod), describePod);
             terminationReasons.put(
                     KubernetesHelper.getName(pod),
                     new ImmutablePair<>(new Date(), terminationReason));
             return true;
+        } else {
+            logger.error("Could not delete pod {}", KubernetesHelper.getName(pod));
         }
         return false;
     }
