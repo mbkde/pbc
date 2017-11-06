@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -59,7 +60,7 @@ import org.slf4j.LoggerFactory;
 public class KubernetesWatchdog extends WatchdogJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
-    private static final Long MAX_QUEUE_TIME_MINUTES = 100L;
+    private static final Long MAX_QUEUE_TIME_MINUTES = 30L;
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 100;
@@ -103,6 +104,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         // delete pods which have had the bamboo-agent container terminated
         Set<BackoffCache> newBackedOff = new HashSet<>();
         for (Pod pod : pods) {
+            boolean deleted = false;
             Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
                     .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
             ContainerStatus agentContainer = currentContainers.get(PodCreator.CONTAINER_NAME_BAMBOOAGENT);
@@ -112,22 +114,46 @@ public class KubernetesWatchdog extends WatchdogJob {
                         KubernetesHelper.getName(pod),
                         pod.getStatus().getContainerStatuses().stream()
                                 .map(t -> t.getState()).collect(Collectors.toList()));
-                boolean deleted = deletePod(
-                        client, pod, terminationReasons, agentContainer.getState().getTerminated().getReason());
+                String message = agentContainer.getState().getTerminated().getMessage();
+                deleted = deletePod(
+                        client, pod, terminationReasons, "Bamboo agent container prematurely exited" 
+                                + (message != null ? ":" + message : ""));
                 if (deleted) {
                     killed.add(pod);
                 }
             }
-            //identify if pod is stuck in "imagePullBackOff' loop.
-            newBackedOff.addAll(pod.getStatus().getContainerStatuses().stream()
-                    .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
-                    .filter((ContainerStatus t) -> 
-                            "ImagePullBackOff".equals(t.getState().getWaiting().getReason())
-                         || "ErrImagePull".equals(t.getState().getWaiting().getReason()))
-                    .map((ContainerStatus t) -> 
-                            new BackoffCache(KubernetesHelper.getName(pod), t.getName(), 
-                                    t.getState().getWaiting().getMessage()))
-                    .collect(Collectors.toList()));
+            if (!deleted) {
+                List<String> waitingErrorStates = pod.getStatus().getContainerStatuses().stream()
+                        .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
+                        .filter((ContainerStatus t) -> 
+                                "ImageInspectError".equals(t.getState().getWaiting().getReason())
+                             || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason()))
+                        .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getWaiting().getReason() + ":"
+                                + (StringUtils.isBlank(t.getState().getWaiting().getMessage()) 
+                                        ? "<no details>" : t.getState().getWaiting().getMessage()))
+                        .collect(Collectors.toList());
+                if (!waitingErrorStates.isEmpty()) {
+                    logger.info("Killing pod {} with error waiting state. Container states: {}",
+                            KubernetesHelper.getName(pod), waitingErrorStates);
+                    deleted = deletePod(
+                            client, pod, terminationReasons, "Container error state(s):" + waitingErrorStates);
+                    if (deleted) {
+                        killed.add(pod);
+                    }
+                }
+            }
+            if (!deleted) {
+                //identify if pod is stuck in "imagePullBackOff' loop.
+                newBackedOff.addAll(pod.getStatus().getContainerStatuses().stream()
+                        .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
+                        .filter((ContainerStatus t) -> 
+                                "ImagePullBackOff".equals(t.getState().getWaiting().getReason())
+                             || "ErrImagePull".equals(t.getState().getWaiting().getReason()))
+                        .map((ContainerStatus t) -> 
+                                new BackoffCache(KubernetesHelper.getName(pod), t.getName(), 
+                                        t.getState().getWaiting().getMessage(), t.getImage()))
+                        .collect(Collectors.toList()));
+            }
         }
         Set<BackoffCache> backoffCache = getImagePullBackOffCache(jobDataMap);
         //retain only those pods that are still stuck in backoff
@@ -147,7 +173,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                                 t.podName, t.message);
                         boolean deleted = deletePod(
                                 client, pod, terminationReasons,
-                            "Container '" + t.containerName + "' image pull failed");
+                            "Container '" + t.containerName + "' image '" + t.imageName + "' pull failed");
                         if (deleted) {
                             killed.add(pod);
                         }
@@ -177,10 +203,12 @@ public class KubernetesWatchdog extends WatchdogJob {
                         errorUpdateHandler.recordError(
                                 context.getEntityKey(), "Build was not queued due to pod deletion: " + podName);
 
-                        String errorMessage = "Build killed as pod was terminated";
+                        String errorMessage;
                         Pair<Date, String> terminationReason = terminationReasons.get(podName);
                         if (terminationReason != null) {
-                            errorMessage = errorMessage + " with reason: " + terminationReason.getRight();
+                            errorMessage = terminationReason.getRight();
+                        } else {
+                            errorMessage = "Termination reason unknown";
                         }
                         current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                         generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
@@ -272,12 +300,14 @@ public class KubernetesWatchdog extends WatchdogJob {
         private final Date creationTime;
         private final String containerName;
         private final String message;
+        private final String imageName;
         
-        BackoffCache(String podName, String containerName, String message) {
+        BackoffCache(String podName, String containerName, String message, String imageName) {
             this.podName = podName;
             this.creationTime = new Date();
             this.containerName = containerName;
             this.message = message;
+            this.imageName = imageName;
         }
 
         //for hashcode and equals, only consider podName + container name, not date, for easier cache manipulation.
