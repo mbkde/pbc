@@ -80,7 +80,8 @@ class KubernetesClient {
     }
 
     @SuppressWarnings("unchecked")
-    Pod createPod(File podFile) throws InterruptedException, IOException, KubectlException {
+    Pod createPod(File podFile)
+            throws InterruptedException, IOException, KubectlException {
         return (Pod) executeKubectlAsJson("create", "-f", podFile.getAbsolutePath());
     }
 
@@ -89,14 +90,9 @@ class KubernetesClient {
         return executeKubectl("describe", "pod", KubernetesHelper.getName(pod));
     }
 
-    boolean deletePod(Pod pod) {
-        try {
-            executeKubectl("delete", "pod", KubernetesHelper.getName(pod));
-        } catch (Exception e) {
-            logger.error("Failed to delete pod with name: " + KubernetesHelper.getName(pod) + e);
-            return false;
-        }
-        return true;
+    void deletePod(Pod pod)
+            throws InterruptedException, IOException, KubectlException {
+        executeKubectl("delete", "pod", KubernetesHelper.getName(pod));
     }
 
     class KubectlException extends Exception {
