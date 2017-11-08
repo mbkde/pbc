@@ -72,9 +72,9 @@ public class KubernetesWatchdog extends WatchdogJob {
         try {
             executeImpl(jobDataMap);
         } catch (Throwable t) { 
-            //this is throwable because of NoClassDefFoundError and alike. 
+            // this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
-            // thowing something here will stop rescheduling the job forever (until next redeploy)
+            // throwing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
 
@@ -231,7 +231,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                 context, current);
-                        client.deletePod(pod);
+                        deletePod(client, pod, terminationReasons, errorMessage);
                     }
                 }
             }
@@ -266,19 +266,21 @@ public class KubernetesWatchdog extends WatchdogJob {
         try {
             describePod = client.describePod(pod);
         } catch (IOException | KubernetesClient.KubectlException | InterruptedException e) {
-            logger.error("Could not describe pod {}", KubernetesHelper.getName(pod));
+            logger.error("Could not describe pod {}. {}", KubernetesHelper.getName(pod), e);
         }
-        boolean deleted = client.deletePod(pod);
-        if (deleted) {
-            logger.info("Pod {} successfully deleted. Final state:\n{}", KubernetesHelper.getName(pod), describePod);
-            terminationReasons.put(
-                    KubernetesHelper.getName(pod),
-                    new ImmutablePair<>(new Date(), terminationReason));
-            return true;
-        } else {
-            logger.error("Could not delete pod {}", KubernetesHelper.getName(pod));
+
+        try {
+            client.deletePod(pod);
+        } catch (InterruptedException | IOException | KubernetesClient.KubectlException e) {
+            logger.error("Failed to delete pod {}. {}", KubernetesHelper.getName(pod), e);
+            return false;
         }
-        return false;
+
+        logger.info("Pod {} successfully deleted. Final state:\n{}", KubernetesHelper.getName(pod), describePod);
+        terminationReasons.put(
+                KubernetesHelper.getName(pod),
+                new ImmutablePair<>(new Date(), terminationReason));
+        return true;
     }
 
     private Map<String, Pair<Date, String>> getPodTerminationReasons(Map<String, Object> data) {
