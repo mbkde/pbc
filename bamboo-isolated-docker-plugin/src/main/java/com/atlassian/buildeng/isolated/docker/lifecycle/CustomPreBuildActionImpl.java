@@ -31,31 +31,32 @@ import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements CustomPreBuildAction {
 
-    private final Logger LOG = LoggerFactory.getLogger(CustomPreBuildActionImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(CustomPreBuildActionImpl.class);
     private BuildContext buildContext;
     private BuildLoggerManager buildLoggerManager;
+    final static String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
+    
 
     public CustomPreBuildActionImpl() {
     }
@@ -114,12 +115,13 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
             requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
         }
     }
-    String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
     // TODO eventually remove CAPABILITY once we are sure noone is using the it anymore.
     @Override
-    public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, @NotNull RequirementSet requirementSet) {
-        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
+    public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, 
+            @NotNull RequirementSet requirementSet) {
+        requirementSet.removeRequirements((Requirement input) -> 
+                input.getKey().equals(CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
     }
 
     @NotNull
@@ -129,8 +131,12 @@ public class CustomPreBuildActionImpl extends BaseConfigurablePlugin implements 
         SimpleErrorCollection errs = new SimpleErrorCollection();
         RequirementTaskConfigurator.validateExtraContainers(v, errs);
         Configuration config = AccessConfiguration.forBuildConfiguration(bc);
-        if (config.isEnabled() && StringUtils.isBlank(config.getDockerImage())) {
-            errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot be blank.");
+        if (config.isEnabled()) {
+            if (StringUtils.isBlank(config.getDockerImage())) {
+                errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot be blank.");
+            } else if (!config.getDockerImage().trim().equals(config.getDockerImage())) {
+                errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot contain whitespace.");
+            }
         }
         if (errs.hasAnyErrors()) {
             return errs;

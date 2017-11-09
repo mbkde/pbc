@@ -114,7 +114,7 @@ public class PodCreator {
         return c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", t.getName());
-            map.put("image", t.getImage());
+            map.put("image", sanitizeImageName(t.getImage()));
             map.put("imagePullPolicy", "Always");
             map.put("resources", createResources(t.getExtraSize().memory(), t.getExtraSize().cpu()));
             if (isDockerInDockerImage(t.getImage())) {
@@ -207,7 +207,7 @@ public class PodCreator {
     private static Map<String, Object> createSidekick(String currentSidekick) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", "bamboo-agent-sidekick");
-        map.put("image", currentSidekick);
+        map.put("image", sanitizeImageName(currentSidekick));
         map.put("imagePullPolicy", "Always");
         map.put("command", ImmutableList.of("sh", "-c", 
                           "cp -r /buildeng/* /buildeng-data;"
@@ -233,7 +233,7 @@ public class PodCreator {
             IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", CONTAINER_NAME_BAMBOOAGENT);
-        map.put("image", r.getConfiguration().getDockerImage());
+        map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
         map.put("imagePullPolicy", "Always");
         map.put("workingDir", WORK_DIR);
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
@@ -289,5 +289,10 @@ public class PodCreator {
         cmd.append(" echo ").append(containerName).append(" >> ").append(STARTUP_LOCK_FILE).append(";");
         map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
         return Collections.singletonMap("postStart", map);
-    }    
+    }  
+    
+    public static String sanitizeImageName(String image) {
+        return image.trim();
+    }
+    
 }
