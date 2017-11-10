@@ -98,9 +98,13 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         String v = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         validateExtraContainers(v, errorCollection);
 
-        if (StringUtils.isBlank(params.getString(Configuration.TASK_DOCKER_IMAGE))) {
+        String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
+        if (StringUtils.isBlank(image)) {
             errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, 
                     textProvider.getText("requirement.error.emptyImage"));
+        } else if (image != null && !image.trim().equals(image)) {
+            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, 
+                    textProvider.getText("requirement.error.whitespaceImage"));
         }
         
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
@@ -111,7 +115,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
                     "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
         }
     }
-
+    
     //TODO a bit unfortunate that the field associated with extra containers is hidden
     // the field specific reporting is not showing at all then. So needs to be global.
     public static void validateExtraContainers(String value, ErrorCollection errorCollection) {
