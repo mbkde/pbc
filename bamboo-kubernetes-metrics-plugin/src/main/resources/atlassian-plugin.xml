@@ -23,7 +23,7 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="kubernetes-metrics-plugin"/>
 
-    <buildProcessor key="retreiveMetrics" name="Retreive Container Metrics from Prometheus"
+    <buildProcessor key="retrieveMetrics" name="Retrieve Container Metrics from Prometheus"
                     class="com.atlassian.buildeng.kubernetes.metrics.KubernetesMetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
