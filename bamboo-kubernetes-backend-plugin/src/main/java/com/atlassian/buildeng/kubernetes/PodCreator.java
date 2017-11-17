@@ -261,7 +261,7 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
         envs.add(ImmutableMap.of("name", KUBE_NUM_EXTRA_CONTAINERS, "value",
-                r.getConfiguration().getExtraContainers().size()));
+                "" + r.getConfiguration().getExtraContainers().size()));
         return envs;
     }
 
@@ -282,7 +282,7 @@ public class PodCreator {
     private static Map<String, Object> createContainerLifecycle(String containerName) {
         Map<String, Object> map = new HashMap<>();
         StringBuilder cmd = new StringBuilder();
-        cmd.append("touch ").append(containerName);
+        cmd.append("touch ").append(PBC_DIR + "/" + containerName);
         map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
         return Collections.singletonMap("postStart", map);
     }  
