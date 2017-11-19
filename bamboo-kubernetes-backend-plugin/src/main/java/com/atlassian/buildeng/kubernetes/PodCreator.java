@@ -49,10 +49,10 @@ public class PodCreator {
     static final String ENV_VAR_RESULT_ID = "RESULT_ID";
     
     /**
-     * The environment variable with newline separated list of container names in the pod.
-     * used by the sidekick run_agent script to wait until all containers started up.
+     * The environment variable with the number of side containers in the pod.
+     * Used by the sidekick run_agent script to wait until all containers started up.
      */
-    static final String KUBE_EXTRA_CONTAINER_NAMES = "KUBE_EXTRA_CONTAINER_NAMES";
+    static final String KUBE_NUM_EXTRA_CONTAINERS = "KUBE_NUM_EXTRA_CONTAINERS";
     
 
     /**
@@ -68,12 +68,11 @@ public class PodCreator {
     static final String BUILD_DIR = WORK_DIR + "/bamboo-agent-home/xml-data/build-dir";
     
     /**
-     * the lock file that all containers write to during postStart hook under exclusive lock.
-     * the purpose is to have the agent container wait until all side containers have written to the file.
+     * The directory that all containers write an empty file to during postStart hook
+     * the purpose is to have the agent container wait until all side containers have written to this directory.
      */
     static final String PBC_DIR = "/pbc/kube";
-    static final String STARTUP_LOCK_FILE = PBC_DIR + "/.pbc_kube_state";
-    
+
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
     public static final String LABEL_PBC_MARKER = "pbc";
@@ -212,9 +211,7 @@ public class PodCreator {
         map.put("command", ImmutableList.of("sh", "-c", 
                           "cp -r /buildeng/* /buildeng-data;"
                         + "mkdir " + PBC_DIR + ";"
-                        + "touch " + STARTUP_LOCK_FILE + ";"        
-                        + "chmod a+wt " + PBC_DIR + ";"
-                        + "chmod a+w " + STARTUP_LOCK_FILE));
+                        + "chmod a+wt " + PBC_DIR + ";"));
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
                 ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)));
@@ -245,7 +242,6 @@ public class PodCreator {
                 ));
         map.put("resources", createResources(r.getConfiguration().getSize().memory(),
                 r.getConfiguration().getSize().cpu()));
-        map.put("lifecycle", createContainerLifecycle(CONTAINER_NAME_BAMBOOAGENT));
         return map;
     }
 
@@ -264,8 +260,8 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
-        envs.add(ImmutableMap.of("name", KUBE_EXTRA_CONTAINER_NAMES, 
-                "value", StringUtils.join(containerNames(r.getConfiguration()), "\\n")));
+        envs.add(ImmutableMap.of("name", KUBE_NUM_EXTRA_CONTAINERS, "value",
+                "" + r.getConfiguration().getExtraContainers().size()));
         return envs;
     }
 
@@ -286,7 +282,7 @@ public class PodCreator {
     private static Map<String, Object> createContainerLifecycle(String containerName) {
         Map<String, Object> map = new HashMap<>();
         StringBuilder cmd = new StringBuilder();
-        cmd.append(" echo ").append(containerName).append(" >> ").append(STARTUP_LOCK_FILE).append(";");
+        cmd.append("touch ").append(PBC_DIR + "/" + containerName);
         map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
         return Collections.singletonMap("postStart", map);
     }  
