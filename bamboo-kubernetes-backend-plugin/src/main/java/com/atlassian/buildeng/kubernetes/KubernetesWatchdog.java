@@ -104,6 +104,11 @@ public class KubernetesWatchdog extends WatchdogJob {
         // delete pods which have had the bamboo-agent container terminated
         Set<BackoffCache> newBackedOff = new HashSet<>();
         for (Pod pod : pods) {
+            // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
+            // being terminated, as there is no "Terminating" pod phase
+            if (pod.getMetadata().getDeletionTimestamp() != null) {
+                continue;
+            }
             boolean deleted = false;
             Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
                     .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
