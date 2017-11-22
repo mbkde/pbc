@@ -102,6 +102,7 @@ public class PreBuildQueuedEventListener {
                 terminateBuild(message, buildContext);
                 return;
             }
+            config.overrideDockerImage();
             LOG.info("PBC job {} got queued.", event.getResultKey());
             config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
@@ -219,6 +220,7 @@ public class PreBuildQueuedEventListener {
                 terminateBuild(message, context);
                 return;
             }
+            config.overrideDockerImage();
             config.copyTo(context.getCurrentResult().getCustomBuildData());
             jmx.incrementQueued();
             setQueueTimestamp(context);

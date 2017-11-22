@@ -47,19 +47,27 @@ public final class Configuration {
 
     public static int DOCKER_MINIMUM_MEMORY = 4;
 
+    // a system property containing a map of Docker registries to replace other Docker registries when used in
+    // image names. The actual format is a comma separated list of registries, where every other registry
+    // is the registry that should replace the preceding registry.
+    // For example, "original.com,replacement.com,another.com,anothersreplacement.com"
     private static final String PROPERTY_DOCKER_REGISTRY_MAPPING = "pbc.docker.registry.map";
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
-    private final String dockerImage;
+    private String dockerImage;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
 
     Configuration(boolean enabled, String dockerImage, ContainerSize size, List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
-        this.dockerImage = overrideRegistry(dockerImage, getRegistryOverrides());
+        this.dockerImage = dockerImage;
         this.size = size;
         this.extraContainers = extraContainers;
+    }
+
+    public void overrideDockerImage() {
+        this.dockerImage = overrideRegistry(dockerImage, getRegistryOverrides());
     }
 
     public boolean isEnabled() {
