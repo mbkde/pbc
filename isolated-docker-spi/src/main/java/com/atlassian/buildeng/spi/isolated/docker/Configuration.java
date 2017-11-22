@@ -16,7 +16,12 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.google.common.annotations.VisibleForTesting;
+
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,6 +47,8 @@ public final class Configuration {
 
     public static int DOCKER_MINIMUM_MEMORY = 4;
 
+    private static final String PROPERTY_DOCKER_REGISTRY_MAPPING = "pbc.docker.registry.map";
+
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private final String dockerImage;
@@ -50,13 +57,51 @@ public final class Configuration {
 
     Configuration(boolean enabled, String dockerImage, ContainerSize size, List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
-        this.dockerImage = dockerImage;
+        this.dockerImage = overrideRegistry(dockerImage, getRegistryOverrides());
         this.size = size;
         this.extraContainers = extraContainers;
     }
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    @VisibleForTesting
+    static String overrideRegistry(String imageString, Map<String, String> registryMapping) {
+        String[] parts = imageString.split("/", 2);
+        if (parts.length == 2 && (parts[0].contains(".") || parts[0].contains(":"))) {
+            String registry = parts[0];
+            String rest = parts[1];
+            if (registryMapping.containsKey(registry)) {
+                return registryMapping.get(registry) + "/" + rest;
+            }
+        }
+        return imageString;
+    }
+
+    private Map<String, String> getRegistryOverrides() {
+        String stringMap = System.getProperty(PROPERTY_DOCKER_REGISTRY_MAPPING);
+        if (stringMap == null) {
+            return new HashMap<>();
+        } else {
+            return registryOverrideStringToMap(stringMap);
+        }
+    }
+
+    @VisibleForTesting
+    static Map<String, String> registryOverrideStringToMap(String stringMap) {
+        List<String> list = Arrays.asList(stringMap.split(","));
+        // don't throw an exception if list is malformed.
+        if (list.size() % 2 != 0) {
+            return new HashMap<>();
+        }
+
+        Iterator<String> it = list.iterator();
+        Map<String, String> registryMap = new HashMap<>();
+        while (it.hasNext()) {
+            registryMap.put(it.next(), it.next());
+        }
+        return registryMap;
     }
 
     public String getDockerImage() {
@@ -298,5 +343,4 @@ public final class Configuration {
         }
         
     }
-
 }
