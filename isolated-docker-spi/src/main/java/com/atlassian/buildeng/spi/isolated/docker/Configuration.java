@@ -16,15 +16,11 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import com.google.common.annotations.VisibleForTesting;
-
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
@@ -47,12 +43,6 @@ public final class Configuration {
 
     public static int DOCKER_MINIMUM_MEMORY = 4;
 
-    // a system property containing a map of Docker registries to replace other Docker registries when used in
-    // image names. The actual format is a comma separated list of registries, where every other registry
-    // is the registry that should replace the preceding registry.
-    // For example, "original.com,replacement.com,another.com,anothersreplacement.com"
-    private static final String PROPERTY_DOCKER_REGISTRY_MAPPING = "pbc.docker.registry.map";
-
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private String dockerImage;
@@ -66,54 +56,16 @@ public final class Configuration {
         this.extraContainers = extraContainers;
     }
 
-    public void overrideDockerImage() {
-        this.dockerImage = overrideRegistry(dockerImage, getRegistryOverrides());
-    }
-
     public boolean isEnabled() {
         return enabled;
     }
 
-    @VisibleForTesting
-    static String overrideRegistry(String imageString, Map<String, String> registryMapping) {
-        String[] parts = imageString.split("/", 2);
-        if (parts.length == 2 && (parts[0].contains(".") || parts[0].contains(":"))) {
-            String registry = parts[0];
-            String rest = parts[1];
-            if (registryMapping.containsKey(registry)) {
-                return registryMapping.get(registry) + "/" + rest;
-            }
-        }
-        return imageString;
-    }
-
-    private Map<String, String> getRegistryOverrides() {
-        String stringMap = System.getProperty(PROPERTY_DOCKER_REGISTRY_MAPPING);
-        if (stringMap == null) {
-            return new HashMap<>();
-        } else {
-            return registryOverrideStringToMap(stringMap);
-        }
-    }
-
-    @VisibleForTesting
-    static Map<String, String> registryOverrideStringToMap(String stringMap) {
-        List<String> list = Arrays.asList(stringMap.split(","));
-        // don't throw an exception if list is malformed.
-        if (list.size() % 2 != 0) {
-            return new HashMap<>();
-        }
-
-        Iterator<String> it = list.iterator();
-        Map<String, String> registryMap = new HashMap<>();
-        while (it.hasNext()) {
-            registryMap.put(it.next(), it.next());
-        }
-        return registryMap;
-    }
-
     public String getDockerImage() {
         return dockerImage;
+    }
+
+    public void setDockerImage(String dockerImage) {
+        this.dockerImage = dockerImage;
     }
 
     public ContainerSize getSize() {
@@ -204,7 +156,7 @@ public final class Configuration {
 
     public static class ExtraContainer {
         private final String name;
-        private final String image;
+        private String image;
         private ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
         private List<String> commands = Collections.emptyList();
         private List<EnvVariable> envVariables = Collections.emptyList();
@@ -221,6 +173,10 @@ public final class Configuration {
 
         public String getImage() {
             return image;
+        }
+
+        public void setImage(String image) {
+            this.image = image;
         }
 
         public ExtraContainerSize getExtraSize() {
