@@ -16,14 +16,16 @@ public final class ConfigurationOverride {
     // For example, "original.com,replacement.com,another.com,anothersreplacement.com"
     private static final String PROPERTY_DOCKER_REGISTRY_MAPPING = "pbc.docker.registry.map";
 
+    private static Map<String, String> registryOverrides = getRegistryOverrides();
+
     /**
      * Takes an existing configuration object and applies the system property overrides to it.
      */
     public static Configuration applyOverrides(Configuration config) {
         for (Configuration.ExtraContainer e : config.getExtraContainers()) {
-            e.setImage(overrideRegistry(e.getImage(), getRegistryOverrides()));
+            e.setImage(overrideRegistry(e.getImage(), registryOverrides));
         }
-        config.setDockerImage(overrideRegistry(config.getDockerImage(), getRegistryOverrides()));
+        config.setDockerImage(overrideRegistry(config.getDockerImage(), registryOverrides));
         return config;
     }
 
