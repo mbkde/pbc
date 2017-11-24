@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang.StringUtils;
 
 public class PodCreator {
     /**
@@ -80,6 +79,15 @@ public class PodCreator {
     public static final String LABEL_UUID = "pbc.uuid";
     public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
     
+    /**
+     * generate volume with memory fs at /dev/shm via https://docs.openshift.org/latest/dev_guide/shared_memory.html
+     * the preferable solution is to modify the docker daemon's --default-shm-size parameter on hosts but it only
+     * comes with docker 17.06+
+     * 
+     */
+    private static final boolean GENERATE_SHM_VOLUME = Boolean.parseBoolean(
+            System.getProperty("pbc.kube.shm.generate", "true"));
+    
 
     static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Configuration c = r.getConfiguration();
@@ -126,10 +134,13 @@ public class PodCreator {
                         .map((Configuration.EnvVariable t1) ->
                                 ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
                         .collect(Collectors.toList()));
-            map.put("volumeMounts", ImmutableList.of(
-                    ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
-                    ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)
-                    ));
+            ImmutableList.Builder<Map<String, Object>> mountsBuilder = 
+                    ImmutableList.<Map<String, Object>>builder().addAll(commonVolumeMounts());
+            if (GENERATE_SHM_VOLUME) {
+                mountsBuilder.add(ImmutableMap.of("name", "shm", "mountPath", "/dev/shm", "readOnly", false));
+            }
+            map.put("volumeMounts", mountsBuilder.build());
+            
             map.put("lifecycle", createContainerLifecycle(t.getName()));
             return map;
         }).collect(Collectors.toList());
@@ -189,10 +200,18 @@ public class PodCreator {
     }
 
     private static List<Map<String, Object>> createVolumes() {
-        return ImmutableList.of(
-            ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()),
-            ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()),
-            ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
+        ImmutableList.Builder<Map<String, Object>> bldr = ImmutableList.builder();
+        if (GENERATE_SHM_VOLUME) {
+            // workaround for low default of 64M in docker daemon. 
+            //https://docs.openshift.org/latest/dev_guide/shared_memory.html
+            // since docker daemon 17.06 
+            //the default size should be configurable on the docker daemon size and is likely preferable.
+            bldr.add(ImmutableMap.of("name", "shm", "emptyDir", ImmutableMap.of("medium", "Memory")));
+        }
+        bldr.add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
+            .add(ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()))
+            .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
+        return bldr.build();
     }
 
     private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration,
@@ -235,14 +254,23 @@ public class PodCreator {
         map.put("workingDir", WORK_DIR);
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
-        map.put("volumeMounts", ImmutableList.of(
-                ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false),
-                ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
-                ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)
-                ));
+        ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
+                .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))
+                .addAll(commonVolumeMounts());
+        if (GENERATE_SHM_VOLUME) {
+            mountsBuilder.add(ImmutableMap.of("name", "shm", "mountPath", "/dev/shm", "readOnly", false));
+        }
+        map.put("volumeMounts", mountsBuilder.build());
         map.put("resources", createResources(r.getConfiguration().getSize().memory(),
                 r.getConfiguration().getSize().cpu()));
         return map;
+    }
+    
+    private static List<Map<String, Object>> commonVolumeMounts() {
+        return ImmutableList.of(
+                ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
+                ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)
+        );
     }
 
     private static Object createMainContainerEnvs(GlobalConfiguration globalConfiguration,
