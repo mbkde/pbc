@@ -4,6 +4,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +17,7 @@ public final class ConfigurationOverride {
     // For example, "original.com,replacement.com,another.com,anothersreplacement.com"
     private static final String PROPERTY_DOCKER_REGISTRY_MAPPING = "pbc.docker.registry.map";
 
-    private static Map<String, String> registryOverrides = getRegistryOverrides();
+    private static final Map<String, String> registryOverrides = Collections.unmodifiableMap(getRegistryOverrides());
 
     /**
      * Takes an existing configuration object and applies the system property overrides to it.
