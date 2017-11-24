@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
@@ -44,7 +45,7 @@ public final class Configuration {
 
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
-    private final String dockerImage;
+    private String dockerImage;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
 
@@ -61,6 +62,10 @@ public final class Configuration {
 
     public String getDockerImage() {
         return dockerImage;
+    }
+
+    public void setDockerImage(String dockerImage) {
+        this.dockerImage = dockerImage;
     }
 
     public ContainerSize getSize() {
@@ -151,7 +156,7 @@ public final class Configuration {
 
     public static class ExtraContainer {
         private final String name;
-        private final String image;
+        private String image;
         private ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
         private List<String> commands = Collections.emptyList();
         private List<EnvVariable> envVariables = Collections.emptyList();
@@ -168,6 +173,10 @@ public final class Configuration {
 
         public String getImage() {
             return image;
+        }
+
+        public void setImage(String image) {
+            this.image = image;
         }
 
         public ExtraContainerSize getExtraSize() {
@@ -298,5 +307,4 @@ public final class Configuration {
         }
         
     }
-
 }
