@@ -62,7 +62,8 @@ public class UnmetRequirements {
     private final AgentAssignmentService agentAssignmentService;
 
     public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager, 
-                            AgentManager agentManager, AgentRemovals agentRemovals, AgentAssignmentService agentAssignmentService,
+                            AgentManager agentManager, AgentRemovals agentRemovals,
+                            AgentAssignmentService agentAssignmentService,
                             ErrorUpdateHandler errorUpdateHandler, EventPublisher eventPublisher) {
         this.buildQueueManager = buildQueueManager;
         this.cachedPlanManager = cachedPlanManager;
@@ -75,9 +76,8 @@ public class UnmetRequirements {
     }
     
     /**
-     * check if requirements match the capabilities of the agent. it will disable the agent+ stop the agent + remove job from queue
-     * when so.
-     * @param pipelineDefinition
+     * check if requirements match the capabilities of the agent. 
+     * it will disable the agent+ stop the agent + remove job from queue when so.
      * @return true when unmatched requirements were detected;
      */
     public boolean markAndStopTheBuild(RemoteAgentDefinition pipelineDefinition) {
@@ -94,7 +94,8 @@ public class UnmetRequirements {
                     .findFirst();
             if (found.isPresent() && found.get() instanceof BuildContext) {
                 CurrentResult current = found.get().getCurrentResult();
-                final ImmutableBuildable build = cachedPlanManager.getPlanByKey(key.getPlanKey(), ImmutableBuildable.class);
+                final ImmutableBuildable build = cachedPlanManager.getPlanByKey(key.getPlanKey(), 
+                        ImmutableBuildable.class);
                 if (build != null) {
                     //only builds
                     RequirementSet req = build.getEffectiveRequirementSet();
@@ -107,8 +108,12 @@ public class UnmetRequirements {
                         agentManager.savePipeline(pipelineDefinition);
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
-                        errorUpdateHandler.recordError(found.get().getEntityKey(), "Capabilities of PBC agent don't match job " + key.getPlanKey() + " requirements (" + found.get().getResultKey() + "). Affected requirements:" + missingReqKeys);
-                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getEntityKey(), missingReqKeys));
+                        errorUpdateHandler.recordError(found.get().getEntityKey(),
+                                "Capabilities of PBC agent don't match job " + key.getPlanKey()
+                                        + " requirements (" + found.get().getResultKey() 
+                                        + "). Affected requirements:" + missingReqKeys);
+                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getEntityKey(),
+                                missingReqKeys));
                         return true;
                     }
                     AgentAssignmentMap assignments = agentAssignmentService.getAgentAssignments();
@@ -121,13 +126,15 @@ public class UnmetRequirements {
                                 AgentAssignmentServiceHelper.asExecutables(plan),
                                 AgentAssignmentServiceHelper.projectToExecutables(plan.getProject())));
                     if (!dedicatedAgents.isEmpty()) {
-                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Please <a href=\"https://confluence.atlassian.com/display/BAMBOO/Dedicating+an+agent\">undedictate</a> this job or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
+                        current.getCustomBuildData().put(Constants.RESULT_ERROR,
+                                "Please <a href=\"https://confluence.atlassian.com/display/BAMBOO/Dedicating+an+agent\">undedictate</a> this job or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
                         agentRemovals.removeAgent(pipelineDefinition.getId());
-                        errorUpdateHandler.recordError(found.get().getEntityKey(), "Please undedictate job " + key.getPlanKey() + " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
+                        errorUpdateHandler.recordError(found.get().getEntityKey(),
+                                "Please undedictate job " + key.getPlanKey() + " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
                         eventPublisher.publish(new DockerAgentDedicatedJobEvent(found.get().getEntityKey()));
                         return true;
                     }

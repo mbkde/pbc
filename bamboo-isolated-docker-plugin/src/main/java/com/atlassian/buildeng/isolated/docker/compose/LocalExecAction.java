@@ -23,15 +23,8 @@ import com.opensymphony.xwork2.Preparable;
 
 public class LocalExecAction extends PlanResultsAction implements Preparable {
 
-//    private final ResultsSummaryManager resultsSummaryManager;
-
     private boolean dockerIncluded = false;
-
     private Configuration configuration;
-
-//    public LocalExecAction(ResultsSummaryManager resultsSummaryManager) {
-//        this.resultsSummaryManager = resultsSummaryManager;
-//    }
 
     public Configuration getConfiguration() {
         return configuration;
@@ -44,7 +37,6 @@ public class LocalExecAction extends PlanResultsAction implements Preparable {
     @Override
     public void prepare() throws Exception {
         if (getBuildKey() != null) {
-//            ResultsSummary rs = resultsSummaryManager.getResultsSummary(PlanKeys.getPlanResultKey(getBuildKey(), getBuildNumber()));
             configuration = AccessConfiguration.forBuildResultSummary(resultsSummary);
 
             if (configuration.isEnabled()) {
