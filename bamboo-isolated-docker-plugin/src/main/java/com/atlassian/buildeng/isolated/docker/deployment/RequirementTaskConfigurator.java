@@ -49,15 +49,9 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
 
-    // ---------------------------------------------------------------------------------------------------- Constructors
-
     private RequirementTaskConfigurator(TextProvider textProvider) {
         this.textProvider = textProvider;
     }
-
-    // ----------------------------------------------------------------------------------------------- Interface Methods
-    // -------------------------------------------------------------------------------------------------- Action Methods
-    // -------------------------------------------------------------------------------------------------- Public Methods
 
     @NotNull
     @Override

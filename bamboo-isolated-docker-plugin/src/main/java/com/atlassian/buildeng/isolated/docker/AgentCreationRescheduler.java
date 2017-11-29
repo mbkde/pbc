@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AgentCreationRescheduler implements LifecycleAware  {
-    private final Logger LOG = LoggerFactory.getLogger(AgentCreationRescheduler.class);
+    private final Logger logger = LoggerFactory.getLogger(AgentCreationRescheduler.class);
     private final EventPublisher eventPublisher;
     private final BuildQueueManager buildQueueManager;
     private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, 
@@ -56,10 +56,10 @@ public class AgentCreationRescheduler implements LifecycleAware  {
         if (event.getRetryCount() > MAX_RETRY_COUNT) {
             return false;
         }
-        LOG.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
+        logger.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
         event.getContext().getCurrentResult().getCustomBuildData().put(KEY, "true");
         executor.schedule(() -> {
-            LOG.info("Publishing {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
+            logger.info("Publishing {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
             eventPublisher.publish(event);
             event.getContext().getCurrentResult().getCustomBuildData().remove(KEY);
         }, RETRY_DELAY, TimeUnit.SECONDS);
@@ -68,8 +68,9 @@ public class AgentCreationRescheduler implements LifecycleAware  {
 
     @Override
     public void onStart() {
-        LOG.info("Checking what jobs are queued on plugin restart.");
-        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager, (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
+        logger.info("Checking what jobs are queued on plugin restart.");
+        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager,
+                (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
         queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
             Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
             Configuration c = AccessConfiguration.forContext(t.getView());
@@ -77,7 +78,7 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                 String wasWaiting = bd.get(KEY);
                 if (wasWaiting != null) {
                     //we need to restart this guy.
-                    LOG.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
+                    logger.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
                     eventPublisher.publish(new RetryAgentStartupEvent(c, t.getView()));
                 } else {
                     String buildKey = bd.get(DockerAgentBuildQueue.BUILD_KEY);
@@ -87,22 +88,22 @@ public class AgentCreationRescheduler implements LifecycleAware  {
                     // else, the docker agent for this one is either coming up online or will be dumped/stopped by
                     // ECSWatchDogJob
                     if (buildKey == null || !buildKey.equals(t.getView().getBuildKey().getKey())) {
-                        LOG.info("Refire build/deployment event for {} after plugin restart.", t.getView().getResultKey());
+                        logger.info("Refire build/deployment event for {} after plugin restart.",
+                                t.getView().getResultKey());
                         if (t.getView() instanceof BuildContext) {
                             eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
-                        }
-                        else if (t.getView() instanceof DeploymentContext) {
+                        } else if (t.getView() instanceof DeploymentContext) {
                             eventPublisher.publish(new DeploymentTriggeredEvent((DeploymentContext) t.getView()));
                         }
                     }
                 }
-             }
+            }
         });
     }
 
     @Override
     public void onStop() {
-        LOG.info("Destroying executor on plugin stop");
+        logger.info("Destroying executor on plugin stop");
         try {
             executor.shutdown();
             executor.awaitTermination(10, TimeUnit.SECONDS);

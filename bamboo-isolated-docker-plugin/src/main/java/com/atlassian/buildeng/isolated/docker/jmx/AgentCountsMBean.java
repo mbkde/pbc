@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.jmx;
 
-/**
- *
- * @author mkleint
- */
 public interface AgentCountsMBean {
     
     long getQueuedAgentsCount();
+    
     long getScheduledAgentsCount();
+    
     long getActiveAgentsCount();
+    
     long getCancelledAgentsCount();
+    
     long getTimedOutAgentsCount();
+    
     long getFailedAgentsCount();
 }

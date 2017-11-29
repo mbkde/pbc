@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.jmx;
 
 import java.lang.management.ManagementFactory;
@@ -21,10 +22,6 @@ import javax.management.ObjectName;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
-/**
- *
- * @author mkleint
- */
 public class JMXAgentsService implements DisposableBean, InitializingBean {
 
     private AgentCounts agentsCount;
@@ -45,11 +42,11 @@ public class JMXAgentsService implements DisposableBean, InitializingBean {
     }
 
     public void incrementQueued() {
-       agentsCount.queued.incrementAndGet();
+        agentsCount.queued.incrementAndGet();
     }
 
     public void incrementCancelled() {
-       agentsCount.cancelled.incrementAndGet();
+        agentsCount.cancelled.incrementAndGet();
     }
 
     public void incrementTimedOut() {

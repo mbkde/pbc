@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.jmx;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- *
- * @author mkleint
- */
 public class AgentCounts implements AgentCountsMBean {
     
     final AtomicLong queued = new AtomicLong(0);
