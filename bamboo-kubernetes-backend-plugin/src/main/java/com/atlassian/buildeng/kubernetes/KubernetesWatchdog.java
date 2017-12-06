@@ -350,7 +350,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         
     }
 
-    private class TerminationReason {
+    private static final class TerminationReason {
         private final Date terminationTime;
         private final String errorMessage;
         private final String describePod;
