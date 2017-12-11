@@ -209,8 +209,9 @@ public class KubernetesWatchdog extends WatchdogJob {
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
                         if (reason != null) {
-                            logger.error("{}\n{}", logMessage, terminationReasons.get(podName).getDescribePod());
                             errorMessage = reason.getErrorMessage();
+                            logger.error("{}\n{}\n{}",
+                                    logMessage, errorMessage, terminationReasons.get(podName).getDescribePod());
                         } else {
                             errorMessage = "Termination reason unknown";
                         }
