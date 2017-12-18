@@ -143,6 +143,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private File createPodFile(Map<String, Object> finalPod) throws IOException {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setDefaultScalarStyle(DumperOptions.ScalarStyle.SINGLE_QUOTED);
         options.setIndent(4);
         options.setCanonical(false);
         Yaml yaml = new Yaml(options);
