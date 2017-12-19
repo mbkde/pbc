@@ -213,7 +213,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                             logger.error("{}\n{}\n{}",
                                     logMessage, errorMessage, terminationReasons.get(podName).getDescribePod());
                         } else {
-                            errorMessage = "Termination reason unknown";
+                            errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                         }
                         current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                         generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
