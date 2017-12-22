@@ -20,6 +20,7 @@ public enum ECSInstance {
     M4_4XLARGE(16384, 64419, "m4.4xlarge"),
     M4_10XLARGE(40960, 161186, "m4.10xlarge"),
     M4_16XLARGE(65536, 257955, "m4.16xlarge"),
+    M5_12XLARGE(49152, 185198, "m5.12xlarge"),
     I3_8XLARGE(32768, 245731, "i3.8xlarge"),
     I3_16XLARGE(65536, 491683,"i3.16xlarge");
 
