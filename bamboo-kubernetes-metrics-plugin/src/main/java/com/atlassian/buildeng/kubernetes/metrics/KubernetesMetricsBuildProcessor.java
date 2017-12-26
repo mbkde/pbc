@@ -35,13 +35,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -141,23 +139,11 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
      */
     private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger) {
-        Client client = ClientBuilder
-                .newBuilder()
-                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                .build();
-        String encQuery;
-        try {
-            encQuery = URLEncoder.encode(query, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            buildLogger.addBuildLogEntry("Unable to parse Prometheus query string: " + query);
-            return;
-        }
-
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
-        WebTarget webTarget = client
+        WebTarget webTarget = createClient()
                 .target(PROMETHEUS_SERVER)
                 .path("api/v1/query_range")
-                .queryParam("query", encQuery)
+                .queryParam("query", encodeQuery(query))
                 .queryParam("step", STEP_PERIOD)
                 .queryParam("start", submitTimestamp)
                 .queryParam("end", Instant.now().getEpochSecond());
@@ -223,22 +209,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     private String query(String query, BuildLogger buildLogger) {
-        Client client = ClientBuilder
-                .newBuilder()
-                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                .build();
-        String encQuery;
-        try {
-            encQuery = URLEncoder.encode(query, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            buildLogger.addBuildLogEntry("Unable to parse Prometheus query string: " + query);
-            return null;
-        }
-
-        WebTarget webTarget = client
+        WebTarget webTarget = createClient()
                 .target(PROMETHEUS_SERVER)
                 .path("api/v1/query")
-                .queryParam("query", encQuery);
+                .queryParam("query", encodeQuery(query));
 
         Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
         if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
@@ -250,7 +224,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
         return response.readEntity(String.class);    
     }
-
+    
     /**
      * This massages the values obtained from Prometheus into the format that Rickshaw.js expects.
      */
@@ -290,5 +264,20 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         artifactDetails.put("cpuRequest", cpuRequest);
         artifactDetails.put("memoryRequest", memoryRequest);
         return artifactDetails;
+    }
+    
+    private Client createClient() {
+        return ClientBuilder
+                .newBuilder()
+                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
+                .build();
+    }
+
+    private String encodeQuery(String query) {
+        try {
+            return URLEncoder.encode(query, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Unable to parse Prometheus query string: " + query, e);
+        }
     }
 }

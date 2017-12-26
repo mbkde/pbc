@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.metrics.shared;
 
-import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.CustomBuildProcessor;
