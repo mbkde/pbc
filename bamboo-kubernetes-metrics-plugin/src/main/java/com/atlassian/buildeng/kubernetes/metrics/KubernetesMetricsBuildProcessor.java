@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -176,22 +177,26 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     private void logValues(String container, BuildLogger buildLogger) {
+        long buildDurationInSeconds = (System.currentTimeMillis() - Long.parseLong(SUBMIT_TIMESTAMP)) / 1000;
         String queryMaxSwap = String.format(
-                "max_over_time(container_memory_swap{pod_name=\"%s\",container_name=\"%s\"}[12h])", 
-                KUBE_POD_NAME, container);
+                Locale.ENGLISH,
+                "max_over_time(container_memory_swap{pod_name=\"%s\",container_name=\"%s\"}[%ss])", 
+                KUBE_POD_NAME, container, buildDurationInSeconds);
         String swap =  extractValueFromJson(query(queryMaxSwap, buildLogger));
         logger.info("max_swap:" + swap + " container:" + container + " pod:" + KUBE_POD_NAME);
         
         String queryMaxCache = String.format(
-                "max_over_time(container_memory_cache{pod_name=\"%s\",container_name=\"%s\"}[12h])",
-                KUBE_POD_NAME, container);
+                Locale.ENGLISH,
+                "max_over_time(container_memory_cache{pod_name=\"%s\",container_name=\"%s\"}[%ss])",
+                KUBE_POD_NAME, container, buildDurationInSeconds);
         String cache = "max_cache:" + extractValueFromJson(query(queryMaxCache, buildLogger)) 
                 + " container:" + container + " pod:" + KUBE_POD_NAME;
         logger.info(cache);
         
         String queryMaxRss = String.format(
-                "max_over_time(container_memory_rss{pod_name=\"%s\",container_name=\"%s\"}[12h])",
-                KUBE_POD_NAME, container);
+                Locale.ENGLISH,
+                "max_over_time(container_memory_rss{pod_name=\"%s\",container_name=\"%s\"}[%ss])",
+                KUBE_POD_NAME, container, buildDurationInSeconds);
         String res = "max_rss:" + extractValueFromJson(query(queryMaxRss, buildLogger)) 
                 + " container:" + container + " pod:" + KUBE_POD_NAME;
         logger.info(res);
@@ -203,7 +208,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 .getJSONObject("data")
                 .getJSONArray("result");
         if (result.length() == 0) {
-            return "0";
+            return "-1";
         }
         return result.getJSONObject(0).getJSONArray("value").getString(1);
     }
