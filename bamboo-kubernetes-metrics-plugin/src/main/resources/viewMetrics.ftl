@@ -63,14 +63,19 @@ var generateCPUGraph = function(containerName, cpuMetrics) {
 }
 
 var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRssMetrics, memoryCacheMetrics, memoryLimit) {
+    var limit = JSON.parse(JSON.stringify(memorySwapMetrics));
+    for (var i = 0; i < limit.length; i++) {
+        limit[i]["y"] = memoryLimit * 1000000;
+    }
     var memoryGraph = new Rickshaw.Graph( {
         element: document.querySelector("#" + containerName + "-memory-chart"),
-        renderer: 'area',
+        renderer: 'multi',
         interpolation: 'linear',
         series: [
-            {"color": "steelblue", "name": "rss", "data": memoryRssMetrics},
-            {"color": "lightblue", "name": "cache", "data": memoryCacheMetrics},
-            {"color": "red", "name": "swap", "data": memorySwapMetrics}
+            {"color": "steelblue", "name": "rss", renderer: "area", "data": memoryRssMetrics},
+            {"color": "lightblue", "name": "cache", renderer: "area", "data": memoryCacheMetrics},
+            {"color": "red", "name": "swap", renderer: "area", "data": memorySwapMetrics},
+            {"color": "yellow", "name": "container limit", "renderer" : "line", "data" : limit}
         ],
     });
 
@@ -110,14 +115,6 @@ var generateMemoryGraphCommon = function(containerName, memoryGraph, memoryLimit
         yFormatter: function(y) { return (y/1000000).toFixed(2) + " MB" }
     } );
 
-    var limitLineMemory = new Rickshaw.Graph.Axis.Y( {
-        graph: memoryGraph,
-        orientation: 'left',
-        tickValues: [memoryLimit * 1000000],
-        tickFormat: tickFormat,
-        element: document.getElementById(containerName + '-limit-line-memory'),
-    } );
-
     memoryGraph.render();
 }
 
@@ -137,9 +134,6 @@ generateOldMemoryGraph("${container.name}", ${container.memoryMetrics}, ${contai
 [/#if]
 
 
-d3.select("g[data-y-value=\"" + tickFormat(${container.memoryLimit} * 1000000) + "\"]")
-        .style("stroke", "rgba(255,0,0,1)")
-        .style("stroke-dasharray", "0");
 
 [/#list]
 
