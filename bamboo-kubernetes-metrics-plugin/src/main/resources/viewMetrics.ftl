@@ -41,84 +41,101 @@ var tickFormat = function(y) {
     else                      { return y }
 };
 
+var generateCPUGraph = function(containerName, cpuMetrics) {
+    var cpuGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-cpu-chart"),
+        renderer: 'line',
+        interpolation: 'linear',
+        series: [{"color": "steelblue", "name": "cpu", "data": cpuMetrics}],
+    });    
+    var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
+    var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
+        graph: cpuGraph,
+        orientation: 'left',
+        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+        element: document.getElementById(containerName + '-y-axis-cpu'),
+    } );
+    var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
+        graph: cpuGraph,
+        yFormatter: function(y) { return y.toFixed(2) + " cores" }
+    } );
+    cpuGraph.render();
+}
+
+var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRssMetrics, memoryCacheMetrics, memoryLimit) {
+    var memoryGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-memory-chart"),
+        renderer: 'area',
+        interpolation: 'linear',
+        series: [
+            {"color": "steelblue", "name": "rss", "data": memoryRssMetrics},
+            {"color": "lightblue", "name": "cache", "data": memoryCacheMetrics},
+            {"color": "red", "name": "swap", "data": memorySwapMetrics}
+        ],
+    });
+
+    var legend = new Rickshaw.Graph.Legend({
+        graph: memoryGraph,
+        element: document.querySelector("#" + containerName + "-memory-chart-legend")
+    });
+    var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+        graph: memoryGraph,
+        legend: legend
+    });
+    generateMemoryGraphCommon(containerName, memoryGraph, memoryLimit);
+}
+
+var generateOldMemoryGraph = function(containerName, memoryMetrics, memoryLimit) {
+    var memoryGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-memory-chart"),
+        renderer: 'line',
+        interpolation: 'linear',
+        series: [{"color": "steelblue", "name": "memory", "data": memoryMetrics}],
+    });
+    generateMemoryGraphCommon(containerName, memoryGraph, memoryLimit);
+}
+
+var generateMemoryGraphCommon = function(containerName, memoryGraph, memoryLimit) {
+    var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
+
+    var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
+        graph: memoryGraph,
+        orientation: 'left',
+        tickFormat: tickFormat,
+        element: document.getElementById(containerName + '-y-axis-memory'),
+    } );
+
+    var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
+        graph: memoryGraph,
+        yFormatter: function(y) { return (y/1000000).toFixed(2) + " MB" }
+    } );
+
+    var limitLineMemory = new Rickshaw.Graph.Axis.Y( {
+        graph: memoryGraph,
+        orientation: 'left',
+        tickValues: [memoryLimit * 1000000],
+        tickFormat: tickFormat,
+        element: document.getElementById(containerName + '-limit-line-memory'),
+    } );
+
+    memoryGraph.render();
+}
+
 [#list containerList as container]
 
-[#if container.memoryRssMetrics??]
-var memorySwap = ${container.memorySwapMetrics};
-var memoryRss = ${container.memoryRssMetrics};
-var memoryCache = ${container.memoryCacheMetrics};
-var memoryGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${container.name}-memory-chart"),
-    renderer: 'area',
-    interpolation: 'linear',
-    series: [
-        {"color": "steelblue", "name": "rss", "data": memoryRss},
-        {"color": "lightblue", "name": "cache", "data": memoryCache},
-        {"color": "red", "name": "swap", "data": memorySwap}
-    ],
-});
+generateCPUGraph("${container.name}", ${container.cpuMetrics});
 
-var legend = new Rickshaw.Graph.Legend({
-    graph: memoryGraph,
-    element: document.querySelector("#${container.name}-memory-chart-legend")
-});
-var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
-    graph: memoryGraph,
-    legend: legend
-});
+[#if container.memoryRssMetrics??]
+
+generateNewMemoryGraph("${container.name}", ${container.memorySwapMetrics}, ${container.memoryRssMetrics},
+ ${container.memoryCacheMetrics}, ${container.memoryLimit});
 
 [#else]
 
-var memoryGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${container.name}-memory-chart"),
-    renderer: 'line',
-    interpolation: 'linear',
-    series: [{"color": "steelblue", "name": "memory", "data": ${container.memoryMetrics}}],
-});
+generateOldMemoryGraph("${container.name}", ${container.memoryMetrics}, ${container.memoryLimit});
+
 [/#if]
-var cpuGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${container.name}-cpu-chart"),
-    renderer: 'line',
-    interpolation: 'linear',
-    series: [{"color": "steelblue", "name": "cpu", "data": ${container.cpuMetrics}}],
-});
 
-var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
-var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
-
-var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
-    graph: memoryGraph,
-    orientation: 'left',
-    tickFormat: tickFormat,
-    element: document.getElementById('${container.name}-y-axis-memory'),
-} );
-var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
-    graph: cpuGraph,
-    orientation: 'left',
-    tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-    element: document.getElementById('${container.name}-y-axis-cpu'),
-} );
-
-var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
-    graph: memoryGraph,
-    yFormatter: function(y) { return (y/1000000).toFixed(2) + " MB" }
-} );
-var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
-    graph: cpuGraph,
-    yFormatter: function(y) { return y.toFixed(2) + " cores" }
-} );
-
-var limitLineMemory = new Rickshaw.Graph.Axis.Y( {
-    graph: memoryGraph,
-    orientation: 'left',
-    tickValues: [${container.memoryLimit} * 1000000],
-    tickFormat: tickFormat,
-    element: document.getElementById('${container.name}-limit-line-memory'),
-} );
-
-
-memoryGraph.render();
-cpuGraph.render();
 
 d3.select("g[data-y-value=\"" + tickFormat(${container.memoryLimit} * 1000000) + "\"]")
         .style("stroke", "rgba(255,0,0,1)")
