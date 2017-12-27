@@ -21,6 +21,7 @@ Shows CPU and memory unitization of PBC containers used in the build. If absent,
     <div class="yAxis" id="${container.name}-limit-line-memory"></div>
     <div class="yAxis" id="${container.name}-y-axis-memory"></div>
     <div class="chart" id="${container.name}-memory-chart"></div>
+    <div class="legend" id="${container.name}-memory-chart-legend"></div>
 </div>
 <h3>CPU usage</h3>
 <div class="chartContainer">
@@ -41,14 +42,44 @@ var tickFormat = function(y) {
 };
 
 [#list containerList as container]
+
+[#if container.memoryRssMetrics??]
+var memorySwap = ${container.memorySwapMetrics};
+var memoryRss = ${container.memoryRssMetrics};
+var memoryCache = ${container.memoryCacheMetrics};
+var memoryGraph = new Rickshaw.Graph( {
+    element: document.querySelector("#${container.name}-memory-chart"),
+    renderer: 'area',
+    interpolation: 'linear',
+    series: [
+        {"color": "steelblue", "name": "rss", "data": memoryRss},
+        {"color": "lightblue", "name": "cache", "data": memoryCache},
+        {"color": "red", "name": "swap", "data": memorySwap}
+    ],
+});
+
+var legend = new Rickshaw.Graph.Legend({
+    graph: memoryGraph,
+    element: document.querySelector("#${container.name}-memory-chart-legend")
+});
+var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+    graph: memoryGraph,
+    legend: legend
+});
+
+[#else]
+
 var memoryGraph = new Rickshaw.Graph( {
     element: document.querySelector("#${container.name}-memory-chart"),
     renderer: 'line',
+    interpolation: 'linear',
     series: [{"color": "steelblue", "name": "memory", "data": ${container.memoryMetrics}}],
 });
+[/#if]
 var cpuGraph = new Rickshaw.Graph( {
     element: document.querySelector("#${container.name}-cpu-chart"),
     renderer: 'line',
+    interpolation: 'linear',
     series: [{"color": "steelblue", "name": "cpu", "data": ${container.cpuMetrics}}],
 });
 

@@ -38,10 +38,14 @@ import org.json.JSONObject;
 
 
 public class KubernetesViewMetricsAction extends ViewMetricsAction {
+    
     public class ContainerMetrics {
         private String containerName;
         private String cpuMetrics;
         private String memoryMetrics;
+        private String memoryRssMetrics;
+        private String memoryCacheMetrics;
+        private String memorySwapMetrics;
         private int memoryLimit;
         private int cpuLimit;
 
@@ -71,6 +75,30 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
             this.memoryMetrics = memoryMetrics;
         }
 
+        public String getMemoryRssMetrics() {
+            return memoryRssMetrics;
+        }
+
+        public void setMemoryRssMetrics(String memoryRssMetrics) {
+            this.memoryRssMetrics = memoryRssMetrics;
+        }
+
+        public String getMemoryCacheMetrics() {
+            return memoryCacheMetrics;
+        }
+
+        public void setMemoryCacheMetrics(String memoryCacheMetrics) {
+            this.memoryCacheMetrics = memoryCacheMetrics;
+        }
+
+        public String getMemorySwapMetrics() {
+            return memorySwapMetrics;
+        }
+
+        public void setMemorySwapMetrics(String memorySwapMetrics) {
+            this.memorySwapMetrics = memorySwapMetrics;
+        }
+        
         public int getCpuLimit() {
             return cpuLimit;
         }
@@ -102,6 +130,9 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 ContainerMetrics container = new ContainerMetrics(containerName, cpu, memory);
                 container.setCpuMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-cpu"));
                 container.setMemoryMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory"));
+                container.setMemoryRssMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-rss"));
+                container.setMemoryCacheMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-cache"));
+                container.setMemorySwapMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-swap"));
                 containerList.add(container);
             }
         }

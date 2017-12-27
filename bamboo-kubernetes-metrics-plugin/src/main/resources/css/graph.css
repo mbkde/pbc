@@ -11,3 +11,7 @@
     bottom: 0;
     width: 40px;
 }
+.rickshaw_legend {
+    color: #404040;
+    background-color: transparent;
+}
