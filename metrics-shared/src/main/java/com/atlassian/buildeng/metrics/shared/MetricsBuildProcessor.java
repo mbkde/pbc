@@ -71,7 +71,7 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
         return buildContext;
     }
 
-    protected void publishMetrics(
+    protected final void publishMetrics(
             String name, String fileExtension, SecureToken secureToken, BuildLogger buildLogger,
             File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration,
             BuildContext buildContext) {

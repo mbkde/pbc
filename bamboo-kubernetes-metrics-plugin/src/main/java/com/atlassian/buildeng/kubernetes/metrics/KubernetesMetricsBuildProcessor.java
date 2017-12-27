@@ -32,16 +32,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -126,6 +125,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                         artifactHandlerConfiguration, buildContext);
 
                 artifactsJsonDetails.put(generateArtifactDetailsJson(container, containerPair.getRight()));
+                
+                logValues(container, buildLogger);
+                
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
@@ -138,23 +140,11 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
      */
     private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger) {
-        Client client = ClientBuilder
-                .newBuilder()
-                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                .build();
-
-        try {
-            query = URLEncoder.encode(query, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            buildLogger.addBuildLogEntry("Unable to parse Prometheus query string: " + query);
-            return;
-        }
-
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
-        WebTarget webTarget = client
+        WebTarget webTarget = createClient()
                 .target(PROMETHEUS_SERVER)
                 .path("api/v1/query_range")
-                .queryParam("query", query)
+                .queryParam("query", encodeQuery(query))
                 .queryParam("step", STEP_PERIOD)
                 .queryParam("start", submitTimestamp)
                 .queryParam("end", Instant.now().getEpochSecond());
@@ -162,8 +152,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
         if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
             buildLogger.addErrorLogEntry(
-                    String.format("Error when querying Prometheus server: %s. Response %s",
-                            PROMETHEUS_SERVER, response.readEntity(String.class)));
+                    String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
+                            PROMETHEUS_SERVER, query, response.readEntity(String.class)));
             return;
         }
 
@@ -185,7 +175,64 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             buildLogger.addErrorLogEntry(String.format("Error when attempting to write metrics file to %s", location));
         }
     }
+    
+    private void logValues(String container, BuildLogger buildLogger) {
+        long buildDurationInSeconds = (System.currentTimeMillis() - Long.parseLong(SUBMIT_TIMESTAMP)) / 1000;
+        String queryMaxSwap = String.format(
+                Locale.ENGLISH,
+                "max_over_time(container_memory_swap{pod_name=\"%s\",container_name=\"%s\"}[%ss])", 
+                KUBE_POD_NAME, container, buildDurationInSeconds);
+        String swap =  extractValueFromJson(query(queryMaxSwap, buildLogger));
+        logger.info("max_swap:" + swap + " container:" + container + " pod:" + KUBE_POD_NAME);
+        
+        String queryMaxCache = String.format(
+                Locale.ENGLISH,
+                "max_over_time(container_memory_cache{pod_name=\"%s\",container_name=\"%s\"}[%ss])",
+                KUBE_POD_NAME, container, buildDurationInSeconds);
+        String cache = "max_cache:" + extractValueFromJson(query(queryMaxCache, buildLogger)) 
+                + " container:" + container + " pod:" + KUBE_POD_NAME;
+        logger.info(cache);
+        
+        String queryMaxRss = String.format(
+                Locale.ENGLISH,
+                "max_over_time(container_memory_rss{pod_name=\"%s\",container_name=\"%s\"}[%ss])",
+                KUBE_POD_NAME, container, buildDurationInSeconds);
+        String res = "max_rss:" + extractValueFromJson(query(queryMaxRss, buildLogger)) 
+                + " container:" + container + " pod:" + KUBE_POD_NAME;
+        logger.info(res);
+    }
+    
+    private String extractValueFromJson(String input) {
+        if (input == null) {
+            return "-1";
+        }
+        JSONObject jsonResponse = new JSONObject(input);
+        JSONArray result = jsonResponse
+                .getJSONObject("data")
+                .getJSONArray("result");
+        if (result.length() == 0) {
+            return "-1";
+        }
+        return result.getJSONObject(0).getJSONArray("value").getString(1);
+    }
+    
+    private String query(String query, BuildLogger buildLogger) {
+        WebTarget webTarget = createClient()
+                .target(PROMETHEUS_SERVER)
+                .path("api/v1/query")
+                .queryParam("query", encodeQuery(query));
 
+        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
+            buildLogger.addErrorLogEntry(
+                    String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
+                            PROMETHEUS_SERVER, query, response.readEntity(String.class)));
+            return null;
+        }
+
+        return response.readEntity(String.class);    
+    }
+    
     /**
      * This massages the values obtained from Prometheus into the format that Rickshaw.js expects.
      */
@@ -225,5 +272,20 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         artifactDetails.put("cpuRequest", cpuRequest);
         artifactDetails.put("memoryRequest", memoryRequest);
         return artifactDetails;
+    }
+    
+    private Client createClient() {
+        return ClientBuilder
+                .newBuilder()
+                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
+                .build();
+    }
+
+    private String encodeQuery(String query) {
+        try {
+            return URLEncoder.encode(query, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Unable to parse Prometheus query string: " + query, e);
+        }
     }
 }
