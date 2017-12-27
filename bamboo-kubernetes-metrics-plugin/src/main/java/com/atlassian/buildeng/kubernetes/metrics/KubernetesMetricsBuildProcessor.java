@@ -203,6 +203,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     private String extractValueFromJson(String input) {
+        if (input == null) {
+            return "-1";
+        }
         JSONObject jsonResponse = new JSONObject(input);
         JSONArray result = jsonResponse
                 .getJSONObject("data")
