@@ -21,6 +21,7 @@ Shows CPU and memory unitization of PBC containers used in the build. If absent,
     <div class="yAxis" id="${container.name}-limit-line-memory"></div>
     <div class="yAxis" id="${container.name}-y-axis-memory"></div>
     <div class="chart" id="${container.name}-memory-chart"></div>
+    <div class="legend" id="${container.name}-memory-chart-legend"></div>
 </div>
 <h3>CPU usage</h3>
 <div class="chartContainer">
@@ -40,58 +41,99 @@ var tickFormat = function(y) {
     else                      { return y }
 };
 
+var generateCPUGraph = function(containerName, cpuMetrics) {
+    var cpuGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-cpu-chart"),
+        renderer: 'line',
+        interpolation: 'linear',
+        series: [{"color": "steelblue", "name": "cpu", "data": cpuMetrics}],
+    });    
+    var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
+    var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
+        graph: cpuGraph,
+        orientation: 'left',
+        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+        element: document.getElementById(containerName + '-y-axis-cpu'),
+    } );
+    var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
+        graph: cpuGraph,
+        yFormatter: function(y) { return y.toFixed(2) + " cores" }
+    } );
+    cpuGraph.render();
+}
+
+var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRssMetrics, memoryCacheMetrics, memoryLimit) {
+    var limit = JSON.parse(JSON.stringify(memorySwapMetrics));
+    for (var i = 0; i < limit.length; i++) {
+        limit[i]["y"] = memoryLimit * 1000000;
+    }
+    var memoryGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-memory-chart"),
+        renderer: 'multi',
+        interpolation: 'linear',
+        series: [
+            {"color": "steelblue", "name": "rss", renderer: "area", "data": memoryRssMetrics},
+            {"color": "lightblue", "name": "cache", renderer: "area", "data": memoryCacheMetrics},
+            {"color": "red", "name": "swap", renderer: "area", "data": memorySwapMetrics},
+            {"color": "yellow", "name": "container limit", "renderer" : "line", "data" : limit}
+        ],
+    });
+
+    var legend = new Rickshaw.Graph.Legend({
+        graph: memoryGraph,
+        element: document.querySelector("#" + containerName + "-memory-chart-legend")
+    });
+    var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+        graph: memoryGraph,
+        legend: legend
+    });
+    generateMemoryGraphCommon(containerName, memoryGraph, memoryLimit);
+}
+
+var generateOldMemoryGraph = function(containerName, memoryMetrics, memoryLimit) {
+    var memoryGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-memory-chart"),
+        renderer: 'line',
+        interpolation: 'linear',
+        series: [{"color": "steelblue", "name": "memory", "data": memoryMetrics}],
+    });
+    generateMemoryGraphCommon(containerName, memoryGraph, memoryLimit);
+}
+
+var generateMemoryGraphCommon = function(containerName, memoryGraph, memoryLimit) {
+    var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
+
+    var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
+        graph: memoryGraph,
+        orientation: 'left',
+        tickFormat: tickFormat,
+        element: document.getElementById(containerName + '-y-axis-memory'),
+    } );
+
+    var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
+        graph: memoryGraph,
+        yFormatter: function(y) { return (y/1000000).toFixed(2) + " MB" }
+    } );
+
+    memoryGraph.render();
+}
+
 [#list containerList as container]
-var memoryGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${container.name}-memory-chart"),
-    renderer: 'line',
-    series: [{"color": "steelblue", "name": "memory", "data": ${container.memoryMetrics}}],
-});
-var cpuGraph = new Rickshaw.Graph( {
-    element: document.querySelector("#${container.name}-cpu-chart"),
-    renderer: 'line',
-    series: [{"color": "steelblue", "name": "cpu", "data": ${container.cpuMetrics}}],
-});
 
-var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
-var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
+generateCPUGraph("${container.name}", ${container.cpuMetrics});
 
-var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
-    graph: memoryGraph,
-    orientation: 'left',
-    tickFormat: tickFormat,
-    element: document.getElementById('${container.name}-y-axis-memory'),
-} );
-var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
-    graph: cpuGraph,
-    orientation: 'left',
-    tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-    element: document.getElementById('${container.name}-y-axis-cpu'),
-} );
+[#if container.memoryRssMetrics??]
 
-var hoverDetailMemory = new Rickshaw.Graph.HoverDetail( {
-    graph: memoryGraph,
-    yFormatter: function(y) { return (y/1000000).toFixed(2) + " MB" }
-} );
-var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
-    graph: cpuGraph,
-    yFormatter: function(y) { return y.toFixed(2) + " cores" }
-} );
+generateNewMemoryGraph("${container.name}", ${container.memorySwapMetrics}, ${container.memoryRssMetrics},
+ ${container.memoryCacheMetrics}, ${container.memoryLimit});
 
-var limitLineMemory = new Rickshaw.Graph.Axis.Y( {
-    graph: memoryGraph,
-    orientation: 'left',
-    tickValues: [${container.memoryLimit} * 1000000],
-    tickFormat: tickFormat,
-    element: document.getElementById('${container.name}-limit-line-memory'),
-} );
+[#else]
+
+generateOldMemoryGraph("${container.name}", ${container.memoryMetrics}, ${container.memoryLimit});
+
+[/#if]
 
 
-memoryGraph.render();
-cpuGraph.render();
-
-d3.select("g[data-y-value=\"" + tickFormat(${container.memoryLimit} * 1000000) + "\"]")
-        .style("stroke", "rgba(255,0,0,1)")
-        .style("stroke-dasharray", "0");
 
 [/#list]
 

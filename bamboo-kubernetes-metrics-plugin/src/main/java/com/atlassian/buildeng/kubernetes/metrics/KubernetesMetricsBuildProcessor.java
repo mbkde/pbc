@@ -58,6 +58,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesMetricsBuildProcessor.class);
 
     private static final String PROMETHEUS_MEMORY_METRIC = "container_memory_usage_bytes";
+    private static final String PROMETHEUS_MEMORY_RSS_METRIC = "container_memory_rss";
+    private static final String PROMETHEUS_MEMORY_CACHE_METRIC = "container_memory_cache";
+    private static final String PROMETHEUS_MEMORY_SWAP_METRIC = "container_memory_swap";
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
@@ -98,34 +101,35 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
             JSONArray artifactsJsonDetails = new JSONArray();
             List<Pair<String, Enum>> containers = Stream.concat(
+                    Stream.of(new ImmutablePair<>("bamboo-agent", (Enum) config.getSize())),
                     config.getExtraContainers().stream().map(
                         (Configuration.ExtraContainer e) ->
-                                    new ImmutablePair<>(e.getName(), (Enum) e.getExtraSize())),
-                    Stream.of(new ImmutablePair<>("bamboo-agent", (Enum) config.getSize())))
+                                    new ImmutablePair<>(e.getName(), (Enum) e.getExtraSize())))
                     .collect(Collectors.toList());
             for (Pair<String, Enum> containerPair : containers) {
                 String container = containerPair.getLeft();
 
                 String cpuName = container + "-cpu";
-                String memoryName = container + "-memory";
-
                 String queryCpu = String.format("sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
                         PROMETHEUS_CPU_METRIC, KUBE_POD_NAME, container);
                 generateMetricsFile(
                         targetDir.resolve(cpuName + ".json"), queryCpu, container, buildLogger);
-
-                String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
-                        PROMETHEUS_MEMORY_METRIC, KUBE_POD_NAME, container);
-                generateMetricsFile(
-                        targetDir.resolve(memoryName + ".json"), queryMemory, container, buildLogger);
-
                 publishMetrics(cpuName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                         artifactHandlerConfiguration, buildContext);
-                publishMetrics(memoryName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                        artifactHandlerConfiguration, buildContext);
+
+                collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+                collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+                collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+                collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+
 
                 artifactsJsonDetails.put(generateArtifactDetailsJson(container, containerPair.getRight()));
                 
+                //TODO avoid the extra calls and extract maximums from the query ranges above.
                 logValues(container, buildLogger);
                 
             }
@@ -133,6 +137,18 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             buildContext.getCurrentResult().getCustomBuildData()
                     .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, artifactsJsonDetails.toString());
         }
+    }
+    
+    private void collectMemoryMetric(String metricName, String suffix, String container,
+            BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
+        String fileName = container + suffix;
+        String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+                metricName, KUBE_POD_NAME, container);
+        generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
+                queryMemory, container, buildLogger);
+        publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
+                BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+
     }
 
     /**
