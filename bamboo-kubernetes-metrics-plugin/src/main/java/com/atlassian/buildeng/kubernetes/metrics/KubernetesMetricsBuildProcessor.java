@@ -62,6 +62,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String PROMETHEUS_MEMORY_CACHE_METRIC = "container_memory_cache";
     private static final String PROMETHEUS_MEMORY_SWAP_METRIC = "container_memory_swap";
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
+    private static final String PROMETHEUS_FS_WRITE = "container_fs_writes_bytes_total";
+    private static final String PROMETHEUS_FS_READ = "container_fs_reads_bytes_total";
+    private static final String PROMETHEUS_NET_READ = "container_network_receive_bytes_total";
+    private static final String PROMETHEUS_NET_WRITE = "container_network_transmit_bytes_total";
+
+    private static final String MEMORY_QUERY = "%s{pod_name=\"%s\",container_name=\"%s\"}";
+    
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     // TODO: Pull this from somewhere
@@ -84,8 +91,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
                 return;
             }
-            final Map<String, String> artifactHandlerConfiguration = BuildContextHelper
-                    .getArtifactHandlerConfiguration(buildContext);
 
             Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext)
                     .toPath();
@@ -106,32 +111,44 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                         (Configuration.ExtraContainer e) ->
                                     new ImmutablePair<>(e.getName(), (Enum) e.getExtraSize())))
                     .collect(Collectors.toList());
+            
+            //both timestamps to be created once to have all metric queries in sync.
+            long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
+            long finishTimestamp = Instant.now().getEpochSecond();
+            //not specific to container
+            collectMetric(PROMETHEUS_NET_WRITE, "-net-write", 
+                    "sum(irate(%s{pod_name=\"%s\"}[15s]))",
+                    "all", buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+            collectMetric(PROMETHEUS_NET_READ, "-net-read", 
+                    "sum(irate(%s{pod_name=\"%s\"}[15s]))",
+                    "all", buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+            
             for (Pair<String, Enum> containerPair : containers) {
                 String container = containerPair.getLeft();
 
-                String cpuName = container + "-cpu";
-                String queryCpu = String.format("sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
-                        PROMETHEUS_CPU_METRIC, KUBE_POD_NAME, container);
-                generateMetricsFile(
-                        targetDir.resolve(cpuName + ".json"), queryCpu, container, buildLogger);
-                publishMetrics(cpuName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                        artifactHandlerConfiguration, buildContext);
+                collectMetric(PROMETHEUS_CPU_METRIC, "-cpu", 
+                        "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+                collectMetric(PROMETHEUS_FS_WRITE, "-fs-write", 
+                        "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+                collectMetric(PROMETHEUS_FS_READ, "-fs-read", 
+                        "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
 
-                collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-                collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-                collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-                collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-
+                collectMetric(PROMETHEUS_MEMORY_METRIC, "-memory", MEMORY_QUERY,
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp, finishTimestamp);
+                collectMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", MEMORY_QUERY,
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp, finishTimestamp);
+                collectMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", MEMORY_QUERY, 
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp, finishTimestamp);
+                collectMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap", MEMORY_QUERY, 
+                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp, finishTimestamp);
 
                 artifactsJsonDetails.put(generateArtifactDetailsJson(container, containerPair.getRight()));
                 
                 //TODO avoid the extra calls and extract maximums from the query ranges above.
                 logValues(container, buildLogger);
-                
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
@@ -139,13 +156,14 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         }
     }
     
-    private void collectMemoryMetric(String metricName, String suffix, String container,
-            BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
+    private void collectMetric(String metricName, String suffix, String metricQuery, String container, 
+            BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory,
+            long submitTimestamp, long finishTimestamp) {
         String fileName = container + suffix;
-        String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+        String queryMemory = String.format(metricQuery,
                 metricName, KUBE_POD_NAME, container);
         generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
-                queryMemory, container, buildLogger);
+                queryMemory, container, buildLogger, submitTimestamp, finishTimestamp);
         publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                 BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
 
@@ -155,15 +173,15 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * Create a JSON file containing the metrics by querying Prometheus and massaging its output.
      * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
      */
-    private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger) {
-        long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
+    private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger, 
+            long submitTimestamp, long finishTimestamp) {
         WebTarget webTarget = createClient()
                 .target(PROMETHEUS_SERVER)
                 .path("api/v1/query_range")
                 .queryParam("query", encodeQuery(query))
                 .queryParam("step", STEP_PERIOD)
                 .queryParam("start", submitTimestamp)
-                .queryParam("end", Instant.now().getEpochSecond());
+                .queryParam("end", finishTimestamp);
 
         Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
         if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
