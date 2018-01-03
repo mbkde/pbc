@@ -62,6 +62,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String PROMETHEUS_MEMORY_CACHE_METRIC = "container_memory_cache";
     private static final String PROMETHEUS_MEMORY_SWAP_METRIC = "container_memory_swap";
     private static final String PROMETHEUS_CPU_METRIC = "container_cpu_usage_seconds_total";
+    private static final String PROMETHEUS_CPU_USER_METRIC = "container_cpu_user_seconds_total";
+    private static final String PROMETHEUS_CPU_SYSTEM_METRIC = "container_cpu_system_seconds_total";
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     // TODO: Pull this from somewhere
@@ -109,14 +111,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             for (Pair<String, Enum> containerPair : containers) {
                 String container = containerPair.getLeft();
 
-                String cpuName = container + "-cpu";
-                String queryCpu = String.format("sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
-                        PROMETHEUS_CPU_METRIC, KUBE_POD_NAME, container);
-                generateMetricsFile(
-                        targetDir.resolve(cpuName + ".json"), queryCpu, container, buildLogger);
-                publishMetrics(cpuName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                        artifactHandlerConfiguration, buildContext);
-
                 collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory", container, buildLogger, 
                         secureToken, buildWorkingDirectory);
                 collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", container, buildLogger, 
@@ -124,6 +118,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", container, buildLogger, 
                         secureToken, buildWorkingDirectory);
                 collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+
+                collectCpuMetric(PROMETHEUS_CPU_METRIC, "-cpu", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+                collectCpuMetric(PROMETHEUS_CPU_USER_METRIC, "-cpu-user", container, buildLogger, 
+                        secureToken, buildWorkingDirectory);
+                collectCpuMetric(PROMETHEUS_CPU_SYSTEM_METRIC, "-cpu-system", container, buildLogger, 
                         secureToken, buildWorkingDirectory);
 
 
@@ -138,6 +139,18 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                     .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, artifactsJsonDetails.toString());
         }
     }
+    
+    private void collectCpuMetric(String metricName, String suffix, String container,
+            BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
+        String fileName = container + suffix;
+        String queryMemory = String.format("sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                metricName, KUBE_POD_NAME, container);
+        generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
+                queryMemory, container, buildLogger);
+        publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
+                BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+    }
+    
     
     private void collectMemoryMetric(String metricName, String suffix, String container,
             BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
