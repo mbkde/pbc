@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.client.Client;
@@ -128,13 +127,16 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
                 collectMetric(PROMETHEUS_CPU_METRIC, "-cpu", 
                         "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
-                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+                        container, buildLogger, secureToken, buildWorkingDirectory, 
+                        submitTimestamp - 30, finishTimestamp);
                 collectMetric(PROMETHEUS_FS_WRITE, "-fs-write", 
                         "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
-                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+                        container, buildLogger, secureToken, buildWorkingDirectory,
+                        submitTimestamp - 30, finishTimestamp);
                 collectMetric(PROMETHEUS_FS_READ, "-fs-read", 
                         "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
-                        container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp - 30, finishTimestamp);
+                        container, buildLogger, secureToken, buildWorkingDirectory,
+                        submitTimestamp - 30, finishTimestamp);
 
                 collectMetric(PROMETHEUS_MEMORY_METRIC, "-memory", MEMORY_QUERY,
                         container, buildLogger, secureToken, buildWorkingDirectory, submitTimestamp, finishTimestamp);
