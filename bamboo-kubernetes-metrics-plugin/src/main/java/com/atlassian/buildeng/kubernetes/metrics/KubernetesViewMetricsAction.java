@@ -42,6 +42,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
     public class ContainerMetrics {
         private String containerName;
         private String cpuMetrics;
+        private String cpuUserMetrics;
+        private String cpuSystemMetrics;
         private String memoryMetrics;
         private String memoryRssMetrics;
         private String memoryCacheMetrics;
@@ -65,6 +67,22 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
         public void setCpuMetrics(String cpuMetrics) {
             this.cpuMetrics = cpuMetrics;
+        }
+
+        public String getCpuUserMetrics() {
+            return cpuUserMetrics;
+        }
+
+        public void setCpuUserMetrics(String cpuUserMetrics) {
+            this.cpuUserMetrics = cpuUserMetrics;
+        }
+
+        public String getCpuSystemMetrics() {
+            return cpuSystemMetrics;
+        }
+
+        public void setCpuSystemMetrics(String cpuSystemMetrics) {
+            this.cpuSystemMetrics = cpuSystemMetrics;
         }
 
         public String getMemoryMetrics() {
@@ -127,19 +145,22 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 int cpu = artifactJson.getInt("cpuRequest");
                 int memory = artifactJson.getInt("memoryRequest");
 
-                ContainerMetrics container = new ContainerMetrics(containerName, cpu, memory);
-                container.setCpuMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-cpu"));
-                container.setMemoryMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory"));
-                container.setMemoryRssMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-rss"));
-                container.setMemoryCacheMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-cache"));
-                container.setMemorySwapMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-swap"));
-                containerList.add(container);
+                ContainerMetrics cont = new ContainerMetrics(containerName, cpu, memory);
+                cont.setCpuMetrics(loadArtifact(containerName, "-cpu"));
+                cont.setCpuUserMetrics(loadArtifact(containerName, "-cpu-user"));
+                cont.setCpuSystemMetrics(loadArtifact(containerName, "-cpu-system"));
+                cont.setMemoryMetrics(loadArtifact(containerName, "-memory"));
+                cont.setMemoryRssMetrics(loadArtifact(containerName, "-memory-rss"));
+                cont.setMemoryCacheMetrics(loadArtifact(containerName, "-memory-cache"));
+                cont.setMemorySwapMetrics(loadArtifact(containerName, "-memory-swap"));
+                containerList.add(cont);
             }
         }
 
     }
 
-    private String loadArtifact(String artifactName) {
+    private String loadArtifact(String containerName, String suffix) {
+        String artifactName = ARTIFACT_PREFIX + containerName + suffix;
         Artifact artifact = createArtifact(
                 artifactName, resultsSummary.getPlanResultKey(),
                 resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
