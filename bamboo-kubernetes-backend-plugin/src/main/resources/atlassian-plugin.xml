@@ -51,13 +51,13 @@ limitations under the License.
         <context>viewKubernetesConfiguration</context>
     </web-resource>
 
-    <web-item key="kubernetes-config" name="Configure ECS Kubernetes Backend" section="system.admin/plugins" weight="296">
+    <web-item key="kubernetes-config" name="Configure Kubernetes Backend" section="system.admin/plugins" weight="296">
         <description key="kubernetes-config-link.desc"/>
         <label key="kubernetes-config-link.label"/>
         <link linkId="kubernetes-config-link">/admin/viewKubernetesConfiguration.action</link>
     </web-item>
 
-    <xwork key="kubernetes-configuration" name="Configure ECS Kubernetes Backend">
+    <xwork key="kubernetes-configuration" name="Configure Kubernetes Backend">
         <package name="kubernetesConfiguration" extends="admin">
             <action name="viewKubernetesConfiguration" class="com.atlassian.buildeng.kubernetes.ConfigurationAction">
                 <result name="success" type="freemarker">/config/kubernetesConfig.ftl</result>

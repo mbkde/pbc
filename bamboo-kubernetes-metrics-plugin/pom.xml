@@ -77,21 +77,15 @@ limitations under the License.
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.rrd4j</groupId>
-            <artifactId>rrd4j</artifactId>
-            <version>3.1</version>
-        </dependency>
-        <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-agent-core</artifactId>
             <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
-        <!-- Careful updating Jersey: we need Jersey supporting JAX-RS 2.0 not 2.1 -->
         <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>2.25.1</version>
+            <groupId>com.atlassian.plugins.rest</groupId>
+            <artifactId>atlassian-rest-common</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

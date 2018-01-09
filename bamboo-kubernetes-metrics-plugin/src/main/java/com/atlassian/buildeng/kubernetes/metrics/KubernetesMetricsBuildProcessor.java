@@ -27,6 +27,9 @@ import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,14 +39,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.glassfish.jersey.logging.LoggingFeature;
+import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -170,38 +170,40 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      */
     private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger) {
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
-        WebTarget webTarget = createClient()
-                .target(PROMETHEUS_SERVER)
-                .path("api/v1/query_range")
-                .queryParam("query", encodeQuery(query))
-                .queryParam("step", STEP_PERIOD)
-                .queryParam("start", submitTimestamp)
-                .queryParam("end", Instant.now().getEpochSecond());
+        try {
+            URI uri = new URIBuilder(PROMETHEUS_SERVER)
+                    .setPath("api/v1/query_range")
+                    .setParameter("query", encodeQuery(query))
+                    .setParameter("step", STEP_PERIOD)
+                    .setParameter("start", Long.toString(submitTimestamp))
+                    .setParameter("end", Long.toString(Instant.now().getEpochSecond()))
+                    .build();
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+            connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
+            
+            String response = IOUtils.toString(connection.getInputStream(), "UTF-8");
+            JSONObject jsonResponse = new JSONObject(response);
+            JSONArray result = jsonResponse
+                    .getJSONObject("data")
+                    .getJSONArray("result");
+            if (result.length() == 0) {
+                buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
+                        + " This can occur when the build time is too short for metrics to appear in Prometheus.",
+                        containerName));
+                return;
+            }
+            JSONArray values = result.getJSONObject(0).getJSONArray("values");
 
-        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
+            try {
+                Files.write(location, createJsonArtifact(values).getBytes());
+            } catch (IOException e) {
+                buildLogger.addErrorLogEntry(
+                        String.format("Error when attempting to write metrics file to %s", location));
+            }
+        } catch (URISyntaxException | IOException | RuntimeException ex) {
             buildLogger.addErrorLogEntry(
                     String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
-                            PROMETHEUS_SERVER, query, response.readEntity(String.class)));
-            return;
-        }
-
-        JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
-        JSONArray result = jsonResponse
-                .getJSONObject("data")
-                .getJSONArray("result");
-        if (result.length() == 0) {
-            buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
-                    + " This can occur when the build time is too short for metrics to appear in Prometheus.",
-                    containerName));
-            return;
-        }
-        JSONArray values = result.getJSONObject(0).getJSONArray("values");
-
-        try {
-            Files.write(location, createJsonArtifact(values).getBytes());
-        } catch (IOException e) {
-            buildLogger.addErrorLogEntry(String.format("Error when attempting to write metrics file to %s", location));
+                            PROMETHEUS_SERVER, query, ex.getClass().getName() + " " + ex.getMessage()));
         }
     }
     
@@ -246,20 +248,20 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     private String query(String query, BuildLogger buildLogger) {
-        WebTarget webTarget = createClient()
-                .target(PROMETHEUS_SERVER)
-                .path("api/v1/query")
-                .queryParam("query", encodeQuery(query));
-
-        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
-            buildLogger.addErrorLogEntry(
-                    String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
-                            PROMETHEUS_SERVER, query, response.readEntity(String.class)));
+//        try {
+//            WebResource webTarget = createClient()
+//                    .resource(new URIBuilder(PROMETHEUS_SERVER)
+//                            .setPath("api/v1/query")
+//                            .setParameter("query", encodeQuery(query))
+//                            .build());
+//            
+//            return webTarget.accept(MediaType.APPLICATION_JSON).get(String.class);
+//        } catch (Throwable t) {
+//            buildLogger.addErrorLogEntry(
+//                    String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
+//                            PROMETHEUS_SERVER, query, t.getClass().getName() + " " + t.getMessage()));
             return null;
-        }
-
-        return response.readEntity(String.class);    
+//        }
     }
     
     /**
@@ -303,12 +305,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         return artifactDetails;
     }
     
-    private Client createClient() {
-        return ClientBuilder
-                .newBuilder()
-                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                .build();
-    }
 
     private String encodeQuery(String query) {
         try {

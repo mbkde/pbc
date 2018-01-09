@@ -23,16 +23,12 @@ import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
-
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.UniformInterfaceException;
+import com.sun.jersey.api.client.WebResource;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.logging.LoggingFeature;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -40,7 +36,7 @@ import org.json.JSONObject;
 public class KubernetesViewMetricsAction extends ViewMetricsAction {
     
     public class ContainerMetrics {
-        private String containerName;
+        private final String containerName;
         private String cpuMetrics;
         private String cpuUserMetrics;
         private String cpuSystemMetrics;
@@ -48,8 +44,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         private String memoryRssMetrics;
         private String memoryCacheMetrics;
         private String memorySwapMetrics;
-        private int memoryLimit;
-        private int cpuLimit;
+        private final int memoryLimit;
+        private final int cpuLimit;
 
         ContainerMetrics(String containerName, int cpuLimit, int memoryLimit) {
             this.containerName = containerName;
@@ -173,24 +169,18 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
         ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
         if (single != null) {
-            Client client = ClientBuilder
-                    .newBuilder()
-                    .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT,
-                            LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                    .build();
-
-            WebTarget webTarget = client.target(single.getUrl());
+            Client client = Client.create();
+            WebResource webTarget = client.resource(single.getUrl());
 
             // We have to directly retrieve the artifact here instead of passing the URL to the user due to
             // same-origin policy.
-            Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-            if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
+            try {
+                return webTarget.accept(MediaType.APPLICATION_JSON).get(String.class);
+            } catch (UniformInterfaceException e) {
                 addActionError(
                         String.format("Error retrieving metrics JSON artifact from %s", single.getUrl()));
                 return null;
             }
-
-            return response.readEntity(String.class);
         }
         return null;
     }
