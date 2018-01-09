@@ -91,7 +91,6 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
                         .stream()
                         .findAny()
                         .map(ArtifactHandlerPublishingResult::getArtifactHandlerKey).orElse(Artifact.SYSTEM_LINK_TYPE));
-        buildLogger.addBuildLogEntry("Generated and published '" + name + "' container performance artifact.");
     }
 
     protected abstract void generateMetricsGraphs(BuildLogger buildLogger, Configuration config);

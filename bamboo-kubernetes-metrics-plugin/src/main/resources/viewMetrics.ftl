@@ -161,7 +161,9 @@ generateNewCPUGraph("${container.name}", ${container.cpuUserMetrics}, ${containe
 
 [#else]
 
+[#if container.cpuMetrics??]
 generateOldCPUGraph("${container.name}", ${container.cpuMetrics});
+[/#if]
 
 [/#if]
 

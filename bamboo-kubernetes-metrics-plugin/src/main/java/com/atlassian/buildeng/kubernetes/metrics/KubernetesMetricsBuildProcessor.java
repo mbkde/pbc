@@ -31,18 +31,17 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -86,9 +85,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
                 return;
             }
-            final Map<String, String> artifactHandlerConfiguration = BuildContextHelper
-                    .getArtifactHandlerConfiguration(buildContext);
-
             Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext)
                     .toPath();
             Path targetDir = buildWorkingDirectory.resolve(METRICS_FOLDER);
@@ -102,23 +98,23 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             final SecureToken secureToken = SecureToken.createFromString(token);
 
             JSONArray artifactsJsonDetails = new JSONArray();
-            List<Pair<String, Enum>> containers = Stream.concat(
-                    Stream.of(new ImmutablePair<>("bamboo-agent", (Enum) config.getSize())),
+            List<ReservationSize> containers = Stream.concat(
+                    Stream.of(createReservationSize("bamboo-agent", (Enum) config.getSize())),
                     config.getExtraContainers().stream().map(
                         (Configuration.ExtraContainer e) ->
-                                    new ImmutablePair<>(e.getName(), (Enum) e.getExtraSize())))
+                                    createReservationSize(e.getName(), (Enum) e.getExtraSize())))
                     .collect(Collectors.toList());
-            for (Pair<String, Enum> containerPair : containers) {
-                String container = containerPair.getLeft();
+            for (ReservationSize containerPair : containers) {
+                String container = containerPair.name;
 
-                collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-                collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-                collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
-                collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
+                final Datapoint[] memAll = collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory",
+                        container, buildLogger, secureToken, buildWorkingDirectory);
+                final Datapoint[] memCache = collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", 
+                        container, buildLogger, secureToken, buildWorkingDirectory);
+                final Datapoint[] memRss = collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", 
+                        container, buildLogger, secureToken, buildWorkingDirectory);
+                final Datapoint[] memSwap = collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap",
+                        container, buildLogger, secureToken, buildWorkingDirectory);
 
                 collectCpuMetric(PROMETHEUS_CPU_METRIC, "-cpu", container, buildLogger, 
                         secureToken, buildWorkingDirectory);
@@ -128,11 +124,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                         secureToken, buildWorkingDirectory);
 
 
-                artifactsJsonDetails.put(generateArtifactDetailsJson(container, containerPair.getRight()));
+                artifactsJsonDetails.put(generateArtifactDetailsJson(containerPair));
                 
-                //TODO avoid the extra calls and extract maximums from the query ranges above.
-                logValues(container, buildLogger);
-                
+                logValues(memAll, memRss, memCache, memSwap, containerPair, buildLogger);
             }
 
             buildContext.getCurrentResult().getCustomBuildData()
@@ -152,23 +146,25 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     
-    private void collectMemoryMetric(String metricName, String suffix, String container,
+    private Datapoint[] collectMemoryMetric(String metricName, String suffix, String container,
             BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
         String fileName = container + suffix;
         String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
                 metricName, KUBE_POD_NAME, container);
-        generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
+        Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
                 queryMemory, container, buildLogger);
         publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                 BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
-
+        return dp;
     }
 
     /**
      * Create a JSON file containing the metrics by querying Prometheus and massaging its output.
      * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
      */
-    private void generateMetricsFile(Path location, String query, String containerName, BuildLogger buildLogger) {
+    @Nonnull
+    private Datapoint[] generateMetricsFile(Path location, String query, 
+            String containerName, BuildLogger buildLogger) {
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
         WebTarget webTarget = createClient()
                 .target(PROMETHEUS_SERVER)
@@ -183,7 +179,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             buildLogger.addErrorLogEntry(
                     String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
                             PROMETHEUS_SERVER, query, response.readEntity(String.class)));
-            return;
+            return new Datapoint[0];
         }
 
         JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
@@ -194,95 +190,92 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
                     + " This can occur when the build time is too short for metrics to appear in Prometheus.",
                     containerName));
-            return;
+            return new Datapoint[0];
         }
         JSONArray values = result.getJSONObject(0).getJSONArray("values");
 
         try {
-            Files.write(location, createJsonArtifact(values).getBytes());
+            Datapoint[] toRet = createDatapoints(values);
+            Files.write(location, createJsonArtifact(toRet).toString().getBytes());
+            return toRet;
         } catch (IOException e) {
             buildLogger.addErrorLogEntry(String.format("Error when attempting to write metrics file to %s", location));
+            return new Datapoint[0];
         }
     }
     
-    private void logValues(String container, BuildLogger buildLogger) {
-        long buildDurationInSeconds = (System.currentTimeMillis() - Long.parseLong(SUBMIT_TIMESTAMP)) / 1000;
-        String queryMaxSwap = String.format(
-                Locale.ENGLISH,
-                "max_over_time(container_memory_swap{pod_name=\"%s\",container_name=\"%s\"}[%ss])", 
-                KUBE_POD_NAME, container, buildDurationInSeconds);
-        String swap =  extractValueFromJson(query(queryMaxSwap, buildLogger));
-        logger.info("max_swap:" + swap + " container:" + container + " pod:" + KUBE_POD_NAME);
+    private void logValues(Datapoint[] memAll, Datapoint[] memRss, Datapoint[] memCache, Datapoint[] memSwap, 
+            ReservationSize container, BuildLogger buildLogger) {
+        double maxRss = maxValue(memRss).orElse(-1);
+        double maxCache = maxValue(memCache).orElse(-1);
+        double maxSwap = maxValue(memSwap).orElse(-1);
         
-        String queryMaxCache = String.format(
-                Locale.ENGLISH,
-                "max_over_time(container_memory_cache{pod_name=\"%s\",container_name=\"%s\"}[%ss])",
-                KUBE_POD_NAME, container, buildDurationInSeconds);
-        String cache = "max_cache:" + extractValueFromJson(query(queryMaxCache, buildLogger)) 
-                + " container:" + container + " pod:" + KUBE_POD_NAME;
-        logger.info(cache);
-        
-        String queryMaxRss = String.format(
-                Locale.ENGLISH,
-                "max_over_time(container_memory_rss{pod_name=\"%s\",container_name=\"%s\"}[%ss])",
-                KUBE_POD_NAME, container, buildDurationInSeconds);
-        String res = "max_rss:" + extractValueFromJson(query(queryMaxRss, buildLogger)) 
-                + " container:" + container + " pod:" + KUBE_POD_NAME;
-        logger.info(res);
+        logger.info("max_swap:" + maxSwap + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_cache:" + maxCache + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_rss:" + maxRss + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        Datapoint maxoverall = maxValueKey(memAll);
+        if (maxoverall != null) {
+            logger.info("max_total:" + maxoverall.y + " container:" + container + " pod:" + KUBE_POD_NAME);
+            if (maxoverall.y > container.memoryInBytes) {
+                double rss = Arrays.stream(memRss)
+                        .filter((Datapoint t) -> t.x == maxoverall.x)
+                        .findFirst().orElse(Datapoint.NONE).y;
+                double swap = Arrays.stream(memSwap)
+                        .filter((Datapoint t) -> t.x == maxoverall.x)
+                        .findFirst().orElse(Datapoint.NONE).y;
+                if (rss > container.memoryInBytes && swap > 0) {
+                    buildLogger.addBuildLogEntry("Warning: The container "
+                            + container.name + " is using both high amount of RSS memory and swap."
+                                    + " Please consider adjusting size of the container.");
+                }
+            }
+            if (maxoverall.y < container.memoryInBytes / 4) {
+                buildLogger.addBuildLogEntry("The container "
+                            + container.name + " is using less than quarter of the memory reserved."
+                                    + " Please consider adjusting the size of the container.");
+            }
+        }
     }
     
-    private String extractValueFromJson(String input) {
-        if (input == null) {
-            return "-1";
-        }
-        JSONObject jsonResponse = new JSONObject(input);
-        JSONArray result = jsonResponse
-                .getJSONObject("data")
-                .getJSONArray("result");
-        if (result.length() == 0) {
-            return "-1";
-        }
-        return result.getJSONObject(0).getJSONArray("value").getString(1);
+    private Datapoint maxValueKey(Datapoint[] arr) {
+        return Arrays.stream(arr).max((Datapoint o1, Datapoint o2) -> {
+            return Double.compare(o1.y, o2.y);
+        }).get();
     }
     
-    private String query(String query, BuildLogger buildLogger) {
-        WebTarget webTarget = createClient()
-                .target(PROMETHEUS_SERVER)
-                .path("api/v1/query")
-                .queryParam("query", encodeQuery(query));
-
-        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
-            buildLogger.addErrorLogEntry(
-                    String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
-                            PROMETHEUS_SERVER, query, response.readEntity(String.class)));
-            return null;
-        }
-
-        return response.readEntity(String.class);    
+    private OptionalDouble maxValue(Datapoint[] arr) {
+        return Arrays.stream(arr).mapToDouble((Datapoint value) -> value.y).max(); 
     }
     
     /**
      * This massages the values obtained from Prometheus into the format that Rickshaw.js expects.
      */
-    private String createJsonArtifact(JSONArray values) {
-        JSONArray data = new JSONArray();
+    private Datapoint[] createDatapoints(JSONArray values) {
+        Datapoint[] toRet = new Datapoint[values.length()];
 
         for (int i = 0; i < values.length(); i++) {
             JSONArray value = values.getJSONArray(i);
-            data.put(createDataPoint(value.getInt(0), value.getString(1)));
+            toRet[i] = new Datapoint(value.getInt(0), Double.parseDouble(value.getString(1)));
         }
-        return data.toString();
+        return toRet;
+    }
+    
+    private JSONArray createJsonArtifact(Datapoint[] datapoints) {
+        JSONArray data = new JSONArray();
+        for (Datapoint dp : datapoints) {
+            data.put(createDataPointJson(dp));
+        }
+        return data;
     }
 
-    private JSONObject createDataPoint(int x, String y) {
+    private JSONObject createDataPointJson(Datapoint dp) {
         JSONObject point = new JSONObject();
-        point.put("x", x);
-        point.put("y", Float.parseFloat(y));
+        point.put("x", dp.x);
+        point.put("y", dp.y);
         return point;
     }
 
-    private JSONObject generateArtifactDetailsJson(String name, Enum containerSize) {
+    private ReservationSize createReservationSize(String name, Enum containerSize) {
         int cpuRequest;
         int memoryRequest;
         if ("bamboo-agent".equals(name)) {
@@ -295,11 +288,14 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             cpuRequest = size.cpu();
             memoryRequest = size.memory();
         }
+        return new ReservationSize(name, cpuRequest, memoryRequest);
+    }
 
+    private JSONObject generateArtifactDetailsJson(ReservationSize reservation) {
         JSONObject artifactDetails = new JSONObject();
-        artifactDetails.put("name", name);
-        artifactDetails.put("cpuRequest", cpuRequest);
-        artifactDetails.put("memoryRequest", memoryRequest);
+        artifactDetails.put("name", reservation.name);
+        artifactDetails.put("cpuRequest", reservation.cpu);
+        artifactDetails.put("memoryRequest", reservation.memory);
         return artifactDetails;
     }
     
@@ -317,4 +313,31 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             throw new RuntimeException("Unable to parse Prometheus query string: " + query, e);
         }
     }
+    
+    private static class Datapoint {
+        private final int x;
+        private final double y;
+        private static Datapoint NONE = new Datapoint(0, -1);
+
+        public Datapoint(int x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+    
+    private static class ReservationSize {
+        private final String name;
+        private final int cpu;
+        private final int memory;
+        private final long memoryInBytes;
+
+        public ReservationSize(String container, int cpu, int memory) {
+            this.name = container;
+            this.cpu = cpu;
+            this.memory = memory;
+            this.memoryInBytes = (long)memory * 1000000;
+        }
+        
+    }
+    
 }
