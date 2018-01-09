@@ -169,15 +169,20 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         try {
             URI uri = new URIBuilder(PROMETHEUS_SERVER)
                     .setPath("api/v1/query_range")
-                    .setParameter("query", encodeQuery(query))
+                    .setParameter("query", query)
                     .setParameter("step", STEP_PERIOD)
                     .setParameter("start", Long.toString(submitTimestamp))
                     .setParameter("end", Long.toString(Instant.now().getEpochSecond()))
                     .build();
             HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-            connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
-
-            String response = IOUtils.toString(connection.getInputStream(), "UTF-8");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
+            String response;
+            try {
+                response = IOUtils.toString(connection.getInputStream(), "UTF-8");
+            } finally {
+                connection.disconnect();
+            }
             JSONObject jsonResponse = new JSONObject(response);
             JSONArray result = jsonResponse
                     .getJSONObject("data")
@@ -300,15 +305,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         artifactDetails.put("cpuRequest", reservation.cpu);
         artifactDetails.put("memoryRequest", reservation.memory);
         return artifactDetails;
-    }
-    
-
-    private String encodeQuery(String query) {
-        try {
-            return URLEncoder.encode(query, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Unable to parse Prometheus query string: " + query, e);
-        }
     }
     
     private static class Datapoint {
