@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReserveFutureCapacityPostStageAction implements PostStageAction {
-    private final static Logger logger = LoggerFactory.getLogger(ReserveFutureCapacityPostStageAction.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReserveFutureCapacityPostStageAction.class);
 
     private static final String FUTURE_RESERVE_STATE = "pbc.futureState";
 
@@ -35,7 +35,8 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
     }
 
     @Override
-    public void execute(ChainResultsSummary chainResultsSummary, ChainStageResult chainStageResult, StageExecution stageExecution) throws InterruptedException, Exception {
+    public void execute(ChainResultsSummary chainResultsSummary, ChainStageResult chainStageResult,
+            StageExecution stageExecution) throws InterruptedException, Exception {
         //cleanup future reservations in case of failure.
         FutureState state = retrieveFutureState(stageExecution);
         boolean successful = chainStageResult.isSuccessful();
@@ -63,13 +64,14 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
 
     }
 
-    static void storeFutureState(StageExecution stageExecution, ReserveFutureCapacityPostStageAction.FutureState state) {
+    static void storeFutureState(StageExecution stageExecution,
+            ReserveFutureCapacityPostStageAction.FutureState state) {
         stageExecution.getBuilds().stream()
                 .map(BuildExecution::getBuildContext)
                 .map(BuildContext::getBuildResult)
                 .forEach((CurrentBuildResult t) -> {
                     t.getCustomBuildData().put(ReserveFutureCapacityPostStageAction.FUTURE_RESERVE_STATE, state.name());
-        });
+                });
     }
 
 

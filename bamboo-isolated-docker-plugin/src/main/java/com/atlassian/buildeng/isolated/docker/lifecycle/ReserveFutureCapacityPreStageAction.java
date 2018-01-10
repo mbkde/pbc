@@ -27,9 +27,7 @@ import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryCriteria;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
-import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildKey;
-import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -47,12 +45,13 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
     private static final int MINIMUM_RESULT_COUNT = 5;
     private static final int TOTAL_RESULT_COUNT = 10;
 
-    private final static Logger logger = LoggerFactory.getLogger(ReserveFutureCapacityPreStageAction.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReserveFutureCapacityPreStageAction.class);
     private final IsolatedAgentService isoService;
     private final ResultsSummaryManager resultsSummaryManager;
     private final CachedPlanManager cachedPlanManager;
 
-    public ReserveFutureCapacityPreStageAction(IsolatedAgentService isoService, ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager) {
+    public ReserveFutureCapacityPreStageAction(IsolatedAgentService isoService,
+            ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager) {
         this.isoService = isoService;
         this.resultsSummaryManager = resultsSummaryManager;
         this.cachedPlanManager = cachedPlanManager;
@@ -60,26 +59,34 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
 
     @Override
     public void execute(StageExecution stageExecution) throws InterruptedException, Exception {
-        Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
-        Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
-        Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
-        Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
+        Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex())
+                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
+        Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex())
+                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
+        Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1)
+                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
+        Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1)
+                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
         long diffCpu = Math.max(0, nextStageCpu - currentStageCpu);
         long diffMem = Math.max(0, nextStageMem - currentStageMem);
         if (diffMem > 0 || diffCpu > 0) {
             long seconds = stageSuccessfulCompletionAvg(stageExecution);
             if (seconds != -1) { //for now ignore the time it takes, only care about succ/fail ratio
                 BuildKey key = findBuildKey(stageExecution);
-                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, ReserveFutureCapacityPostStageAction.FutureState.RESERVED);
-                logger.info("Adding future reservation for {} {} ", key, stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex()));
+                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, 
+                        ReserveFutureCapacityPostStageAction.FutureState.RESERVED);
+                logger.info("Adding future reservation for {} {} ", key, 
+                        stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex()));
                 isoService.reserveCapacity(key,
                     stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                     diffMem, diffCpu);
             } else {
-                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, ReserveFutureCapacityPostStageAction.FutureState.NOT_RESERVED);
+                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution,
+                        ReserveFutureCapacityPostStageAction.FutureState.NOT_RESERVED);
             }
         } else {
-            ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution, ReserveFutureCapacityPostStageAction.FutureState.NOT_APPLICABLE);
+            ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution,
+                    ReserveFutureCapacityPostStageAction.FutureState.NOT_APPLICABLE);
         }
     }
 
