@@ -215,7 +215,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         logger.info("max_rss:" + maxRss + " container:" + container.name + " pod:" + KUBE_POD_NAME);
         Datapoint maxoverall = maxValueKey(memAll);
         if (maxoverall != null) {
-            logger.info("max_total:" + maxoverall.y + " container:" + container + " pod:" + KUBE_POD_NAME);
+            logger.info("max_total:" + maxoverall.y + " container:" + container.name + " pod:" + KUBE_POD_NAME);
             if (maxoverall.y > container.memoryInBytes) {
                 double rss = Arrays.stream(memRss)
                         .filter((Datapoint t) -> t.x == maxoverall.x)
@@ -331,8 +331,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         private final int memory;
         private final long memoryInBytes;
 
-        public ReservationSize(String container, int cpu, int memory) {
-            this.name = container;
+        public ReservationSize(String name, int cpu, int memory) {
+            this.name = name;
             this.cpu = cpu;
             this.memory = memory;
             this.memoryInBytes = (long)memory * 1000000;
