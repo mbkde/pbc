@@ -26,8 +26,9 @@ import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -37,12 +38,9 @@ import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.logging.LoggingFeature;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.utils.URIBuilder;
+import org.codehaus.plexus.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -65,8 +63,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String PROMETHEUS_CPU_SYSTEM_METRIC = "container_cpu_system_seconds_total";
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
-    // TODO: Pull this from somewhere
-    private static final String PROMETHEUS_SERVER = "http://prometheus.monitoring.svc.cluster.local:9090";
     private static final String STEP_PERIOD = "15s";
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
@@ -85,6 +81,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
                 return;
             }
+            String prometheusUrl = buildContext.getBuildResult()
+                    .getCustomBuildData().get(GlobalConfiguration.BANDANA_PROMETHEUS_URL);
+            if (StringUtils.isBlank(prometheusUrl)) {
+                buildLogger.addErrorLogEntry("Prometheus URL not configured on server.");
+                return;
+            }
+            
             Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext)
                     .toPath();
             Path targetDir = buildWorkingDirectory.resolve(METRICS_FOLDER);
@@ -108,20 +111,20 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 String container = containerPair.name;
 
                 final Datapoint[] memAll = collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory",
-                        container, buildLogger, secureToken, buildWorkingDirectory);
+                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
                 final Datapoint[] memCache = collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache", 
-                        container, buildLogger, secureToken, buildWorkingDirectory);
+                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
                 final Datapoint[] memRss = collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss", 
-                        container, buildLogger, secureToken, buildWorkingDirectory);
+                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
                 final Datapoint[] memSwap = collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap",
-                        container, buildLogger, secureToken, buildWorkingDirectory);
+                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
 
                 collectCpuMetric(PROMETHEUS_CPU_METRIC, "-cpu", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
+                        secureToken, prometheusUrl, buildWorkingDirectory);
                 collectCpuMetric(PROMETHEUS_CPU_USER_METRIC, "-cpu-user", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
+                        secureToken, prometheusUrl, buildWorkingDirectory);
                 collectCpuMetric(PROMETHEUS_CPU_SYSTEM_METRIC, "-cpu-system", container, buildLogger, 
-                        secureToken, buildWorkingDirectory);
+                        secureToken, prometheusUrl, buildWorkingDirectory);
 
 
                 artifactsJsonDetails.put(generateArtifactDetailsJson(containerPair));
@@ -135,24 +138,24 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     private void collectCpuMetric(String metricName, String suffix, String container,
-            BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
+            BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
         String fileName = container + suffix;
         String queryMemory = String.format("sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
                 metricName, KUBE_POD_NAME, container);
         generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
-                queryMemory, container, buildLogger);
+                queryMemory, container, prometheusUrl, buildLogger);
         publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                 BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
     }
     
     
     private Datapoint[] collectMemoryMetric(String metricName, String suffix, String container,
-            BuildLogger buildLogger, SecureToken secureToken, Path buildWorkingDirectory) {
+            BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
         String fileName = container + suffix;
         String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
                 metricName, KUBE_POD_NAME, container);
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
-                queryMemory, container, buildLogger);
+                queryMemory, container, prometheusUrl, buildLogger);
         publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                 BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
         return dp;
@@ -163,43 +166,50 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      * Prometheus HTTP API: https://prometheus.io/docs/querying/api/
      */
     @Nonnull
-    private Datapoint[] generateMetricsFile(Path location, String query, 
-            String containerName, BuildLogger buildLogger) {
+    private Datapoint[] generateMetricsFile(Path location, String query,
+            String containerName, String prometheusUrl, BuildLogger buildLogger) {
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
-        WebTarget webTarget = createClient()
-                .target(PROMETHEUS_SERVER)
-                .path("api/v1/query_range")
-                .queryParam("query", encodeQuery(query))
-                .queryParam("step", STEP_PERIOD)
-                .queryParam("start", submitTimestamp)
-                .queryParam("end", Instant.now().getEpochSecond());
-
-        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
+        try {
+            URI uri = new URIBuilder(prometheusUrl)
+                    .setPath("api/v1/query_range")
+                    .setParameter("query", query)
+                    .setParameter("step", STEP_PERIOD)
+                    .setParameter("start", Long.toString(submitTimestamp))
+                    .setParameter("end", Long.toString(Instant.now().getEpochSecond()))
+                    .build();
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
+            String response;
+            try {
+                response = IOUtils.toString(connection.getInputStream(), "UTF-8");
+            } finally {
+                connection.disconnect();
+            }
+            JSONObject jsonResponse = new JSONObject(response);
+            JSONArray result = jsonResponse
+                    .getJSONObject("data")
+                    .getJSONArray("result");
+            if (result.length() == 0) {
+                buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
+                        + " This can occur when the build time is too short for metrics to appear in Prometheus.",
+                        containerName));
+                return new Datapoint[0];
+            }
+            JSONArray values = result.getJSONObject(0).getJSONArray("values");
+            try {
+                Datapoint[] toRet = createDatapoints(values);
+                Files.write(location, createJsonArtifact(toRet).toString().getBytes());
+                return toRet;
+            } catch (IOException e) {
+                buildLogger.addErrorLogEntry(
+                        String.format("Error when attempting to write metrics file to %s", location));
+                return new Datapoint[0];
+            }
+        } catch (URISyntaxException | IOException | RuntimeException ex) {
             buildLogger.addErrorLogEntry(
                     String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
-                            PROMETHEUS_SERVER, query, response.readEntity(String.class)));
-            return new Datapoint[0];
-        }
-
-        JSONObject jsonResponse = new JSONObject(response.readEntity(String.class));
-        JSONArray result = jsonResponse
-                .getJSONObject("data")
-                .getJSONArray("result");
-        if (result.length() == 0) {
-            buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
-                    + " This can occur when the build time is too short for metrics to appear in Prometheus.",
-                    containerName));
-            return new Datapoint[0];
-        }
-        JSONArray values = result.getJSONObject(0).getJSONArray("values");
-
-        try {
-            Datapoint[] toRet = createDatapoints(values);
-            Files.write(location, createJsonArtifact(toRet).toString().getBytes());
-            return toRet;
-        } catch (IOException e) {
-            buildLogger.addErrorLogEntry(String.format("Error when attempting to write metrics file to %s", location));
+                            prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
             return new Datapoint[0];
         }
     }
@@ -243,6 +253,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         }).get();
     }
     
+
     private OptionalDouble maxValue(Datapoint[] arr) {
         return Arrays.stream(arr).mapToDouble((Datapoint value) -> value.y).max(); 
     }
@@ -297,21 +308,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         artifactDetails.put("cpuRequest", reservation.cpu);
         artifactDetails.put("memoryRequest", reservation.memory);
         return artifactDetails;
-    }
-    
-    private Client createClient() {
-        return ClientBuilder
-                .newBuilder()
-                .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT, LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                .build();
-    }
-
-    private String encodeQuery(String query) {
-        try {
-            return URLEncoder.encode(query, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Unable to parse Prometheus query string: " + query, e);
-        }
     }
     
     private static class Datapoint {
