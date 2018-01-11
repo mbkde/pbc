@@ -210,12 +210,12 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         double maxCache = maxValue(memCache).orElse(-1);
         double maxSwap = maxValue(memSwap).orElse(-1);
         
-        logger.info("max_swap:" + maxSwap + " container:" + container.name + " pod:" + KUBE_POD_NAME);
-        logger.info("max_cache:" + maxCache + " container:" + container.name + " pod:" + KUBE_POD_NAME);
-        logger.info("max_rss:" + maxRss + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_swap:" + (long)maxSwap + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_cache:" + (long)maxCache + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_rss:" + (long)maxRss + " container:" + container.name + " pod:" + KUBE_POD_NAME);
         Datapoint maxoverall = maxValueKey(memAll);
         if (maxoverall != null) {
-            logger.info("max_total:" + maxoverall.y + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+            logger.info("max_total:" + (long)maxoverall.y + " container:" + container.name + " pod:" + KUBE_POD_NAME);
             if (maxoverall.y > container.memoryInBytes) {
                 double rss = Arrays.stream(memRss)
                         .filter((Datapoint t) -> t.x == maxoverall.x)
