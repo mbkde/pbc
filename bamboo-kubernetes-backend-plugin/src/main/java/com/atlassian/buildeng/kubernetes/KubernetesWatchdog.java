@@ -32,7 +32,6 @@ import com.atlassian.event.api.EventPublisher;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -46,8 +45,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,20 +125,14 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
             if (!deleted) {
-                List<String> waitingErrorStates = pod.getStatus().getContainerStatuses().stream()
-                        .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
-                        .filter((ContainerStatus t) -> 
-                                "ImageInspectError".equals(t.getState().getWaiting().getReason())
-                             || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason()))
-                        .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getWaiting().getReason() + ":"
-                                + (StringUtils.isBlank(t.getState().getWaiting().getMessage()) 
-                                        ? "<no details>" : t.getState().getWaiting().getMessage()))
-                        .collect(Collectors.toList());
-                if (!waitingErrorStates.isEmpty()) {
-                    logger.info("Killing pod {} with error waiting state. Container states: {}",
-                            KubernetesHelper.getName(pod), waitingErrorStates);
+                List<String> errorStates = Stream.concat(
+                        waitingStateErrorsStream(pod),
+                        terminatedStateErrorsStream(pod)).collect(Collectors.toList());
+                if (!errorStates.isEmpty()) {
+                    logger.info("Killing pod {} with error state. Container states: {}",
+                            KubernetesHelper.getName(pod), errorStates);
                     deleted = deletePod(
-                            client, pod, terminationReasons, "Container error state(s):" + waitingErrorStates);
+                            client, pod, terminationReasons, "Container error state(s):" + errorStates);
                     if (deleted) {
                         killed.add(pod);
                     }
@@ -246,6 +239,29 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
         });
+    }
+
+    private Stream<String> waitingStateErrorsStream(Pod pod) {
+        return pod.getStatus().getContainerStatuses().stream()
+                .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
+                .filter((ContainerStatus t) ->
+                        "ImageInspectError".equals(t.getState().getWaiting().getReason())
+                                || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason())
+                                || "InvalidImageName".equals(t.getState().getWaiting().getReason()))
+                .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getWaiting().getReason() + ":"
+                        + (StringUtils.isBlank(t.getState().getWaiting().getMessage())
+                                ? "<no details>" : t.getState().getWaiting().getMessage()));
+    }
+    
+    private Stream<String> terminatedStateErrorsStream(Pod pod) {
+        return pod.getStatus().getContainerStatuses().stream()
+                .filter((ContainerStatus t) -> t.getState().getTerminated() != null)
+                .filter((ContainerStatus t) ->
+                        "Error".equals(t.getState().getTerminated().getReason()))
+                .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getTerminated().getReason() + ":"
+                        + "ExitCode:" + t.getState().getTerminated().getExitCode() + " - "
+                        + (StringUtils.isBlank(t.getState().getTerminated().getMessage())
+                                ? "<no details>" : t.getState().getTerminated().getMessage()));
     }
     
     
