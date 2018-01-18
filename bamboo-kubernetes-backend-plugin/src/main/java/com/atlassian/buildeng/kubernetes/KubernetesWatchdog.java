@@ -93,8 +93,11 @@ public class KubernetesWatchdog extends WatchdogJob {
 
 
         KubernetesClient client = new KubernetesClient(globalConfiguration);
+        long start = System.currentTimeMillis();
         List<Pod> pods = client.getPods(
                 PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
+        logger.debug("Time it took query current pods {}", Duration.ofMillis(System.currentTimeMillis() - start));
+        
         Map<String, TerminationReason> terminationReasons = getPodTerminationReasons(jobDataMap);
         List<Pod> killed = new ArrayList<>();
         
