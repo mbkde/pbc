@@ -99,7 +99,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         try {
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
-            logger.debug("Kubernetes successfully processed request for " + request.getResultKey());
+            Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
+            logger.info("Kubernetes successfully processed request for {} in {}", request.getResultKey(), servedIn);
             callback.handle(new IsolatedDockerAgentResult()
                     .withCustomResultData(NAME, KubernetesHelper.getName(pod))
                     .withCustomResultData(UID, pod.getMetadata().getUid()));

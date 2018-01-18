@@ -192,11 +192,12 @@ public class KubernetesWatchdog extends WatchdogJob {
                 Pod pod = nameToPod.get(podName);
 
                 if (pod == null) {
+                    Duration grace = Duration.ofMillis(System.currentTimeMillis() - queueTime);
                     if (terminationReasons.get(podName) != null
-                            || Duration.ofMillis(System.currentTimeMillis() - queueTime).toMinutes()
-                                    >= MISSING_POD_GRACE_PERIOD_MINUTES) {
+                            || grace.toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES) {
                         String logMessage = "Build was not queued due to pod deletion: " + podName;
-                        logger.info("Stopping job {} because pod {} no longer exists", context.getResultKey(), podName);
+                        logger.info("Stopping job {} because pod {} no longer exists (grace timeout {})",
+                                context.getResultKey(), podName, grace);
                         errorUpdateHandler.recordError(context.getEntityKey(), logMessage);
 
                         String errorMessage;
