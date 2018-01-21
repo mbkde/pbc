@@ -66,6 +66,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
     @Override
     public final void execute(Map<String, Object> jobDataMap) {
+        long start = System.currentTimeMillis();
         try {
             executeImpl(jobDataMap);
         } catch (Throwable t) { 
@@ -74,6 +75,7 @@ public class KubernetesWatchdog extends WatchdogJob {
             // throwing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
+        logger.debug("Time overall {}", Duration.ofMillis(System.currentTimeMillis() - start));
 
     }
 
@@ -93,10 +95,11 @@ public class KubernetesWatchdog extends WatchdogJob {
 
 
         KubernetesClient client = new KubernetesClient(globalConfiguration);
-        long start = System.currentTimeMillis();
+        long clusterStateQueryTime = System.currentTimeMillis();
         List<Pod> pods = client.getPods(
                 PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
-        logger.debug("Time it took query current pods {}", Duration.ofMillis(System.currentTimeMillis() - start));
+        logger.debug("Time it took query current pods {}", 
+                Duration.ofMillis(System.currentTimeMillis() - clusterStateQueryTime));
         
         Map<String, TerminationReason> terminationReasons = getPodTerminationReasons(jobDataMap);
         List<Pod> killed = new ArrayList<>();
@@ -195,7 +198,14 @@ public class KubernetesWatchdog extends WatchdogJob {
                 Pod pod = nameToPod.get(podName);
 
                 if (pod == null) {
-                    Duration grace = Duration.ofMillis(System.currentTimeMillis() - queueTime);
+                    //we don't use System.currentTimeMillis but clusterStateQueryTime here because our data is based
+                    //on a query that could have happened significantly in the past. The pod query itself takes time
+                    //and every pod deletion equals to 2 kubectl commands and thus in this loop we can accumulate
+                    //significant time penalties that don't fit MISSING_POD_GRACE_PERIOD_MINUTES nicely.
+                    //Ideally we would also not compare to QUEUE_TIMESTAMP but to the time when 'kubectl create pod' was
+                    //actually executed in KubernetesIsolatedDockerImpl (we create pods concurrently, still 
+                    //can incur some time penalty there.
+                    Duration grace = Duration.ofMillis(clusterStateQueryTime - queueTime);
                     if (terminationReasons.get(podName) != null
                             || grace.toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES) {
                         String logMessage = "Build was not queued due to pod deletion: " + podName;
