@@ -23,11 +23,18 @@ import java.util.Map;
  * Base class for events sent to Datadog via the monitoring plugin.
  */
 public abstract class DockerAgentEvent {
-    
+        
     protected static final boolean ddmarkdown = Boolean.parseBoolean(
             System.getProperty("pbc.event.tostring.datadog", "true"));
     
     public abstract String toString();
+    
+    /**
+     * loose coupling with bamboo-monitoring-plugin, if this method is present, it will send the event to datadog.
+     */
+    public String getMonitoringPluginEventTag() {
+        return "pbc";
+    }    
 
     protected final String generateMarkdownLinks(Map<String, URL> markdownLinks) {
         StringBuilder sb = new StringBuilder();
