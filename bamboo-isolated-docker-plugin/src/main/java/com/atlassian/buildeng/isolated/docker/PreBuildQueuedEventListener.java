@@ -65,6 +65,7 @@ public class PreBuildQueuedEventListener {
     private final DeploymentResultService deploymentResultService;
     private final DeploymentExecutionService deploymentExecutionService;
     private final AgentRemovals agentRemovals;
+    private final AgentLicenseLimits agentLicenseLimits;
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
@@ -78,6 +79,7 @@ public class PreBuildQueuedEventListener {
                                         DeploymentExecutionService deploymentExecutionService,
                                         EventPublisher eventPublisher,
                                         AgentRemovals agentRemovals,
+                                        AgentLicenseLimits agentLicenseLimits,
                                         DockerSoxService dockerSoxService) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
@@ -89,6 +91,7 @@ public class PreBuildQueuedEventListener {
         this.eventPublisher = eventPublisher;
         this.dockerSoxService = dockerSoxService;
         this.deploymentExecutionService = deploymentExecutionService;
+        this.agentLicenseLimits = agentLicenseLimits;
     }
 
     @EventListener
@@ -118,17 +121,30 @@ public class PreBuildQueuedEventListener {
     }
 
     @EventListener
-    public void retry(RetryAgentStartupEvent event) {
+    public void retry(RetryAgentStartupEvent event) {        
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             logger.info("Retrying but {} was already cancelled, aborting. (state:{})",
-                    event.getContext().getResultKey().getKey(), event.getContext().getCurrentResult().getLifeCycleState());
+                    event.getContext().getResultKey().getKey(), 
+                    event.getContext().getCurrentResult().getLifeCycleState());
             //TODO cancel future reservations if any
             jmx.incrementCancelled();
             return;
+        }        
+        
+        synchronized (this) {
+            clearResultCustomData(event.getContext());
+            //done between clear and set to avoid counting the current one.
+            if (agentLicenseLimits.checkLicenseLimit(event)) {
+                logger.info("Limit of existing online agents and those already "
+                        + "started by PBC was reached. Rescheduling {}",
+                        event.getContext().getResultKey());
+                return;
+            }
+            setBuildkeyCustomData(event.getContext());
         }
-        clearResultCustomData(event.getContext());
-        setBuildkeyCustomData(event.getContext());
+        
+        
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
                         event.getUniqueIdentifier(), 

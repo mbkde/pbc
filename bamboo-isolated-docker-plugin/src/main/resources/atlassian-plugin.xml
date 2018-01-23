@@ -90,6 +90,9 @@ limitations under the License.
     <component key="agentRemovals" class="com.atlassian.buildeng.isolated.docker.AgentRemovals">
     </component>
 
+    <component key="agentLicenseLimits" class="com.atlassian.buildeng.isolated.docker.AgentLicenseLimits">
+    </component>
+    
     <component key="unmetRequirements" class="com.atlassian.buildeng.isolated.docker.UnmetRequirements">
     </component>
 

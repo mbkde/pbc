@@ -13,9 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
@@ -27,6 +38,7 @@ import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -34,23 +46,12 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventPublisher;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -69,9 +70,13 @@ public class PreBuildQueuedEventListenerTest {
     private DockerSoxService dockerSoxService;
     @Mock
     private JMXAgentsService jmx;
+    @Mock
+    private AgentLicenseLimits agentLicenseLimits;
             
     @InjectMocks
     private PreBuildQueuedEventListener listener;
+    
+    
 
     @Before
     public void mockSox() {
@@ -202,6 +207,19 @@ public class PreBuildQueuedEventListenerTest {
         assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.DOCKER_IMAGE));
     }    
     
+    
+  
+    @Test
+    public void testLicenseLimitReached() throws IsolatedDockerAgentException {
+        BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        when(agentLicenseLimits.checkLicenseLimit(anyObject())).thenReturn(Boolean.TRUE);
+        listener.call(event);
+        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
+        //well, actually called but inside agentLicenseLimits component.
+        verify(scheduler, never()).reschedule(anyObject());
+        verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
+    }    
 
     private BuildContext mockBuildContext(boolean dockerEnabled, String image, LifeCycleState state) {
         BuildContext buildContext = mock(BuildContext.class);
