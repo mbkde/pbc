@@ -38,6 +38,11 @@ public class AgentLicenseLimits {
         this.buildQueueManager = buildQueueManager;
     }
 
+    /**
+     * check if license limit on agents was reached
+     * @param event
+     * @return true when limit was reached.
+     */
     boolean checkLicenseLimit(RetryAgentStartupEvent event) {
         //this will sometimes for (short) periods of time allow smaller amount of agents, due to the fact that
         // we might have some agents already registered but they haven't picked up jobs yet,
@@ -50,6 +55,6 @@ public class AgentLicenseLimits {
                     event.getContext().getResultKey());
             rescheduler.reschedule(event);
         }
-        return allowAdditional;
+        return !allowAdditional;
     }
 }
