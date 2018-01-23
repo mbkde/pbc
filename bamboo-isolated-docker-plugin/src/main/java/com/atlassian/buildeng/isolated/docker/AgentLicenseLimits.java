@@ -40,21 +40,21 @@ public class AgentLicenseLimits {
 
     /**
      * check if license limit on agents was reached
-     * @param event
+     * @param event parameter
      * @return true when limit was reached.
      */
-    boolean checkLicenseLimit(RetryAgentStartupEvent event) {
+    boolean licenseLimitReached(RetryAgentStartupEvent event) {
         //this will sometimes for (short) periods of time allow smaller amount of agents, due to the fact that
         // we might have some agents already registered but they haven't picked up jobs yet,
         // so effectively counting them twice.
         long queued = DockerAgentBuildQueue.currentlyQueued(buildQueueManager).count();
-        boolean allowAdditional = agentManager.allowNewRemoteAgents((int) (1 + queued));
-        if (!allowAdditional) {
+        boolean limitReached = !agentManager.allowNewRemoteAgents((int) (1 + queued));
+        if (limitReached) {
             //intentionally not creating new event object to avoid increasing the retry count.
             logger.debug("Remote agent limit reached, delaying agent creation for {}",
                     event.getContext().getResultKey());
             rescheduler.reschedule(event);
         }
-        return !allowAdditional;
+        return limitReached;
     }
 }

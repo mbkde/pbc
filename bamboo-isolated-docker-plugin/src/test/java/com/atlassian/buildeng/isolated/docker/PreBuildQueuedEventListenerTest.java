@@ -213,7 +213,7 @@ public class PreBuildQueuedEventListenerTest {
     public void testLicenseLimitReached() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
-        when(agentLicenseLimits.checkLicenseLimit(anyObject())).thenReturn(Boolean.TRUE);
+        when(agentLicenseLimits.licenseLimitReached(anyObject())).thenReturn(Boolean.TRUE);
         listener.call(event);
         verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
         //well, actually called but inside agentLicenseLimits component.

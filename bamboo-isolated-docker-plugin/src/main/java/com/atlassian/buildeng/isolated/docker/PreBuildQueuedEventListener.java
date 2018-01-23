@@ -121,7 +121,7 @@ public class PreBuildQueuedEventListener {
     }
 
     @EventListener
-    public void retry(RetryAgentStartupEvent event) {        
+    public void retry(RetryAgentStartupEvent event) {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             logger.info("Retrying but {} was already cancelled, aborting. (state:{})",
@@ -135,7 +135,7 @@ public class PreBuildQueuedEventListener {
         synchronized (this) {
             clearResultCustomData(event.getContext());
             //done between clear and set to avoid counting the current one.
-            if (agentLicenseLimits.checkLicenseLimit(event)) {
+            if (agentLicenseLimits.licenseLimitReached(event)) {
                 logger.info("Limit of existing online agents and those already "
                         + "started by PBC was reached. Rescheduling {}",
                         event.getContext().getResultKey());
@@ -143,7 +143,6 @@ public class PreBuildQueuedEventListener {
             }
             setBuildkeyCustomData(event.getContext());
         }
-        
         
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
