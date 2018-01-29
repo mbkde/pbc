@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 
 public class PodCreator {
     /**
@@ -190,6 +191,8 @@ public class PodCreator {
     private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("restartPolicy", "Never");
+        //63 is max - https://tools.ietf.org/html/rfc2181#section-11
+        map.put("hostname", StringUtils.left(r.getResultKey().toLowerCase(Locale.ENGLISH), 63));
         map.put("volumes", createVolumes());
         map.put("containers", createContainers(globalConfiguration, r));
         List<Map<String, Object>> initContainersList = new ArrayList<>();
