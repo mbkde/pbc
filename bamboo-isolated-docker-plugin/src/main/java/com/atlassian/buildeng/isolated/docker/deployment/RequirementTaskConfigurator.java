@@ -129,6 +129,10 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
                                 if (StringUtils.isBlank(v2.getName())) {
                                     errorCollection.addErrorMessage("Extra container requires a non empty name.");
                                 }
+                                if (!v2.getName().matches("[a-z0-9]([\\-a-z0-9]*[a-z0-9])?")) {
+                                    errorCollection.addErrorMessage("Extra container name should "
+                                            + "be composed of lowercase letters, numbers and - character only");
+                                }
                                 if (StringUtils.isBlank(v2.getImage())) {
                                     errorCollection.addErrorMessage("Extra container requires non empty image.");
                                 }
