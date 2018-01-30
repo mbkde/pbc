@@ -1,7 +1,7 @@
 Gotchas and known limitations
 =============================
 
-* Kubernetes and simple docker backends only implement a subset of features. They might be missing
+* Simple docker backends only implements a subset of features. It might be missing
 Extra containers, container resource reservations, bits to have Docker in Docker work etc.
 
 * The ECS backend can currently only have the following EC2 instance types in the AutoScaling Group:
@@ -10,8 +10,8 @@ m4.xlarge, m4.4xlarge, m4.10xlarge and m4.16xlarge. It should be simple to exten
 * All containers in ECS task need to fit on single EC2 instance in ASG. The UI will allow to define larger container sizes
 but the such agents will not be able to materialize.
 
-* We've only tested with close to unlimited license in terms of number of agents available. Unclear what happens when you
-run out of license count.
+* We've only tested with close to unlimited license in terms of number of agents available. 
+[Issue 13](https://bitbucket.org/atlassian/per-build-container/issues/13/bamboo-pbc-build-fails-when-license-limit) added some limit handling but might not be bulletproof.
 
 * Our Bamboo instance once in a while end up in trouble when they try to start 500+ agent at about the same time.
 
@@ -25,6 +25,10 @@ passed to either Bamboo server or the ecs-scheduler-service (based on what ECS b
 * We've had bad experience with fluentd log driver that managed to crash Docker daemon occasionally.
 
 * We've had bad experience with the default storage driver on AWS ECS AMI and changed it to overlay.
+
+* Kubernetes scaling and scheduling of pods is outside of the scope of the plugin. You have to deal with it on Kube side.
+
+* Kubernetes container logs storage is also out of scope.
 
 
 
