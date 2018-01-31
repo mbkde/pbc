@@ -30,7 +30,7 @@ The most battle hardened are the ones backed by AWS ECS. Download all binaries i
 * [bamboo-remote-ecs-backend-plugin](bamboo-remote-ecs-backend-plugin/README.md) - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
 requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
-* [bamboo-kubernetes-backend-plugin](bamboo-kubernetes-backend-plugin/README.md) - Alpha backend that schedules agents on Kubernetes cluster.
+* [bamboo-kubernetes-backend-plugin](bamboo-kubernetes-backend-plugin/README.md) - Beta backend that schedules agents on Kubernetes cluster.
 
 In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use. See individual plugin's documentation for details.
 
