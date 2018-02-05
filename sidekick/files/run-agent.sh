@@ -24,10 +24,15 @@ EOF
 
 # kill the agent after running the given timeout, we don't expect jobs to run longer than this
 TIMEOUT=6h
+# To support alpine, we need the '-t' parameter before the timeout
+case "$(timeout 2>&1)" in
+    *BusyBox*) timeout_flag='-t';;
+    *) timeout_flag='';;
+esac
 
 # Actually run the agent
 while [ $? -eq 0 ]; do
-    timeout --signal=KILL $TIMEOUT jre/bin/java  \
+    timeout -s KILL $timeout_flag $TIMEOUT jre/bin/java  \
  -Dbamboo.home=bamboo-agent-home -DDISABLE_AGENT_AUTO_CAPABILITY_DETECTION=true -jar atlassian-bamboo-agent.jar $BAMBOO_SERVER/agentServer/
 done
 
