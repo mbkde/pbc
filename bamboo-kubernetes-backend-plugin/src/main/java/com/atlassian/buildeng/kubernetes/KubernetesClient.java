@@ -92,9 +92,15 @@ class KubernetesClient {
 
     void deletePod(Pod pod)
             throws InterruptedException, IOException, KubectlException {
-        executeKubectl("delete", "pod", KubernetesHelper.getName(pod));
+        deletePod(KubernetesHelper.getName(pod));
     }
 
+    
+    void deletePod(String podName)
+            throws InterruptedException, IOException, KubectlException {
+        executeKubectl("delete", "pod", podName);
+    }
+    
     class KubectlException extends Exception {
         KubectlException(String message) {
             super(message);
