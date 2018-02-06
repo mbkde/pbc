@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
-import com.atlassian.buildeng.isolated.docker.AgentQueries;
-import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.event.BuildCanceledEvent;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.events.AgentOfflineEvent;
+import com.atlassian.buildeng.isolated.docker.AgentQueries;
+import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.event.api.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

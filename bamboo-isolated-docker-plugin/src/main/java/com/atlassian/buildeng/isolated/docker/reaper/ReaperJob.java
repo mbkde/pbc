@@ -55,9 +55,6 @@ public class ReaperJob implements PluginJob {
     void executeImpl(Map<String, Object> jobDataMap) {
 
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
-        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(
-                Reaper.REAPER_AGENTS_HELPER_KEY
-        );
         AgentRemovals agentRemovals = (AgentRemovals) jobDataMap.get(Reaper.REAPER_REMOVALS_KEY);
         UnmetRequirements unmetRequirement = (UnmetRequirements) jobDataMap.get(Reaper.REAPER_UNMET_KEY);
         
@@ -72,6 +69,9 @@ public class ReaperJob implements PluginJob {
 
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
+        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(
+                Reaper.REAPER_AGENTS_HELPER_KEY
+        );
         Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
                 ExecutorQuery.newQueryWithoutAssignments(reqs)
         );
@@ -82,10 +82,10 @@ public class ReaperJob implements PluginJob {
             PipelineDefinition definition = agent.getDefinition();
             Date creationTime = definition.getCreationDate();
             long currentTime = System.currentTimeMillis();
-            if (AgentQueries.isDockerAgent(agent) &&
-                    agent.getAgentStatus().isIdle() &&
-                    creationTime != null &&
-                    currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS) {
+            if (AgentQueries.isDockerAgent(agent)
+                    && agent.getAgentStatus().isIdle()
+                    && creationTime != null
+                    && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS) {
                 relevantAgents.add(agent);
             }
         }

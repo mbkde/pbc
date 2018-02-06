@@ -64,5 +64,10 @@ limitations under the License.
             </action>
         </package>
     </xwork>
+    
+    <bambooEventListener key="onCancelledBuild" name="Listens on Build Cancelled events"
+                         class="com.atlassian.buildeng.kubernetes.OnCancelledBuild">
+        <description>Listens to events of Bamboo.</description>
+    </bambooEventListener>    
 
 </atlassian-plugin>
