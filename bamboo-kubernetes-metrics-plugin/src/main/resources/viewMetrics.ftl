@@ -26,6 +26,7 @@ Shows CPU and memory unitization of PBC containers used in the build. If absent,
 <div class="chartContainer">
     <div class="yAxis" id="${container.name}-y-axis-cpu"></div>
     <div class="chart" id="${container.name}-cpu-chart"></div>
+    <div class="legend" id="${container.name}-cpu-chart-legend"></div>
 </div>
 <h3>Filesystem read/write bytes</h3>
 <div class="chartContainer">
@@ -53,7 +54,7 @@ var tickFormat = function(y) {
     else                      { return y }
 };
 
-var generateCPUGraph = function(containerName, cpuMetrics) {
+var generateOldCPUGraph = function(containerName, cpuMetrics) {
     var cpuGraph = new Rickshaw.Graph( {
         element: document.querySelector("#" + containerName + "-cpu-chart"),
         renderer: 'line',
@@ -142,7 +143,41 @@ var generateNetGraph = function(netReadMetrics, netWriteMetrics) {
     graph.render();
 }
 
+var generateNewCPUGraph = function(containerName, cpuUserMetrics, cpuSystemMetrics) {
+    var cpuGraph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-cpu-chart"),
+        renderer: 'area',
+        interpolation: 'linear',
+        series: [
+            {"color": "steelblue", "name": "user", "data": cpuUserMetrics},
+            {"color": "red", "name": "system", "data": cpuSystemMetrics}
+        ],
+    });    
+    var xAxisCpu = new Rickshaw.Graph.Axis.Time( { graph: cpuGraph } );
+    var yAxisCpu = new Rickshaw.Graph.Axis.Y( {
+        graph: cpuGraph,
+        orientation: 'left',
+        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+        element: document.getElementById(containerName + '-y-axis-cpu'),
+    } );
+    var hoverDetailCpu = new Rickshaw.Graph.HoverDetail( {
+        graph: cpuGraph,
+        yFormatter: function(y) { return y.toFixed(2) + " cores" }
+    } );
+    var legend = new Rickshaw.Graph.Legend({
+        graph: cpuGraph,
+        element: document.querySelector("#" + containerName + "-cpu-chart-legend")
+    });
+    var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+        graph: cpuGraph,
+        legend: legend
+    });
+
+    cpuGraph.render();
+}
+
 var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRssMetrics, memoryCacheMetrics, memoryLimit) {
+    // sort of a hack to get an array with the same structure and size and populate it with the limit
     var limit = JSON.parse(JSON.stringify(memorySwapMetrics));
     for (var i = 0; i < limit.length; i++) {
         limit[i]["y"] = memoryLimit * 1000000;
@@ -200,7 +235,17 @@ var generateMemoryGraphCommon = function(containerName, memoryGraph, memoryLimit
 
 [#list containerList as container]
 
-generateCPUGraph("${container.name}", ${container.cpuMetrics});
+[#if container.cpuUserMetrics??]
+
+generateNewCPUGraph("${container.name}", ${container.cpuUserMetrics}, ${container.cpuSystemMetrics});
+
+[#else]
+
+[#if container.cpuMetrics??]
+generateOldCPUGraph("${container.name}", ${container.cpuMetrics});
+[/#if]
+
+[/#if]
 
 [#if container.memoryRssMetrics??]
 

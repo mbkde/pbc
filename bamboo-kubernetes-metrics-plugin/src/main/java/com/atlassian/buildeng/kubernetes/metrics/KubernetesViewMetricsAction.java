@@ -23,16 +23,12 @@ import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
-
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.UniformInterfaceException;
+import com.sun.jersey.api.client.WebResource;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.logging.LoggingFeature;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -42,6 +38,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
     public final class ContainerMetrics {
         private final String containerName;
         private String cpuMetrics;
+        private String cpuUserMetrics;
+        private String cpuSystemMetrics;
         private String memoryMetrics;
         private String memoryRssMetrics;
         private String memoryCacheMetrics;
@@ -67,6 +65,22 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
         public void setCpuMetrics(String cpuMetrics) {
             this.cpuMetrics = cpuMetrics;
+        }
+
+        public String getCpuUserMetrics() {
+            return cpuUserMetrics;
+        }
+
+        public void setCpuUserMetrics(String cpuUserMetrics) {
+            this.cpuUserMetrics = cpuUserMetrics;
+        }
+
+        public String getCpuSystemMetrics() {
+            return cpuSystemMetrics;
+        }
+
+        public void setCpuSystemMetrics(String cpuSystemMetrics) {
+            this.cpuSystemMetrics = cpuSystemMetrics;
         }
 
         public String getMemoryMetrics() {
@@ -145,29 +159,32 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         String artifactsJsonString = resultsSummary.getCustomBuildData().get(ARTIFACT_BUILD_DATA_KEY);
         if (artifactsJsonString != null) {
             JSONArray artifacts = new JSONArray(artifactsJsonString);
-            setNetReadMetrics(loadArtifact(ARTIFACT_PREFIX + "all-net-read"));
-            setNetWriteMetrics(loadArtifact(ARTIFACT_PREFIX + "all-net-write"));
+            setNetReadMetrics(loadArtifact("", "all-net-read"));
+            setNetWriteMetrics(loadArtifact("", "all-net-write"));
             for (Object artifactObject : artifacts) {
                 JSONObject artifactJson = (JSONObject) artifactObject;
                 String containerName = artifactJson.getString("name");
                 int cpu = artifactJson.getInt("cpuRequest");
                 int memory = artifactJson.getInt("memoryRequest");
 
-                ContainerMetrics container = new ContainerMetrics(containerName, cpu, memory);
-                container.setCpuMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-cpu"));
-                container.setMemoryMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory"));
-                container.setMemoryRssMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-rss"));
-                container.setMemoryCacheMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-cache"));
-                container.setMemorySwapMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-memory-swap"));
-                container.setFsReadMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-fs-read"));
-                container.setFsWriteMetrics(loadArtifact(ARTIFACT_PREFIX + containerName + "-fs-write"));
-                containerList.add(container);
+                ContainerMetrics cont = new ContainerMetrics(containerName, cpu, memory);
+                cont.setCpuMetrics(loadArtifact(containerName, "-cpu"));
+                cont.setCpuUserMetrics(loadArtifact(containerName, "-cpu-user"));
+                cont.setCpuSystemMetrics(loadArtifact(containerName, "-cpu-system"));
+                cont.setMemoryMetrics(loadArtifact(containerName, "-memory"));
+                cont.setMemoryRssMetrics(loadArtifact(containerName, "-memory-rss"));
+                cont.setMemoryCacheMetrics(loadArtifact(containerName, "-memory-cache"));
+                cont.setMemorySwapMetrics(loadArtifact(containerName, "-memory-swap"));
+                cont.setFsReadMetrics(loadArtifact(containerName,"-fs-read"));
+                cont.setFsWriteMetrics(loadArtifact(containerName,"-fs-write"));
+                containerList.add(cont);
             }
         }
 
     }
 
-    private String loadArtifact(String artifactName) {
+    private String loadArtifact(String containerName, String suffix) {
+        String artifactName = ARTIFACT_PREFIX + containerName + suffix;
         Artifact artifact = createArtifact(
                 artifactName, resultsSummary.getPlanResultKey(),
                 resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
@@ -180,24 +197,18 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
         ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
         if (single != null) {
-            Client client = ClientBuilder
-                    .newBuilder()
-                    .property(LoggingFeature.LOGGING_FEATURE_VERBOSITY_CLIENT,
-                            LoggingFeature.Verbosity.PAYLOAD_TEXT)
-                    .build();
-
-            WebTarget webTarget = client.target(single.getUrl());
+            Client client = Client.create();
+            WebResource webTarget = client.resource(single.getUrl());
 
             // We have to directly retrieve the artifact here instead of passing the URL to the user due to
             // same-origin policy.
-            Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-            if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SUCCESSFUL) != 0) {
+            try {
+                return webTarget.accept(MediaType.APPLICATION_JSON).get(String.class);
+            } catch (UniformInterfaceException e) {
                 addActionError(
                         String.format("Error retrieving metrics JSON artifact from %s", single.getUrl()));
                 return null;
             }
-
-            return response.readEntity(String.class);
         }
         return null;
     }

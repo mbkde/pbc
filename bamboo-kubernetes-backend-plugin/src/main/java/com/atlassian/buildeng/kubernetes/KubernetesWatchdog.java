@@ -32,7 +32,6 @@ import com.atlassian.event.api.EventPublisher;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -46,8 +45,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +66,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
     @Override
     public final void execute(Map<String, Object> jobDataMap) {
+        long start = System.currentTimeMillis();
         try {
             executeImpl(jobDataMap);
         } catch (Throwable t) { 
@@ -75,6 +75,7 @@ public class KubernetesWatchdog extends WatchdogJob {
             // throwing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
+        logger.debug("Time overall {}", Duration.ofMillis(System.currentTimeMillis() - start));
 
     }
 
@@ -94,8 +95,12 @@ public class KubernetesWatchdog extends WatchdogJob {
 
 
         KubernetesClient client = new KubernetesClient(globalConfiguration);
+        long clusterStateQueryTime = System.currentTimeMillis();
         List<Pod> pods = client.getPods(
                 PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
+        logger.debug("Time it took query current pods {}", 
+                Duration.ofMillis(System.currentTimeMillis() - clusterStateQueryTime));
+        
         Map<String, TerminationReason> terminationReasons = getPodTerminationReasons(jobDataMap);
         List<Pod> killed = new ArrayList<>();
         
@@ -126,20 +131,14 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
             if (!deleted) {
-                List<String> waitingErrorStates = pod.getStatus().getContainerStatuses().stream()
-                        .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
-                        .filter((ContainerStatus t) -> 
-                                "ImageInspectError".equals(t.getState().getWaiting().getReason())
-                             || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason()))
-                        .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getWaiting().getReason() + ":"
-                                + (StringUtils.isBlank(t.getState().getWaiting().getMessage()) 
-                                        ? "<no details>" : t.getState().getWaiting().getMessage()))
-                        .collect(Collectors.toList());
-                if (!waitingErrorStates.isEmpty()) {
-                    logger.info("Killing pod {} with error waiting state. Container states: {}",
-                            KubernetesHelper.getName(pod), waitingErrorStates);
+                List<String> errorStates = Stream.concat(
+                        waitingStateErrorsStream(pod),
+                        terminatedStateErrorsStream(pod)).collect(Collectors.toList());
+                if (!errorStates.isEmpty()) {
+                    logger.info("Killing pod {} with error state. Container states: {}",
+                            KubernetesHelper.getName(pod), errorStates);
                     deleted = deletePod(
-                            client, pod, terminationReasons, "Container error state(s):" + waitingErrorStates);
+                            client, pod, terminationReasons, "Container error state(s):" + errorStates);
                     if (deleted) {
                         killed.add(pod);
                     }
@@ -199,11 +198,19 @@ public class KubernetesWatchdog extends WatchdogJob {
                 Pod pod = nameToPod.get(podName);
 
                 if (pod == null) {
+                    //we don't use System.currentTimeMillis but clusterStateQueryTime here because our data is based
+                    //on a query that could have happened significantly in the past. The pod query itself takes time
+                    //and every pod deletion equals to 2 kubectl commands and thus in this loop we can accumulate
+                    //significant time penalties that don't fit MISSING_POD_GRACE_PERIOD_MINUTES nicely.
+                    //Ideally we would also not compare to QUEUE_TIMESTAMP but to the time when 'kubectl create pod' was
+                    //actually executed in KubernetesIsolatedDockerImpl (we create pods concurrently, still 
+                    //can incur some time penalty there.
+                    Duration grace = Duration.ofMillis(clusterStateQueryTime - queueTime);
                     if (terminationReasons.get(podName) != null
-                            || Duration.ofMillis(System.currentTimeMillis() - queueTime).toMinutes()
-                                    >= MISSING_POD_GRACE_PERIOD_MINUTES) {
+                            || grace.toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES) {
                         String logMessage = "Build was not queued due to pod deletion: " + podName;
-                        logger.info("Stopping job {} because pod {} no longer exists", context.getResultKey(), podName);
+                        logger.info("Stopping job {} because pod {} no longer exists (grace timeout {})",
+                                context.getResultKey(), podName, grace);
                         errorUpdateHandler.recordError(context.getEntityKey(), logMessage);
 
                         String errorMessage;
@@ -246,6 +253,29 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
         });
+    }
+
+    private Stream<String> waitingStateErrorsStream(Pod pod) {
+        return pod.getStatus().getContainerStatuses().stream()
+                .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
+                .filter((ContainerStatus t) ->
+                        "ImageInspectError".equals(t.getState().getWaiting().getReason())
+                                || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason())
+                                || "InvalidImageName".equals(t.getState().getWaiting().getReason()))
+                .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getWaiting().getReason() + ":"
+                        + (StringUtils.isBlank(t.getState().getWaiting().getMessage())
+                                ? "<no details>" : t.getState().getWaiting().getMessage()));
+    }
+    
+    private Stream<String> terminatedStateErrorsStream(Pod pod) {
+        return pod.getStatus().getContainerStatuses().stream()
+                .filter((ContainerStatus t) -> t.getState().getTerminated() != null)
+                .filter((ContainerStatus t) ->
+                        "Error".equals(t.getState().getTerminated().getReason()))
+                .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getTerminated().getReason() + ":"
+                        + "ExitCode:" + t.getState().getTerminated().getExitCode() + " - "
+                        + (StringUtils.isBlank(t.getState().getTerminated().getMessage())
+                                ? "<no details>" : t.getState().getTerminated().getMessage()));
     }
     
     
