@@ -113,21 +113,36 @@ public class KubernetesWatchdog extends WatchdogJob {
                 continue;
             }
             boolean deleted = false;
-            Map<String, ContainerStatus> currentContainers = pod.getStatus().getContainerStatuses().stream()
-                    .collect(Collectors.toMap(ContainerStatus::getName, x -> x));
-            ContainerStatus agentContainer = currentContainers.get(PodCreator.CONTAINER_NAME_BAMBOOAGENT);
-            // if agentContainer == null then the pod is still initializing
-            if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
-                logger.info("Killing pod {} with terminated agent container. Container states: {}",
-                        KubernetesHelper.getName(pod),
-                        pod.getStatus().getContainerStatuses().stream()
-                                .map(t -> t.getState()).collect(Collectors.toList()));
-                String message = agentContainer.getState().getTerminated().getMessage();
+            if ("Failed".equals(pod.getStatus().getPhase())
+                    && ("OutOfcpu".equals(pod.getStatus().getReason()) 
+                     || "OutOfmemory".equals(pod.getStatus().getReason()))) {
+                logger.info("Killing pod {} due to resource constraints. {} ",
+                        KubernetesHelper.getName(pod), pod.getStatus());
+                String message = pod.getStatus().getReason();
                 deleted = deletePod(
-                        client, pod, terminationReasons, "Bamboo agent container prematurely exited" 
+                        client, pod, terminationReasons, "Bamboo agent could not be scheduled " 
                                 + (message != null ? ":" + message : ""));
                 if (deleted) {
                     killed.add(pod);
+                }
+            }
+            if (!deleted) {
+                ContainerStatus agentContainer = pod.getStatus().getContainerStatuses().stream()
+                        .filter((ContainerStatus t) -> t.getName().equals(PodCreator.CONTAINER_NAME_BAMBOOAGENT))
+                        .findFirst().orElse(null);
+                // if agentContainer == null then the pod is still initializing
+                if (agentContainer != null && agentContainer.getState().getTerminated() != null) {
+                    logger.info("Killing pod {} with terminated agent container. Container states: {}",
+                            KubernetesHelper.getName(pod),
+                            pod.getStatus().getContainerStatuses().stream()
+                                    .map(t -> t.getState()).collect(Collectors.toList()));
+                    String message = agentContainer.getState().getTerminated().getMessage();
+                    deleted = deletePod(
+                            client, pod, terminationReasons, "Bamboo agent container prematurely exited" 
+                                    + (message != null ? ":" + message : ""));
+                    if (deleted) {
+                        killed.add(pod);
+                    }
                 }
             }
             if (!deleted) {
