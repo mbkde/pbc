@@ -66,8 +66,6 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String PROMETHEUS_NET_READ = "container_network_receive_bytes_total";
     private static final String PROMETHEUS_NET_WRITE = "container_network_transmit_bytes_total";
 
-    private static final String MEMORY_QUERY = "%s{pod_name=\"%s\",container_name=\"%s\"}";
-    
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     private static final String STEP_PERIOD = "15s";
@@ -116,12 +114,12 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                     .collect(Collectors.toList());
             
             //not specific to container
-            collectMetric(PROMETHEUS_NET_WRITE, "-net-write", 
+            collectMetric(PROMETHEUS_NET_WRITE, "net-write", 
                     "sum(irate(%s{pod_name=\"%s\"}[15s]))",
-                    "all", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
-            collectMetric(PROMETHEUS_NET_READ, "-net-read", 
+                    "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
+            collectMetric(PROMETHEUS_NET_READ, "net-read", 
                     "sum(irate(%s{pod_name=\"%s\"}[15s]))",
-                    "all", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
+                    "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
         
             for (ReservationSize containerPair : containers) {
                 String container = containerPair.name;

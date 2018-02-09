@@ -159,8 +159,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         String artifactsJsonString = resultsSummary.getCustomBuildData().get(ARTIFACT_BUILD_DATA_KEY);
         if (artifactsJsonString != null) {
             JSONArray artifacts = new JSONArray(artifactsJsonString);
-            setNetReadMetrics(loadArtifact("", "all-net-read"));
-            setNetWriteMetrics(loadArtifact("", "all-net-write"));
+            setNetReadMetrics(loadArtifact("", "net-read"));
+            setNetWriteMetrics(loadArtifact("", "net-write"));
             for (Object artifactObject : artifacts) {
                 JSONObject artifactJson = (JSONObject) artifactObject;
                 String containerName = artifactJson.getString("name");
