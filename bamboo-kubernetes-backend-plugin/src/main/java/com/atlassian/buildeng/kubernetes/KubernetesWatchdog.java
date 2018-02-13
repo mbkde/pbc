@@ -465,7 +465,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         
         @Override
         public boolean shouldBeDeleted(Pod pod) {
-            return errorStates(pod).isEmpty();
+            return !errorStates(pod).isEmpty();
         }
 
         @Override
