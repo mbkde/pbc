@@ -107,7 +107,10 @@ public class PodCreator {
     private static Map<String, String> createLabels(IsolatedDockerAgentRequest r, GlobalConfiguration c) {
         Map<String, String> labels = new HashMap<>();
         labels.put(LABEL_PBC_MARKER, "true");
-        labels.put(LABEL_RESULTID, r.getResultKey());
+        //Valid label values must be 63 characters or less and must be empty or 
+        //begin and end with an alphanumeric character ([a-z0-9A-Z]) 
+        // with dashes (-), underscores (_), dots (.), and alphanumerics between.
+        labels.put(LABEL_RESULTID, StringUtils.abbreviate(r.getResultKey(), 59) + "Z");
         labels.put(LABEL_UUID,  r.getUniqueIdentifier().toString());
         labels.put(LABEL_BAMBOO_SERVER, c.getBambooBaseUrlAskKubeLabel());
         return labels;
