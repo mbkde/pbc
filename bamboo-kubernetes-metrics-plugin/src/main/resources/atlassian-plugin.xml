@@ -30,6 +30,12 @@ limitations under the License.
     <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.kubernetes.metrics.KubePreJobActionImpl">
     </preJobAction>
     
+    <preBuildAction key="queryContainerStartup" name="Query Kubernetes environment for Container Agent"
+                    class="com.atlassian.buildeng.kubernetes.metrics.QueryPrometheusPreBuildAction"
+                    weight="304">
+        <description>Query Prometheus about images used and kube node hostname.</description>
+    </preBuildAction>
+
     <xwork key="viewMetrics" name="Show Metrics for containers">
         <package name="viewMetrics" extends="buildResultView">
             <action name="viewMetrics" class="com.atlassian.buildeng.kubernetes.metrics.KubernetesViewMetricsAction">
