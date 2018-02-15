@@ -122,7 +122,8 @@ public class KubernetesWatchdog extends WatchdogJob {
         Set<BackoffCache> newBackedOff = new HashSet<>();
         
         List<TerminatePodSelector> selectors = Arrays.asList(new TerminatePodSelector[] {
-            new OutOfResourcesSelector(),
+            //TODO establish how long to wait to have this condition trigger, the cluster mostly recovers.
+            //new OutOfResourcesSelector(),
             new TerminatedAgentContainer(),
             new ContainerErrorStates()
         });
