@@ -32,6 +32,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
@@ -101,6 +102,8 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Accept-Charset", "UTF-8");
+        connection.setConnectTimeout((int)Duration.ofSeconds(10).toMillis());
+        connection.setReadTimeout((int)Duration.ofSeconds(60).toMillis());
         String response;
         try {
             response = IOUtils.toString(connection.getInputStream(), "UTF-8");
