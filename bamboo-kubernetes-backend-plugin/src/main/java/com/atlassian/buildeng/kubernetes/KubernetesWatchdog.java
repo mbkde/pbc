@@ -142,6 +142,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                         killedFutures.add(executorService.submit(t.delete(pod, client)));
                     });
         }
+        
+        long killingStart = System.currentTimeMillis();
         killedFutures.stream().forEach((Future<Optional<TerminationReason>> t) -> {
             try {
                 Optional<TerminationReason> result = t.get();
@@ -156,6 +158,10 @@ public class KubernetesWatchdog extends WatchdogJob {
                 logger.error("Future Execution failed", ex);
             }
         });
+        if (!killedFutures.isEmpty()) {
+            logger.info("Deleting {} pods took:{} s", killedFutures.size(), 
+                    Duration.ofMillis(System.currentTimeMillis() - killingStart).getSeconds());
+        }
   
         for (Pod pod : pods) {
             // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
