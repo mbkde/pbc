@@ -29,6 +29,11 @@ limitations under the License.
     </buildProcessor>
     <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.metrics.shared.PreJobActionImpl">
     </preJobAction>
+    <preBuildAction key="startupDetails" name="Collect and record environment of Agent"
+                    class="com.atlassian.buildeng.ecs.metrics.CustomPreBuildActionImpl"
+                    weight="305">
+        <description>Print details about configuration.</description>
+    </preBuildAction>
     
     <xwork key="viewMetrics" name="Show Metrics for containers">
         <package name="viewMetrics" extends="buildResultView">

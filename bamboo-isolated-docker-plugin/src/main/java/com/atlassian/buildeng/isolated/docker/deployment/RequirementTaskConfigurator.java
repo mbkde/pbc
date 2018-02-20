@@ -24,7 +24,7 @@ import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl;
+import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
@@ -71,7 +71,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.putAll(taskDefinition.getConfiguration());
         context.put(Configuration.TASK_DOCKER_IMAGE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE));
-        context.put("imageSizes", CustomPreBuildActionImpl.getImageSizes());
+        context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
@@ -81,7 +81,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     @Override
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
-        context.put("imageSizes", CustomPreBuildActionImpl.getImageSizes());
+        context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 
