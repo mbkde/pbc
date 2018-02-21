@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -73,6 +74,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 600;
+    private static final int MAX_RETRY_COUNT = 10;
     
     private final ExecutorService executorService = new ThreadPoolExecutor(0, 10,
                                       60L, TimeUnit.SECONDS,
@@ -240,11 +242,9 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
-                        if (reason != null && reason.isRestartPod()) {
-                            Configuration config = AccessConfiguration.forContext(context);
-                            eventPublisher.publish(new RetryAgentStartupEvent(config, context));
-                            eventPublisher.publish(new DockerAgentKubeRestartEvent(
-                                    reason.getErrorMessage(), context.getResultKey(), podName, Collections.emptyMap()));
+                        int retryCount = getRetryCount(pod);
+                        if (reason != null && reason.isRestartPod() && retryCount < MAX_RETRY_COUNT) {
+                            retryPodCreation(context, pod, reason, podName, retryCount, eventPublisher);
                         } else {
                             if (reason != null) {
                                 errorMessage = reason.getErrorMessage();
@@ -285,6 +285,23 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
         });
+    }
+    
+    private int getRetryCount(Pod pod) {
+        String retry = pod.getMetadata().getAnnotations()
+                .getOrDefault(PodCreator.ANN_RETRYCOUNT, "0");
+        return Integer.parseInt(retry);
+    }
+
+    private void retryPodCreation(CommonContext context, Pod pod, 
+            TerminationReason reason, String podName, int retryCount, EventPublisher eventPublisher) {
+        Configuration config = AccessConfiguration.forContext(context);
+        String uuid = pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
+                pod.getMetadata().getLabels().get(PodCreator.ANN_UUID));
+        eventPublisher.publish(new RetryAgentStartupEvent(config, context,
+                retryCount + 1, UUID.fromString(uuid)));
+        eventPublisher.publish(new DockerAgentKubeRestartEvent(
+                reason.getErrorMessage(), context.getResultKey(), podName, Collections.emptyMap()));
     }
     
     Set<BackoffCache> getImagePullBackOffCache(Map<String, Object> jobDataMap) {
