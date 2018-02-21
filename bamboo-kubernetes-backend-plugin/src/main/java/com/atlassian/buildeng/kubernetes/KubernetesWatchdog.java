@@ -74,6 +74,9 @@ public class KubernetesWatchdog extends WatchdogJob {
     private final ExecutorService executorService;
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
+    /**
+     * creates new object of type KybernetesWatchdog.
+     */
     public KubernetesWatchdog() {
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(10, 10,
                 60L, TimeUnit.SECONDS,
