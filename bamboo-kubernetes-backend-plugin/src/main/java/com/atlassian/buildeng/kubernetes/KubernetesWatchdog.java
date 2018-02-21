@@ -71,13 +71,19 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 600;
     
-    private final ExecutorService executorService = new ThreadPoolExecutor(0, 10,
-                                      60L, TimeUnit.SECONDS,
-                                      new LinkedBlockingQueue<>());
-    
-
+    private final ExecutorService executorService;
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
+    public KubernetesWatchdog() {
+        ThreadPoolExecutor tpe = new ThreadPoolExecutor(10, 10,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>());
+        tpe.allowCoreThreadTimeOut(true);
+        executorService = tpe;
+    }
+
+    
+    
     @Override
     public final void execute(Map<String, Object> jobDataMap) {
         long start = System.currentTimeMillis();
