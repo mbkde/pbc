@@ -141,6 +141,7 @@ public class KubernetesWatchdog extends WatchdogJob {
             new ContainerErrorStates()
         });
         
+        long killingStart = System.currentTimeMillis();
         for (Pod pod : pods) {
             // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
             // being terminated, as there is no "Terminating" pod phase
@@ -156,7 +157,6 @@ public class KubernetesWatchdog extends WatchdogJob {
                     });
         }
         
-        long killingStart = System.currentTimeMillis();
         killedFutures.stream().forEach((Future<Optional<TerminationReason>> t) -> {
             try {
                 Optional<TerminationReason> result = t.get();
