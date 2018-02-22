@@ -251,7 +251,8 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
-                        if (reason != null && reason.isRestartPod() && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
+                        if (reason != null && reason.isRestartPod() 
+                                && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             retryPodCreation(context, reason.getPod(), reason, podName, getRetryCount(reason.getPod()),
                                     eventPublisher);
                         } else {
@@ -263,7 +264,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                             }
                             current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                            generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
+                            generateRemoteFailEvent(context, errorMessage, podName, 
+                                    isolatedAgentService, eventPublisher);
 
                             killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                     context, current);
