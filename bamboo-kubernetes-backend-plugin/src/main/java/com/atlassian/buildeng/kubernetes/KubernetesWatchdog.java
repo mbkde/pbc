@@ -251,9 +251,9 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
-                        int retryCount = getRetryCount(pod);
-                        if (reason != null && reason.isRestartPod() && retryCount < MAX_RETRY_COUNT) {
-                            retryPodCreation(context, pod, reason, podName, retryCount, eventPublisher);
+                        if (reason != null && reason.isRestartPod() && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
+                            retryPodCreation(context, reason.getPod(), reason, podName, getRetryCount(reason.getPod()),
+                                    eventPublisher);
                         } else {
                             if (reason != null) {
                                 errorMessage = reason.getErrorMessage();
