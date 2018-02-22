@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
@@ -32,7 +33,7 @@ public class DeleterGraveling implements BuildAgentVisitor {
     private final AgentRemovals agentRemovals;
     private final UnmetRequirements unmetRequirements;
 
-    private final static Logger LOG = LoggerFactory.getLogger(DeleterGraveling.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DeleterGraveling.class);
 
     public DeleterGraveling(AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
         this.agentRemovals = agentRemovals;
