@@ -141,6 +141,7 @@ public class KubernetesWatchdog extends WatchdogJob {
             new ContainerErrorStates()
         });
         
+        long killingStart = System.currentTimeMillis();
         for (Pod pod : pods) {
             // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
             // being terminated, as there is no "Terminating" pod phase
@@ -156,7 +157,6 @@ public class KubernetesWatchdog extends WatchdogJob {
                     });
         }
         
-        long killingStart = System.currentTimeMillis();
         killedFutures.stream().forEach((Future<Optional<TerminationReason>> t) -> {
             try {
                 Optional<TerminationReason> result = t.get();
@@ -251,9 +251,10 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
-                        int retryCount = getRetryCount(pod);
-                        if (reason != null && reason.isRestartPod() && retryCount < MAX_RETRY_COUNT) {
-                            retryPodCreation(context, pod, reason, podName, retryCount, eventPublisher);
+                        if (reason != null && reason.isRestartPod() 
+                                && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
+                            retryPodCreation(context, reason.getPod(), reason, podName, getRetryCount(reason.getPod()),
+                                    eventPublisher);
                         } else {
                             if (reason != null) {
                                 errorMessage = reason.getErrorMessage();
@@ -263,7 +264,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                             }
                             current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                            generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
+                            generateRemoteFailEvent(context, errorMessage, podName, 
+                                    isolatedAgentService, eventPublisher);
 
                             killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                     context, current);
