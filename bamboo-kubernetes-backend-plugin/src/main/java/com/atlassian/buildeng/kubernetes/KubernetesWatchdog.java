@@ -263,13 +263,13 @@ public class KubernetesWatchdog extends WatchdogJob {
                                 current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                                 generateRemoteFailEvent(context, errorMessage, podName, 
                                         isolatedAgentService, eventPublisher);
+                                killBuild(deploymentExecutionService, deploymentResultService, logger, 
+                                        buildQueueManager, context, current);
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                                 retryPodCreation(context, null, errorMessage,
                                         podName, 0, eventPublisher);
                             }
-                            killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
-                                    context, current);
                         }
                     } else {
                         logger.debug("Pod {} missing but still in grace period, not stopping the build.", podName);
@@ -311,6 +311,8 @@ public class KubernetesWatchdog extends WatchdogJob {
         //when pod is not around, just generate new UUID :(
         String uuid = pod != null ? pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
                 pod.getMetadata().getLabels().get(PodCreator.ANN_UUID)) : UUID.randomUUID().toString();
+        context.getCurrentResult().getCustomBuildData().remove(KubernetesIsolatedDockerImpl.RESULT_PREFIX
+                    + KubernetesIsolatedDockerImpl.NAME);
         eventPublisher.publish(new RetryAgentStartupEvent(config, context,
                 retryCount + 1, UUID.fromString(uuid)));
         eventPublisher.publish(new DockerAgentKubeRestartEvent(
