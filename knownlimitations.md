@@ -15,16 +15,16 @@ but the such agents will not be able to materialize.
 
 * Our Bamboo instance once in a while end up in trouble when they try to start 500+ agent at about the same time.
 
-* When attempting to run Docker in Docker, we start any docker:*-dind named containers with privileged mode turned on.
+* When attempting to run Docker in Docker, we start any docker:*dind named containers with privileged mode turned on.
 The inner Docker daemon needs to synchronize storagedriver with the outer Docker daemon.
- We add --storage-driver=overlay by default. You can override that with a Java system property of `pbc.dind.storage.driver`
-passed to either Bamboo server or the ecs-scheduler-service (based on what ECS backend you are using).
+ We add --storage-driver=overlay2 by default. You can override that with a Java system property of `pbc.dind.storage.driver`
+passed to either Bamboo server JVM or the ecs-scheduler-service (if using the Remote ECS backend).
 
 * ECS backends configured with awslogs log driver will show links to all the containers in the build result UI.
 
-* We've had bad experience with fluentd log driver that managed to crash Docker daemon occasionally.
+* We've had bad experience with fluentd log driver in ECS that managed to crash Docker daemon occasionally.
 
-* We've had bad experience with the default storage driver on AWS ECS AMI and changed it to overlay.
+* We've had bad experience with the default storage driver on AWS ECS AMI and changed it to overlay and then overlay2.
 
 * Kubernetes scaling and scheduling of pods is outside of the scope of the plugin. You have to deal with it on Kube side.
 
