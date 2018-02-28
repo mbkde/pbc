@@ -12,9 +12,9 @@ of the build job to wait for side container ready state.
 
 AWS ECS backend
 ===============
-ECS creates links between containers using an older Docker run parameter --link. That's onedirectional link only. 
+ECS creates links between containers using an older Docker run parameter --link. That's one directional link only. 
 So the bamboo agent container sees 'selenium' container under this hostname, but the selenium container can't 
-reference the agent container in the same way. (so you can't enter the url for the webapp running in agent container into the 
+reference the agent container in the same way. (so you can't enter the URL for the webapp running in agent container into the 
 selenium browser). The workaround in this case is to find out the public IP address of the agent container and pass that 
 around.
 
