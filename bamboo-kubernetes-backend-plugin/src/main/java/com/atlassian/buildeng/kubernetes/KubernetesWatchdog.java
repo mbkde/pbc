@@ -253,22 +253,23 @@ public class KubernetesWatchdog extends WatchdogJob {
                         TerminationReason reason = terminationReasons.get(podName);
                         if (reason != null && reason.isRestartPod() 
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
-                            retryPodCreation(context, reason.getPod(), reason, podName, getRetryCount(reason.getPod()),
-                                    eventPublisher);
+                            retryPodCreation(context, reason.getPod(), reason.getErrorMessage(),
+                                    podName, getRetryCount(reason.getPod()), eventPublisher);
                         } else {
                             if (reason != null) {
                                 errorMessage = reason.getErrorMessage();
                                 logger.error("{}\n{}\n{}",
                                         logMessage, errorMessage, terminationReasons.get(podName).getDescribePod());
+                                current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
+                                generateRemoteFailEvent(context, errorMessage, podName, 
+                                        isolatedAgentService, eventPublisher);
+                                killBuild(deploymentExecutionService, deploymentResultService, logger, 
+                                        buildQueueManager, context, current);
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
+                                retryPodCreation(context, null, errorMessage,
+                                        podName, 0, eventPublisher);
                             }
-                            current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                            generateRemoteFailEvent(context, errorMessage, podName, 
-                                    isolatedAgentService, eventPublisher);
-
-                            killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
-                                    context, current);
                         }
                     } else {
                         logger.debug("Pod {} missing but still in grace period, not stopping the build.", podName);
@@ -305,14 +306,17 @@ public class KubernetesWatchdog extends WatchdogJob {
     }
 
     private void retryPodCreation(CommonContext context, Pod pod, 
-            TerminationReason reason, String podName, int retryCount, EventPublisher eventPublisher) {
+            String errorMessage, String podName, int retryCount, EventPublisher eventPublisher) {
         Configuration config = AccessConfiguration.forContext(context);
-        String uuid = pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
-                pod.getMetadata().getLabels().get(PodCreator.ANN_UUID));
+        //when pod is not around, just generate new UUID :(
+        String uuid = pod != null ? pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
+                pod.getMetadata().getLabels().get(PodCreator.ANN_UUID)) : UUID.randomUUID().toString();
+        context.getCurrentResult().getCustomBuildData().remove(KubernetesIsolatedDockerImpl.RESULT_PREFIX
+                    + KubernetesIsolatedDockerImpl.NAME);
         eventPublisher.publish(new RetryAgentStartupEvent(config, context,
                 retryCount + 1, UUID.fromString(uuid)));
         eventPublisher.publish(new DockerAgentKubeRestartEvent(
-                reason.getErrorMessage(), context.getResultKey(), podName, Collections.emptyMap()));
+                errorMessage, context.getResultKey(), podName, Collections.emptyMap()));
     }
     
     Set<BackoffCache> getImagePullBackOffCache(Map<String, Object> jobDataMap) {
