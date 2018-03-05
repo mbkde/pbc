@@ -28,14 +28,14 @@ Shows CPU and memory unitization of PBC containers used in the build. If absent,
     <div class="chart" id="${container.name}-cpu-chart"></div>
     <div class="legend" id="${container.name}-cpu-chart-legend"></div>
 </div>
-<h3>Filesystem read/write bytes</h3>
+<h3>Filesystem read/write IO per second</h3>
 <div class="chartContainer">
     <div class="yAxis" id="${container.name}-y-axis-fs"></div>
     <div class="chart" id="${container.name}-fs-chart"></div>
     <div class="legend" id="${container.name}-fs-chart-legend"></div>
 </div>
 [/#list]
-<h2 id="network-h2">Network read/write bytes</h2>
+<h2 id="network-h2">Per Pod Network read/write IO per second</h2>
 <div class="chartContainer">
     <div class="yAxis" id="all-y-axis-net"></div>
     <div class="chart" id="all-net-chart"></div>
