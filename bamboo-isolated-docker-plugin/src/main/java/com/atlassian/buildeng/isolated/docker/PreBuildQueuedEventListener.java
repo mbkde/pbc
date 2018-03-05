@@ -147,7 +147,8 @@ public class PreBuildQueuedEventListener {
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
                         event.getUniqueIdentifier(), 
-                        getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString()),
+                        getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
+                        event.getRetryCount()),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {

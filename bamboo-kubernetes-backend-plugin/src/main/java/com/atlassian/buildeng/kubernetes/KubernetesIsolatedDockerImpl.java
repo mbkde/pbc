@@ -73,14 +73,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
-    //0-10 threads, destroyed after a minute if not used.
-    final ExecutorService executor = new ThreadPoolExecutor(0, 10,
-                                      60L, TimeUnit.SECONDS,
-                                      new LinkedBlockingQueue<>());
+    private final ExecutorService executor;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
+        ThreadPoolExecutor tpe = new ThreadPoolExecutor(5, 5,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>());
+        tpe.allowCoreThreadTimeOut(true);
+        executor = tpe;
     }
 
     @Override

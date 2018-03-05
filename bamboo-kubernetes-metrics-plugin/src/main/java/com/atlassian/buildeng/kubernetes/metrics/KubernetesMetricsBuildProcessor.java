@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -206,6 +207,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("Accept-Charset", "UTF-8");
+            connection.setConnectTimeout((int)Duration.ofSeconds(10).toMillis());
+            connection.setReadTimeout((int)Duration.ofSeconds(60).toMillis());
+            
             String response;
             try {
                 response = IOUtils.toString(connection.getInputStream(), "UTF-8");

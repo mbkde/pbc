@@ -32,19 +32,22 @@ public final class RetryAgentStartupEvent {
     private final CommonContext context;
     private final Configuration configuration;
     private final UUID uniqueIdentifier;
-
-    public RetryAgentStartupEvent(Configuration configuration, CommonContext context) {
+    
+    public RetryAgentStartupEvent(Configuration configuration, CommonContext context,
+            int retryCount, UUID existingUuid) {
         this.configuration = configuration;
         this.context = context;
-        retryCount = 0;
-        uniqueIdentifier = UUID.randomUUID();
+        this.retryCount = retryCount;
+        this.uniqueIdentifier = existingUuid;
+    }
+
+    public RetryAgentStartupEvent(Configuration configuration, CommonContext context) {
+        this(configuration, context, 0, UUID.randomUUID());
     }
     
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
-        configuration = previousEvent.getConfiguration();
-        context = previousEvent.getContext();
-        retryCount = previousEvent.getRetryCount() + 1;
-        uniqueIdentifier = previousEvent.uniqueIdentifier;
+        this(previousEvent.getConfiguration(), previousEvent.getContext(), 
+                previousEvent.getRetryCount() + 1, previousEvent.uniqueIdentifier);
     }
 
     public int getRetryCount() {

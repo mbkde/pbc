@@ -16,12 +16,11 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
-import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
@@ -30,9 +29,9 @@ import javax.annotation.Nonnull;
 
 public class AgentQueries {
 
-    public static boolean isDockerAgentForResult(BuildAgent t, @Nonnull PlanResultKey key) {
+    public static boolean isDockerAgentForResult(BuildAgent t, @Nonnull ResultKey key) {
         String cap = getDockerResultCapability(t);
-        return cap != null && key.equals(PlanKeys.getPlanResultKey(cap));
+        return cap != null && key.getKey().equals(cap);
     }
 
     public static boolean isDockerAgent(BuildAgent agent) {

@@ -22,15 +22,20 @@ Usage
 ======
 
 You would typically install a subset of Bamboo plugins depending on what infrastructure backend you going to use.
-The most battle hardened are the ones backed by AWS ECS. Download all binaries in the [Download](https://bitbucket.org/atlassian/per-build-container/downloads/) section.
+The most battle hardened are the ones backed by AWS ECS and Kubernetes. Download all binaries in the [Download](https://bitbucket.org/atlassian/per-build-container/downloads/) section.
+
+These two have to be always installed:
 
 * [bamboo-isolated-docker-plugin](bamboo-isolated-docker-plugin/README.md) - the general UI and bamboo lifecycle management. Mandatory plugin.
 * [isolated-docker-spi](isolated-docker-spi/README.md) - the plugin with API for the various backends. Mandatory plugin.
+
+You will also need to install one of these based on what is your preferred containerization backend:
+
 * [bamboo-isolated-ecs-plugin](bamboo-isolated-ecs-plugin/README.md) - AWS ECS backed plugin that performs the scheduling and scaling of ECS cluster from Bamboo server. __Implies one ECS cluster per Bamboo Server__.
 * [bamboo-remote-ecs-backend-plugin](bamboo-remote-ecs-backend-plugin/README.md) - Backend talking to a remote service that talks to ECS. Allows multiple Bamboo servers scheduling on single ECS cluster. This
 requires you to setup a separate service and infrastructure, see [Setup pbc-scheduler microservice](ecs-scheduler-service/README.md)
+* [bamboo-kubernetes-backend-plugin](bamboo-kubernetes-backend-plugin/README.md) - Backend that schedules agents on Kubernetes cluster. The plugin only starts pods on the cluster, scaling is to be done by kube native components.
 * bamboo-simple-backend-plugin - Experimental backend that runs the Docker agents directly on the Bamboo server or a single remote instance.
-* [bamboo-kubernetes-backend-plugin](bamboo-kubernetes-backend-plugin/README.md) - Beta backend that schedules agents on Kubernetes cluster.
 
 In any of these cases you will have to configure some global settings in the Bamboo's Administration section. Eg. point to the ECS cluster to use. See individual plugin's documentation for details.
 
@@ -45,8 +50,10 @@ Installation
 ============
 
 * First and foremost, you need an existing Bamboo installation.
+* IMPORTANT: Enable remote agents and make sure 'Remote agent authentication is disabled'. When using PBC, each build will register a new remote agent 
+and that agent needs to be allowed to pick up teh job without manual agent approvals.
 * Then you need to decide what Docker clustering solution to use (where your builds will be running).
-We recommend AWS ECS right now as it's the most battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
+We recommend AWS ECS or Kubernetes right now as these are the most battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
 * Generate a [sidekick](sidekick/README.md) Docker image and push to your Docker registry.
 * Then install the appropriate Bamboo plugins and configure them. Follow the links in the __Usage__ section to learn how to setup each plugin.
 * Create a bamboo plan with a simple echo script task job, configure it to be run on `ubuntu:16.04` in [Job's Miscellaneous tab](bamboo-isolated-docker-plugin/README.md) and run the build!
@@ -60,6 +67,7 @@ Documentation
 * Creating Docker images for builds with [Bamboo agent capabilities](sidekick/capabilities.md)
 * [Secrets management considerations](sidekick/secrets.md)
 * [Gotchas and known limitations](knownlimitations.md)
+* [Differences between agents on ECS and Kube](extra-containers.md)
 
 Tests
 =====

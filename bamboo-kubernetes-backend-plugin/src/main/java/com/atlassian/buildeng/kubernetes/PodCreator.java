@@ -75,9 +75,10 @@ public class PodCreator {
 
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
+    public static final String ANN_RESULTID = "pbc.resultId";
+    public static final String ANN_RETRYCOUNT = "pbc.retryCount";
+    public static final String ANN_UUID = "pbc.uuid";
     public static final String LABEL_PBC_MARKER = "pbc";
-    public static final String LABEL_RESULTID = "pbc.resultId";
-    public static final String LABEL_UUID = "pbc.uuid";
     public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
     
     /**
@@ -100,15 +101,22 @@ public class PodCreator {
         return root;
     }
 
-    private static Map<String, String> createAnnotations() {
-        return new HashMap<>();
+    private static Map<String, String> createAnnotations(IsolatedDockerAgentRequest r) {
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(ANN_UUID,  r.getUniqueIdentifier().toString());
+        annotations.put(ANN_RESULTID, r.getResultKey());
+        annotations.put(ANN_RETRYCOUNT, Integer.toString(r.getRetryCount()));
+        return annotations;
     }
 
     private static Map<String, String> createLabels(IsolatedDockerAgentRequest r, GlobalConfiguration c) {
         Map<String, String> labels = new HashMap<>();
         labels.put(LABEL_PBC_MARKER, "true");
-        labels.put(LABEL_RESULTID, r.getResultKey());
-        labels.put(LABEL_UUID,  r.getUniqueIdentifier().toString());
+        
+        //TODO remove these two in the future, no need to have them as labels.
+        labels.put(ANN_RESULTID, StringUtils.abbreviate(r.getResultKey(), 59) + "Z");
+        labels.put(ANN_UUID,  r.getUniqueIdentifier().toString());
+        
         labels.put(LABEL_BAMBOO_SERVER, c.getBambooBaseUrlAskKubeLabel());
         return labels;
     }
@@ -180,7 +188,7 @@ public class PodCreator {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
         map.put("labels", createLabels(r, globalConfiguration));
-        map.put("annotations", createAnnotations());
+        map.put("annotations", createAnnotations(r));
         return map;
     }
 

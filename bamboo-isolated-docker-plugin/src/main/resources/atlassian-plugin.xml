@@ -23,13 +23,6 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="isolated-docker-plugin"/>
 
-    <preBuildAction key="measureContainerStartup" name="Measure time to start Container Agent"
-                    class="com.atlassian.buildeng.isolated.docker.lifecycle.CustomPreBuildActionImpl">
-        <description>Measure the time between queue time and start time.</description>
-        <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
-        <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
-    </preBuildAction>
-
     <preStageAction key="reserveFutureCapacityPreStage" class="com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction">
     </preStageAction>
 
@@ -131,9 +124,12 @@ limitations under the License.
         <description>Provides the REST resource for javascript code</description>
     </rest>
     
-    <buildProcessorServer key="agentSafeguard" name="Safeguarding agents get properly discarded after build." class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
+    <buildProcessorServer key="agentSafeguard" name="Safeguarding agents get properly discarded after build."
+                          class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
         <skipIfFailed/>
         <description/>
+        <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
+        <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </buildProcessorServer>
     
     <taskType key="dockertask" name="Per-build Container (PBC) Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
