@@ -116,10 +116,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             
             //not specific to container
             collectMetric(PROMETHEUS_NET_WRITE, "net-write", 
-                    "sum(irate(%s{pod_name=\"%s\"}[15s]))",
+                    "sum(irate(%s{pod_name=\"%s\"}[1m]))",
                     "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
             collectMetric(PROMETHEUS_NET_READ, "net-read", 
-                    "sum(irate(%s{pod_name=\"%s\"}[15s]))",
+                    "sum(irate(%s{pod_name=\"%s\"}[1m]))",
                     "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
         
             for (ReservationSize containerPair : containers) {
