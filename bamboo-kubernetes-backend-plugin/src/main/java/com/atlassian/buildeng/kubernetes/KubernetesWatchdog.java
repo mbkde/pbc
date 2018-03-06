@@ -74,7 +74,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 600;
-    private static final int MAX_RETRY_COUNT = 10;
+    private static final int MAX_RETRY_COUNT = 30;
     
     private final ExecutorService executorService;
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
