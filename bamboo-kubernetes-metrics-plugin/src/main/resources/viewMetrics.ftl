@@ -15,10 +15,9 @@
 <h1>PBC Container Metrics</h1>
 Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing. Look for an error at the very end of the build log: "Failed to execute plugin 'Retreive Container Metrics from Prometheus' with error: ...".
 [#list containerList as container]
-<h2>${container.name} container</h2>
+<h2>Container:${container.name}</h2>
 <h3>Memory usage</h3>
 <div class="chartContainer">
-    <div class="yAxis" id="${container.name}-limit-line-memory"></div>
     <div class="yAxis" id="${container.name}-y-axis-memory"></div>
     <div class="chart" id="${container.name}-memory-chart"></div>
     <div class="legend" id="${container.name}-memory-chart-legend"></div>
@@ -29,7 +28,20 @@ Shows CPU and memory unitization of PBC containers used in the build. If absent,
     <div class="chart" id="${container.name}-cpu-chart"></div>
     <div class="legend" id="${container.name}-cpu-chart-legend"></div>
 </div>
+<h3>Filesystem read/write IO per second</h3>
+<div class="chartContainer">
+    <div class="yAxis" id="${container.name}-y-axis-fs"></div>
+    <div class="chart" id="${container.name}-fs-chart"></div>
+    <div class="legend" id="${container.name}-fs-chart-legend"></div>
+</div>
 [/#list]
+<h2 id="network-h2">Per Pod Network read/write IO per second</h2>
+<div class="chartContainer">
+    <div class="yAxis" id="all-y-axis-net"></div>
+    <div class="chart" id="all-net-chart"></div>
+    <div class="legend" id="all-net-chart-legend"></div>
+</div>
+
 
 <script type="text/javascript">
 var tickFormat = function(y) {
@@ -61,6 +73,74 @@ var generateOldCPUGraph = function(containerName, cpuMetrics) {
         yFormatter: function(y) { return y.toFixed(2) + " cores" }
     } );
     cpuGraph.render();
+}
+
+var generateFSGraph = function(containerName, fsReadMetrics, fsWriteMetrics) {
+    var graph = new Rickshaw.Graph( {
+        element: document.querySelector("#" + containerName + "-fs-chart"),
+        renderer: 'line',
+        interpolation: 'linear',
+        series: [
+            {"color": "steelblue", "name": "read", "data": fsReadMetrics},
+            {"color": "lightblue", "name": "write", "data": fsWriteMetrics}
+        ],
+    });    
+    var xAxis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
+    var yAxis = new Rickshaw.Graph.Axis.Y( {
+        graph: graph,
+        orientation: 'left',
+        tickFormat: tickFormat,
+        element: document.getElementById(containerName + '-y-axis-fs'),
+    } );
+    var legend = new Rickshaw.Graph.Legend({
+        graph: graph,
+        element: document.querySelector("#" + containerName + "-fs-chart-legend")
+    });
+    var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+        graph: graph,
+        legend: legend
+    });
+    var hoverDetail = new Rickshaw.Graph.HoverDetail( {
+        graph: graph,
+        yFormatter: function(y) { return y + " bytes" }
+    } );
+
+
+    graph.render();
+}
+
+var generateNetGraph = function(netReadMetrics, netWriteMetrics) {
+    var graph = new Rickshaw.Graph( {
+        element: document.querySelector("#all-net-chart"),
+        renderer: 'line',
+        interpolation: 'linear',
+        series: [
+            {"color": "steelblue", "name": "read", "data": netReadMetrics},
+            {"color": "lightblue", "name": "write", "data": netWriteMetrics}
+        ],
+    });    
+    var xAxis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
+    var yAxis = new Rickshaw.Graph.Axis.Y( {
+        graph: graph,
+        orientation: 'left',
+        tickFormat: tickFormat,
+        element: document.getElementById('all-y-axis-net'),
+    } );
+    var legend = new Rickshaw.Graph.Legend({
+        graph: graph,
+        element: document.querySelector("#all-net-chart-legend")
+    });
+    var shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+        graph: graph,
+        legend: legend
+    });
+    var hoverDetail = new Rickshaw.Graph.HoverDetail( {
+        graph: graph,
+        yFormatter: function(y) { return y + " bytes" }
+    } );
+
+
+    graph.render();
 }
 
 var generateNewCPUGraph = function(containerName, cpuUserMetrics, cpuSystemMetrics) {
@@ -178,9 +258,22 @@ generateOldMemoryGraph("${container.name}", ${container.memoryMetrics}, ${contai
 
 [/#if]
 
+[#if container.fsWriteMetrics??]
+
+generateFSGraph("${container.name}", ${container.fsReadMetrics}, ${container.fsWriteMetrics});
+
+[/#if]
 
 
 [/#list]
+
+[#if netWriteMetrics??]
+
+generateNetGraph(${netReadMetrics}, ${netWriteMetrics});
+
+[#else]
+$('#network-h2').hide();
+[/#if]
 
 </script>
 </body>

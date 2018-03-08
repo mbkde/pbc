@@ -35,7 +35,7 @@ import org.json.JSONObject;
 
 public class KubernetesViewMetricsAction extends ViewMetricsAction {
     
-    public class ContainerMetrics {
+    public final class ContainerMetrics {
         private final String containerName;
         private String cpuMetrics;
         private String cpuUserMetrics;
@@ -44,6 +44,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         private String memoryRssMetrics;
         private String memoryCacheMetrics;
         private String memorySwapMetrics;
+        private String fsWriteMetrics;
+        private String fsReadMetrics;
         private final int memoryLimit;
         private final int cpuLimit;
 
@@ -120,11 +122,33 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         public int getMemoryLimit() {
             return memoryLimit;
         }
+
+        public String getFsWriteMetrics() {
+            return fsWriteMetrics;
+        }
+
+        public void setFsWriteMetrics(String fsWrite) {
+            this.fsWriteMetrics = fsWrite;
+        }
+
+        public String getFsReadMetrics() {
+            return fsReadMetrics;
+        }
+
+        public void setFsReadMetrics(String fsRead) {
+            this.fsReadMetrics = fsRead;
+        }
+
+        
     }
 
     static final String ARTIFACT_BUILD_DATA_KEY = "kubernetes_metrics_artifacts";
 
-    private List<ContainerMetrics> containerList = new ArrayList<>();
+    private final List<ContainerMetrics> containerList = new ArrayList<>();
+    
+    private String netWriteMetrics;
+    private String netReadMetrics;
+    
 
     public List<ContainerMetrics> getContainerList() {
         return containerList;
@@ -135,6 +159,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         String artifactsJsonString = resultsSummary.getCustomBuildData().get(ARTIFACT_BUILD_DATA_KEY);
         if (artifactsJsonString != null) {
             JSONArray artifacts = new JSONArray(artifactsJsonString);
+            setNetReadMetrics(loadArtifact("", "net-read"));
+            setNetWriteMetrics(loadArtifact("", "net-write"));
             for (Object artifactObject : artifacts) {
                 JSONObject artifactJson = (JSONObject) artifactObject;
                 String containerName = artifactJson.getString("name");
@@ -149,6 +175,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 cont.setMemoryRssMetrics(loadArtifact(containerName, "-memory-rss"));
                 cont.setMemoryCacheMetrics(loadArtifact(containerName, "-memory-cache"));
                 cont.setMemorySwapMetrics(loadArtifact(containerName, "-memory-swap"));
+                cont.setFsReadMetrics(loadArtifact(containerName,"-fs-read"));
+                cont.setFsWriteMetrics(loadArtifact(containerName,"-fs-write"));
                 containerList.add(cont);
             }
         }
@@ -184,4 +212,21 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         }
         return null;
     }
+    
+    public String getNetWriteMetrics() {
+        return netWriteMetrics;
+    }
+
+    public void setNetWriteMetrics(String netWriteMetrics) {
+        this.netWriteMetrics = netWriteMetrics;
+    }
+
+    public String getNetReadMetrics() {
+        return netReadMetrics;
+    }
+
+    public void setNetReadMetrics(String netReadMetrics) {
+        this.netReadMetrics = netReadMetrics;
+    }
+    
 }
