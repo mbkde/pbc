@@ -174,7 +174,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
                 Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
                 Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
-                Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"));
+                Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"),
+                Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"));
     }
     
 }

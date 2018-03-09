@@ -155,7 +155,10 @@ function extraImageDetails(item) {
         sizeUI = "<p>Large size (~ 4G)</p>";
     }
     else if (size.toUpperCase() === 'XLARGE') {
-        sizeUI = "<p>Large size (~ 8G)</p>";
+        sizeUI = "<p>X Large size (~ 8G)</p>";
+    }
+    else if (size.toUpperCase() === 'XXLARGE') {
+        sizeUI = "<p>XX Large size (~ 12G)</p>";
     }
     var envvarsUI = "";
     var commandsUI = "";

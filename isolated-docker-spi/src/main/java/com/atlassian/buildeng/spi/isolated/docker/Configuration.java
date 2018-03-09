@@ -132,6 +132,7 @@ public final class Configuration {
 
     
     public static enum ContainerSize {
+        XXLARGE(5120, 20000),
         XLARGE(4096, 16000),
         LARGE(3072, 12000),
         REGULAR(2048, 8000),
@@ -239,6 +240,7 @@ public final class Configuration {
     }
     
     public static enum ExtraContainerSize {
+        XXLARGE(3072, 12000),
         XLARGE(2048, 8000),
         LARGE(1024, 4000),
         REGULAR(512, 2000),
