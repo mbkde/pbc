@@ -183,7 +183,10 @@ public class KubernetesWatchdog extends WatchdogJob {
                 continue;
             }
             //identify if pod is stuck in "imagePullBackOff' loop.
-            newBackedOff.addAll(pod.getStatus().getContainerStatuses().stream()
+            newBackedOff.addAll(
+                    Stream.concat(
+                            pod.getStatus().getContainerStatuses().stream(),
+                            pod.getStatus().getInitContainerStatuses().stream())
                     .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
                     .filter((ContainerStatus t) -> 
                             "ImagePullBackOff".equals(t.getState().getWaiting().getReason())
