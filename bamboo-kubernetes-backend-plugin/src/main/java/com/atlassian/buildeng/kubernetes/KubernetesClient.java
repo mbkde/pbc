@@ -82,7 +82,7 @@ class KubernetesClient {
     @SuppressWarnings("unchecked")
     Pod createPod(File podFile)
             throws InterruptedException, IOException, KubectlException {
-        return (Pod) executeKubectlAsJson("create", "-f", podFile.getAbsolutePath());
+        return (Pod) executeKubectlAsJson("create", "--validate=false", "-f", podFile.getAbsolutePath());
     }
 
     String describePod(Pod pod)
