@@ -138,6 +138,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         List<TerminatePodSelector> selectors = Arrays.asList(new TerminatePodSelector[] {
             new OutOfResourcesSelector(),
             new TerminatedAgentContainer(),
+            new CreateContainerError(),
             new ContainerErrorStates()
         });
         
@@ -509,6 +510,27 @@ public class KubernetesWatchdog extends WatchdogJob {
             return () -> deletePod(
                     client, pod, "Bamboo agent container prematurely exited" 
                             + (message != null ? ":" + message : ""), false);
+        }
+        
+    }
+    
+    private static class CreateContainerError implements TerminatePodSelector {
+
+        @Override
+        public boolean shouldBeDeleted(Pod pod) {
+            return Stream.concat(pod.getStatus().getInitContainerStatuses().stream(), 
+                                 pod.getStatus().getContainerStatuses().stream())
+                    .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
+                    .filter((ContainerStatus t) -> "CreateContainerError".equals(t.getState().getWaiting().getReason()))
+                    .findFirst().isPresent();
+        }
+
+        @Override
+        public Callable<Optional<TerminationReason>> delete(Pod pod, KubernetesClient client) {
+            logger.info("Killing pod {} with CreateContainerError.",
+                    KubernetesHelper.getName(pod));
+            return () -> deletePod(
+                    client, pod, "Pod with CreateContainerError.", true);
         }
         
     }
