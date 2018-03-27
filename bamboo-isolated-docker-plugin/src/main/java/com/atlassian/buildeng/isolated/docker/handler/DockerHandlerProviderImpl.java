@@ -1,0 +1,73 @@
+/*
+ * Copyright 2018 Atlassian Pty Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.atlassian.buildeng.isolated.docker.handler;
+
+import com.atlassian.bamboo.build.BuildDefinition;
+import com.atlassian.bamboo.build.docker.DockerHandler;
+import com.atlassian.bamboo.build.docker.DockerHandlerProvider;
+import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
+import com.atlassian.bamboo.deployments.environments.Environment;
+import com.atlassian.bamboo.template.TemplateRenderer;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.plugin.ModuleDescriptor;
+import com.atlassian.plugin.webresource.WebResourceManager;
+import com.opensymphony.xwork2.TextProvider;
+
+public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDescriptor> {
+
+    static final String ISOLATION_TYPE = "PBC";
+    
+    private ModuleDescriptor moduleDescriptor;
+    private final TemplateRenderer templateRenderer;
+    private final EnvironmentCustomConfigService environmentCustomConfigService;
+    private final WebResourceManager webResourceManager;
+
+    public DockerHandlerProviderImpl(TemplateRenderer templateRenderer, EnvironmentCustomConfigService environmentCustomConfigService, WebResourceManager webResourceManager) {
+        this.templateRenderer = templateRenderer;
+        this.environmentCustomConfigService = environmentCustomConfigService;
+        this.webResourceManager = webResourceManager;
+    }
+    
+    @Override
+    public String getIsolationType() {
+        return ISOLATION_TYPE;
+    }
+
+    @Override
+    public DockerHandler getHandler(BuildDefinition bd, boolean create) {
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+                environmentCustomConfigService, create, AccessConfiguration.forBuildDefinition(bd));
+    }
+
+    @Override
+    public DockerHandler getHandler(Environment environment, boolean create) {
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+                environmentCustomConfigService, 
+                create, AccessConfiguration.forEnvironment(environment, environmentCustomConfigService));
+    }
+
+    @Override
+    public void init(ModuleDescriptor moduleDescriptor) {
+        this.moduleDescriptor = moduleDescriptor;
+    }
+
+    @Override
+    public String getIsolationTypeLabel(TextProvider textProvider) {
+        return "Per Build Container (PBC) plugin";
+    }
+    
+}
