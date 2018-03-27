@@ -16,6 +16,9 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.build.BuildDefinition;
+import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
+import com.atlassian.bamboo.deployments.environments.Environment;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_EXTRA_CONTAINERS;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
@@ -30,6 +33,7 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -109,8 +113,19 @@ public class AccessConfiguration {
     }
 
     public static Configuration forJob(ImmutableJob job) {
-        Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
+        return forBuildDefinition(job.getBuildDefinition());
+    }
+    
+    public static Configuration forBuildDefinition(BuildDefinition buildDefinition) {
+        Map<String, String> cc = buildDefinition.getCustomConfiguration();
         return forMap(cc);
     }
 
+    
+    public static Configuration forEnvironment(Environment environment, 
+            EnvironmentCustomConfigService environmentCustomConfigService) {
+        return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
+                //TODO proper plugin key
+                environment.getId()).getOrDefault("XXX", Collections.emptyMap()));
+    }
 }

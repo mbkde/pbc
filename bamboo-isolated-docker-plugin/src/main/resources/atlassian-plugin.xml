@@ -100,6 +100,12 @@ limitations under the License.
         <context>bamboo.configuration</context>
     </web-resource>
 
+  <dockerHandler key="dockerHandler" name="PBC Docker Configuration handler"
+        class="com.atlassian.buildeng.isolated.docker.handler.DockerHandlerProviderImpl">
+    <description>Plugin to configure Docker wrapper for tasks on agents</description>
+    <resource type="freemarker" name="edit" location="templates/plugin/editDocker.ftl"/>
+    <resource type="freemarker" name="view" location="templates/plugin/viewDocker.ftl"/>
+  </dockerHandler>
 
     <web-resource key="docker-job-ui-js" name="JavaScript dependencies for editing isolated docker configuration">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
