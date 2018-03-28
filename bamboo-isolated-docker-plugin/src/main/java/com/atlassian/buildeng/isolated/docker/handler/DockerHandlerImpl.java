@@ -74,20 +74,22 @@ public class DockerHandlerImpl implements DockerHandler {
     private String render(String name) {
         final ResourceLocation resourceLocation = moduleDescriptor.getResourceLocation("freemarker", name);
         if (resourceLocation != null) {
-            String templatePath = resourceLocation.getLocation();
-
             final Map<String, Object> context = new HashMap<>();
-            context.put("webResourceManager", webResourceManager);
+            context.put("custom.isolated.docker.image", configuration.getDockerImage());
+            context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
+            context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
+            context.put("custom.isolated.docker.extraContainers", 
+                    ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
+            OgnlStackUtils.putAll(context);
             
+            context.put("webResourceManager", webResourceManager);
             Map<String, Object> cc = new HashMap<>();
             cc.put("image", configuration.getDockerImage());
             cc.put("imageSize", configuration.getSize().name());
             cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
-            context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
-            
-            OgnlStackUtils.putAll(context);
 
+            String templatePath = resourceLocation.getLocation();
             return templateRenderer.render(templatePath, context);
         } else {
             return StringUtils.EMPTY;
