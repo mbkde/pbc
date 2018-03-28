@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.utils.Pair;
+import com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
@@ -74,10 +75,13 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final GlobalConfiguration globalConfiguration;
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
+    private final AgentCreationRescheduler agentCreationRescheduler;
 
-    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
+    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, 
+            AgentCreationRescheduler agentCreationRescheduler, PluginScheduler pluginScheduler) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
+        this.agentCreationRescheduler = agentCreationRescheduler;
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(5, 5,
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
@@ -136,6 +140,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
+        config.put("agentRescheduler", agentCreationRescheduler);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class,
                 config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
