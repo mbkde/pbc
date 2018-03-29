@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
@@ -30,10 +29,11 @@ public final class Configuration {
     //custom.isolated.docker.image and custom.isolated.docker.image.size 
     // the way bamboo serializes these will cause the parent to get additional trailing whitespace
     // and you get mad trying to figure out why.
-    public static final String ENABLED_FOR_JOB = "custom.isolated.docker.enabled"; 
-    public static final String DOCKER_IMAGE = "custom.isolated.docker.image"; 
-    public static final String DOCKER_IMAGE_SIZE = "custom.isolated.docker.imageSize"; 
-    public static final String DOCKER_EXTRA_CONTAINERS = "custom.isolated.docker.extraContainers"; 
+    public static final String PROPERTY_PREFIX = "custom.isolated.docker";
+    public static final String ENABLED_FOR_JOB = PROPERTY_PREFIX + ".enabled"; 
+    public static final String DOCKER_IMAGE = PROPERTY_PREFIX + ".image"; 
+    public static final String DOCKER_IMAGE_SIZE = PROPERTY_PREFIX + ".imageSize"; 
+    public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers"; 
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";

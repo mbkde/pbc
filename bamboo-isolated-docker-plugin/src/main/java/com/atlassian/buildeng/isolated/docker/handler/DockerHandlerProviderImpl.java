@@ -23,6 +23,8 @@ import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomC
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.opensymphony.xwork2.TextProvider;
@@ -36,7 +38,8 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     private final EnvironmentCustomConfigService environmentCustomConfigService;
     private final WebResourceManager webResourceManager;
 
-    public DockerHandlerProviderImpl(TemplateRenderer templateRenderer, EnvironmentCustomConfigService environmentCustomConfigService, WebResourceManager webResourceManager) {
+    public DockerHandlerProviderImpl(TemplateRenderer templateRenderer, 
+            EnvironmentCustomConfigService environmentCustomConfigService, WebResourceManager webResourceManager) {
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
         this.webResourceManager = webResourceManager;
@@ -49,15 +52,20 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
 
     @Override
     public DockerHandler getHandler(BuildDefinition bd, boolean create) {
+        Configuration c = bd != null ? AccessConfiguration.forBuildDefinition(bd) 
+                : ConfigurationBuilder.create("").withEnabled(false).build();
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
-                environmentCustomConfigService, create, AccessConfiguration.forBuildDefinition(bd));
+                environmentCustomConfigService, create, c);
     }
 
     @Override
     public DockerHandler getHandler(Environment environment, boolean create) {
+        Configuration c = environment != null 
+                ? AccessConfiguration.forEnvironment(environment, environmentCustomConfigService)
+                : ConfigurationBuilder.create("").withEnabled(false).build();
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
                 environmentCustomConfigService, 
-                create, AccessConfiguration.forEnvironment(environment, environmentCustomConfigService));
+                create, c);
     }
 
     @Override

@@ -17,11 +17,13 @@
 package com.atlassian.buildeng.isolated.docker.handler;
 
 import com.atlassian.bamboo.build.BuildDefinition;
+import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.build.docker.DockerHandler;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.struts.OgnlStackUtils;
 import com.atlassian.bamboo.template.TemplateRenderer;
+import com.atlassian.bamboo.utils.ConfigUtils;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
@@ -36,6 +38,7 @@ import com.atlassian.plugin.webresource.WebResourceManager;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 
 public class DockerHandlerImpl implements DockerHandler {
@@ -138,7 +141,7 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     @Override
-    public void enableAndUpdate(BuildDefinition buildDefinition, Map<String, Object> webFragmentsContextMap) {
+    public void enableAndUpdate(BuildDefinition buildDefinition, Job job, Map<String, Object> webFragmentsContextMap) {
         Configuration config = createFromWebContext(webFragmentsContextMap);
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
@@ -149,7 +152,7 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     @Override
-    public void disable(BuildDefinition buildDefinition) {
+    public void disable(BuildDefinition buildDefinition, Job job) {
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
         //TODO do we remove the other configuration at this point?
@@ -187,8 +190,18 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     @Override
-    public void appendConfiguration(BuildConfiguration buildConfiguration, Map<String, Object> webFragmentsContextMap, boolean enabled) {
-        
+    public void appendConfiguration(BuildConfiguration buildConfiguration, Map<String, Object> webFragmentsContextMap,
+            boolean enabled) {
+        Configuration config = createFromWebContext(webFragmentsContextMap);
+        final HierarchicalConfiguration hc = new HierarchicalConfiguration();
+        hc.setDelimiterParsingDisabled(true);
+        hc.setProperty(Configuration.ENABLED_FOR_JOB, enabled);
+        hc.setProperty(Configuration.DOCKER_IMAGE, config.getDockerImage());
+        hc.setProperty(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
+        hc.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS, 
+                (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
+        buildConfiguration.clearTree(Configuration.PROPERTY_PREFIX);
+        ConfigUtils.copyNodes(hc, buildConfiguration.getProjectConfig());
     }
     
 }
