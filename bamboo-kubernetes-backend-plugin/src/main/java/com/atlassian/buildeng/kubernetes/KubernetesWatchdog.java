@@ -25,7 +25,6 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeRestartEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-import com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -115,8 +114,6 @@ public class KubernetesWatchdog extends WatchdogJob {
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
         GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
                 "globalConfiguration", jobDataMap);
-        AgentCreationRescheduler agentCreationRescheduler = getService(AgentCreationRescheduler.class,
-                "agentRescheduler", jobDataMap);
         DeploymentExecutionService deploymentExecutionService = getService(
                 DeploymentExecutionService.class, "deploymentExecutionService");
         DeploymentResultService deploymentResultService = getService(
@@ -257,7 +254,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                         if (reason != null && reason.isRestartPod() 
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             retryPodCreation(context, reason.getPod(), reason.getErrorMessage(),
-                                    podName, getRetryCount(reason.getPod()), eventPublisher, agentCreationRescheduler);
+                                    podName, getRetryCount(reason.getPod()), eventPublisher);
                         } else {
                             if (reason != null) {
                                 String logMessage = "Build was not queued due to pod deletion: " + podName;
@@ -275,7 +272,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                                 retryPodCreation(context, null, errorMessage,
-                                        podName, 0, eventPublisher, agentCreationRescheduler);
+                                        podName, 0, eventPublisher);
                             }
                         }
                     } else {
@@ -313,15 +310,14 @@ public class KubernetesWatchdog extends WatchdogJob {
     }
 
     private void retryPodCreation(CommonContext context, Pod pod, 
-            String errorMessage, String podName, int retryCount, EventPublisher eventPublisher, 
-            AgentCreationRescheduler rescheduler) {
+            String errorMessage, String podName, int retryCount, EventPublisher eventPublisher) {
         Configuration config = AccessConfiguration.forContext(context);
         //when pod is not around, just generate new UUID :(
         String uuid = pod != null ? pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
                 pod.getMetadata().getLabels().get(PodCreator.ANN_UUID)) : UUID.randomUUID().toString();
         context.getCurrentResult().getCustomBuildData().remove(KubernetesIsolatedDockerImpl.RESULT_PREFIX
                     + KubernetesIsolatedDockerImpl.NAME);
-        rescheduler.reschedule(new RetryAgentStartupEvent(config, context,
+        eventPublisher.publish(new RetryAgentStartupEvent(config, context,
                 retryCount + 1, UUID.fromString(uuid)));
         eventPublisher.publish(new DockerAgentKubeRestartEvent(
                 errorMessage, context.getResultKey(), podName, Collections.emptyMap()));
@@ -382,7 +378,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                         .getTerminationTime().getTime()).toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES);
         return map;
     }
-    
+
     private static class BackoffCache {
         private final String podName;
         private final Date creationTime;

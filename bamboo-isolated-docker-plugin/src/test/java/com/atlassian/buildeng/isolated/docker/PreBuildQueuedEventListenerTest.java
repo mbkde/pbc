@@ -57,7 +57,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class PreBuildQueuedEventListenerTest {
     @Mock
-    private AgentCreationReschedulerImpl scheduler;
+    private AgentCreationRescheduler scheduler;
     @Mock
     private IsolatedAgentService isolatedAgentService;
     @Mock
