@@ -28,10 +28,10 @@ public class AgentLicenseLimits {
     private final Logger logger = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
 
     private final AgentManager agentManager;
-    private final AgentCreationReschedulerImpl rescheduler;
+    private final AgentCreationRescheduler rescheduler;
     private final BuildQueueManager buildQueueManager;
 
-    public AgentLicenseLimits(AgentManager agentManager, AgentCreationReschedulerImpl rescheduler,
+    public AgentLicenseLimits(AgentManager agentManager, AgentCreationRescheduler rescheduler,
             BuildQueueManager buildQueueManager) {
         this.agentManager = agentManager;
         this.rescheduler = rescheduler;
