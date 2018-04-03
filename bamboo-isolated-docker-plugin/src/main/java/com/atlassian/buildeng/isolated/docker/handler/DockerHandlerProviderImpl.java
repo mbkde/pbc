@@ -28,6 +28,7 @@ import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.opensymphony.xwork2.TextProvider;
+import java.util.Map;
 
 public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDescriptor> {
 
@@ -67,6 +68,14 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
                 environmentCustomConfigService, 
                 create, c);
     }
+    
+    @Override
+    public DockerHandler getHandler(Map<String, Object> webFragmentsContextMap, boolean create) {
+        Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+                environmentCustomConfigService, 
+                create, c);
+    }
 
     @Override
     public void init(ModuleDescriptor moduleDescriptor) {
@@ -77,5 +86,6 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     public String getIsolationTypeLabel(TextProvider textProvider) {
         return "Per Build Container (PBC) plugin";
     }
+
     
 }

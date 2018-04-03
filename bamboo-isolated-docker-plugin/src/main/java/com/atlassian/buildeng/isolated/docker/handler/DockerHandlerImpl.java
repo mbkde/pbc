@@ -125,7 +125,7 @@ public class DockerHandlerImpl implements DockerHandler {
         return errs;
     }
 
-    private Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
+    static Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
         String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
         
         Configuration config = ConfigurationBuilder
