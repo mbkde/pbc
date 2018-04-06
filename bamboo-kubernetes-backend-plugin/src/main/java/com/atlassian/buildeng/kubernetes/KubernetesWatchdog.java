@@ -32,6 +32,9 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.plugin.ModuleDescriptor;
+import com.atlassian.plugin.PluginAccessor;
+import com.atlassian.plugin.osgi.factory.descriptor.ComponentModuleDescriptor;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -115,8 +118,6 @@ public class KubernetesWatchdog extends WatchdogJob {
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
         GlobalConfiguration globalConfiguration = getService(GlobalConfiguration.class,
                 "globalConfiguration", jobDataMap);
-        AgentCreationRescheduler agentCreationRescheduler = getService(AgentCreationRescheduler.class,
-                "agentRescheduler", jobDataMap);
         DeploymentExecutionService deploymentExecutionService = getService(
                 DeploymentExecutionService.class, "deploymentExecutionService");
         DeploymentResultService deploymentResultService = getService(
@@ -124,6 +125,25 @@ public class KubernetesWatchdog extends WatchdogJob {
         IsolatedAgentService isolatedAgentService = getService(
                 IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
 
+        //AgentCreationRescheduler - this component cannot be injected by spring 
+        // as it introduces cycles in spring injection between plugins.
+        // Ugly but I haven't found a shortcut utility method do to the same in bamboo.
+        PluginAccessor pluginAccessor = getService(PluginAccessor.class, "pluginAccessor");
+        AgentCreationRescheduler acr = null;
+        ModuleDescriptor md = pluginAccessor.getPluginModule(
+                "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler");
+        if (md instanceof ComponentModuleDescriptor) {
+            ComponentModuleDescriptor cmd = (ComponentModuleDescriptor) md;
+            Object o = cmd.getModule();
+            if (o instanceof AgentCreationRescheduler) {
+                acr = (AgentCreationRescheduler) o;
+            }
+        }
+        AgentCreationRescheduler agentCreationRescheduler = acr;
+        if (agentCreationRescheduler == null) {
+            throw new IllegalStateException("Cannot find component "
+                    + "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler");
+        }
 
         KubernetesClient client = new KubernetesClient(globalConfiguration);
         long clusterStateQueryTime = System.currentTimeMillis();
