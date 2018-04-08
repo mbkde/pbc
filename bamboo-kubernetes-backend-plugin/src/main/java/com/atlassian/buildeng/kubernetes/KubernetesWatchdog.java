@@ -25,12 +25,16 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeRestartEvent;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.plugin.ModuleDescriptor;
+import com.atlassian.plugin.PluginAccessor;
+import com.atlassian.plugin.osgi.factory.descriptor.ComponentModuleDescriptor;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -121,6 +125,25 @@ public class KubernetesWatchdog extends WatchdogJob {
         IsolatedAgentService isolatedAgentService = getService(
                 IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
 
+        //AgentCreationRescheduler - this component cannot be injected by spring 
+        // as it introduces cycles in spring injection between plugins.
+        // Ugly but I haven't found a shortcut utility method do to the same in bamboo.
+        PluginAccessor pluginAccessor = getService(PluginAccessor.class, "pluginAccessor");
+        AgentCreationRescheduler acr = null;
+        ModuleDescriptor md = pluginAccessor.getPluginModule(
+                "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler");
+        if (md instanceof ComponentModuleDescriptor) {
+            ComponentModuleDescriptor cmd = (ComponentModuleDescriptor) md;
+            Object o = cmd.getModule();
+            if (o instanceof AgentCreationRescheduler) {
+                acr = (AgentCreationRescheduler) o;
+            }
+        }
+        AgentCreationRescheduler agentCreationRescheduler = acr;
+        if (agentCreationRescheduler == null) {
+            throw new IllegalStateException("Cannot find component "
+                    + "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler");
+        }
 
         KubernetesClient client = new KubernetesClient(globalConfiguration);
         long clusterStateQueryTime = System.currentTimeMillis();
@@ -254,7 +277,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                         if (reason != null && reason.isRestartPod() 
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             retryPodCreation(context, reason.getPod(), reason.getErrorMessage(),
-                                    podName, getRetryCount(reason.getPod()), eventPublisher);
+                                    podName, getRetryCount(reason.getPod()), eventPublisher, agentCreationRescheduler);
                         } else {
                             if (reason != null) {
                                 String logMessage = "Build was not queued due to pod deletion: " + podName;
@@ -272,7 +295,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                                 retryPodCreation(context, null, errorMessage,
-                                        podName, 0, eventPublisher);
+                                        podName, 0, eventPublisher, agentCreationRescheduler);
                             }
                         }
                     } else {
@@ -310,14 +333,15 @@ public class KubernetesWatchdog extends WatchdogJob {
     }
 
     private void retryPodCreation(CommonContext context, Pod pod, 
-            String errorMessage, String podName, int retryCount, EventPublisher eventPublisher) {
+            String errorMessage, String podName, int retryCount, EventPublisher eventPublisher, 
+            AgentCreationRescheduler rescheduler) {
         Configuration config = AccessConfiguration.forContext(context);
         //when pod is not around, just generate new UUID :(
         String uuid = pod != null ? pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
                 pod.getMetadata().getLabels().get(PodCreator.ANN_UUID)) : UUID.randomUUID().toString();
         context.getCurrentResult().getCustomBuildData().remove(KubernetesIsolatedDockerImpl.RESULT_PREFIX
                     + KubernetesIsolatedDockerImpl.NAME);
-        eventPublisher.publish(new RetryAgentStartupEvent(config, context,
+        rescheduler.reschedule(new RetryAgentStartupEvent(config, context,
                 retryCount + 1, UUID.fromString(uuid)));
         eventPublisher.publish(new DockerAgentKubeRestartEvent(
                 errorMessage, context.getResultKey(), podName, Collections.emptyMap()));
@@ -378,7 +402,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                         .getTerminationTime().getTime()).toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES);
         return map;
     }
-
+    
     private static class BackoffCache {
         private final String podName;
         private final Date creationTime;

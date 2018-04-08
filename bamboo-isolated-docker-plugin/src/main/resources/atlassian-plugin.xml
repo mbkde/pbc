@@ -51,7 +51,8 @@ limitations under the License.
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
     
-    <component key="AgentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationRescheduler" public="true">
+    <component key="agentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationReschedulerImpl" public="true">
+        <interface>com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
     

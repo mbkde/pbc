@@ -60,7 +60,7 @@ public class PreBuildQueuedEventListener {
     private final Logger logger = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
     private final ErrorUpdateHandler errorUpdateHandler;
     private final BuildQueueManager buildQueueManager;
-    private final AgentCreationRescheduler rescheduler;
+    private final AgentCreationReschedulerImpl rescheduler;
     private final JMXAgentsService jmx;
     private final DeploymentResultService deploymentResultService;
     private final DeploymentExecutionService deploymentExecutionService;
@@ -73,7 +73,7 @@ public class PreBuildQueuedEventListener {
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                         ErrorUpdateHandler errorUpdateHandler,
                                         BuildQueueManager buildQueueManager,
-                                        AgentCreationRescheduler rescheduler,
+                                        AgentCreationReschedulerImpl rescheduler,
                                         JMXAgentsService jmx,
                                         DeploymentResultService deploymentResultService,
                                         DeploymentExecutionService deploymentExecutionService,
