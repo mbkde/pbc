@@ -218,7 +218,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     }
     
     private boolean isDockerInDockerImage(String image) {
-        return image.startsWith("docker:") && image.endsWith("dind");
+        return image.contains("docker:") && image.endsWith("dind");
     }
     
     public List<HostFolderMapping> getHostFolderMappings() {
