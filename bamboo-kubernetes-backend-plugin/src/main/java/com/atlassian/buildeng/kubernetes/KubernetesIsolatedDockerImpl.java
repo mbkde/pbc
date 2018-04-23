@@ -111,7 +111,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
         } catch (KubernetesClient.KubectlException e) {
             IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
-            if (e.getMessage().contains("(AlredyExists)")) {
+            if (e.getMessage().contains("(AlreadyExists)")) {
                 //full error message example: 
                 //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml": 
                 //object is being deleted: pods "plantemplates-srt-job1-..." already exists
