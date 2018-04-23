@@ -110,8 +110,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                     .withCustomResultData(UID, pod.getMetadata().getUid()));
 
         } catch (KubernetesClient.KubectlException e) {
-            callback.handle(new IsolatedDockerAgentResult()
-                    .withError(e.getMessage()));
+            IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
+            if (e.getMessage().contains("(AlredyExists)")) {
+                //full error message example: 
+                //Error from server (AlreadyExists): error when creating "/data/bamboo-server/current/temp/pod1409421494114698314yaml": object is being deleted: pods "plantemplates-srt-job1-812-d6e6c333-6284-44c0-b5d6-a85cec6bb415" already exists
+                result = result.withRetryRecoverable(e.getMessage());
+            } else {
+                result = result.withError(e.getMessage());
+            }
+            callback.handle(result);
             logger.error(e.getMessage());
 
         } catch (IOException | InterruptedException e) {
