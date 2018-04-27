@@ -123,7 +123,7 @@ public class PodCreator {
     
 
     public static boolean isDockerInDockerImage(String image) {
-        return image.startsWith("docker:") && image.endsWith("dind");
+        return image.contains("docker:") && image.endsWith("dind");
     }
 
     private static List<Map<String, Object>> createExtraContainers(Configuration c) {

@@ -50,7 +50,7 @@ public class LocalExecAction extends PlanResultsAction implements Preparable {
     }
 
     private boolean isDockerInDockerImage(String image) {
-        return image.startsWith("docker:") && image.endsWith("dind");
+        return image.contains("docker:") && image.endsWith("dind");
     }
   
 }

@@ -52,7 +52,7 @@ public class TaskDefinitionRegistrations {
     private static final Logger logger = LoggerFactory.getLogger(TaskDefinitionRegistrations.class);
 
     public static boolean isDockerInDockerImage(String image) {
-        return image.startsWith("docker:") && image.endsWith("dind");
+        return image.contains("docker:") && image.endsWith("dind");
     }
 
     //TODO this should be refactored to no expose the internal structure at all.

@@ -25,6 +25,7 @@ import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
@@ -37,8 +38,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AgentCreationRescheduler implements LifecycleAware  {
-    private final Logger logger = LoggerFactory.getLogger(AgentCreationRescheduler.class);
+public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreationRescheduler  {
+    private final Logger logger = LoggerFactory.getLogger(AgentCreationReschedulerImpl.class);
     private final EventPublisher eventPublisher;
     private final BuildQueueManager buildQueueManager;
     private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, 
@@ -47,7 +48,7 @@ public class AgentCreationRescheduler implements LifecycleAware  {
     private static final int RETRY_DELAY = 20; //20 seconds times 90 = 30 minutes
     private static final String KEY = "custom.isolated.docker.waiting";
 
-    private AgentCreationRescheduler(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
+    private AgentCreationReschedulerImpl(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
         this.eventPublisher = eventPublisher;
         this.buildQueueManager = buildQueueManager;
     }

@@ -68,7 +68,7 @@ public abstract class WatchdogJob implements PluginJob {
         );
         return type.cast(obj);
     }
-
+    
     protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
         final Object obj = checkNotNull(jobDataMap.get(serviceKey),
                 "Expected value for key '" + serviceKey + "', found nothing.");

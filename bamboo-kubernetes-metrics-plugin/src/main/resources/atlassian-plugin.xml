@@ -23,14 +23,14 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="kubernetes-metrics-plugin"/>
 
-    <buildProcessor key="retrieveMetrics" name="Retrieve Container Metrics from Prometheus"
+    <buildProcessor key="retrieveMetrics" name="PBC: Retrieve Container Metrics from Prometheus"
                     class="com.atlassian.buildeng.kubernetes.metrics.KubernetesMetricsBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
     <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.kubernetes.metrics.KubePreJobActionImpl">
     </preJobAction>
     
-    <preBuildAction key="queryContainerStartup" name="Query Kubernetes environment for Container Agent"
+    <preBuildAction key="queryContainerStartup" name="PBC: Query Kubernetes environment for Container Agent"
                     class="com.atlassian.buildeng.kubernetes.metrics.QueryPrometheusPreBuildAction"
                     weight="304">
         <description>Query Prometheus about images used and kube node hostname.</description>
