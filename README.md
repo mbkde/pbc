@@ -9,6 +9,8 @@ Each execution of a Bamboo job or deployment environment will run on a newly cre
 that will contain exactly the tools needed for the job, run it and then destroy itself. Services as Selenium, databases or Docker
 can be defined as extra containers that the build can interact with.
 
+Please note that PBC is currently compiled against Bamboo 6.2.0 and may not work correctly in older versions. Later versions should work.
+
 What is it good for?
 ====================
 
