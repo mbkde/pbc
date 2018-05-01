@@ -158,12 +158,11 @@ public class KubernetesWatchdog extends WatchdogJob {
         // delete pods which have had the bamboo-agent container terminated
         Set<BackoffCache> newBackedOff = new HashSet<>();
         
-        List<TerminatePodSelector> selectors = Arrays.asList(new TerminatePodSelector[] {
-            new OutOfResourcesSelector(),
-            new TerminatedAgentContainer(),
-            new CreateContainerError(),
-            new ContainerErrorStates()
-        });
+        List<TerminatePodSelector> selectors = Arrays.asList(
+                new OutOfResourcesSelector(),
+                new TerminatedAgentContainer(),
+                new CreateContainerError(),
+                new ContainerErrorStates());
         
         long killingStart = System.currentTimeMillis();
         for (Pod pod : pods) {
