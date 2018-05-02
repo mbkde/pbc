@@ -290,7 +290,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                                         logMessage, errorMessage, terminationReasons.get(podName).getDescribePod());
                                 current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                                 generateRemoteFailEvent(context, errorMessage, podName, 
-                                        isolatedAgentService, eventPublisher);
+                                        isolatedAgentService, eventPublisher, globalConfiguration);
                                 killBuild(deploymentExecutionService, deploymentResultService, logger, 
                                         buildQueueManager, context, current);
                             } else {
@@ -317,7 +317,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                         }
 
                         current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                        generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService, eventPublisher);
+                        generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService,
+                                eventPublisher, globalConfiguration);
 
                         killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                 context, current);
@@ -359,7 +360,8 @@ public class KubernetesWatchdog extends WatchdogJob {
     }
 
     private void generateRemoteFailEvent(CommonContext context, String reason, String podName,
-                                         IsolatedAgentService isolatedAgentService, EventPublisher eventPublisher) {
+                                         IsolatedAgentService isolatedAgentService,
+                                         EventPublisher eventPublisher, GlobalConfiguration configuration) {
         Configuration config = AccessConfiguration.forContext(context);
         Map<String, String> customData = new HashMap<>(context.getCurrentResult().getCustomBuildData());
         customData.entrySet().removeIf(
@@ -367,7 +369,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(config, customData);
 
         eventPublisher.publish(new DockerAgentKubeFailEvent(
-                reason, context.getResultKey(), podName, containerLogs));
+                reason, context.getResultKey(), podName, containerLogs, configuration));
     }
 
     private static Optional<TerminationReason> deletePod(KubernetesClient client, Pod pod, String terminationReason,
