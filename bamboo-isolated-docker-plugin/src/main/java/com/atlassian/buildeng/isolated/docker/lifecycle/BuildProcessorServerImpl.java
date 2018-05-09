@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements CustomBuildProcessorServer {
     private static final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
-    static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
+    public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
     private BuildContext buildContext;
     private AgentRemovals agentRemovals;
@@ -80,9 +80,6 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         this.buildExecutionManager = buildExecutionManager;
     }
 
-    
-    
-    
     @Override
     public void init(@NotNull BuildContext buildContext) {
         this.buildContext = buildContext;
@@ -123,7 +120,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         removeBuildRequirements(planKey, buildConfiguration, requirementSet);
         Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
         if (config.isEnabled()) {
-            requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
+            addResultRequirement(requirementSet);
         }
     }
 
@@ -131,8 +128,16 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     @Override
     public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, 
             @NotNull RequirementSet requirementSet) {
+        removeAllRequirements(requirementSet);
+    }
+    
+    public static void removeAllRequirements(@NotNull RequirementSet requirementSet) {
         requirementSet.removeRequirements((Requirement input) -> 
                 input.getKey().equals(CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
+    }
+    
+    public static void addResultRequirement(@NotNull RequirementSet requirementSet) {
+        requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
     }
 
     @NotNull
@@ -164,6 +169,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
         config.copyTo(context);
         context.put("imageSizes", getImageSizes());
+        context.put("doShow", !hasDockerTab());
     }
 
     @NotNull
@@ -176,6 +182,20 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
                 Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"),
                 Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"));
+    }
+
+    /**
+     * this method attempts to avoid compilation dependency on newer bamboo dependencies.
+     */
+    private Boolean hasDockerTab() {
+        boolean hasClass;
+        try {
+            Class clazz = Class.forName("com.atlassian.bamboo.build.docker.DockerHandlerProvider");
+            hasClass = true;
+        } catch (ClassNotFoundException ex) {
+            hasClass = false;
+        }
+        return hasClass && !Boolean.getBoolean("bamboo.docker.pipelines.disable");
     }
     
 }

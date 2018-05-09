@@ -1,3 +1,5 @@
+[#if doShow]
+
 ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
 
 [@ui.bambooSection titleKey="isolated.docker.misc.header" descriptionKey='isolated.docker.misc.header.description']
@@ -17,3 +19,5 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
 <script>
 [#include "jobConfiguration.js"]
 </script>
+
+[/#if]

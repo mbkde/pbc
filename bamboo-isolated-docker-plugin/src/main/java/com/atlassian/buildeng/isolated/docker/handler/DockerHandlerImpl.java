@@ -21,12 +21,16 @@ import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.build.docker.DockerHandler;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
+import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
+import com.atlassian.bamboo.exception.WebValidationException;
 import com.atlassian.bamboo.struts.OgnlStackUtils;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.utils.ConfigUtils;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
+import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -40,8 +44,11 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
 
 public class DockerHandlerImpl implements DockerHandler {
+    @SuppressWarnings("UnusedDeclaration")
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
 
     private final ModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
@@ -49,14 +56,17 @@ public class DockerHandlerImpl implements DockerHandler {
     private final boolean create;
     private final Configuration configuration;
     private final WebResourceManager webResourceManager;
+    private final EnvironmentRequirementService environmentRequirementService;
 
     public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager, 
             TemplateRenderer templateRenderer, 
-            EnvironmentCustomConfigService environmentCustomConfigService, boolean create,
-            Configuration configuration) {
+            EnvironmentCustomConfigService environmentCustomConfigService,
+            EnvironmentRequirementService environmentRequirementService,
+            boolean create, Configuration configuration) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
+        this.environmentRequirementService = environmentRequirementService;
         this.create = create;
         this.configuration = configuration;
         this.webResourceManager = webResourceManager;
@@ -149,12 +159,15 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
+        BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
+        BuildProcessorServerImpl.addResultRequirement(job.getRequirementSet());
     }
 
     @Override
     public void disable(BuildDefinition buildDefinition, Job job) {
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
+        BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
         //TODO do we remove the other configuration at this point?
     }
 
@@ -174,6 +187,13 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
+        removeEnvironmentRequirements(environment);
+        try {
+            environmentRequirementService.addRequirement(environment.getId(), 
+                    Constants.CAPABILITY_RESULT, ImmutableRequirement.MatchType.MATCHES, ".*");
+        } catch (WebValidationException ex) {
+            log.error("Failed to add requirement for environment " + environment.getId(), ex);
+        }
     }
 
     @Override
@@ -187,6 +207,25 @@ public class DockerHandlerImpl implements DockerHandler {
         }
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
+        removeEnvironmentRequirements(environment);
+    }
+
+    void removeEnvironmentRequirements(Environment environment) {
+        try {
+            environmentRequirementService.getRequirementsForEnvironment(environment.getId()).stream()
+                    .filter((ImmutableRequirement input)
+                            -> input.getKey().equals(BuildProcessorServerImpl.CAPABILITY)
+                                    || input.getKey().equals(Constants.CAPABILITY_RESULT))
+                    .forEach((ImmutableRequirement t) -> {
+                        try {
+                            environmentRequirementService.removeRequirement(environment.getId(), t.getId());
+                        } catch (WebValidationException ex) {
+                            log.error("Failed to remove requirement for environment " + environment.getId(), ex);
+                        }
+                    });
+        } catch (WebValidationException ex) {
+            log.error("Failed to list requirements for environment " + environment.getId(), ex);
+        }
     }
 
     @Override
@@ -202,6 +241,8 @@ public class DockerHandlerImpl implements DockerHandler {
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         buildConfiguration.clearTree(Configuration.PROPERTY_PREFIX);
         ConfigUtils.copyNodes(hc, buildConfiguration.getProjectConfig());
+        //we deal with adding the requirement Constants.CAPABILITY_RESULT in BuildCreatedEventListener
+        // in here the job doesn't exist yet.
     }
     
 }

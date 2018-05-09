@@ -21,6 +21,7 @@ import com.atlassian.bamboo.build.docker.DockerHandler;
 import com.atlassian.bamboo.build.docker.DockerHandlerProvider;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
+import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -37,12 +38,16 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     private ModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
     private final EnvironmentCustomConfigService environmentCustomConfigService;
+    private final EnvironmentRequirementService environmentRequirementService;
     private final WebResourceManager webResourceManager;
 
     public DockerHandlerProviderImpl(TemplateRenderer templateRenderer, 
-            EnvironmentCustomConfigService environmentCustomConfigService, WebResourceManager webResourceManager) {
+            EnvironmentCustomConfigService environmentCustomConfigService, 
+            EnvironmentRequirementService environmentRequirementService,
+            WebResourceManager webResourceManager) {
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
+        this.environmentRequirementService = environmentRequirementService;
         this.webResourceManager = webResourceManager;
     }
     
@@ -56,7 +61,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
         Configuration c = bd != null ? AccessConfiguration.forBuildDefinition(bd) 
                 : ConfigurationBuilder.create("").withEnabled(false).build();
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
-                environmentCustomConfigService, create, c);
+                environmentCustomConfigService, environmentRequirementService, create, c);
     }
 
     @Override
@@ -65,7 +70,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
                 ? AccessConfiguration.forEnvironment(environment, environmentCustomConfigService)
                 : ConfigurationBuilder.create("").withEnabled(false).build();
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
-                environmentCustomConfigService, 
+                environmentCustomConfigService, environmentRequirementService,
                 create, c);
     }
     
@@ -73,7 +78,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     public DockerHandler getHandler(Map<String, Object> webFragmentsContextMap, boolean create) {
         Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
-                environmentCustomConfigService, 
+                environmentCustomConfigService, environmentRequirementService,
                 create, c);
     }
 
