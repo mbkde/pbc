@@ -44,11 +44,12 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DockerHandlerImpl implements DockerHandler {
     @SuppressWarnings("UnusedDeclaration")
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
 
     private final ModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;

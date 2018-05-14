@@ -39,6 +39,10 @@ import javax.annotation.Nonnull;
 
 public class AccessConfiguration {
 
+    
+    //XXX interplugin dependency
+    static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
+    
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
         return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
@@ -63,8 +67,14 @@ public class AccessConfiguration {
     @Nonnull
     private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
+            Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY);
+            if (!map.isEmpty()) { 
+                //not sure this condition is 100% reliable, when enabling and disabling 
+                //the docker tab data will retain some config.
+                return forMap(map);
+            }
             //XXX interplugin dependency
-            if ("com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockertask".equals(task.getPluginKey())) {
+            if ((IMPL_PLUGIN_KEY + ":dockertask").equals(task.getPluginKey())) {
                 return forTaskConfiguration(task);
             }
         }
@@ -125,7 +135,7 @@ public class AccessConfiguration {
     public static Configuration forEnvironment(Environment environment, 
             EnvironmentCustomConfigService environmentCustomConfigService) {
         return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
-                //TODO proper plugin key
-                environment.getId()).getOrDefault("XXX", Collections.emptyMap()));
+                environment.getId()).getOrDefault(IMPL_PLUGIN_KEY,
+                        Collections.emptyMap()));
     }
 }
