@@ -74,8 +74,7 @@ class KubernetesClient {
     List<Pod> getPods(String labelName, String labelValue)
             throws InterruptedException, IOException, KubectlException {
         String label = labelName + '=' + labelValue;
-        // --show-all displays "Completed" status pods as well
-        return ((KubernetesList) executeKubectlAsJson("get", "pods", "--selector", label, "--show-all"))
+        return ((KubernetesList) executeKubectlAsJson("get", "pods", "--selector", label))
                 .getItems().stream().map((HasMetadata pod) -> (Pod) pod).collect(Collectors.toList());
     }
 

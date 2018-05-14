@@ -17,42 +17,14 @@
 package com.atlassian.buildeng.isolated.docker.events;
 
 import com.atlassian.bamboo.Key;
-import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
+import com.atlassian.buildeng.kubernetes.GlobalConfiguration;
 import java.net.URL;
 import java.util.Map;
 
-public final class DockerAgentKubeFailEvent extends DockerAgentEvent {
+public final class DockerAgentKubeFailEvent extends DockerAgentKubeEvent {
 
-    private final String errorMessage;
-    private final Key key;
-    private final String podName;
-    private final Map<String, URL> markdownLinks;
-
-    /**
-     * Event sent to Datadog for when a pod fails to queue, for any reason.
-     */
     public DockerAgentKubeFailEvent(
-            String errorMessage, Key key, String podName, Map<String, URL> markdownLinks) {
-        this.errorMessage = errorMessage;
-        this.key = key;
-        this.podName = podName;
-        this.markdownLinks = markdownLinks;
+            String errorMessage, Key key, String podName, Map<String, URL> markdownLinks, GlobalConfiguration config) {
+        super(errorMessage, key, podName, markdownLinks, config);
     }
-
-    @Override
-    public String toString() {
-        if (ddmarkdown) {
-            //http://docs.datadoghq.com/guides/markdown/
-            return "%%% \\n"
-                    + "Key:**" + key.getKey() + "**\\n"
-                    + "Pod name:" + podName + "\\n"
-                    + "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n"
-                    + escape(errorMessage) + "\\n"
-                    + "\\n %%%";
-        }
-        return "DockerAgentKubeFailEvent{podName="
-                + podName + ", key=" + key  + ",containerLogs=" + markdownLinks +  ",message=" + errorMessage
-                +  "}";
-    }
-
 }
