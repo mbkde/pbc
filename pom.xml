@@ -11,7 +11,7 @@
     <groupId>com.atlassian.buildeng</groupId>
     <artifactId>bamboo-isolated-docker</artifactId>
     <version>1.228-SNAPSHOT</version>
-    <name>Bamboo plugins for ECS based docker agents...</name>
+    <name>Bamboo plugins for cluster based Docker agents</name>
     <description>more relevant text here</description>
     <packaging>pom</packaging>
     <organization>
