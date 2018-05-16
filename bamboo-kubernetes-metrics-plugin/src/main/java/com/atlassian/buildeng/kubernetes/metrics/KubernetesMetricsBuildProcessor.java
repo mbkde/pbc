@@ -256,13 +256,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         Datapoint maxoverall = maxValueKey(memAll);
         if (maxoverall != null) {
             logger.info("max_total:" + (long)maxoverall.y + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+            double rss = Arrays.stream(memRss)
+                    .filter((Datapoint t) -> t.x == maxoverall.x)
+                    .findFirst().orElse(Datapoint.NONE).y;
+            double swap = Arrays.stream(memSwap)
+                    .filter((Datapoint t) -> t.x == maxoverall.x)
+                    .findFirst().orElse(Datapoint.NONE).y;
             if (maxoverall.y > container.memoryInBytes) {
-                double rss = Arrays.stream(memRss)
-                        .filter((Datapoint t) -> t.x == maxoverall.x)
-                        .findFirst().orElse(Datapoint.NONE).y;
-                double swap = Arrays.stream(memSwap)
-                        .filter((Datapoint t) -> t.x == maxoverall.x)
-                        .findFirst().orElse(Datapoint.NONE).y;
                 if (rss > container.memoryInBytes && swap > 0) {
                     buildLogger.addBuildLogEntry("Warning: The container "
                             + container.name + " is using both high amount of RSS memory and swap."
@@ -274,6 +274,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                             + container.name + " is using less than quarter of the memory reserved."
                                     + " Please consider adjusting the size of the container.");
             }
+            //TODO max of swap at maxoverall or it's own maximum via maxValueKey(memSwap) or both?
+            Datapoint dpSwap = maxValueKey(memSwap);
+            logAdditionalChecks(container.name, container.memoryInBytes, (long)maxoverall.y, (long)rss, 
+                    Math.max(dpSwap != null ? (long)dpSwap.y : 0, (long)swap));
         }
     }
     
@@ -339,8 +343,14 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         artifactDetails.put("memoryRequest", reservation.memory);
         return artifactDetails;
     }
+
+    protected void logAdditionalChecks(String containerName, long reservedMemoryInBytes, 
+            long usedMaximum, long usedMaxRss, long usedMaxSwap) {
+        //do nothing intentionally.
+        logger.debug("in logAdditonalChecks");
+    }
     
-    private static class Datapoint {
+    public static class Datapoint {
         private final int x;
         private final double y;
         private static Datapoint NONE = new Datapoint(0, -1);
@@ -351,13 +361,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         }
     }
     
-    private static class ReservationSize {
+    public static class ReservationSize {
         private final String name;
         private final int cpu;
         private final int memory;
         private final long memoryInBytes;
 
-        public ReservationSize(String name, int cpu, int memory) {
+        ReservationSize(String name, int cpu, int memory) {
             this.name = name;
             this.cpu = cpu;
             this.memory = memory;
