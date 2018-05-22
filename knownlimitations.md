@@ -26,7 +26,8 @@ passed to either Bamboo server JVM or the ecs-scheduler-service (if using the Re
 
 * We've had bad experience with the default storage driver on AWS ECS AMI and changed it to overlay and then overlay2.
 
-* Kubernetes scaling and scheduling of pods is outside of the scope of the plugin. You have to deal with it on Kube side.
+* Kubernetes scaling and scheduling of pods is outside of the scope of the plugin. You have to deal with it on Kube side. 
+We are currently using [escalator](https://github.com/atlassian/escalator) for scaling rapidly. See https://developer.atlassian.com/blog/2018/05/introducing-escalator/
 
 * Kubernetes container logs storage is also out of scope.
 

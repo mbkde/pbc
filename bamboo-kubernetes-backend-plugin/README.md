@@ -37,7 +37,8 @@ users:
     token: XXX
 ```
 
-* Preexisting kubernetes cluster with automatic scaling, the Bamboo plugin itself only performs scheduling, not scaling.
+* Preexisting kubernetes cluster with automatic scaling, the Bamboo plugin itself only adds pods to the cluster, not scaling.
+We are using [escalator](https://github.com/atlassian/escalator) for scaling the cluster in AWS infrastructure.
 
 Usage
 =====
@@ -103,7 +104,7 @@ Advanced and Miscellaneous
 If you are running Prometheus in the cluster, you can make use of the [PBC Kubernetes Metrics plugin](../bamboo-kubernetes-metrics-plugin/)
 and collect per agent metrics via Prometheus.
 
-To access AWS resources, we are running https://github.com/jtblin/kube2iam as service in our cluster and the Pod Template Bamboo configuration
+To access AWS resources, we are running a combination of Kube secrets and https://github.com/jtblin/kube2iam as service in our cluster and the Pod Template Bamboo configuration
 includes the kube2iam annotations to have the agent container assume the given role per Bamboo server.
 
 
