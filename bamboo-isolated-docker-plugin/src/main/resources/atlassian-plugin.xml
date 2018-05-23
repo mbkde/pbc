@@ -164,5 +164,15 @@ limitations under the License.
     <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
     <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
   </web-item>
+  
+  <!-- the 'pbcEnvironment' key or plugin key can never ever change value, because they end up as part of export -->
+    <customEnvironmentConfig key="pbcEnvironment" name="Dummy environment config"
+                                        class = "com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigPluginImpl">
+        <description>
+            Plugin module that handles per environment configuration
+        </description>
+        <resource type="freemarker" name="edit" location="/templates/plugin/empty.ftl" />
+        <exporter class="com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigExporterImpl" />
+    </customEnvironmentConfig>  
     
 </atlassian-plugin>

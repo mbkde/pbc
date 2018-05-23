@@ -31,6 +31,7 @@ import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -122,17 +123,12 @@ public class DockerHandlerImpl implements DockerHandler {
 
     @Override
     public ErrorCollection validateConfig(Map<String, Object> webFragmentsContextMap) {
-        Configuration config = createFromWebContext(webFragmentsContextMap);
-        String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
+        String extraCont = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
+        String size = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE_SIZE);
+        String image = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE);
+        String enabled = (String) webFragmentsContextMap.get(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
-        RequirementTaskConfigurator.validateExtraContainers(v, errs);
-        if (config.isEnabled()) {
-            if (org.apache.commons.lang.StringUtils.isBlank(config.getDockerImage())) {
-                errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot be blank.");
-            } else if (!config.getDockerImage().trim().equals(config.getDockerImage())) {
-                errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot contain whitespace.");
-            }
-        }
+        Validator.validate(image, size, extraCont, errs, false);
         return errs;
     }
 
@@ -177,10 +173,10 @@ public class DockerHandlerImpl implements DockerHandler {
         Configuration config = createFromWebContext(webFragmentsContextMap);
         Map<String, Map<String, String>> all = environmentCustomConfigService.getEnvironmentPluginConfig(
                 environment.getId());
-        Map<String, String> cc = all.get(moduleDescriptor.getPluginKey());
+        Map<String, String> cc = all.get(CustomEnvironmentConfigExporterImpl.ENV_CONFIG_MODULE_KEY);
         if (cc == null) {
             cc = new HashMap<>();
-            all.put(moduleDescriptor.getPluginKey(), cc);
+            all.put(CustomEnvironmentConfigExporterImpl.ENV_CONFIG_MODULE_KEY, cc);
         }
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
@@ -201,10 +197,10 @@ public class DockerHandlerImpl implements DockerHandler {
     public void disable(Environment environment) {
         Map<String, Map<String, String>> all = environmentCustomConfigService.getEnvironmentPluginConfig(
                 environment.getId());
-        Map<String, String> cc = all.get(moduleDescriptor.getPluginKey());
+        Map<String, String> cc = all.get(CustomEnvironmentConfigExporterImpl.ENV_CONFIG_MODULE_KEY);
         if (cc == null) {
             cc = new HashMap<>();
-            all.put(moduleDescriptor.getPluginKey(), cc);
+            all.put(CustomEnvironmentConfigExporterImpl.ENV_CONFIG_MODULE_KEY, cc);
         }
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());

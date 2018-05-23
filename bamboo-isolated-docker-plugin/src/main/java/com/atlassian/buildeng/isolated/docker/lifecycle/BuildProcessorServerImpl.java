@@ -34,13 +34,12 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
+import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,17 +142,12 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     @NotNull
     @Override
     public ErrorCollection validate(@NotNull BuildConfiguration bc) {
-        String v = bc.getString(Configuration.DOCKER_EXTRA_CONTAINERS);
+        String extraCont = bc.getString(Configuration.DOCKER_EXTRA_CONTAINERS);
+        String image = bc.getString(Configuration.DOCKER_IMAGE);
+        String size = bc.getString(Configuration.DOCKER_IMAGE_SIZE);
+        String enabled = bc.getString(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
-        RequirementTaskConfigurator.validateExtraContainers(v, errs);
-        Configuration config = AccessConfiguration.forBuildConfiguration(bc);
-        if (config.isEnabled()) {
-            if (StringUtils.isBlank(config.getDockerImage())) {
-                errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot be blank.");
-            } else if (!config.getDockerImage().trim().equals(config.getDockerImage())) {
-                errs.addError(Configuration.DOCKER_IMAGE, "Docker image cannot contain whitespace.");
-            }
-        }
+        Validator.validate(image, size, extraCont, errs, false);
         if (errs.hasAnyErrors()) {
             return errs;
         }
