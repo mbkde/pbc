@@ -21,8 +21,8 @@ import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Just here to have the plugin included on agent classpath. Bamboo doesn't

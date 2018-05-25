@@ -173,8 +173,8 @@ public class DockerHandlerImpl implements DockerHandler {
         try {
             environmentRequirementService.getRequirementsForEnvironment(environment.getId()).stream()
                     .filter((ImmutableRequirement input)
-                            -> input.getKey().equals(BuildProcessorServerImpl.CAPABILITY)
-                                    || input.getKey().equals(Constants.CAPABILITY_RESULT))
+                        -> input.getKey().equals(BuildProcessorServerImpl.CAPABILITY)
+                               || input.getKey().equals(Constants.CAPABILITY_RESULT))
                     .forEach((ImmutableRequirement t) -> {
                         try {
                             environmentRequirementService.removeRequirement(environment.getId(), t.getId());
