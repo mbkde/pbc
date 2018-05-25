@@ -21,6 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.util.Arrays;
 import org.apache.commons.lang.StringUtils;
@@ -86,7 +87,7 @@ public class Validator {
                         }
                     });
                 }
-            } catch (RuntimeException e) {
+            } catch (JsonParseException e) {
                 errorCollection.addErrorMessage("Extra containers field is not valid json.");
             }
         }
