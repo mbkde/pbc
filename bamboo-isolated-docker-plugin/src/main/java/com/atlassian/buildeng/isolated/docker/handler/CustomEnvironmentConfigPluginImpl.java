@@ -24,7 +24,6 @@ import java.util.Optional;
 /**
  * A dummy implementation not doing anything, just carrier of CustomEnvironmentConfigPluginExporter implementation
  * in module declaration.
- * @author mkleint
  */
 public class CustomEnvironmentConfigPluginImpl implements CustomEnvironmentConfigPlugin {
 

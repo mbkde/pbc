@@ -41,6 +41,9 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     private final EnvironmentRequirementService environmentRequirementService;
     private final WebResourceManager webResourceManager;
 
+    /**
+     * New stateless instance.
+     */
     public DockerHandlerProviderImpl(TemplateRenderer templateRenderer, 
             EnvironmentCustomConfigService environmentCustomConfigService, 
             EnvironmentRequirementService environmentRequirementService,

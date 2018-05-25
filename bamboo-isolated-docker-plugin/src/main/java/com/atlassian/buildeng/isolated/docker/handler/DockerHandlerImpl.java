@@ -32,7 +32,6 @@ import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.Validator;
-import com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
@@ -60,6 +59,9 @@ public class DockerHandlerImpl implements DockerHandler {
     private final WebResourceManager webResourceManager;
     private final EnvironmentRequirementService environmentRequirementService;
 
+    /**
+     * Creates new stateful instance.
+     */
     public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager, 
             TemplateRenderer templateRenderer, 
             EnvironmentCustomConfigService environmentCustomConfigService,
@@ -85,31 +87,6 @@ public class DockerHandlerImpl implements DockerHandler {
     public String getViewHtml() {
         return render("view");
     }
-    
-    private String render(String name) {
-        final ResourceLocation resourceLocation = moduleDescriptor.getResourceLocation("freemarker", name);
-        if (resourceLocation != null) {
-            final Map<String, Object> context = new HashMap<>();
-            context.put("custom.isolated.docker.image", configuration.getDockerImage());
-            context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
-            context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
-            context.put("custom.isolated.docker.extraContainers", 
-                    ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
-            OgnlStackUtils.putAll(context);
-            
-            context.put("webResourceManager", webResourceManager);
-            Map<String, Object> cc = new HashMap<>();
-            cc.put("image", configuration.getDockerImage());
-            cc.put("imageSize", configuration.getSize().name());
-            cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
-            context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
-
-            String templatePath = resourceLocation.getLocation();
-            return templateRenderer.render(templatePath, context);
-        } else {
-            return StringUtils.EMPTY;
-        }
-    }
 
     @Override
     public boolean isEnabled() {
@@ -132,21 +109,6 @@ public class DockerHandlerImpl implements DockerHandler {
         return errs;
     }
 
-    static Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
-        String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
-        
-        Configuration config = ConfigurationBuilder
-                .create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE, ""))
-                .withEnabled(true)
-                .withImageSize(Configuration.ContainerSize.valueOf(
-                        (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
-                                Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(
-                        (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
-                .build();
-        return config;
-    }
-
     @Override
     public void enableAndUpdate(BuildDefinition buildDefinition, Job job, Map<String, Object> webFragmentsContextMap) {
         Configuration config = createFromWebContext(webFragmentsContextMap);
@@ -158,14 +120,6 @@ public class DockerHandlerImpl implements DockerHandler {
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
         BuildProcessorServerImpl.addResultRequirement(job.getRequirementSet());
-    }
-
-    @Override
-    public void disable(BuildDefinition buildDefinition, Job job) {
-        Map<String, String> cc = buildDefinition.getCustomConfiguration();
-        cc.put(Configuration.ENABLED_FOR_JOB, "false");
-        BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
-        //TODO do we remove the other configuration at this point?
     }
 
     @Override
@@ -191,6 +145,14 @@ public class DockerHandlerImpl implements DockerHandler {
         } catch (WebValidationException ex) {
             log.error("Failed to add requirement for environment " + environment.getId(), ex);
         }
+    }
+    
+    @Override
+    public void disable(BuildDefinition buildDefinition, Job job) {
+        Map<String, String> cc = buildDefinition.getCustomConfiguration();
+        cc.put(Configuration.ENABLED_FOR_JOB, "false");
+        BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
+        //TODO do we remove the other configuration at this point?
     }
 
     @Override
@@ -241,5 +203,46 @@ public class DockerHandlerImpl implements DockerHandler {
         //we deal with adding the requirement Constants.CAPABILITY_RESULT in BuildCreatedEventListener
         // in here the job doesn't exist yet.
     }
+    
+    private String render(String name) {
+        final ResourceLocation resourceLocation = moduleDescriptor.getResourceLocation("freemarker", name);
+        if (resourceLocation != null) {
+            final Map<String, Object> context = new HashMap<>();
+            context.put("custom.isolated.docker.image", configuration.getDockerImage());
+            context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
+            context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
+            context.put("custom.isolated.docker.extraContainers", 
+                    ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
+            OgnlStackUtils.putAll(context);
+            
+            context.put("webResourceManager", webResourceManager);
+            Map<String, Object> cc = new HashMap<>();
+            cc.put("image", configuration.getDockerImage());
+            cc.put("imageSize", configuration.getSize().name());
+            cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
+            context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
+
+            String templatePath = resourceLocation.getLocation();
+            return templateRenderer.render(templatePath, context);
+        } else {
+            return StringUtils.EMPTY;
+        }
+    }
+    
+    static Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
+        String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
+        
+        Configuration config = ConfigurationBuilder
+                .create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                .withEnabled(true)
+                .withImageSize(Configuration.ContainerSize.valueOf(
+                        (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
+                                Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonString(
+                        (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .build();
+        return config;
+    }
+    
     
 }

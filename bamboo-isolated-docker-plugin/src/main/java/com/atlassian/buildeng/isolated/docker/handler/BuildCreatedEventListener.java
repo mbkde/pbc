@@ -25,8 +25,6 @@ import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.event.api.EventListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -55,8 +53,8 @@ public class BuildCreatedEventListener {
                     if (!isPresent && AccessConfiguration.forJob(job).isEnabled()) {
                         BuildProcessorServerImpl.addResultRequirement(job.getRequirementSet());
                     }
+                    pm.savePlan(job);
                 }
-                pm.savePlan(job);
                 return this;
             });
         } catch (Exception ex) {

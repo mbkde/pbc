@@ -32,15 +32,10 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author mkleint
- */
 public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentConfigPluginExporter {
 
     // these things can never ever change value, because they end up as part of export
