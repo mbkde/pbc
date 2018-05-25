@@ -108,28 +108,4 @@ limitations under the License.
             <scope>provided</scope>
         </dependency>
     </dependencies>
-    <profiles>
-        <profile>
-            <id>old</id>
-            <properties>
-                <bamboo.version>6.2.0</bamboo.version>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <!-- compile against 6.2.0 but avoid compiling the handler subpackage 
-                                that depends on latest milestone-->
-                                
-                                <exclude>**/com/atlassian/buildeng/isolated/docker/handler/**</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
