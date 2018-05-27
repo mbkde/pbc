@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DockerHandlerImpl implements DockerHandler {
-    @SuppressWarnings("UnusedDeclaration")
+
     private static final Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
 
     private final ModuleDescriptor moduleDescriptor;

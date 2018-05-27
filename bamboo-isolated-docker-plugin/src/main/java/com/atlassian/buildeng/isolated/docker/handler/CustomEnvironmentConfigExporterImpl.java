@@ -33,17 +33,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentConfigPluginExporter {
 
     // these things can never ever change value, because they end up as part of export
     static final String ENV_CONFIG_MODULE_KEY = 
             "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
-
-    @SuppressWarnings("UnusedDeclaration")
-    private static final Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
 
     @Override
     public EnvironmentPluginConfiguration toSpecsEntity(Map<String, String> map) {
