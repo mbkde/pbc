@@ -26,8 +26,12 @@ import com.atlassian.bamboo.exception.WebValidationException;
 import com.atlassian.bamboo.struts.OgnlStackUtils;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.utils.ConfigUtils;
+import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
+import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
+import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
@@ -39,17 +43,35 @@ import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.elements.ResourceLocation;
 import com.atlassian.plugin.webresource.WebResourceManager;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DockerHandlerImpl implements DockerHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
+
+    public static void removeAllRequirements(@NotNull RequirementSet requirementSet) {
+        requirementSet.removeRequirements((Requirement input) -> input.getKey().equals(BuildProcessorServerImpl.CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
+    }
+
+    public static void addResultRequirement(@NotNull RequirementSet requirementSet) {
+        requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
+    }
+
+    @NotNull
+    public static Collection<Pair<String, String>> getImageSizes() {
+        return Arrays.asList( //this is stupid ordering but we want to keep regular as default for new
+        //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
+        Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"), Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"), Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"), Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"), Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"));
+    }
 
     private final ModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
@@ -118,8 +140,8 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
-        BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
-        BuildProcessorServerImpl.addResultRequirement(job.getRequirementSet());
+        removeAllRequirements(job.getRequirementSet());
+        addResultRequirement(job.getRequirementSet());
     }
 
     @Override
@@ -151,7 +173,7 @@ public class DockerHandlerImpl implements DockerHandler {
     public void disable(BuildDefinition buildDefinition, Job job) {
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
-        BuildProcessorServerImpl.removeAllRequirements(job.getRequirementSet());
+        removeAllRequirements(job.getRequirementSet());
         //TODO do we remove the other configuration at this point?
     }
 
@@ -210,7 +232,7 @@ public class DockerHandlerImpl implements DockerHandler {
             final Map<String, Object> context = new HashMap<>();
             context.put("custom.isolated.docker.image", configuration.getDockerImage());
             context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
-            context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
+            context.put("imageSizes", getImageSizes());
             context.put("custom.isolated.docker.extraContainers", 
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             OgnlStackUtils.putAll(context);

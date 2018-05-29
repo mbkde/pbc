@@ -18,28 +18,15 @@ package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import com.atlassian.bamboo.build.BuildExecutionManager;
 import com.atlassian.bamboo.build.CustomBuildProcessorServer;
-import com.atlassian.bamboo.plan.Plan;
-import com.atlassian.bamboo.plan.PlanKey;
-import com.atlassian.bamboo.utils.Pair;
-import com.atlassian.bamboo.utils.error.ErrorCollection;
-import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentlyBuilding;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
-import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,85 +98,4 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         }
         return buildContext;
     }
-    
-    // TODO eventually remove CAPABILITY once we are sure noone is using it anymore.
-    @Override
-    public void customizeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, 
-            @NotNull RequirementSet requirementSet) {
-        removeBuildRequirements(planKey, buildConfiguration, requirementSet);
-        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
-        if (config.isEnabled()) {
-            addResultRequirement(requirementSet);
-        }
-    }
-
-    // TODO eventually remove CAPABILITY once we are sure noone is using the it anymore.
-    @Override
-    public void removeBuildRequirements(@NotNull PlanKey planKey, @NotNull BuildConfiguration buildConfiguration, 
-            @NotNull RequirementSet requirementSet) {
-        removeAllRequirements(requirementSet);
-    }
-    
-    public static void removeAllRequirements(@NotNull RequirementSet requirementSet) {
-        requirementSet.removeRequirements((Requirement input) -> 
-                input.getKey().equals(CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
-    }
-    
-    public static void addResultRequirement(@NotNull RequirementSet requirementSet) {
-        requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
-    }
-
-    @NotNull
-    @Override
-    public ErrorCollection validate(@NotNull BuildConfiguration bc) {
-        String extraCont = bc.getString(Configuration.DOCKER_EXTRA_CONTAINERS);
-        String image = bc.getString(Configuration.DOCKER_IMAGE);
-        String size = bc.getString(Configuration.DOCKER_IMAGE_SIZE);
-        String enabled = bc.getString(Configuration.ENABLED_FOR_JOB);
-        SimpleErrorCollection errs = new SimpleErrorCollection();
-        Validator.validate(image, size, extraCont, errs, false);
-        if (errs.hasAnyErrors()) {
-            return errs;
-        }
-        //TODO more checks on format.
-        return super.validate(bc);
-    }
-
-
-    @Override
-    protected void populateContextForEdit(@NotNull Map<String, Object> context, 
-            @NotNull BuildConfiguration buildConfiguration, Plan plan) {
-        super.populateContextForEdit(context, buildConfiguration, plan);
-        Configuration config = AccessConfiguration.forBuildConfiguration(buildConfiguration);
-        config.copyTo(context);
-        context.put("imageSizes", getImageSizes());
-        context.put("doShow", !hasDockerTab());
-    }
-
-    @NotNull
-    public static Collection<Pair<String, String>> getImageSizes() {
-        return Arrays.asList(
-                //this is stupid ordering but we want to keep regular as default for new
-                //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
-                Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
-                Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
-                Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
-                Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"),
-                Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"));
-    }
-
-    /**
-     * this method attempts to avoid compilation dependency on newer bamboo dependencies.
-     */
-    private Boolean hasDockerTab() {
-        boolean hasClass;
-        try {
-            Class clazz = Class.forName("com.atlassian.bamboo.build.docker.DockerHandlerProvider");
-            hasClass = true;
-        } catch (ClassNotFoundException ex) {
-            hasClass = false;
-        }
-        return hasClass && !Boolean.getBoolean("bamboo.docker.pipelines.disable");
-    }
-    
 }

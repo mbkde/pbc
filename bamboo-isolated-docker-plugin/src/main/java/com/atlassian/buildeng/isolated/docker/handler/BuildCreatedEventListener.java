@@ -51,7 +51,7 @@ public class BuildCreatedEventListener {
                             .filter((Requirement t) -> Constants.CAPABILITY_RESULT.equals(t.getKey()))
                             .findFirst().isPresent();
                     if (!isPresent && AccessConfiguration.forJob(job).isEnabled()) {
-                        BuildProcessorServerImpl.addResultRequirement(job.getRequirementSet());
+                        DockerHandlerImpl.addResultRequirement(job.getRequirementSet());
                     }
                     pm.savePlan(job);
                 }

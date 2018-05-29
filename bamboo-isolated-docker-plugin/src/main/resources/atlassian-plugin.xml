@@ -141,17 +141,14 @@ limitations under the License.
     
     <buildProcessorServer key="agentSafeguard" name="PBC: Safeguarding agents get properly discarded after build."
                           class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
-        <skipIfFailed/>
-        <description/>
-        <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
-        <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </buildProcessorServer>
     
-    <taskType key="dockertask" name="Per-build Container (PBC) Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
-      <description>Reserves the deployment to run on per-build container (PBC) agent. Do not use for plans/jobs, only deployments.</description>
+    <taskType key="dockertask" name="(Deprecated) Per-build Container (PBC) Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
+      <description>Reserves the deployment to run on per-build container (PBC) agent. Do not use, instead configure in Docker tab in environment or job.</description>
       <configuration class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator"/>
       <resource type="freemarker" name="edit" location="/templates/plugin/editRequirementTask.ftl"/>
     </taskType>
+    
     <xwork key="local" name="Show Docker Compose for dev execution">
         <package name="localExec" extends="buildResultView">
             <action name="viewLocalExec" class="com.atlassian.buildeng.isolated.docker.compose.LocalExecAction">
