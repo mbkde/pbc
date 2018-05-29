@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DockerSoxService {
-    private final static Logger logger = LoggerFactory.getLogger(DockerSoxService.class);
+    private static final Logger logger = LoggerFactory.getLogger(DockerSoxService.class);
 
     private final FeatureManager featureManager;
     private final AuditLogService auditLogService;
@@ -49,7 +49,8 @@ public class DockerSoxService {
     static final String BANDANA_SOX_PATTERNS = "com.atlassian.buildeng.pbc.sox.whitelist";
     private List<Pattern> soxPatterns;
 
-    public DockerSoxService(FeatureManager featureManager, AuditLogService auditLogService, BandanaManager bandanaManager, BambooAuthenticationContext authenticationContext) {
+    public DockerSoxService(FeatureManager featureManager, AuditLogService auditLogService,
+            BandanaManager bandanaManager, BambooAuthenticationContext authenticationContext) {
         this.featureManager = featureManager;
         this.auditLogService = auditLogService;
         this.bandanaManager = bandanaManager;
@@ -60,11 +61,8 @@ public class DockerSoxService {
     public boolean isSoxEnabled() {
         return getConfig().isEnabled(); //featureManager.isSoxComplianceModeConfigurable()
     }
-    /**
-     *
-     * @param config
-     * @return false if checks not passed
-     */
+    
+
     public boolean checkSoxCompliance(Configuration config) {
         if (isSoxEnabled()) {
             Stream<String> images = Stream.concat(
@@ -76,7 +74,8 @@ public class DockerSoxService {
     }
 
     private Predicate<String> matchesPatterns() {
-        return (String image) -> getSoxPatterns().stream().filter((Pattern t) -> t.matcher(image).matches()).findFirst().isPresent();
+        return (String image) -> getSoxPatterns()
+                .stream().filter((Pattern t) -> t.matcher(image).matches()).findFirst().isPresent();
     }
 
     public synchronized void updateConfig(SoxRestConfig config) {
@@ -84,22 +83,29 @@ public class DockerSoxService {
 
         SoxRestConfig old = getConfig();
         if (old.isEnabled() != config.isEnabled()) {
-            AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(), new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Enabled", Boolean.toString(old.isEnabled()), Boolean.toString(config.isEnabled()));
+            AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(),
+                    new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Enabled",
+                    Boolean.toString(old.isEnabled()), Boolean.toString(config.isEnabled()));
             auditLogService.log(ent);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_ENABLED, config.isEnabled());
         }
         if (!Arrays.equals(old.getWhitelistPatterns(), config.getWhitelistPatterns())) {
-            AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(), new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Whitelist", Arrays.toString(old.getWhitelistPatterns()), Arrays.toString(config.getWhitelistPatterns()));
+            AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(),
+                    new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Whitelist",
+                    Arrays.toString(old.getWhitelistPatterns()), Arrays.toString(config.getWhitelistPatterns()));
             auditLogService.log(ent);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_PATTERNS, config.getWhitelistPatterns());
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_PATTERNS,
+                    config.getWhitelistPatterns());
             soxPatterns = null;
         }
     }
 
     public synchronized SoxRestConfig getConfig() {
-        Boolean enabled = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_ENABLED);
+        Boolean enabled = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_SOX_ENABLED);
         enabled = enabled != null ? enabled : Boolean.FALSE;
-        String[] whitelist = (String[])bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_PATTERNS);
+        String[] whitelist = (String[])bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_SOX_PATTERNS);
         whitelist = whitelist != null ? whitelist : new String[0];
         return new SoxRestConfig(enabled, whitelist);
     }

@@ -18,7 +18,6 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.event.api.AsynchronousPreferred;
-
 import java.util.UUID;
 
 /**
@@ -32,7 +31,7 @@ public final class RetryAgentStartupEvent {
     private final CommonContext context;
     private final Configuration configuration;
     private final UUID uniqueIdentifier;
-    
+
     public RetryAgentStartupEvent(Configuration configuration, CommonContext context,
             int retryCount, UUID existingUuid) {
         this.configuration = configuration;
@@ -44,7 +43,7 @@ public final class RetryAgentStartupEvent {
     public RetryAgentStartupEvent(Configuration configuration, CommonContext context) {
         this(configuration, context, 0, UUID.randomUUID());
     }
-    
+
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
         this(previousEvent.getConfiguration(), previousEvent.getContext(), 
                 previousEvent.getRetryCount() + 1, previousEvent.uniqueIdentifier);

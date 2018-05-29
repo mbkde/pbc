@@ -24,6 +24,8 @@ import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.Validator;
+import com.atlassian.buildeng.isolated.docker.handler.DockerHandlerImpl;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -71,7 +73,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.putAll(taskDefinition.getConfiguration());
         context.put(Configuration.TASK_DOCKER_IMAGE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE));
-        context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
+        context.put("imageSizes", DockerHandlerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
@@ -81,7 +83,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     @Override
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
-        context.put("imageSizes", BuildProcessorServerImpl.getImageSizes());
+        context.put("imageSizes", DockerHandlerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 
@@ -89,70 +91,12 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void validate(@NotNull ActionParametersMap params, @NotNull ErrorCollection errorCollection) {
         super.validate(params, errorCollection);
         
-        String v = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
-        validateExtraContainers(v, errorCollection);
-
         String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
-        if (StringUtils.isBlank(image)) {
-            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, 
-                    textProvider.getText("requirement.error.emptyImage"));
-        } else if (image != null && !image.trim().equals(image)) {
-            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE, 
-                    textProvider.getText("requirement.error.whitespaceImage"));
-        }
-        
+        String extraCont = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
-        try {
-            Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
-        } catch (IllegalArgumentException e) {
-            errorCollection.addError(Configuration.TASK_DOCKER_IMAGE_SIZE, 
-                    "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
-        }
+        Validator.validate(image, size, extraCont, errorCollection, true);
     }
     
-    //TODO a bit unfortunate that the field associated with extra containers is hidden
-    // the field specific reporting is not showing at all then. So needs to be global.
-    public static void validateExtraContainers(String value, ErrorCollection errorCollection) {
-        if (!StringUtils.isBlank(value)) {
-            try {
-                JsonElement obj = new JsonParser().parse(value);
-                if (!obj.isJsonArray()) {
-                    errorCollection.addErrorMessage("Extra containers json needs to be an array.");
-                } else {
-                    JsonArray arr = obj.getAsJsonArray();
-                    arr.forEach((JsonElement t) -> {
-                        if (t.isJsonObject()) {
-                            Configuration.ExtraContainer v2 = ConfigurationPersistence.from(t.getAsJsonObject());
-                            if (v2 == null) {
-                                errorCollection.addErrorMessage("wrong format for extra containers");
-                            } else {
-                                if (StringUtils.isBlank(v2.getName())) {
-                                    errorCollection.addErrorMessage("Extra container requires a non empty name.");
-                                }
-                                if (!v2.getName().matches("[a-z0-9]([\\-a-z0-9]*[a-z0-9])?")) {
-                                    errorCollection.addErrorMessage("Extra container name should "
-                                            + "be composed of lowercase letters, numbers and - character only");
-                                }
-                                if (StringUtils.isBlank(v2.getImage())) {
-                                    errorCollection.addErrorMessage("Extra container requires non empty image.");
-                                }
-                                for (Configuration.EnvVariable env : v2.getEnvVariables()) {
-                                    if (StringUtils.isBlank(env.getName())) {
-                                        errorCollection.addErrorMessage(
-                                                "Extra container requires non empty environment variable name.");
-                                    }
-                                }
-                            }
-                        } else {
-                            errorCollection.addErrorMessage("wrong format for extra containers");
-                        }
-                    });
-                }
-            } catch (RuntimeException e) {
-                errorCollection.addErrorMessage("Extra containers field is not valid json.");
-            }
-        }
-    }
 
     // TODO eventually remove once we are sure noone is using the capability anymore.
 

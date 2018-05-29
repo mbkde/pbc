@@ -126,7 +126,7 @@ public class ConfigurationPersistence {
         return el;
     }
 
-    static JsonArray toJson(List<Configuration.ExtraContainer> extraContainers) {
+    public static JsonArray toJson(List<Configuration.ExtraContainer> extraContainers) {
         JsonArray arr = new JsonArray();
         extraContainers.forEach((Configuration.ExtraContainer t) -> {
             arr.add(ConfigurationPersistence.toJson(t));

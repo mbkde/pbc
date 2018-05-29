@@ -50,7 +50,13 @@ limitations under the License.
                          class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildCancelledEventListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
-    
+
+    <bambooEventListener key="buildCreatedEventListener" name="Bamboo Event Listener"
+                         class="com.atlassian.buildeng.isolated.docker.handler.BuildCreatedEventListener">
+        <description>Listens to events of Bamboo.</description>
+    </bambooEventListener>
+
+            
     <component key="agentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationReschedulerImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
@@ -103,6 +109,12 @@ limitations under the License.
         <context>bamboo.configuration</context>
     </web-resource>
 
+  <dockerHandler key="dockerHandler" name="PBC Docker Configuration handler"
+        class="com.atlassian.buildeng.isolated.docker.handler.DockerHandlerProviderImpl">
+    <description>Plugin to configure Docker wrapper for tasks on agents</description>
+    <resource type="freemarker" name="edit" location="templates/plugin/editDocker.ftl"/>
+    <resource type="freemarker" name="view" location="templates/plugin/viewDocker.ftl"/>
+  </dockerHandler>
 
     <web-resource key="docker-job-ui-js" name="JavaScript dependencies for editing isolated docker configuration">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
@@ -129,17 +141,14 @@ limitations under the License.
     
     <buildProcessorServer key="agentSafeguard" name="PBC: Safeguarding agents get properly discarded after build."
                           class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
-        <skipIfFailed/>
-        <description/>
-        <resource type="freemarker" name="view" location="templates/plugin/jobConfiguration.ftl"/>
-        <resource type="freemarker" name="edit" location="templates/plugin/jobConfiguration.ftl"/>
     </buildProcessorServer>
     
-    <taskType key="dockertask" name="Per-build Container (PBC) Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
-      <description>Reserves the deployment to run on per-build container (PBC) agent. Do not use for plans/jobs, only deployments.</description>
+    <taskType key="dockertask" name="(Deprecated) Per-build Container (PBC) Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
+      <description>Reserves the deployment to run on per-build container (PBC) agent. Do not use, instead configure in Docker tab in environment or job.</description>
       <configuration class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator"/>
       <resource type="freemarker" name="edit" location="/templates/plugin/editRequirementTask.ftl"/>
     </taskType>
+    
     <xwork key="local" name="Show Docker Compose for dev execution">
         <package name="localExec" extends="buildResultView">
             <action name="viewLocalExec" class="com.atlassian.buildeng.isolated.docker.compose.LocalExecAction">
@@ -152,5 +161,15 @@ limitations under the License.
     <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
     <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
   </web-item>
+  
+  <!-- the 'pbcEnvironment' key or plugin key can never ever change value, because they end up as part of export -->
+    <customEnvironmentConfig key="pbcEnvironment" name="Dummy environment config"
+                                        class = "com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigPluginImpl">
+        <description>
+            Plugin module that handles per environment configuration
+        </description>
+        <resource type="freemarker" name="edit" location="/templates/plugin/empty.ftl" />
+        <exporter class="com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigExporterImpl" />
+    </customEnvironmentConfig>  
     
 </atlassian-plugin>

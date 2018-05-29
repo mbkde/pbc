@@ -21,6 +21,9 @@ import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IM
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
 import static com.atlassian.buildeng.spi.isolated.docker.Configuration.ENABLED_FOR_JOB;
 
+import com.atlassian.bamboo.build.BuildDefinition;
+import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
+import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
@@ -30,11 +33,18 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
 public class AccessConfiguration {
-
+    
+    //XXX interplugin dependency
+    // these things can never ever change value, because they end up as part of export
+    private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
+    private static final String ENV_MODULE = "pbcEnvironment";
+    private static final String DOCKERTASK_MODULE = "dockertask";
+    
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
         return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
@@ -59,8 +69,14 @@ public class AccessConfiguration {
     @Nonnull
     private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
+            Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE);
+            if (!map.isEmpty()) { 
+                //not sure this condition is 100% reliable, when enabling and disabling 
+                //the docker tab data will retain some config.
+                return forMap(map);
+            }
             //XXX interplugin dependency
-            if ("com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockertask".equals(task.getPluginKey())) {
+            if ((IMPL_PLUGIN_KEY + ":" + DOCKERTASK_MODULE).equals(task.getPluginKey())) {
                 return forTaskConfiguration(task);
             }
         }
@@ -109,8 +125,19 @@ public class AccessConfiguration {
     }
 
     public static Configuration forJob(ImmutableJob job) {
-        Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
+        return forBuildDefinition(job.getBuildDefinition());
+    }
+    
+    public static Configuration forBuildDefinition(BuildDefinition buildDefinition) {
+        Map<String, String> cc = buildDefinition.getCustomConfiguration();
         return forMap(cc);
     }
 
+    
+    public static Configuration forEnvironment(Environment environment, 
+            EnvironmentCustomConfigService environmentCustomConfigService) {
+        return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
+                environment.getId()).getOrDefault(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE,
+                        Collections.emptyMap()));
+    }
 }
