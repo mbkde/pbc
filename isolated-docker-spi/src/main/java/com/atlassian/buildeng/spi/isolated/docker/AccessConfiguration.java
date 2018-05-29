@@ -41,8 +41,9 @@ public class AccessConfiguration {
     
     //XXX interplugin dependency
     // these things can never ever change value, because they end up as part of export
-    static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
-    static final String ENV_MODULE = ":pbcEnvironment";
+    private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
+    private static final String ENV_MODULE = "pbcEnvironment";
+    private static final String DOCKERTASK_MODULE = "dockertask";
     
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
@@ -68,14 +69,14 @@ public class AccessConfiguration {
     @Nonnull
     private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
-            Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ENV_MODULE);
+            Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE);
             if (!map.isEmpty()) { 
                 //not sure this condition is 100% reliable, when enabling and disabling 
                 //the docker tab data will retain some config.
                 return forMap(map);
             }
             //XXX interplugin dependency
-            if ((IMPL_PLUGIN_KEY + ":dockertask").equals(task.getPluginKey())) {
+            if ((IMPL_PLUGIN_KEY + ":" + DOCKERTASK_MODULE).equals(task.getPluginKey())) {
                 return forTaskConfiguration(task);
             }
         }
@@ -136,7 +137,7 @@ public class AccessConfiguration {
     public static Configuration forEnvironment(Environment environment, 
             EnvironmentCustomConfigService environmentCustomConfigService) {
         return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
-                environment.getId()).getOrDefault(IMPL_PLUGIN_KEY + ENV_MODULE,
+                environment.getId()).getOrDefault(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE,
                         Collections.emptyMap()));
     }
 }
