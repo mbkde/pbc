@@ -1,7 +1,7 @@
 
 ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
 
-[@ui.bambooSection titleKey="isolated.docker.misc.header" descriptionKey='isolated.docker.misc.header.description']
+[@ui.bambooSection title=" " descriptionKey='isolated.docker.misc.header.description']
     [@ww.textfield cssClass='long-field docker-container-autocomplete' required=true 
         labelKey='isolated.docker.image' name='custom.isolated.docker.image' descriptionKey="isolated.docker.image.description" 
         /]
