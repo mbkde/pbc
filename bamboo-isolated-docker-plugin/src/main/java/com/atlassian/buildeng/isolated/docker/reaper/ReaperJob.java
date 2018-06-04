@@ -26,7 +26,6 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementSetImpl;
 import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
 import com.atlassian.sal.api.scheduling.PluginJob;
 
 import java.util.ArrayList;
@@ -56,13 +55,12 @@ public class ReaperJob implements PluginJob {
 
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
         AgentRemovals agentRemovals = (AgentRemovals) jobDataMap.get(Reaper.REAPER_REMOVALS_KEY);
-        UnmetRequirements unmetRequirement = (UnmetRequirements) jobDataMap.get(Reaper.REAPER_UNMET_KEY);
-        
+
         List<BuildAgent> deathList = (List<BuildAgent>) jobDataMap.get(Reaper.REAPER_DEATH_LIST);
 
         // Stop and remove disabled agents
         for (BuildAgent agent : deathList) {
-            agent.accept(new DeleterGraveling(agentRemovals, unmetRequirement));
+            agent.accept(new DeleterGraveling(agentRemovals));
         }
 
         deathList.clear();

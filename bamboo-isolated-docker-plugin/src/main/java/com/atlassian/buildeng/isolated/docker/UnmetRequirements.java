@@ -107,6 +107,8 @@ public class UnmetRequirements {
                         pipelineDefinition.setEnabled(false);
                         agentManager.savePipeline(pipelineDefinition);
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
+                        // stop agent but do not remove it yet. Wait until ReaperJob comes around and kills it after 40
+                        // minutes to allow time for inspection by the user.
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
                         errorUpdateHandler.recordError(found.get().getEntityKey(),
                                 "Capabilities of PBC agent don't match job " + key.getPlanKey()

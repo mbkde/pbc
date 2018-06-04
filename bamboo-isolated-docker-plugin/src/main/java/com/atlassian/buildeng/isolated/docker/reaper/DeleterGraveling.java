@@ -24,20 +24,17 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent.BuildAgentVisitor;
 import com.atlassian.bamboo.v2.build.agent.LocalBuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
-import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 public class DeleterGraveling implements BuildAgentVisitor {
     private final AgentRemovals agentRemovals;
-    private final UnmetRequirements unmetRequirements;
 
     private static final Logger LOG = LoggerFactory.getLogger(DeleterGraveling.class);
 
-    public DeleterGraveling(AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
+    public DeleterGraveling(AgentRemovals agentRemovals) {
         this.agentRemovals = agentRemovals;
-        this.unmetRequirements = unmetRequirements;
     }
 
     @Override
@@ -61,13 +58,8 @@ public class DeleterGraveling implements BuildAgentVisitor {
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
-                boolean matched = unmetRequirements.markAndStopTheBuild(pipelineDefinition);
-                if (!matched) {
-                    agentRemovals.stopAgentRemotely(buildAgent);
-                    agentRemovals.removeAgent(buildAgent);
-                } else {
-                    //agent stopped by UnmetRequirements, but is not to be removed.
-                }
+                agentRemovals.stopAgentRemotely(buildAgent);
+                agentRemovals.removeAgent(buildAgent);
             }
         });
     }
