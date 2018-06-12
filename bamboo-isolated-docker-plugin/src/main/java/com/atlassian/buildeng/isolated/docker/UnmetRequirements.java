@@ -101,7 +101,13 @@ public class UnmetRequirements {
                     RequirementSet req = build.getEffectiveRequirementSet();
                     if (!capabilityRequirementsMatcher.matches(capabilitySet, req)) {
                         List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
-                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Capabilities of agent don't match requirements. Check the <a href=\"/admin/agent/viewAgent.action?agentId=" + pipelineDefinition.getId() + "\">agent's capabilities.</a></br>Affected requirements:" + missingReqKeys);
+                        current.getCustomBuildData().put(Constants.RESULT_ERROR,
+                                "Capabilities of <a href=\"/admin/agent/viewAgent.action?agentId="
+                                        + pipelineDefinition.getId()
+                                        + "\">agent</a> don't match requirements.</br>Capabilities of agent:</br>"
+                                        + capabilitySet.getCapabilities().stream().map(
+                                                (Capability c) -> c.getKey() + "=" + c.getValueWithDefault()
+                                ).collect(Collectors.joining("<br>")));
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                         pipelineDefinition.setEnabled(false);
