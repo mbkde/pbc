@@ -100,14 +100,23 @@ public class UnmetRequirements {
                     //only builds
                     RequirementSet req = build.getEffectiveRequirementSet();
                     if (!capabilityRequirementsMatcher.matches(capabilitySet, req)) {
-                        List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
-                        current.getCustomBuildData().put(Constants.RESULT_ERROR, "Capabilities of agent don't match requirements. Check the <a href=\"/admin/agent/viewAgent.action?agentId=" + pipelineDefinition.getId() + "\">agent's capabilities.</a></br>Affected requirements:" + missingReqKeys);
+                        current.getCustomBuildData().put(Constants.RESULT_ERROR,
+                                "Capabilities of <a href=\"/admin/agent/viewAgent.action?agentId="
+                                        + pipelineDefinition.getId()
+                                        + "\">agent</a> don't match requirements.</br>Capabilities of agent:</br>"
+                                        + capabilitySet.getCapabilities().stream().map(
+                                            (Capability c) -> c.getKey() + "=" + c.getValueWithDefault()
+                                ).collect(Collectors.joining("<br>")));
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                         pipelineDefinition.setEnabled(false);
                         agentManager.savePipeline(pipelineDefinition);
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
+                        // stop agent but do not remove it yet. Wait until ReaperJob comes around and kills it after 40
+                        // minutes to allow time for inspection by the user.
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
+
+                        List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
                         errorUpdateHandler.recordError(found.get().getEntityKey(),
                                 "Capabilities of PBC agent don't match job " + key.getPlanKey()
                                         + " requirements (" + found.get().getResultKey() 
