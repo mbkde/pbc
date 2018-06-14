@@ -36,7 +36,7 @@ public class Validator {
         if (StringUtils.isBlank(image)) {
             errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE, 
                     "Docker Image cannot be empty.");
-        } else if (image != null && !image.trim().equals(image)) {
+        } else if (image != null && !StringUtils.deleteWhitespace(image).equals(image)) {
             errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE, 
                     "Docker Image cannot contain whitespace.");
         }
@@ -74,6 +74,9 @@ public class Validator {
                                 }
                                 if (StringUtils.isBlank(v2.getImage())) {
                                     errorCollection.addErrorMessage("Extra container requires non empty image.");
+                                }
+                                if (!StringUtils.deleteWhitespace(v2.getImage()).equals(v2.getImage())) {
+                                    errorCollection.addErrorMessage("Extra container image cannot contain whitespace.");
                                 }
                                 for (Configuration.EnvVariable env : v2.getEnvVariables()) {
                                     if (StringUtils.isBlank(env.getName())) {
