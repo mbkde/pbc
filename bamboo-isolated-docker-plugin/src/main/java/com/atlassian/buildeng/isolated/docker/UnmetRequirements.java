@@ -51,7 +51,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UnmetRequirements {
-
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;
     private final CapabilityRequirementsMatcher capabilityRequirementsMatcher;
@@ -109,11 +108,9 @@ public class UnmetRequirements {
                                 ).collect(Collectors.joining("<br>")));
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
-                        pipelineDefinition.setEnabled(false);
-                        agentManager.savePipeline(pipelineDefinition);
+                        // stop build and agent but do not disable agent. Wait until ReaperJob comes around and kills it
+                        // after 40 minutes to allow time for inspection by the user.
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
-                        // stop agent but do not remove it yet. Wait until ReaperJob comes around and kills it after 40
-                        // minutes to allow time for inspection by the user.
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
 
                         List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
