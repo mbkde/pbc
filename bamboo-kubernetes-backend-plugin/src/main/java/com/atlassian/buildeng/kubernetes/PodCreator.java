@@ -200,7 +200,11 @@ public class PodCreator {
         Map<String, Object> map = new HashMap<>();
         map.put("restartPolicy", "Never");
         //63 is max - https://tools.ietf.org/html/rfc2181#section-11
-        map.put("hostname", StringUtils.left(r.getResultKey().toLowerCase(Locale.ENGLISH), 63));
+        String hostname = StringUtils.left(r.getResultKey().toLowerCase(Locale.ENGLISH), 63);
+        if (hostname.length() == 63 && hostname.charAt(62) == '-') {
+            hostname = hostname.substring(0, 62);
+        }
+        map.put("hostname", hostname);
         map.put("volumes", createVolumes());
         map.put("containers", createContainers(globalConfiguration, r));
         List<Map<String, Object>> initContainersList = new ArrayList<>();
