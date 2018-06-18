@@ -202,7 +202,7 @@ public class PodCreator {
         //63 is max - https://tools.ietf.org/html/rfc2181#section-11
         String hostname = StringUtils.left(r.getResultKey().toLowerCase(Locale.ENGLISH), 63);
         if (hostname.length() == 63 && hostname.charAt(62) == '-') {
-            hostname = hostname.substring(0, 61);
+            hostname = hostname.substring(0, 62);
         }
         map.put("hostname", hostname);
         map.put("volumes", createVolumes());
