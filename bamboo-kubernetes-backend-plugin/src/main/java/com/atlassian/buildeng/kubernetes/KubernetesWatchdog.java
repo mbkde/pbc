@@ -579,8 +579,14 @@ public class KubernetesWatchdog extends WatchdogJob {
             List<String> errorStates = errorStates(pod);
             logger.info("Killing pod {} with error state. Container states: {}",
                     KubernetesHelper.getName(pod), errorStates);
+            // ImageInspectError:Failed to inspect image "xxx": 
+            //          rpc error: code = Unknown desc = Error response from daemon: readlink /var/lib/docker/overlay2:
+            //          invalid argument
+            //this is a retryable error, only appears to affect single node fairly rarely.
+            //if there are others that can create endless cycles, we need to revisit
+            boolean retry = errorStates.stream().anyMatch((String t) -> t.contains("ImageInspectError"));
             return () -> deletePod(
-                    client, pod, "Container error state(s):" + errorStates, false);
+                    client, pod, "Container error state(s):" + errorStates, retry);
         }
         
         private Stream<String> waitingStateErrorsStream(Pod pod) {
