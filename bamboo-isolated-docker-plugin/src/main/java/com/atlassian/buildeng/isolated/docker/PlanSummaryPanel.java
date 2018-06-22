@@ -34,6 +34,7 @@ import java.io.Writer;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PlanSummaryPanel implements WebPanel {
     
@@ -67,9 +68,9 @@ public class PlanSummaryPanel implements WebPanel {
                 Map<String, URL> containerLogs = detail.getContainerLogs(config, custom);
                 if (!containerLogs.isEmpty()) {
                     ret.append("<br/>");
-                    containerLogs.forEach((String t, URL u) -> {
-                        ret.append("<a href=\"").append(u.toString()).append("\">").append(t).append("</a>,&nbsp;&nbsp;");
-                    });
+                    ret.append(containerLogs.entrySet().stream().map((Map.Entry e) ->
+                            "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>"
+                    ).collect(Collectors.joining(",&nbsp;&nbsp;")));
                     ret.append("</dd>");
                 }
                 if (error != null) {
