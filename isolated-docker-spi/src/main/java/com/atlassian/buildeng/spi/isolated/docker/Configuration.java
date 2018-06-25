@@ -136,7 +136,8 @@ public final class Configuration {
         XLARGE(4096, 16000),
         LARGE(3072, 12000),
         REGULAR(2048, 8000),
-        SMALL(1024, 4000);
+        SMALL(1024, 4000),
+        XSMALL(512, 2000);
 
         private final int cpu;
         private final int memory;
