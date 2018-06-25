@@ -274,7 +274,8 @@ public class DockerHandlerImpl implements DockerHandler {
             //this is stupid ordering but we want to keep regular as default for new
             //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
             Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
-            Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"), 
+            Pair.make(Configuration.ContainerSize.XSMALL.name(), "Extra Small (~2G memory, 0.5 vCPU)"),
+            Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
             Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
             Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"),
             Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"));
