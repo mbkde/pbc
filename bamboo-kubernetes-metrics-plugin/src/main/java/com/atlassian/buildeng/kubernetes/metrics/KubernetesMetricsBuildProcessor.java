@@ -265,7 +265,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             if (maxoverall.y > container.memoryInBytes) {
                 if (rss > container.memoryInBytes) {
                     buildLogger.addBuildLogEntry("Warning: The container "
-                            + container.name + " is using more memory than has been allocated to it."
+                            + container.name + " is using more memory than it reserved."
                                     + " Please adjust the size of the container.");
                 }
             }
