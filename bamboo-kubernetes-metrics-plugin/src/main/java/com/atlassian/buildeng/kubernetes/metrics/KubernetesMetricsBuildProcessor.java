@@ -263,16 +263,16 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                     .filter((Datapoint t) -> t.x == maxoverall.x)
                     .findFirst().orElse(Datapoint.NONE).y;
             if (maxoverall.y > container.memoryInBytes) {
-                if (rss > container.memoryInBytes && swap > 0) {
+                if (rss > container.memoryInBytes) {
                     buildLogger.addBuildLogEntry("Warning: The container "
-                            + container.name + " is using both high amount of RSS memory and swap."
-                                    + " Please consider adjusting size of the container.");
+                            + container.name + " is using more memory than it reserved."
+                                    + " Please adjust the size of the container.");
                 }
             }
             if (maxoverall.y < container.memoryInBytes / 4) {
                 buildLogger.addBuildLogEntry("The container "
                             + container.name + " is using less than quarter of the memory reserved."
-                                    + " Please consider adjusting the size of the container.");
+                                    + " Please adjust the size of the container.");
             }
             //TODO max of swap at maxoverall or it's own maximum via maxValueKey(memSwap) or both?
             Datapoint dpSwap = maxValueKey(memSwap);
