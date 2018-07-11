@@ -52,7 +52,7 @@ limitations under the License.
     </bambooEventListener>
 
     <bambooEventListener key="buildCreatedEventListener" name="Bamboo Event Listener"
-                         class="com.atlassian.buildeng.isolated.docker.handler.BuildCreatedEventListener">
+                         class="com.atlassian.buildeng.isolated.docker.handler.PostCreationListeners">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
 
