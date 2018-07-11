@@ -590,12 +590,14 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
         
         private Stream<String> waitingStateErrorsStream(Pod pod) {
-            return pod.getStatus().getContainerStatuses().stream()
+            return Stream.concat(
+                        pod.getStatus().getContainerStatuses().stream(),
+                        pod.getStatus().getInitContainerStatuses().stream())
                     .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
                     .filter((ContainerStatus t) ->
                             "ImageInspectError".equals(t.getState().getWaiting().getReason())
-                                    || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason())
-                                    || "InvalidImageName".equals(t.getState().getWaiting().getReason()))
+                         || "ErrInvalidImageName".equals(t.getState().getWaiting().getReason())
+                         || "InvalidImageName".equals(t.getState().getWaiting().getReason()))
                     .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getWaiting().getReason() + ":"
                             + (StringUtils.isBlank(t.getState().getWaiting().getMessage())
                                     ? "<no details>" : t.getState().getWaiting().getMessage()));
