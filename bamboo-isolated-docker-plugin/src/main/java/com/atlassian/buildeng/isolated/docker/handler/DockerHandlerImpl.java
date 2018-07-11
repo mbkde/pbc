@@ -144,15 +144,10 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
-        removeEnvironmentRequirements(environment);
-        try {
-            environmentRequirementService.addRequirement(environment.getId(), 
-                    Constants.CAPABILITY_RESULT, ImmutableRequirement.MatchType.MATCHES, ".*");
-        } catch (WebValidationException ex) {
-            log.error("Failed to add requirement for environment " + environment.getId(), ex);
-        }
+        removeEnvironmentRequirements(environment, environmentRequirementService);
+        addEnvironementRequirement(environment, environmentRequirementService);
     }
-    
+
     @Override
     public void disable(BuildDefinition buildDefinition, Job job) {
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
@@ -172,10 +167,11 @@ public class DockerHandlerImpl implements DockerHandler {
         }
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
-        removeEnvironmentRequirements(environment);
+        removeEnvironmentRequirements(environment, environmentRequirementService);
     }
 
-    void removeEnvironmentRequirements(Environment environment) {
+    static void removeEnvironmentRequirements(Environment environment, 
+            EnvironmentRequirementService environmentRequirementService) {
         try {
             environmentRequirementService.getRequirementsForEnvironment(environment.getId()).stream()
                     .filter((ImmutableRequirement input)
@@ -263,6 +259,16 @@ public class DockerHandlerImpl implements DockerHandler {
      */
     public static void addResultRequirement(@NotNull RequirementSet requirementSet) {
         requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
+    }
+    
+    static void addEnvironementRequirement(Environment environment,
+            EnvironmentRequirementService environmentRequirementService) {
+        try {
+            environmentRequirementService.addRequirement(environment.getId(), 
+                    Constants.CAPABILITY_RESULT, ImmutableRequirement.MatchType.MATCHES, ".*");
+        } catch (WebValidationException ex) {
+            log.error("Failed to add requirement for environment " + environment.getId(), ex);
+        }
     }
 
     /**
