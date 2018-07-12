@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.stream.Collectors;
@@ -282,9 +283,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
     
     private Datapoint maxValueKey(Datapoint[] arr) {
-        return Arrays.stream(arr).max((Datapoint o1, Datapoint o2) -> {
-            return Double.compare(o1.y, o2.y);
-        }).get();
+        return Arrays.stream(arr).max(Comparator.comparingDouble((Datapoint o) -> o.y)).orElse(null);
     }
     
 
