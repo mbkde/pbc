@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.AmazonAutoScaling;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DetachInstancesRequest;
@@ -23,7 +25,6 @@ import com.amazonaws.services.autoscaling.model.DetachInstancesResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.autoscaling.model.SuspendProcessesRequest;
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
@@ -32,7 +33,6 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.AmazonECSException;
 import com.amazonaws.services.ecs.model.Container;
@@ -64,9 +64,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -74,9 +72,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * class encapsulating all AWS interaction for the CyclingECSScheduler
+ * class encapsulating all AWS interaction for the CyclingECSScheduler.
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
+    
     private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
     private final Map<String, Instance> cachedInstances = new HashMap<>();
 
@@ -90,7 +89,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException {
         try {
-            AmazonECSClient ecsClient = new AmazonECSClient();
+            AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
             ListContainerInstancesRequest listReq = new ListContainerInstancesRequest()
                     .withCluster(cluster);
 
@@ -132,27 +131,30 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 .collect(Collectors.toList());
 
         stale.forEach(cachedInstances::remove);
-        List<String> misses = instanceIds.stream().filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
-        if (!misses.isEmpty()) try {
-            AmazonEC2Client ec2Client = new AmazonEC2Client();
-            DescribeInstancesRequest req = new DescribeInstancesRequest()
-                    .withInstanceIds(misses);
-            boolean finished = false;
+        List<String> misses = instanceIds.stream()
+                .filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
+        if (!misses.isEmpty()) {
+            try {
+                AmazonEC2 ec2Client = AmazonEC2ClientBuilder.defaultClient();
+                DescribeInstancesRequest req = new DescribeInstancesRequest()
+                        .withInstanceIds(misses);
+                boolean finished = false;
 
-            while (!finished) {
-                DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
-                describeInstancesResult.getReservations().stream()
-                        .flatMap(t -> t.getInstances().stream())
-                        .forEach(t -> cachedInstances.put(t.getInstanceId(), t));
-                String nextToken = describeInstancesResult.getNextToken();
-                if (nextToken == null) {
-                    finished = true;
-                } else {
-                    req.setNextToken(nextToken);
+                while (!finished) {
+                    DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
+                    describeInstancesResult.getReservations().stream()
+                            .flatMap(t -> t.getInstances().stream())
+                            .forEach(t -> cachedInstances.put(t.getInstanceId(), t));
+                    String nextToken = describeInstancesResult.getNextToken();
+                    if (nextToken == null) {
+                        finished = true;
+                    } else {
+                        req.setNextToken(nextToken);
+                    }
                 }
+            } catch (Exception ex) {
+                throw new ECSException(ex);
             }
-        } catch (Exception ex) {
-            throw new ECSException(ex);
         }
         return new ArrayList<>(cachedInstances.values());
     }
@@ -161,7 +163,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     public void scaleTo(int desiredCapacity, String autoScalingGroup) throws ECSException {
         logger.info("Scaling to capacity: {} in ASG: {}", desiredCapacity, autoScalingGroup);
         try {
-            AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
+            AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
             asClient.setDesiredCapacity(new SetDesiredCapacityRequest()
                     .withDesiredCapacity(desiredCapacity)
                     .withAutoScalingGroupName(autoScalingGroup)
@@ -172,7 +174,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, boolean decrementSize, String clusterName) throws ECSException {
+    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, 
+            boolean decrementSize, String clusterName) throws ECSException {
         try {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
             //explicit deregister first BUILDENG-12397 for details
@@ -188,9 +191,10 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     logger.error("Failed deregistering ecs container instance, we survive but suspicious", th);
                 }
             });
-            final List<String> asgInstances = hosts.stream().filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
+            final List<String> asgInstances = hosts.stream()
+                    .filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
             if (!asgInstances.isEmpty()) {
-                AmazonAutoScalingClient asClient = new AmazonAutoScalingClient();
+                AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
                 DetachInstancesResult result = 
                       asClient.detachInstances(new DetachInstancesRequest()
                             .withAutoScalingGroupName(asgName)
@@ -278,7 +282,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest request, String taskDefinition) throws ECSException {
+    public SchedulingResult schedule(DockerHost dockerHost, String cluster,
+            SchedulingRequest request, String taskDefinition) throws ECSException {
         try {
             AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
             TaskOverride overrides = new TaskOverride();
@@ -309,7 +314,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withTaskDefinition(taskDefinition + ":" + request.getRevision())
                     .withOverrides(overrides)
             );
-            return new SchedulingResult(startTaskResult, dockerHost.getContainerInstanceArn(), dockerHost.getInstanceId());
+            return new SchedulingResult(startTaskResult, 
+                    dockerHost.getContainerInstanceArn(), dockerHost.getInstanceId());
         } catch (Exception e) {
             throw new ECSException(e);
         }
@@ -324,7 +330,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException {
         try {
-            AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
+            AmazonAutoScaling asgClient = AmazonAutoScalingClientBuilder.defaultClient();
             DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest()
                     .withAutoScalingGroupNames(autoScalingGroup);
             List<AutoScalingGroup> groups = asgClient.describeAutoScalingGroups(asgReq).getAutoScalingGroups();
@@ -414,7 +420,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public void suspendProcess(String autoScalingGroupName, String processName) throws ECSException {
         try {
-            AmazonAutoScalingClient asgClient = new AmazonAutoScalingClient();
+            AmazonAutoScaling asgClient = AmazonAutoScalingClientBuilder.defaultClient();
             SuspendProcessesRequest req = new SuspendProcessesRequest()
                     .withAutoScalingGroupName(autoScalingGroupName)
                     .withScalingProcesses(processName);
