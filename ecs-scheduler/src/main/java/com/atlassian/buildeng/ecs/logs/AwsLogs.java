@@ -17,7 +17,9 @@
 package com.atlassian.buildeng.ecs.logs;
 
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.GetConsoleOutputRequest;
 import com.amazonaws.services.ec2.model.GetConsoleOutputResult;
 import com.amazonaws.services.logs.AWSLogsClient;
@@ -101,7 +103,7 @@ public class AwsLogs {
         AwsLogs.Driver driver = AwsLogs.getAwsLogsDriver(configuration);
         if (driver != null && driver.getRegion() != null && driver.getLogGroupName() != null) {
             try {
-                AmazonEC2Client client = new AmazonEC2Client();
+                AmazonEC2 client = AmazonEC2ClientBuilder.defaultClient();
                 GetConsoleOutputResult result = client.getConsoleOutput(new GetConsoleOutputRequest(t));
                 AWSLogsClient logs = new AWSLogsClient().withRegion(Regions.fromName(driver.getRegion()));
                 // t (ec2 instance id) should be unique within reason
