@@ -18,15 +18,31 @@ package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import com.atlassian.bamboo.build.BuildExecutionManager;
 import com.atlassian.bamboo.build.CustomBuildProcessorServer;
+import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
+import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
+import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForJob;
+import com.atlassian.bamboo.specs.api.model.pbc.EnvProperties;
+import com.atlassian.bamboo.specs.api.model.pbc.ExtraContainerProperties;
+import com.atlassian.bamboo.specs.api.model.pbc.PerBuildContainerForJobProperties;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.v2.build.CurrentlyBuilding;
+import com.atlassian.bamboo.v2.build.ImportExportAwarePlugin;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +54,8 @@ import org.slf4j.LoggerFactory;
  * pre or post actions on the agent if artifact download fails.
  * 
  */
-public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements CustomBuildProcessorServer {
+public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements CustomBuildProcessorServer, 
+        ImportExportAwarePlugin<PerBuildContainerForJob, PerBuildContainerForJobProperties> {
     private static final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
     public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
@@ -97,5 +114,73 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             
         }
         return buildContext;
+    }
+
+    @Override
+    public Set<String> getConfigurationKeys() {
+        return new HashSet(Arrays.asList(new String[] {
+            Configuration.ENABLED_FOR_JOB,
+            Configuration.DOCKER_IMAGE,
+            Configuration.DOCKER_IMAGE_SIZE,
+            Configuration.DOCKER_EXTRA_CONTAINERS
+        }));
+    }
+
+    @Override
+    public PerBuildContainerForJob toSpecsEntity(HierarchicalConfiguration buildConfiguration) {
+        String enabled = buildConfiguration.getString(Configuration.ENABLED_FOR_JOB, "false");
+        Map<String, String> cc = new HashMap<>();
+        cc.put(Configuration.ENABLED_FOR_JOB, enabled);
+        String image = buildConfiguration.getString(Configuration.DOCKER_IMAGE);
+        if (image != null) {
+            cc.put(Configuration.DOCKER_IMAGE, image);
+        }
+        String size = buildConfiguration.getString(Configuration.DOCKER_IMAGE_SIZE);
+        if (size != null) {
+            cc.put(Configuration.DOCKER_IMAGE_SIZE, size);
+        }
+        String extra = buildConfiguration.getString(Configuration.DOCKER_EXTRA_CONTAINERS);
+        if (extra != null) {
+            cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, extra);
+        }
+        Configuration c = AccessConfiguration.forMap(cc);
+        return new PerBuildContainerForJob().enabled(c.isEnabled())
+                .image(c.getDockerImage())
+                .size(c.getSize().name())
+                .extraContainers(c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
+                    return new ExtraContainer()
+                        .name(t.getName())
+                        .image(t.getImage())
+                        .size(t.getExtraSize().name())
+                        .commands(t.getCommands())
+                        .envVariables(t.getEnvVariables().stream().map((Configuration.EnvVariable t2) -> {
+                            return new EnvVar(t2.getName(), t2.getValue());
+                        })
+                        .collect(Collectors.toList()));
+                }).collect(Collectors.toList()));
+    }
+
+    @Override
+    public void addToBuildConfiguration(PerBuildContainerForJobProperties specsProperties, 
+            HierarchicalConfiguration buildConfiguration) {
+        buildConfiguration.setProperty(Configuration.ENABLED_FOR_JOB, specsProperties.isEnabled());
+        buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
+        buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
+        buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS, 
+                toJsonString(specsProperties.getExtraContainers()));
+    }
+
+    public static String toJsonString(List<ExtraContainerProperties> extraContainers) {
+        return ConfigurationPersistence.toJson(extraContainers.stream()
+                .map((ExtraContainerProperties t) -> {
+                    Configuration.ExtraContainer ec = new Configuration.ExtraContainer(
+                            t.getName(), t.getImage(), Configuration.ExtraContainerSize.valueOf(t.getSize()));
+                    ec.setCommands(t.getCommands());
+                    ec.setEnvVariables(t.getEnvironments().stream()
+                            .map((EnvProperties e) -> new Configuration.EnvVariable(e.getKey(), e.getValue()))
+                            .collect(Collectors.toList()));
+                    return ec;
+                })
+                .collect(Collectors.toList())).toString();
     }
 }

@@ -46,7 +46,7 @@ public class AccessConfiguration {
     private static final String DOCKERTASK_MODULE = "dockertask";
     
     @Nonnull
-    private static Configuration forMap(@Nonnull Map<String, String> cc) {
+    public static Configuration forMap(@Nonnull Map<String, String> cc) {
         return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
                     .withEnabled(Boolean.parseBoolean(cc.getOrDefault(ENABLED_FOR_JOB, "false")))
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE,
