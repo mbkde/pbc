@@ -28,7 +28,10 @@ import org.apache.commons.lang.StringUtils;
 
 public class Validator {
 
-
+    /**
+     * Validate configuration.
+     * Errors are collected in ErrorCollection parameter passed in.
+     */
     public static void validate(String image, String size, String extraCont, 
             ErrorCollection errorCollection, boolean task) {
         validateExtraContainers(extraCont, errorCollection);

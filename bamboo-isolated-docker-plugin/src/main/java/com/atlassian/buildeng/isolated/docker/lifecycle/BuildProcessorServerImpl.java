@@ -170,6 +170,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 toJsonString(specsProperties.getExtraContainers()));
     }
 
+    /**
+     * Convert list of ExtraContainerProperties definitions into a json string.
+     */
     public static String toJsonString(List<ExtraContainerProperties> extraContainers) {
         return ConfigurationPersistence.toJson(extraContainers.stream()
                 .map((ExtraContainerProperties t) -> {
