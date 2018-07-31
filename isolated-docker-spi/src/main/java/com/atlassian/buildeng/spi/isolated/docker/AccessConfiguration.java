@@ -45,8 +45,12 @@ public class AccessConfiguration {
     private static final String ENV_MODULE = "pbcEnvironment";
     private static final String DOCKERTASK_MODULE = "dockertask";
     
+    /**
+     * Constructs Configuration object for given key value pair. 
+     * Assumes the keys relating to jobs/environments, not tasks.
+     */
     @Nonnull
-    private static Configuration forMap(@Nonnull Map<String, String> cc) {
+    public static Configuration forMap(@Nonnull Map<String, String> cc) {
         return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
                     .withEnabled(Boolean.parseBoolean(cc.getOrDefault(ENABLED_FOR_JOB, "false")))
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE,
@@ -56,6 +60,9 @@ public class AccessConfiguration {
                     .build();
     }
 
+    /**
+     * Constructs Configuration object for given CommonContext.
+     */
     public static Configuration forContext(@Nonnull CommonContext context) {
         if (context instanceof BuildContext) {
             return forBuildContext((BuildContext) context);
@@ -83,6 +90,9 @@ public class AccessConfiguration {
         return ConfigurationBuilder.create("").withEnabled(false).build();
     }
 
+    /**
+     * Constructs Configuration object for given BuildConfiguration.
+     */
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
         return ConfigurationBuilder.create(config.getString(Configuration.DOCKER_IMAGE))
@@ -101,15 +111,24 @@ public class AccessConfiguration {
         return forMap(cc);
     }
 
+    /**
+     * Constructs Configuration object for given ResultsSummary.
+     */
     public static Configuration forBuildResultSummary(ResultsSummary summary) {
         Map<String, String> cc = summary.getCustomBuildData();
         return forMap(cc);
     }
 
+    /**
+     * Constructs Configuration object for given DeploymentResult.
+     */
     public static Configuration forDeploymentResult(DeploymentResult dr) {
         return forMap(dr.getCustomData());
     }
 
+    /**
+     * Constructs Configuration object for given TaskDefinition.
+     */
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
@@ -124,16 +143,24 @@ public class AccessConfiguration {
                 .build();
     }
 
+    /**
+     * Constructs Configuration object for given Job.
+     */
     public static Configuration forJob(ImmutableJob job) {
         return forBuildDefinition(job.getBuildDefinition());
     }
-    
+
+    /**
+     * Constructs Configuration object for given BuildDefinition.
+     */
     public static Configuration forBuildDefinition(BuildDefinition buildDefinition) {
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
         return forMap(cc);
     }
 
-    
+    /**
+     * Constructs Configuration object for given Environment.
+     */
     public static Configuration forEnvironment(Environment environment, 
             EnvironmentCustomConfigService environmentCustomConfigService) {
         return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(

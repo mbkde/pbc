@@ -28,7 +28,10 @@ import org.apache.commons.lang.StringUtils;
 
 public class Validator {
 
-
+    /**
+     * Validate configuration.
+     * Errors are collected in ErrorCollection parameter passed in.
+     */
     public static void validate(String image, String size, String extraCont, 
             ErrorCollection errorCollection, boolean task) {
         validateExtraContainers(extraCont, errorCollection);
@@ -42,7 +45,13 @@ public class Validator {
         }
         
         try {
-            Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
+            if (size == null) {
+                errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
+                        "Image size must be defined and one of:" 
+                                + Arrays.toString(Configuration.ContainerSize.values()));
+            } else {
+                Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
+            }
         } catch (IllegalArgumentException e) {
             errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE, 
                     "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
