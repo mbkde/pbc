@@ -125,7 +125,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     lackingMemory = Math.max(0, lackingMemory - request.getMemory());
                     // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
                     // Clear everything out, we're probably fine
-                    if (lackingCPU < Configuration.ContainerSize.SMALL.cpu() || lackingMemory < Configuration.ContainerSize.SMALL.memory()) {
+                    if (lackingCPU < Configuration.ContainerSize.SMALL.cpu()
+                            || lackingMemory < Configuration.ContainerSize.SMALL.memory()) {
                         consideredRequestIdentifiers.clear();
                         lackingCPU = 0;
                         lackingMemory = 0;

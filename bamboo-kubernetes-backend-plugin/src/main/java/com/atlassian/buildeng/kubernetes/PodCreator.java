@@ -132,7 +132,8 @@ public class PodCreator {
             map.put("name", t.getName());
             map.put("image", sanitizeImageName(t.getImage()));
             map.put("imagePullPolicy", "Always");
-            map.put("resources", createResources(t.getExtraSize().memory(), t.getExtraSize().cpu()));
+            map.put("resources", createResources(t.getExtraSize().memory(),
+                    t.getExtraSize().memoryLimit(), t.getExtraSize().cpu()));
             if (isDockerInDockerImage(t.getImage())) {
                 map.put("securityContext", ImmutableMap.of("privileged", Boolean.TRUE));
                 map.put("args", adjustCommandsForDind(t.getCommands()));
@@ -249,14 +250,14 @@ public class PodCreator {
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
                 ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)));
-        map.put("resources", createResources(SIDEKICK_MEMORY, SIDEKICK_CPU));
+        map.put("resources", createResources(SIDEKICK_MEMORY, (int) (SIDEKICK_MEMORY * 1.1), SIDEKICK_CPU));
         return map;
     }
 
-    private static Map<String, Object> createResources(int memory, int cpu) {
+    private static Map<String, Object> createResources(int softMemory, int hardMemory, int cpu) {
         return ImmutableMap.of(
-                "limits", ImmutableMap.of("memory", "" + (long)(memory  * Constants.SOFT_TO_HARD_LIMIT_RATIO) + "Mi"),
-                "requests", ImmutableMap.of("memory", "" + memory + "Mi", "cpu", "" + cpu + "m")
+                "limits", ImmutableMap.of("memory", "" + hardMemory + "Mi"),
+                "requests", ImmutableMap.of("memory", "" + softMemory + "Mi", "cpu", "" + cpu + "m")
                 );
     }
 
@@ -276,7 +277,9 @@ public class PodCreator {
             mountsBuilder.add(ImmutableMap.of("name", "shm", "mountPath", "/dev/shm", "readOnly", false));
         }
         map.put("volumeMounts", mountsBuilder.build());
-        map.put("resources", createResources(r.getConfiguration().getSize().memory(),
+        map.put("resources", createResources(
+                r.getConfiguration().getSize().memory(),
+                r.getConfiguration().getSize().memoryLimit(),
                 r.getConfiguration().getSize().cpu()));
         return map;
     }
