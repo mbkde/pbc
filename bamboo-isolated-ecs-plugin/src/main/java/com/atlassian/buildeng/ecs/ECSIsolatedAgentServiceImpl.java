@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.bamboo.Key;
-import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.ecs.logs.AwsLogs;
+import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ReserveRequest;
 import com.atlassian.buildeng.ecs.scheduling.SchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.SchedulingRequest;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -36,9 +38,6 @@ import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,10 +47,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
-    private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
+    
+    private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
 
     private final GlobalConfiguration globalConfiguration;
     private final ECSScheduler ecsScheduler;
@@ -96,11 +99,15 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 return;
             }
         }
-        logger.info("Spinning up new docker agent from task definition {}:{} {}", globalConfiguration.getTaskDefinitionName(), revision, resultId);
+        logger.info("Spinning up new docker agent from task definition {}:{} {}", 
+                globalConfiguration.getTaskDefinitionName(), revision, resultId);
+        ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
         SchedulingRequest schedulingRequest = new SchedulingRequest(
                 req.getUniqueIdentifier(),
                 resultId,
                 revision,
+                req.getConfiguration().getCPUTotal(sizeDescriptor),
+                req.getConfiguration().getMemoryTotal(sizeDescriptor),
                 req.getConfiguration(),
                 req.getQueueTimestamp(),
                 req.getBuildKey());

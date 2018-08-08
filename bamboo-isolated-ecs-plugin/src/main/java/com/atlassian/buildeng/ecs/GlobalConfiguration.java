@@ -34,6 +34,7 @@ import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMappingModuleDescriptor;
 import com.atlassian.plugin.PluginAccessor;
@@ -70,15 +71,17 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
     private final PluginAccessor pluginAccessor;
+    private final ContainerSizeDescriptor sizeDescriptor;
 
     public GlobalConfiguration(BandanaManager bandanaManager, AdministrationConfigurationAccessor admConfAccessor,
             AuditLogService auditLogService, BambooAuthenticationContext authenticationContext,
-            PluginAccessor pluginAccessor) {
+            PluginAccessor pluginAccessor, ContainerSizeDescriptor sizeDescriptor) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;
         this.pluginAccessor = pluginAccessor;
+        this.sizeDescriptor = sizeDescriptor;
     }
 
     @Override
@@ -291,5 +294,10 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
         return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
                 .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ContainerSizeDescriptor getSizeDescriptor() {
+        return sizeDescriptor;
     }
 }

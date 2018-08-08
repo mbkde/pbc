@@ -13,17 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.Resource;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentEcsStaleAsgInstanceEvent;
+import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.atlassian.event.api.EventPublisher;
 import com.google.common.collect.Sets;
 import java.time.Duration;
@@ -39,28 +53,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Matchers;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
 
-/**
- *
- * @author mkleint
- */
+
 @SuppressWarnings("unchecked")
 public class CyclingECSSchedulerTest {
     
@@ -162,16 +160,18 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(75), mem(75), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(75), mem(75), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Capacity overload", thrown.get());
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
@@ -197,16 +197,18 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1,  cpu(55), mem(55), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1,  cpu(55), mem(55), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
@@ -234,16 +236,18 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
 
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
@@ -272,16 +276,18 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
 
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
@@ -312,16 +318,18 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(5), mem(5), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(5), mem(5), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
@@ -358,16 +366,18 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
 
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(argThat(new IsListOfTwoElements()), anyString(), Matchers.eq(true), anyString());
@@ -398,16 +408,18 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(39), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(39), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
@@ -431,26 +443,30 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a2", 1, cpu(65), mem(65), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a2", 1, cpu(65), mem(65), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler); //wait to have the other thread start the processing
         assertEquals("arn1", arn.get());
         assertTrue("Exception Thrown correctly", thrown.get());
@@ -465,16 +481,18 @@ public class CyclingECSSchedulerTest {
         when(backend.getClusterContainerInstances(anyString())).thenThrow(new ECSException("error1"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Exception Thrown correctly", thrown.get());
     }
@@ -493,16 +511,18 @@ public class CyclingECSSchedulerTest {
         when(backend.getInstances(anyList())).thenThrow(new ECSException("error2"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Exception Thrown correctly", thrown.get());
     }
@@ -525,16 +545,18 @@ public class CyclingECSSchedulerTest {
         when(backend.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(19), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(19), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Exception Thrown correctly", thrown.get());
         
@@ -562,16 +584,18 @@ public class CyclingECSSchedulerTest {
         
         populateDisconnectedCacheWithRipeHosts(scheduler);
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Capacity overload", thrown.get());
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(false), anyString());
@@ -599,16 +623,18 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Capacity overload", thrown.get());
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(false), anyString());
@@ -646,16 +672,18 @@ public class CyclingECSSchedulerTest {
         populateDisconnectedCacheWithRipeHosts(scheduler);
         Mockito.doThrow(new ECSException("error")).when(schedulerBackend).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(60), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(60), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(true);
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(true);
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertTrue("Capacity overload", thrown.get());
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(false), anyString());
@@ -675,16 +703,18 @@ public class CyclingECSSchedulerTest {
                 ));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> thrown = new AtomicReference<>("not thrown");
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(120), mem(120), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(120), mem(120), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-                thrown.set(exception.getMessage());
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                        thrown.set(exception.getMessage());
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         assertEquals("Agent's resource reservation is larger than any single instance size in ECS cluster.", thrown.get());
     }
@@ -712,16 +742,18 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(59), mem(79), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-                arn.set(result.getContainerArn());
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(59), mem(79), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                        arn.set(result.getContainerArn());
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id5?
@@ -754,24 +786,28 @@ public class CyclingECSSchedulerTest {
         final EventPublisher eventPublisher = mock(EventPublisher.class);
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), eventPublisher);
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null), new SchedulingCallback() {
-            @Override
-            public void handle(SchedulingResult result) {
-            }
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
+        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+                new SchedulingCallback() {
+                    @Override
+                    public void handle(SchedulingResult result) {
+                    }
 
-            @Override
-            public void handle(ECSException exception) {
-            }
-        });
+                    @Override
+                    public void handle(ECSException exception) {
+                    }
+                }
+        );
         awaitProcessing(scheduler);
         //only id6 should be marked as stale, id7 is just transiently in asg and not in ecs
         verify(eventPublisher, times(1)).publish(any(DockerAgentEcsStaleAsgInstanceEvent.class));
@@ -888,6 +924,7 @@ public class CyclingECSSchedulerTest {
         ECSConfiguration mock = mock(ECSConfiguration.class);
         when(mock.getCurrentCluster()).thenReturn("cluster");
         when(mock.getCurrentASG()).thenReturn("asg");
+        when(mock.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         return mock;
     }
 

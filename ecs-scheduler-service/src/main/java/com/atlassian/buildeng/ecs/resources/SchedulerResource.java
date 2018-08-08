@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.resources;
 
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.buildeng.ecs.api.RestReserveFuture;
-import com.atlassian.buildeng.ecs.scheduling.ArnStoppedState;
 import com.atlassian.buildeng.ecs.api.Scheduler;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import com.atlassian.buildeng.ecs.scheduling.ArnStoppedState;
 import com.atlassian.buildeng.ecs.scheduling.BambooServerEnvironment;
 import com.atlassian.buildeng.ecs.scheduling.DefaultSchedulingCallback;
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
@@ -35,11 +36,6 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.codahale.metrics.annotation.Timed;
 import java.util.Collection;
 import java.util.List;
-import org.glassfish.jersey.server.ManagedAsync;
-
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -48,6 +44,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.MediaType;
+import org.glassfish.jersey.server.ManagedAsync;
+
 
 
 @Path("/rest/scheduler")
@@ -110,7 +111,10 @@ public class SchedulerResource {
                 return;
             }
         }
-        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision, s.getConfiguration(), s.getQueueTimestamp(), s.getBuildKey());
+        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision,
+                s.getConfiguration().getCPUTotal(configuration.getSizeDescriptor()),
+                s.getConfiguration().getMemoryTotal(configuration.getSizeDescriptor()),
+                s.getConfiguration(), s.getQueueTimestamp(), s.getBuildKey());
         DefaultSchedulingCallback dsc = new DefaultSchedulingCallback(new IsolatedDockerRequestCallback() {
             @Override
             public void handle(IsolatedDockerAgentResult result) {

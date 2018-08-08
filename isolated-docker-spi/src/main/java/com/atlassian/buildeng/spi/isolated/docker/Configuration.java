@@ -72,14 +72,24 @@ public final class Configuration {
         return size;
     }
     
-    public int getCPUTotal() {
-        return size.cpu()
-                + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().cpu).sum();
+    /**
+     * calculate cpu requirements for entire configuration.
+     * @param sizeDescriptor component able to resolve the symbolic size to numbers
+     */
+    public int getCPUTotal(ContainerSizeDescriptor sizeDescriptor) {
+        return sizeDescriptor.getCpu(size)
+                + extraContainers.stream()
+                        .mapToInt((ExtraContainer value) -> sizeDescriptor.getCpu(value.getExtraSize())).sum();
     }
     
-    public int getMemoryTotal() {
-        return size.memory() + DOCKER_MINIMUM_MEMORY
-                + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().memory).sum();
+    /**
+     * calculate memory requirements for entire configuration.
+     * @param sizeDescriptor component able to resolve the symbolic size to numbers
+     */
+    public int getMemoryTotal(ContainerSizeDescriptor sizeDescriptor) {
+        return sizeDescriptor.getMemory(size) + DOCKER_MINIMUM_MEMORY
+                + extraContainers.stream()
+                        .mapToInt((ExtraContainer value) -> sizeDescriptor.getMemory(value.getExtraSize())).sum();
     }
 
     public List<ExtraContainer> getExtraContainers() {
@@ -127,46 +137,18 @@ public final class Configuration {
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
     }
 
-    //TODO temporary, eventually will be configurable
-    private static final double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
     
     public static enum ContainerSize {
-        XXLARGE(5120, 20000, (int) (20000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        XLARGE(4096, 16000, (int) (16000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        LARGE(3072, 12000, (int) (12000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        REGULAR(2048, 8000, (int) (8000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        SMALL(1024, 4000, (int) (4000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        XSMALL(512, 2000, (int) (2000 * SOFT_TO_HARD_LIMIT_RATIO));
+        XXLARGE(),
+        XLARGE(),
+        LARGE(),
+        REGULAR(),
+        SMALL(),
+        XSMALL();
 
-        private final int cpu;
-        private final int memory;
-        private final int memoryLimit;
-
-        private ContainerSize(int cpu, int memory, int memoryLimit) {
-            this.cpu = cpu;
-            this.memory = memory;
-            this.memoryLimit = memoryLimit;
+        private ContainerSize() {
         }
 
-        public int cpu() {
-            return cpu;
-        }
-
-        /**
-         * the reservation amount for the container.
-         * @return amount in megabytes
-         */
-        public int memory() {
-            return memory;
-        }
-        
-        /**
-         * the hard limit that the containers cannot cross.
-         * @return amount in megabytes
-         */
-        public int memoryLimit() {
-            return memoryLimit;
-        }
     }
 
     public static class ExtraContainer {
@@ -248,42 +230,14 @@ public final class Configuration {
     }
     
     public static enum ExtraContainerSize {
-        XXLARGE(3072, 12000,(int) (12000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        XLARGE(2048, 8000, (int) (8000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        LARGE(1024, 4000, (int) (4000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        REGULAR(512, 2000, (int) (2000 * SOFT_TO_HARD_LIMIT_RATIO)),
-        SMALL(256, 1000, (int) (1000 * SOFT_TO_HARD_LIMIT_RATIO));
-        
-        private final int cpu;
-        private final int memory;
-        private final int memoryLimit;
+        XXLARGE(),
+        XLARGE(),
+        LARGE(),
+        REGULAR(),
+        SMALL();
 
-        private ExtraContainerSize(int cpu, int memory, int memoryLimit) {
-            this.cpu = cpu;
-            this.memory = memory;
-            this.memoryLimit = memoryLimit;
+        private ExtraContainerSize() {
         }
-
-        public int cpu() {
-            return cpu;
-        }
-        
-        /**
-         * the reservation amount for the container.
-         * @return amount in megabytes
-         */
-        public int memory() {
-            return memory;
-        }
-
-        /**
-         * the hard limit that the containers cannot cross.
-         * @return amount in megabytes
-         */
-        public int memoryLimit() {
-            return memoryLimit;
-        }
-        
     }
 
     public static final class EnvVariable {

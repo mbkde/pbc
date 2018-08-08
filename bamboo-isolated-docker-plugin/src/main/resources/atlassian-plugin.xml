@@ -36,6 +36,8 @@ limitations under the License.
     </buildProcessor>
     <component-import key="isolatedAgentService"
                       interface="com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService"/>
+    <component-import key="containerSizeDescriptor"
+                      interface="com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor"/>
     <bambooEventListener key="bambooEventListener" name="Bamboo Event Listener"
                          class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
