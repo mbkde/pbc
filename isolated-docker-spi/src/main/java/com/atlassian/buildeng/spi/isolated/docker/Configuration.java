@@ -153,7 +153,7 @@ public final class Configuration {
         }
 
         /**
-         * the reservation amount or the container.
+         * the reservation amount for the container.
          * @return amount in megabytes
          */
         public int memory() {
@@ -269,7 +269,7 @@ public final class Configuration {
         }
         
         /**
-         * the reservation amount or the container.
+         * the reservation amount for the container.
          * @return amount in megabytes
          */
         public int memory() {

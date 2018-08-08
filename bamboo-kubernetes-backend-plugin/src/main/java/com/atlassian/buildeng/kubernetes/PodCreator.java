@@ -250,7 +250,7 @@ public class PodCreator {
         map.put("volumeMounts", ImmutableList.of(
                 ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
                 ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)));
-        map.put("resources", createResources(SIDEKICK_MEMORY, (int) (SIDEKICK_MEMORY * 1.1), SIDEKICK_CPU));
+        map.put("resources", createResources(SIDEKICK_MEMORY, SIDEKICK_MEMORY, SIDEKICK_CPU));
         return map;
     }
 
