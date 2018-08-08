@@ -94,8 +94,19 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
             ErrorCollection coll = new SimpleErrorCollection();
-                    
-            Validator.validate(image, size, extraCont, coll, false);
+            if (Boolean.parseBoolean(enabled)) {        
+                Validator.validate(image, size, extraCont, coll, false);
+                return coll.getAllErrorMessages().stream()
+                        .map((String t) -> new ValidationProblem(t))
+                        .collect(Collectors.toList());
+            }
+        }
+        final PerBuildContainerForEnvironmentProperties pbc = 
+                Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
+        if (pbc != null && pbc.isEnabled()) {
+            ErrorCollection coll = new SimpleErrorCollection();
+            Validator.validate(pbc.getImage(), pbc.getSize(), 
+                    BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
             return coll.getAllErrorMessages().stream()
                     .map((String t) -> new ValidationProblem(t))
                     .collect(Collectors.toList());

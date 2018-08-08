@@ -21,9 +21,13 @@ import com.atlassian.bamboo.build.CustomBuildProcessorServer;
 import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
 import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
 import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForJob;
+import com.atlassian.bamboo.specs.api.exceptions.PropertiesValidationException;
 import com.atlassian.bamboo.specs.api.model.pbc.EnvProperties;
 import com.atlassian.bamboo.specs.api.model.pbc.ExtraContainerProperties;
 import com.atlassian.bamboo.specs.api.model.pbc.PerBuildContainerForJobProperties;
+import com.atlassian.bamboo.specs.api.validators.common.ValidationProblem;
+import com.atlassian.bamboo.utils.error.ErrorCollection;
+import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
@@ -32,6 +36,7 @@ import com.atlassian.bamboo.v2.build.ImportExportAwarePlugin;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
@@ -159,10 +164,26 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                         .collect(Collectors.toList()));
                 }).collect(Collectors.toList()));
     }
-
+    
     @Override
     public void addToBuildConfiguration(PerBuildContainerForJobProperties specsProperties, 
             HierarchicalConfiguration buildConfiguration) {
+        if (specsProperties.isEnabled()) {
+            //apparently unlike in CustomEnvironmentConfigPluginExporter there is no explicit validation callback
+            // and the infra is not calling it either. Doing it here for the lack of a better place.
+            specsProperties.validate();
+            ErrorCollection errorCollection = new SimpleErrorCollection();
+            Validator.validate(specsProperties.getImage(), specsProperties.getSize(),
+                    toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
+            if (errorCollection.hasAnyErrors()) {
+                throw new PropertiesValidationException(
+                        errorCollection.getAllErrorMessages().stream()
+                            .map((String t) -> {
+                                return new ValidationProblem(t);
+                            })
+                            .collect(Collectors.toList()));
+            }
+        }
         buildConfiguration.setProperty(Configuration.ENABLED_FOR_JOB, specsProperties.isEnabled());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
