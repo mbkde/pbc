@@ -73,7 +73,8 @@ public final class Configuration {
     }
     
     public int getCPUTotal() {
-        return size.cpu() + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().cpu).sum();
+        return size.cpu()
+                + extraContainers.stream().mapToInt((ExtraContainer value) -> value.getExtraSize().cpu).sum();
     }
     
     public int getMemoryTotal() {
@@ -87,11 +88,7 @@ public final class Configuration {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 79 * hash + Objects.hashCode(this.dockerImage);
-        hash = 79 * hash + Objects.hashCode(this.size);
-        hash = 79 * hash + Objects.hashCode(this.extraContainers);
-        return hash;
+        return Objects.hash(dockerImage, size, extraContainers);
     }
 
     @Override
@@ -130,29 +127,45 @@ public final class Configuration {
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
     }
 
+    //TODO temporary, eventually will be configurable
+    private static final double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
     
     public static enum ContainerSize {
-        XXLARGE(5120, 20000),
-        XLARGE(4096, 16000),
-        LARGE(3072, 12000),
-        REGULAR(2048, 8000),
-        SMALL(1024, 4000),
-        XSMALL(512, 2000);
+        XXLARGE(5120, 20000, (int) (20000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        XLARGE(4096, 16000, (int) (16000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        LARGE(3072, 12000, (int) (12000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        REGULAR(2048, 8000, (int) (8000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        SMALL(1024, 4000, (int) (4000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        XSMALL(512, 2000, (int) (2000 * SOFT_TO_HARD_LIMIT_RATIO));
 
         private final int cpu;
         private final int memory;
+        private final int memoryLimit;
 
-        private ContainerSize(int cpu, int memory) {
+        private ContainerSize(int cpu, int memory, int memoryLimit) {
             this.cpu = cpu;
             this.memory = memory;
+            this.memoryLimit = memoryLimit;
         }
 
         public int cpu() {
             return cpu;
         }
 
+        /**
+         * the reservation amount for the container.
+         * @return amount in megabytes
+         */
         public int memory() {
             return memory;
+        }
+        
+        /**
+         * the hard limit that the containers cannot cross.
+         * @return amount in megabytes
+         */
+        public int memoryLimit() {
+            return memoryLimit;
         }
     }
 
@@ -203,13 +216,7 @@ public final class Configuration {
 
         @Override
         public int hashCode() {
-            int hash = 7;
-            hash = 59 * hash + Objects.hashCode(this.name);
-            hash = 59 * hash + Objects.hashCode(this.image);
-            hash = 59 * hash + Objects.hashCode(this.extraSize);
-            hash = 59 * hash + Objects.hashCode(this.commands);
-            hash = 59 * hash + Objects.hashCode(this.envVariables);
-            return hash;
+            return Objects.hash(name, image, extraSize, commands, envVariables);
         }
 
         @Override
@@ -241,26 +248,40 @@ public final class Configuration {
     }
     
     public static enum ExtraContainerSize {
-        XXLARGE(3072, 12000),
-        XLARGE(2048, 8000),
-        LARGE(1024, 4000),
-        REGULAR(512, 2000),
-        SMALL(256, 1000);
+        XXLARGE(3072, 12000,(int) (12000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        XLARGE(2048, 8000, (int) (8000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        LARGE(1024, 4000, (int) (4000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        REGULAR(512, 2000, (int) (2000 * SOFT_TO_HARD_LIMIT_RATIO)),
+        SMALL(256, 1000, (int) (1000 * SOFT_TO_HARD_LIMIT_RATIO));
         
         private final int cpu;
         private final int memory;
+        private final int memoryLimit;
 
-        private ExtraContainerSize(int cpu, int memory) {
+        private ExtraContainerSize(int cpu, int memory, int memoryLimit) {
             this.cpu = cpu;
             this.memory = memory;
+            this.memoryLimit = memoryLimit;
         }
 
         public int cpu() {
             return cpu;
         }
-
+        
+        /**
+         * the reservation amount for the container.
+         * @return amount in megabytes
+         */
         public int memory() {
             return memory;
+        }
+
+        /**
+         * the hard limit that the containers cannot cross.
+         * @return amount in megabytes
+         */
+        public int memoryLimit() {
+            return memoryLimit;
         }
         
     }
@@ -285,10 +306,7 @@ public final class Configuration {
 
         @Override
         public int hashCode() {
-            int hash = 3;
-            hash = 41 * hash + Objects.hashCode(this.name);
-            hash = 41 * hash + Objects.hashCode(this.value);
-            return hash;
+            return Objects.hash(name, value);
         }
 
         @Override

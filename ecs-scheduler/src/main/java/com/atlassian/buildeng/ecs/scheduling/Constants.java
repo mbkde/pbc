@@ -106,10 +106,6 @@ public interface Constants {
     String RESULT_PART_EC2_INSTANCEID = "EC2InstanceId";
     String RESULT_PART_ECS_CONTAINERARN = "ECSContainerARN";
 
-    // Ratio between soft and hard limits
-    Double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
-
-
     /**
      * environment variable name for extra containers that when defined will be used
      * to tweak the extra container's ulimits. The format is space separated list of key pairs.

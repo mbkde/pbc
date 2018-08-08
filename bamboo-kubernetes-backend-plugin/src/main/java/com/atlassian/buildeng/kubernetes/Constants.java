@@ -19,17 +19,6 @@ package com.atlassian.buildeng.kubernetes;
 public interface Constants {
 
     /**
-     * Property declaring the multiplier for ratio between the pod container's memory reservation and the hard limit.
-     * The reservation is used for scheduling, the hard limit is when containers or their processes get killed.
-     */
-    String KUBE_HARD_LIMIT_RATION_PROPERTY = "pbc.kube.hard.memory.limit.ratio";
-    /**
-     * The ratio between hard and soft memory limit.
-     * The reservation is used for scheduling, the hard limit is when containers or their processes get killed.
-     */
-    Double SOFT_TO_HARD_LIMIT_RATIO = Double.parseDouble(System.getProperty(KUBE_HARD_LIMIT_RATION_PROPERTY, "1.25"));
-
-    /**
      * name of system property that denotes the path to kubectl binary.
      */
     String KUBECTL_PATH_PROPERTY = "pbc.kubectl.path";
