@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs;
 
 import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
+import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.google.common.base.Splitter;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,8 +35,9 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     static final String ECS_ASG = "ECS_ASG";
     static final String ECS_CLUSTER = "ECS_CLUSTER";
     static final String ECS_LOG_DRIVER = "ECS_LOGDRIVER";
+
     /**
-     * value is comma separated list of env variables to read and use as log options
+     * value is comma separated list of env variables to read and use as log options.
      */
     static final String ECS_LOG_OPTIONS = "ECS_LOGOPTIONS";
     
@@ -44,6 +48,7 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     private Map<Configuration, Integer> configurationMapping = new ConcurrentHashMap<>();
     private final String logDriver;
     private final Map<String, String> logOptionsMap;
+    private final ContainerSizeDescriptor sizeDescriptor = new DefaultContainerSizeDescriptor();
 
     @Inject
     public ECSConfigurationImpl(@Named(ECS_ASG) String asg,
@@ -114,8 +119,14 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     }
 
     @Override
-    public void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
+    public void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings,
+            Map<String, Integer> taskRequestMappings) {
         this.configurationMapping = dockerMappings;
         this.ecsTaskMapping = taskRequestMappings;
+    }
+
+    @Override
+    public ContainerSizeDescriptor getSizeDescriptor() {
+        return sizeDescriptor;
     }
 }

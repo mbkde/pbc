@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
+import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.atlassian.event.api.EventPublisher;
 import java.time.Duration;
 import java.util.Map;
@@ -139,6 +141,11 @@ public class CyclingECSSchedulerQuickTest {
         @Override
         public Map<String, String> getEnvVars() {
             return null;
+        }
+
+        @Override
+        public ContainerSizeDescriptor getSizeDescriptor() {
+            return new DefaultContainerSizeDescriptor();
         }
     }
 }

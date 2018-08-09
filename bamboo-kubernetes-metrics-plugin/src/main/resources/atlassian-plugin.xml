@@ -59,6 +59,8 @@ limitations under the License.
     </component>
 
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+    <component-import key="containerSizeDescriptor"
+                      interface="com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor"/>
     
     <!-- REST resources -->
     <rest key="pbc-kubernetes-metrics" path="/pbc-kubernetes-metrics" version="1.0">

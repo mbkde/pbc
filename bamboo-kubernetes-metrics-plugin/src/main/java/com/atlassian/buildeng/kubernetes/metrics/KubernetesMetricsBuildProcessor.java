@@ -25,6 +25,7 @@ import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -71,9 +72,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     private static final String STEP_PERIOD = "15s";
+    
+    private final ContainerSizeDescriptor sizeDescriptor;
 
-    private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
+    private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, 
+            ArtifactManager artifactManager, ContainerSizeDescriptor sizeDescriptor) {
         super(buildLoggerManager, artifactManager);
+        this.sizeDescriptor = sizeDescriptor;
     }
 
     @Override
@@ -324,13 +329,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         int memoryRequest;
         if ("bamboo-agent".equals(name)) {
             Configuration.ContainerSize size = (Configuration.ContainerSize) containerSize;
-            cpuRequest = size.cpu();
-            memoryRequest = size.memory();
+            cpuRequest = sizeDescriptor.getCpu(size);
+            memoryRequest = sizeDescriptor.getMemory(size);
 
         } else {
             Configuration.ExtraContainerSize size = (Configuration.ExtraContainerSize) containerSize;
-            cpuRequest = size.cpu();
-            memoryRequest = size.memory();
+            cpuRequest = sizeDescriptor.getCpu(size);
+            memoryRequest = sizeDescriptor.getMemory(size);
         }
         return new ReservationSize(name, cpuRequest, memoryRequest);
     }

@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -126,14 +127,17 @@ public class PodCreator {
         return image.contains("docker:") && image.endsWith("dind");
     }
 
-    private static List<Map<String, Object>> createExtraContainers(Configuration c) {
+    private static List<Map<String, Object>> createExtraContainers(Configuration c,
+            GlobalConfiguration globalConfiguration) {
         return c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", t.getName());
             map.put("image", sanitizeImageName(t.getImage()));
             map.put("imagePullPolicy", "Always");
-            map.put("resources", createResources(t.getExtraSize().memory(),
-                    t.getExtraSize().memoryLimit(), t.getExtraSize().cpu()));
+            ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
+            map.put("resources", createResources(sizeDescriptor.getMemory(t.getExtraSize()),
+                    sizeDescriptor.getMemoryLimit(t.getExtraSize()),
+                    sizeDescriptor.getCpu(t.getExtraSize())));
             if (isDockerInDockerImage(t.getImage())) {
                 map.put("securityContext", ImmutableMap.of("privileged", Boolean.TRUE));
                 map.put("args", adjustCommandsForDind(t.getCommands()));
@@ -233,7 +237,7 @@ public class PodCreator {
     private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration,
             IsolatedDockerAgentRequest r) {
         ArrayList<Map<String, Object>> toRet = new ArrayList<>();
-        toRet.addAll(createExtraContainers(r.getConfiguration()));
+        toRet.addAll(createExtraContainers(r.getConfiguration(), globalConfiguration));
         toRet.add(createMainContainer(globalConfiguration, r));
         return toRet;
     }
@@ -277,10 +281,11 @@ public class PodCreator {
             mountsBuilder.add(ImmutableMap.of("name", "shm", "mountPath", "/dev/shm", "readOnly", false));
         }
         map.put("volumeMounts", mountsBuilder.build());
+        ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
         map.put("resources", createResources(
-                r.getConfiguration().getSize().memory(),
-                r.getConfiguration().getSize().memoryLimit(),
-                r.getConfiguration().getSize().cpu()));
+                sizeDescriptor.getMemory(r.getConfiguration().getSize()),
+                sizeDescriptor.getMemoryLimit(r.getConfiguration().getSize()),
+                sizeDescriptor.getCpu(r.getConfiguration().getSize())));
         return map;
     }
     

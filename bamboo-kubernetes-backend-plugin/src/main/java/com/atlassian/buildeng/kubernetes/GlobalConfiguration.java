@@ -23,6 +23,7 @@ import com.atlassian.bamboo.persister.AuditLogMessage;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.google.common.base.Preconditions;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
@@ -38,18 +39,25 @@ public class GlobalConfiguration {
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
+    private final ContainerSizeDescriptor sizeDescriptor;
 
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
                                AdministrationConfigurationAccessor admConfAccessor, 
-                               BambooAuthenticationContext authenticationContext) {
+                               BambooAuthenticationContext authenticationContext,
+                               ContainerSizeDescriptor sizeDescriptor) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;
+        this.sizeDescriptor = sizeDescriptor;
     }
 
     public String getBambooBaseUrl() {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
+    }
+    
+    public ContainerSizeDescriptor getSizeDescriptor() {
+        return sizeDescriptor;
     }
     
     /**

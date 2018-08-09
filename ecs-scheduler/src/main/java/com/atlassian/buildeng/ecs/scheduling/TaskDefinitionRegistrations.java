@@ -34,6 +34,7 @@ import com.amazonaws.services.ecs.model.VolumeFrom;
 import com.amazonaws.services.ecs.model.transform.RegisterTaskDefinitionRequestProtocolMarshaller;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
@@ -99,13 +100,15 @@ public class TaskDefinitionRegistrations {
     }
 
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
+    public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, 
+            ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
+        ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
         ContainerDefinition main = withLogDriver(withGlobalEnvVars(
                 new ContainerDefinition()
                         .withName(Constants.AGENT_CONTAINER_NAME)
-                        .withCpu(configuration.getSize().cpu())
-                        .withMemoryReservation(configuration.getSize().memory())
-                        .withMemory((int) (configuration.getSize().memoryLimit()))
+                        .withCpu(sizeDescriptor.getCpu(configuration.getSize()))
+                        .withMemoryReservation(sizeDescriptor.getMemory(configuration.getSize()))
+                        .withMemory(sizeDescriptor.getMemoryLimit(configuration.getSize()))
                         .withImage(sanitizeImageName(configuration.getDockerImage()))
                         .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
                         .withEntryPoint(Constants.RUN_SCRIPT)
@@ -126,9 +129,9 @@ public class TaskDefinitionRegistrations {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()
                     .withName(sanitizeImageName(t.getName()))
                     .withImage(sanitizeImageName(t.getImage()))
-                    .withCpu(t.getExtraSize().cpu())
-                    .withMemoryReservation(t.getExtraSize().memory())
-                    .withMemory(t.getExtraSize().memoryLimit())
+                    .withCpu(sizeDescriptor.getCpu(t.getExtraSize()))
+                    .withMemoryReservation(sizeDescriptor.getMemory(t.getExtraSize()))
+                    .withMemory(sizeDescriptor.getMemoryLimit(t.getExtraSize()))
                     .withUlimits(generateUlimitList(t))
                     .withLinks(generateExtraContainerLinks(t))
                     .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))

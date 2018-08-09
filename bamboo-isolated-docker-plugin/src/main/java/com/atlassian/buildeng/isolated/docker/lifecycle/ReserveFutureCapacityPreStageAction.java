@@ -30,6 +30,7 @@ import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,24 +50,27 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
     private final IsolatedAgentService isoService;
     private final ResultsSummaryManager resultsSummaryManager;
     private final CachedPlanManager cachedPlanManager;
+    private final ContainerSizeDescriptor sizeDescriptor;
 
     public ReserveFutureCapacityPreStageAction(IsolatedAgentService isoService,
-            ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager) {
+            ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager,
+            ContainerSizeDescriptor sizeDescriptor) {
         this.isoService = isoService;
         this.resultsSummaryManager = resultsSummaryManager;
         this.cachedPlanManager = cachedPlanManager;
+        this.sizeDescriptor = sizeDescriptor;
     }
 
     @Override
     public void execute(StageExecution stageExecution) throws InterruptedException, Exception {
         Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex())
-                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
+                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal(sizeDescriptor)));
         Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex())
-                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
+                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal(sizeDescriptor)));
         Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1)
-                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal()));
+                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal(sizeDescriptor)));
         Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1)
-                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal()));
+                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal(sizeDescriptor)));
         long diffCpu = Math.max(0, nextStageCpu - currentStageCpu);
         long diffMem = Math.max(0, nextStageMem - currentStageMem);
         if (diffMem > 0 || diffCpu > 0) {

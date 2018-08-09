@@ -13,7 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
+
+import static com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations.sanitizeImageName;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
@@ -21,19 +28,14 @@ import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
+import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
-
-import static com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations.sanitizeImageName;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import static org.mockito.Matchers.anyObject;
 import org.mockito.Mock;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import org.mockito.runners.MockitoJUnitRunner;
 
 
@@ -63,6 +65,7 @@ public class TaskDefinitionRegistrationsTest {
     public void registerTaskDefinition() {
         Map<Configuration, Integer> dock = new HashMap<>();
         Map<String, Integer> task = new HashMap<>();
+        when(ecsConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         when(backend.getAllECSTaskRegistrations()).thenReturn(task);
         when(backend.getAllRegistrations()).thenReturn(dock);
         BambooServerEnvironment env = mock(BambooServerEnvironment.class);
@@ -95,6 +98,8 @@ public class TaskDefinitionRegistrationsTest {
         Map<String, Integer> task = new HashMap<>();
         when(backend.getAllECSTaskRegistrations()).thenReturn(task);
         when(backend.getAllRegistrations()).thenReturn(dock);
+        when(ecsConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        
         when(regs.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 

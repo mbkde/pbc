@@ -27,6 +27,10 @@ limitations under the License.
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
+    <component key="containerSizeDescriptor" class="com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor" public="true">
+        <interface>com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor</interface>
+    </component>
+    
 
     <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.GlobalConfiguration">
     </component>

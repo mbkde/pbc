@@ -23,6 +23,7 @@ import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.util.Narrow;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -44,9 +45,11 @@ import org.yaml.snakeyaml.Yaml;
 public class LocalExecRest {
 
     private final CachedPlanManager cpm;
+    private final ContainerSizeDescriptor sizeDescriptor;
 
-    public LocalExecRest(CachedPlanManager cpm) {
+    public LocalExecRest(CachedPlanManager cpm, ContainerSizeDescriptor sizeDescriptor) {
         this.cpm = cpm;
+        this.sizeDescriptor = sizeDescriptor;
     }
 
     @GET
@@ -55,8 +58,7 @@ public class LocalExecRest {
     public Response getDockerCompose(@PathParam("jobKey") String jobKey,
             @DefaultValue("false") @QueryParam("dind") boolean useDockerInDocker,
             @DefaultValue("false") @QueryParam("mavenLocal") boolean mavenLocalRepo,
-            @DefaultValue("false") @QueryParam("reservations") boolean reservations)
-    {
+            @DefaultValue("false") @QueryParam("reservations") boolean reservations) {
         if (jobKey == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("jobKey query parameter not defined").build();
         }
@@ -82,10 +84,8 @@ public class LocalExecRest {
             boolean mavenLocalRepo, boolean reservations, String jobKey) {
         final Map<String, Object> root = new LinkedHashMap<>();
         final Map<String, Object> services = new LinkedHashMap<>();
-//        final Map<String, Object> volumes = new LinkedHashMap<>();
         root.put("version", "2");
         root.put("services", services);
-//        root.put("volumes", volumes);
 
         Map<String, Object> bambooAgent = new LinkedHashMap<>();
         services.put("bamboo-agent", bambooAgent);
@@ -100,7 +100,7 @@ public class LocalExecRest {
         bambooAgent.put("volumes", bambooAgentVolumes);
         bambooAgentVolumes.add(".:" + workingDir);
         if (reservations) {
-            bambooAgent.put("mem_limit", "" + conf.getSize().memory() + "m");
+            bambooAgent.put("mem_limit", "" + sizeDescriptor.getMemory(conf.getSize()) + "m");
         }
         if (mavenLocalRepo) {
             bambooAgentVolumes.add("~/.m2/:/root/.m2/");
@@ -132,7 +132,7 @@ public class LocalExecRest {
             }
             if (reservations) {
                 //is there a point in cpu reservation?
-                extra.put("mem_limit", "" + t.getExtraSize().memory() + "m");
+                extra.put("mem_limit", "" + sizeDescriptor.getMemory(t.getExtraSize()) + "m");
             }
 
             services.put(t.getName(), extra);

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -20,10 +21,6 @@ import com.atlassian.buildeng.ecs.exceptions.InstancesSmallerThanAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.DisposableBean;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -41,9 +38,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 
 public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
-    private final static Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(CyclingECSScheduler.class);
     private long lackingCPU = 0;
     private long lackingMemory = 0;
     private final Set<UUID> consideredRequestIdentifiers = new HashSet<>();
@@ -70,7 +70,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, int requiredMemory, int requiredCpu, boolean demandOverflowing) {
+    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, 
+            int requiredMemory, int requiredCpu, boolean demandOverflowing) {
         Comparator<DockerHost> comparator = DockerHost.compareByResourcesAndAge();
         if (demandOverflowing) {
             // when we know that there is demand overflow, we want to spread out the
@@ -125,8 +126,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     lackingMemory = Math.max(0, lackingMemory - request.getMemory());
                     // If we hit a stage where we're able to allocate a job + our deficit is less than a single agent
                     // Clear everything out, we're probably fine
-                    if (lackingCPU < Configuration.ContainerSize.SMALL.cpu()
-                            || lackingMemory < Configuration.ContainerSize.SMALL.memory()) {
+                    if (lackingCPU < globalConfiguration.getSizeDescriptor().getCpu(Configuration.ContainerSize.SMALL)
+                            || lackingMemory < globalConfiguration.getSizeDescriptor()
+                                    .getMemory(Configuration.ContainerSize.SMALL)) {
                         consideredRequestIdentifiers.clear();
                         lackingCPU = 0;
                         lackingMemory = 0;
