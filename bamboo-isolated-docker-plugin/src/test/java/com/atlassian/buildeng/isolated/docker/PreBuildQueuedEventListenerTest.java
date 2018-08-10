@@ -39,6 +39,7 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
@@ -72,6 +73,8 @@ public class PreBuildQueuedEventListenerTest {
     private JMXAgentsService jmx;
     @Mock
     private AgentLicenseLimits agentLicenseLimits;
+    @Mock 
+    private ContainerSizeDescriptor sizeDescriptor;
             
     @InjectMocks
     private PreBuildQueuedEventListener listener;

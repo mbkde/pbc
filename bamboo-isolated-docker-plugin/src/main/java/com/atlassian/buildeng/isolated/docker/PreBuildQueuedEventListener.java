@@ -37,6 +37,7 @@ import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
@@ -68,6 +69,7 @@ public class PreBuildQueuedEventListener {
     private final AgentLicenseLimits agentLicenseLimits;
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
+    private final ContainerSizeDescriptor sizeDescriptor;
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
@@ -80,7 +82,8 @@ public class PreBuildQueuedEventListener {
                                         EventPublisher eventPublisher,
                                         AgentRemovals agentRemovals,
                                         AgentLicenseLimits agentLicenseLimits,
-                                        DockerSoxService dockerSoxService) {
+                                        DockerSoxService dockerSoxService,
+                                        ContainerSizeDescriptor sizeDescriptor) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -92,6 +95,7 @@ public class PreBuildQueuedEventListener {
         this.dockerSoxService = dockerSoxService;
         this.deploymentExecutionService = deploymentExecutionService;
         this.agentLicenseLimits = agentLicenseLimits;
+        this.sizeDescriptor = sizeDescriptor;
     }
 
     @EventListener
@@ -108,13 +112,13 @@ public class PreBuildQueuedEventListener {
             }
             ConfigurationOverride.applyOverrides(config);
             logger.info("PBC job {} got queued.", event.getResultKey());
-            config.copyTo(buildContext.getCurrentResult().getCustomBuildData());
+            config.copyToResult(buildContext.getCurrentResult(), sizeDescriptor);
             jmx.incrementQueued();
             setQueueTimestamp(buildContext);
             retry(new RetryAgentStartupEvent(config, buildContext));
         } else {
             //when a rerun happens and docker agents were disabled.
-            Configuration.removeFrom(buildContext.getCurrentResult().getCustomBuildData());
+            Configuration.removeFromResult(buildContext.getCurrentResult(), sizeDescriptor);
             clearResultCustomData(event.getContext());
             buildContext.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
         }
@@ -246,13 +250,13 @@ public class PreBuildQueuedEventListener {
                 return;
             }
             ConfigurationOverride.applyOverrides(config);
-            config.copyTo(context.getCurrentResult().getCustomBuildData());
+            config.copyToResult(context.getCurrentResult(), sizeDescriptor);
             jmx.incrementQueued();
             setQueueTimestamp(context);
             retry(new RetryAgentStartupEvent(config, context));
         } else {
             //when a rerun happens and docker agents were disabled.
-            Configuration.removeFrom(context.getCurrentResult().getCustomBuildData());
+            Configuration.removeFromResult(context.getCurrentResult(), sizeDescriptor);
             clearResultCustomData(event.getContext());
             context.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
         }

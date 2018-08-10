@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.atlassian.bamboo.agent.AgentType;
 import com.atlassian.bamboo.build.BuildDefinition;
@@ -21,6 +26,7 @@ import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.RemoteAgentDefinitionImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityImpl;
@@ -28,24 +34,18 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySetImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-import org.junit.Test;
-
+import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-/**
- *
- * @author mkleint
- */
 public class TheMightyAgentFilterTest {
     
     PlanResultKey resultKey1 = PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1);
     PlanResultKey resultKey2 = PlanKeys.getPlanResultKey("AAA-BBB-JOB2", 2);
+    
     /**
      * Test of filter method, of class TheMightyAgentFilter.
      */
@@ -54,7 +54,9 @@ public class TheMightyAgentFilterTest {
         HashMap<String, String> customConfig = new HashMap<>();
         BuildContext context = mockBuildContext(customConfig);
         when(context.getResultKey()).thenReturn(resultKey1);
-        ConfigurationBuilder.create("aaa").build().copyTo(customConfig);
+        CurrentResult currResult = mock(CurrentResult.class);
+        when(currResult.getCustomBuildData()).thenReturn(customConfig);
+        ConfigurationBuilder.create("aaa").build().copyToResult(currResult, new DefaultContainerSizeDescriptor());
         Collection<BuildAgent> agents = mockAgents();
         
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
@@ -66,7 +68,9 @@ public class TheMightyAgentFilterTest {
     @Test
     public void testDockerJobMissingAgent() {
         HashMap<String, String> customConfig = new HashMap<>();
-        ConfigurationBuilder.create("aaa").build().copyTo(customConfig);
+        CurrentResult currResult = mock(CurrentResult.class);
+        when(currResult.getCustomBuildData()).thenReturn(customConfig);
+        ConfigurationBuilder.create("aaa").build().copyToResult(currResult, new DefaultContainerSizeDescriptor());
         BuildContext context = mockBuildContext(customConfig);
         when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 3));
         Collection<BuildAgent> agents = mockAgents();

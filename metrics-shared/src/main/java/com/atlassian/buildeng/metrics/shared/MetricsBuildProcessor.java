@@ -65,7 +65,7 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
 
         if (config.isEnabled()) {
             BuildLogger buildLogger = buildLoggerManager.getLogger(buildContext.getResultKey());
-            generateMetricsGraphs(buildLogger, config);
+            generateMetricsGraphs(buildLogger, config, buildContext);
         }
 
         return buildContext;
@@ -93,6 +93,7 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
                         .map(ArtifactHandlerPublishingResult::getArtifactHandlerKey).orElse(Artifact.SYSTEM_LINK_TYPE));
     }
 
-    protected abstract void generateMetricsGraphs(BuildLogger buildLogger, Configuration config);
+    protected abstract void generateMetricsGraphs(BuildLogger buildLogger, 
+            Configuration config, BuildContext buildContext);
 
 }
