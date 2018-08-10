@@ -20,12 +20,12 @@ import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.security.SecureToken;
+import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildContextHelper;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,16 +74,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     private static final String STEP_PERIOD = "15s";
     
-    private final ContainerSizeDescriptor sizeDescriptor;
-
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, 
-            ArtifactManager artifactManager, ContainerSizeDescriptor sizeDescriptor) {
+            ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
-        this.sizeDescriptor = sizeDescriptor;
     }
 
     @Override
-    protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
+    protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config, BuildContext context) {
         if (KUBE_POD_NAME != null) {
             if (SUBMIT_TIMESTAMP == null) {
                 buildLogger.addErrorLogEntry("No SUBMIT_TIMESTAMP environment variable found in custom build data.");
@@ -114,10 +112,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
             JSONArray artifactsJsonDetails = new JSONArray();
             List<ReservationSize> containers = Stream.concat(
-                    Stream.of(createReservationSize("bamboo-agent", (Enum) config.getSize())),
+                    Stream.of(createReservationSize("bamboo-agent", context)),
                     config.getExtraContainers().stream().map(
-                        (Configuration.ExtraContainer e) ->
-                                    createReservationSize(e.getName(), (Enum) e.getExtraSize())))
+                        (Configuration.ExtraContainer e) -> createReservationSize(e.getName(), context)))
                     .collect(Collectors.toList());
             
             //not specific to container
@@ -324,19 +321,14 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         return point;
     }
 
-    private ReservationSize createReservationSize(String name, Enum containerSize) {
+    private ReservationSize createReservationSize(String name, BuildContext context) {
         int cpuRequest;
         int memoryRequest;
-        if ("bamboo-agent".equals(name)) {
-            Configuration.ContainerSize size = (Configuration.ContainerSize) containerSize;
-            cpuRequest = sizeDescriptor.getCpu(size);
-            memoryRequest = sizeDescriptor.getMemory(size);
-
-        } else {
-            Configuration.ExtraContainerSize size = (Configuration.ExtraContainerSize) containerSize;
-            cpuRequest = sizeDescriptor.getCpu(size);
-            memoryRequest = sizeDescriptor.getMemory(size);
-        }
+        Map<String, String> cc = context.getBuildResult().getCustomBuildData();
+        String cpuReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".cpu", "0");
+        String memReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".memory", "0");
+        cpuRequest = Integer.parseInt(cpuReq);
+        memoryRequest = Integer.parseInt(memReq);
         return new ReservationSize(name, cpuRequest, memoryRequest);
     }
 

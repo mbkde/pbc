@@ -16,10 +16,13 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.v2.build.CurrentResult;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
@@ -40,6 +43,14 @@ public final class Configuration {
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
+
+    /**
+     * properties with this prefix are stored in build result custom data 
+     * detailing the sizes of main and extra containers.
+     * The available suffixes are .[container_name].memory and .[container_name].memoryLimit
+     * The main container's name is 'bamboo-agent', for extra containers the name equals the one configured by user.
+     */
+    public static final String DOCKER_IMAGE_DETAIL = PROPERTY_PREFIX + ".imageDetail"; 
 
     public static int DOCKER_MINIMUM_MEMORY = 4;
 
@@ -122,19 +133,49 @@ public final class Configuration {
         return Objects.equals(this.extraContainers, other.extraContainers);
     }
 
-    public void copyTo(Map<String, ? super String> storageMap) {
+    /**
+     * Copy configuration snapshot to result for use by agent side extensions.
+     */
+    public void copyToResult(CurrentResult result, ContainerSizeDescriptor sizeDescriptor) {
+        Map<String, String> storageMap = result.getCustomBuildData();
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
         storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
+        //write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memory", 
+                "" + sizeDescriptor.getMemory(getSize()));
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit", 
+                "" + sizeDescriptor.getMemoryLimit(getSize()));
+            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu",
+                    "" + sizeDescriptor.getCpu(getSize()));
+        getExtraContainers().forEach((ExtraContainer t) -> {
+            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memory",
+                    "" + sizeDescriptor.getMemory(t.getExtraSize()));
+            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memoryLimit",
+                    "" + sizeDescriptor.getMemoryLimit(t.getExtraSize()));
+            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".cpu",
+                    "" + sizeDescriptor.getCpu(t.getExtraSize()));
+        });
     }
     
-    public static void removeFrom(Map<String, ? super String> storageMap) {
+    /**
+     * Clear configuration from result data structures.
+     */
+    public static void removeFromResult(CurrentResult result, ContainerSizeDescriptor sizeDescriptor) {
+        Map<String, String> storageMap = result.getCustomBuildData();
         storageMap.remove(Configuration.ENABLED_FOR_JOB);
         storageMap.remove(Configuration.DOCKER_IMAGE);
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
+        Iterator<Map.Entry<String, String>> it = storageMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, String> ent = it.next();
+            if (ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL)) {
+                it.remove();
+            }
+        }
     }
 
     

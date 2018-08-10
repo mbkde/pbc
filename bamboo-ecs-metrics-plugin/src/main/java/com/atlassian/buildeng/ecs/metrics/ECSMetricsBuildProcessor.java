@@ -20,6 +20,7 @@ import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.security.SecureToken;
+import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildContextHelper;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
@@ -60,7 +61,7 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
     }
 
     @Override
-    protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config) {
+    protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config, BuildContext context) {
         String taskArn = buildContext.getCurrentResult().getCustomBuildData().get(RESULT_PREFIX + TASK_ARN);
         if (taskArn != null) {
             String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
