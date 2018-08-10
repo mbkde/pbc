@@ -324,7 +324,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private ReservationSize createReservationSize(String name, BuildContext context) {
         int cpuRequest;
         int memoryRequest;
-        Map<String, String> cc = context.getBuildDefinition().getCustomConfiguration();
+        Map<String, String> cc = context.getBuildResult().getCustomBuildData();
         String cpuReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".cpu", "0");
         String memReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".memory", "0");
         cpuRequest = Integer.parseInt(cpuReq);
