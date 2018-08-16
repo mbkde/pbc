@@ -1,0 +1,84 @@
+{
+    "main" : [
+        {
+            "name" : "XXLARGE",
+            "cpu" : 5120,
+            "memory" : 20000,
+            "memoryLimit" : 25000,
+            "label" : "Extra Extra Large (~20G memory, 5 vCPU)"
+        },
+        {
+            "name" : "XLARGE",
+            "cpu" : 4096,
+            "memory" : 16000,
+            "memoryLimit" : 20000,
+            "label" : "Extra Large (~16G memory, 4 vCPU)"
+                    
+        },
+        {
+            "name" : "LARGE",
+            "cpu" : 3072,
+            "memory" : 12000,
+            "memoryLimit" : 15000,
+            "label" : "Large (~12G memory, 3 vCPU)"
+        },
+        {
+            "name" : "REGULAR",
+            "cpu" : 2048,
+            "memory" : 8000,
+            "memoryLimit" : 10000,
+            "label" : "Regular (~8G memory, 2 vCPU)"
+        },
+        {
+            "name" : "SMALL",
+            "cpu" : 1024,
+            "memory" : 4000,
+            "memoryLimit" : 5000,
+            "label" : "Small (~4G memory, 1 vCPU)"
+        },
+        {
+            "name" : "XSMALL",
+            "cpu" : 512,
+            "memory" : 2000,
+            "memoryLimit" : 2500,
+            "label" : "Extra Small (~2G memory, 0.5 vCPU)"
+        }
+    ],
+    "extra" : [
+        {
+            "name" : "XXLARGE",
+            "cpu" : 3072,
+            "memory" : 12000,
+            "memoryLimit" : 15000,
+            "label" : "XX Large size (~ 12G)"
+        },
+        {
+            "name" : "XLARGE",
+            "cpu" : 2048,
+            "memory" : 8000,
+            "memoryLimit" : 10000,
+            "label" : "X Large size (~ 8G)"
+        },
+        {
+            "name" : "LARGE",
+            "cpu" : 1024,
+            "memory" : 4000,
+            "memoryLimit" : 5000,
+            "label" : "Large size (~ 4G)"
+        },
+        {
+            "name" : "REGULAR",
+            "cpu" : 512,
+            "memory" : 2000,
+            "memoryLimit" : 2500,
+            "label" : "Regular size (~ 2G)"
+        },
+        {
+            "name" : "SMALL",
+            "cpu" : 256,
+            "memory" : 1000,
+            "memoryLimit" : 1250,
+            "label" : "Small size (~ 1G)"
+        }
+    ]
+}

@@ -20,17 +20,20 @@ public class Config {
 
     public String sidekickImage;
     public String podTemplate;
+    public String containerSizes;
     public String podLogsUrl;
     public String currentContext;
 
     public Config() {
     }
 
-    public Config(String sidekickImage, String currentContext, String podTemplate, String podLogsUrl) {
+    public Config(String sidekickImage, String currentContext, String podTemplate, 
+            String podLogsUrl, String containerSizes) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
         this.podLogsUrl = podLogsUrl;
+        this.containerSizes = containerSizes;
     }
 
     public String getSidekickImage() {
@@ -64,4 +67,13 @@ public class Config {
     public void setPodLogsUrl(String podLogsUrl) {
         this.podLogsUrl = podLogsUrl;
     }
+
+    public String getContainerSizes() {
+        return containerSizes;
+    }
+
+    public void setContainerSizes(String containerSizes) {
+        this.containerSizes = containerSizes;
+    }
+    
 }

@@ -32,6 +32,7 @@
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#currentContext").val(response.currentContext);
         AJS.$("#podTemplate").val(response.podTemplate);
+        AJS.$("#containerSizes").val(response.containerSizes);
         AJS.$("#podLogsUrl").val(response.podLogsUrl);
     }
 
@@ -40,6 +41,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.currentContext = AJS.$("#currentContext").val().trim();
         config.podTemplate = AJS.$("#podTemplate").val().trim();
+        config.containerSizes = AJS.$("#containerSizes").val().trim();
         config.podLogsUrl = AJS.$("#podLogsUrl").val().trim();
 
         updateStatus("Saving...");
@@ -52,9 +54,9 @@
             success: function () {
                 updateStatus("Saved");
             },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 updateStatus("");
-                showError(textStatus + " " + errorThrown);
+                showError(textStatus + " " + errorThrown + " " + jqXHR.responseText);
             }
         });
     }

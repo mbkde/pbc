@@ -18,6 +18,9 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -45,11 +48,12 @@ public class Rest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/config")
-    public Response getConfig() {
+    public Response getConfig() throws IOException {
         Config c = new Config();
         c.setSidekickImage(configuration.getCurrentSidekick());
         c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
+        c.setContainerSizes(configuration.getContainerSizesAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
         return Response.ok(c).build();
     }
@@ -64,8 +68,8 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                    config.getPodLogsUrl());
-        } catch (IllegalArgumentException e) {
+                    config.getPodLogsUrl(), config.getContainerSizes());
+        } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
         return Response.noContent().build();
