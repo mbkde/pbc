@@ -21,8 +21,8 @@
                 success: function (text) {
                     callback(text);
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    showError(textStatus + " " + errorThrown);
+                error: function (jqXHR, textStatus, errorThrown) {
+                    showError(textStatus + " " + errorThrown + " " + jqXHR.responseText);
                 }
             });
     }
