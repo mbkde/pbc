@@ -280,25 +280,25 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             JsonParser parser = new JsonParser();
             JsonElement root = parser.parse(getContainerSizesAsString());
             root.getAsJsonObject().getAsJsonArray("main").forEach((JsonElement t) -> {
-                JsonObject obj = t.getAsJsonObject();
-                String name = obj.getAsJsonPrimitive("name").getAsString();
-                cpuSizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("cpu").getAsInt());
-                memorySizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("memory").getAsInt());
-                memoryLimitSizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("memoryLimit").getAsInt());
-                labelSizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("label").getAsString());
+                processEntry(t, MAIN_PREFIX);
             });
             root.getAsJsonObject().getAsJsonArray("extra").forEach((JsonElement t) -> {
-                JsonObject obj = t.getAsJsonObject();
-                String name = obj.getAsJsonPrimitive("name").getAsString();
-                cpuSizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("cpu").getAsInt());
-                memorySizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("memory").getAsInt());
-                memoryLimitSizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("memoryLimit").getAsInt());
-                labelSizes.put(MAIN_PREFIX + name, obj.getAsJsonPrimitive("label").getAsString());
+                processEntry(t, EXTRA_PREFIX);
             });
         } catch (IOException ex) {
             Logger.getLogger(GlobalConfiguration.class.getName()).log(Level.SEVERE, null, ex);
         }
         
+    }
+
+    private void processEntry(JsonElement t, String prefix) {
+        JsonObject obj = t.getAsJsonObject();
+        String name = obj.getAsJsonPrimitive("name").getAsString();
+        String key = prefix + name;
+        cpuSizes.put(key, obj.getAsJsonPrimitive("cpu").getAsInt());
+        memorySizes.put(key, obj.getAsJsonPrimitive("memory").getAsInt());
+        memoryLimitSizes.put(key, obj.getAsJsonPrimitive("memoryLimit").getAsInt());
+        labelSizes.put(key, obj.getAsJsonPrimitive("label").getAsString());
     }
     
     
