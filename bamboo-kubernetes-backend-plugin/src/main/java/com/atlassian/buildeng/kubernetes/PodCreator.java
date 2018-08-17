@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.plan.PlanKeys;
+import com.atlassian.bamboo.plan.PlanResultKey;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -197,8 +199,19 @@ public class PodCreator {
         return map;
     }
 
-    private static String createPodName(IsolatedDockerAgentRequest r) {
-        return r.getResultKey().toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString();
+    static String createPodName(IsolatedDockerAgentRequest r) {
+        //50 is magic constant that attempts to limit the overall length of the name.
+        String key = r.getResultKey();
+        if (key.length() > 50) {
+            PlanResultKey prk = PlanKeys.getPlanResultKey(key);
+            String pk = prk.getPlanKey().toString();
+            int len = 50 - ("" + prk.getBuildNumber()).length() - 1;
+            key = pk.substring(0, 
+                    Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
+        }
+        //together with the identifier we are not at 88 max,in BUILDENG-15619 the failure in CNI plugin network creation
+        // was linked both to pod name and namespace lengths. this way we should accomodate fairly long namespace names.
+        return key.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString();
     }
 
     private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
