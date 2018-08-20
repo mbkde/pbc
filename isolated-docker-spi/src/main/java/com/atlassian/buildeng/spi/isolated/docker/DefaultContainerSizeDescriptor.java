@@ -28,6 +28,9 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     
     private static final double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
 
+    //*******************************************
+    //NOTE: when changing values here also change them in the kubernetes plugin's default json.
+
     @Override
     public int getCpu(Configuration.ContainerSize size) {
         switch (size) {
