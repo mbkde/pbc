@@ -48,11 +48,13 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         private String fsReadMetrics;
         private final int memoryLimit;
         private final int cpuLimit;
+        private final int memoryRequest;
 
-        ContainerMetrics(String containerName, int cpuLimit, int memoryLimit) {
+        ContainerMetrics(String containerName, int cpuLimit, int memoryLimit, int memoryRequest) {
             this.containerName = containerName;
             this.cpuLimit = cpuLimit;
             this.memoryLimit = memoryLimit;
+            this.memoryRequest = memoryRequest;
         }
 
         public String getName() {
@@ -123,6 +125,10 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
             return memoryLimit;
         }
 
+        public int getMemoryRequest() {
+            return memoryRequest;
+        }
+
         public String getFsWriteMetrics() {
             return fsWriteMetrics;
         }
@@ -166,8 +172,9 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 String containerName = artifactJson.getString("name");
                 int cpu = artifactJson.getInt("cpuRequest");
                 int memory = artifactJson.getInt("memoryRequest");
+                int memoryLimit = artifactJson.optInt("memoryLimit", (int)(memory * 1.25));
 
-                ContainerMetrics cont = new ContainerMetrics(containerName, cpu, memory);
+                ContainerMetrics cont = new ContainerMetrics(containerName, cpu, memoryLimit, memory);
                 cont.setCpuMetrics(loadArtifact(containerName, "-cpu"));
                 cont.setCpuUserMetrics(loadArtifact(containerName, "-cpu-user"));
                 cont.setCpuSystemMetrics(loadArtifact(containerName, "-cpu-system"));

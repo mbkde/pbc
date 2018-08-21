@@ -322,14 +322,14 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     }
 
     private ReservationSize createReservationSize(String name, BuildContext context) {
-        int cpuRequest;
-        int memoryRequest;
         Map<String, String> cc = context.getBuildResult().getCustomBuildData();
         String cpuReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".cpu", "0");
         String memReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".memory", "0");
-        cpuRequest = Integer.parseInt(cpuReq);
-        memoryRequest = Integer.parseInt(memReq);
-        return new ReservationSize(name, cpuRequest, memoryRequest);
+        String memLimitReq = cc.getOrDefault(Configuration.DOCKER_IMAGE_DETAIL + "." + name + ".memoryLimit", "0");
+        int cpuRequest = Integer.parseInt(cpuReq);
+        int memoryRequest = Integer.parseInt(memReq);
+        int memoryLimit = Integer.parseInt(memLimitReq);
+        return new ReservationSize(name, cpuRequest, memoryRequest, memoryLimit);
     }
 
     private JSONObject generateArtifactDetailsJson(ReservationSize reservation) {
@@ -337,6 +337,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         artifactDetails.put("name", reservation.name);
         artifactDetails.put("cpuRequest", reservation.cpu);
         artifactDetails.put("memoryRequest", reservation.memory);
+        artifactDetails.put("memoryLimit", reservation.memoryLimit);
         return artifactDetails;
     }
 
@@ -362,12 +363,16 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         private final int cpu;
         private final int memory;
         private final long memoryInBytes;
+        private final int memoryLimit;
+        private final long memoryLimitInBytes;
 
-        ReservationSize(String name, int cpu, int memory) {
+        ReservationSize(String name, int cpu, int memory, int memoryLimit) {
             this.name = name;
             this.cpu = cpu;
             this.memory = memory;
             this.memoryInBytes = (long)memory * 1000000;
+            this.memoryLimit = memoryLimit;
+            this.memoryLimitInBytes = (long)memoryLimit * 1000000;
         }
         
     }
