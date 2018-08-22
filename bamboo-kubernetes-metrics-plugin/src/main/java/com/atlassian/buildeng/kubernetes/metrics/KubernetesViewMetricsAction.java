@@ -23,6 +23,7 @@ import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
+import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
@@ -172,7 +173,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 String containerName = artifactJson.getString("name");
                 int cpu = artifactJson.getInt("cpuRequest");
                 int memory = artifactJson.getInt("memoryRequest");
-                int memoryLimit = artifactJson.optInt("memoryLimit", (int)(memory * 1.25));
+                int memoryLimit = artifactJson.optInt("memoryLimit", 
+                        (int)(memory * DefaultContainerSizeDescriptor.SOFT_TO_HARD_LIMIT_RATIO));
 
                 ContainerMetrics cont = new ContainerMetrics(containerName, cpu, memoryLimit, memory);
                 cont.setCpuMetrics(loadArtifact(containerName, "-cpu"));

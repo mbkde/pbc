@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     private static final Logger logger = LoggerFactory.getLogger(DefaultContainerSizeDescriptor.class);
     
-    private static final double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
+    public static final double SOFT_TO_HARD_LIMIT_RATIO = 1.25;
 
     //*******************************************
     //NOTE: when changing values here also change them in the kubernetes plugin's default json.
