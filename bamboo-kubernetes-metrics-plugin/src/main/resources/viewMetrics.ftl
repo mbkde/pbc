@@ -176,11 +176,16 @@ var generateNewCPUGraph = function(containerName, cpuUserMetrics, cpuSystemMetri
     cpuGraph.render();
 }
 
-var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRssMetrics, memoryCacheMetrics, memoryLimit) {
+var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRssMetrics, memoryCacheMetrics,
+     memoryLimit, memoryReservation) {
     // sort of a hack to get an array with the same structure and size and populate it with the limit
     var limit = JSON.parse(JSON.stringify(memorySwapMetrics));
     for (var i = 0; i < limit.length; i++) {
         limit[i]["y"] = memoryLimit * 1000000;
+    }
+    var reserve = JSON.parse(JSON.stringify(memorySwapMetrics));
+    for (var i = 0; i < reserve.length; i++) {
+        reserve[i]["y"] = memoryReservation * 1000000;
     }
     var memoryGraph = new Rickshaw.Graph( {
         element: document.querySelector("#" + containerName + "-memory-chart"),
@@ -190,7 +195,8 @@ var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRs
             {"color": "steelblue", "name": "rss", renderer: "area", "data": memoryRssMetrics},
             {"color": "lightblue", "name": "cache", renderer: "area", "data": memoryCacheMetrics},
             {"color": "red", "name": "swap", renderer: "area", "data": memorySwapMetrics},
-            {"color": "yellow", "name": "container limit", "renderer" : "line", "data" : limit}
+            {"color": "yellow", "name": "container limit", "renderer" : "line", "data" : limit},
+            {"color": "silver", "name": "container reservation", "renderer" : "line", "data" : reserve}
         ],
     });
 
@@ -202,20 +208,20 @@ var generateNewMemoryGraph = function(containerName, memorySwapMetrics, memoryRs
         graph: memoryGraph,
         legend: legend
     });
-    generateMemoryGraphCommon(containerName, memoryGraph, memoryLimit);
+    generateMemoryGraphCommon(containerName, memoryGraph);
 }
 
-var generateOldMemoryGraph = function(containerName, memoryMetrics, memoryLimit) {
+var generateOldMemoryGraph = function(containerName, memoryMetrics) {
     var memoryGraph = new Rickshaw.Graph( {
         element: document.querySelector("#" + containerName + "-memory-chart"),
         renderer: 'line',
         interpolation: 'linear',
         series: [{"color": "steelblue", "name": "memory", "data": memoryMetrics}],
     });
-    generateMemoryGraphCommon(containerName, memoryGraph, memoryLimit);
+    generateMemoryGraphCommon(containerName, memoryGraph);
 }
 
-var generateMemoryGraphCommon = function(containerName, memoryGraph, memoryLimit) {
+var generateMemoryGraphCommon = function(containerName, memoryGraph) {
     var xAxisMemory = new Rickshaw.Graph.Axis.Time( { graph: memoryGraph } );
 
     var yAxisMemory = new Rickshaw.Graph.Axis.Y( {
@@ -250,11 +256,11 @@ generateOldCPUGraph("${container.name}", ${container.cpuMetrics});
 [#if container.memoryRssMetrics??]
 
 generateNewMemoryGraph("${container.name}", ${container.memorySwapMetrics}, ${container.memoryRssMetrics},
- ${container.memoryCacheMetrics}, ${container.memoryLimit});
+ ${container.memoryCacheMetrics}, ${container.memoryLimit}, ${container.memoryRequest});
 
 [#else]
 
-generateOldMemoryGraph("${container.name}", ${container.memoryMetrics}, ${container.memoryLimit});
+generateOldMemoryGraph("${container.name}", ${container.memoryMetrics});
 
 [/#if]
 
