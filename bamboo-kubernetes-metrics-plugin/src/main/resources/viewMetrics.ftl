@@ -13,7 +13,12 @@
 <link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/rickshaw.css">
 <link type="text/css" rel="stylesheet" href="${req.contextPath}/download/resources/com.atlassian.buildeng.bamboo-kubernetes-metrics-plugin:kubernetes-metrics-resources/graph.css">
 <h1>PBC Container Metrics</h1>
-Shows CPU and memory unitization of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing. Look for an error at the very end of the build log: "Failed to execute plugin 'Retreive Container Metrics from Prometheus' with error: ...".
+Shows various metrics such as CPU and memory utilisation of PBC containers used in the build. If absent, the metrics were likely not generated or data is missing.
+Look for an error at the very end of the build log: "Failed to execute plugin 'Retrieve Container Metrics from Prometheus' with error: ...".
+<br>
+These metrics are obtained from the underlying Linux cgroups for the Docker containers. For more information, see the
+<a href="https://docs.docker.com/config/containers/runmetrics/#metrics-from-cgroups-memory-cpu-block-io">official Docker documentation</a>
+Note that "cache" memory is included when calculating the total memory used against the container limit.
 [#list containerList as container]
 <h2>Container:${container.name}</h2>
 <h3>Memory usage</h3>
@@ -35,7 +40,7 @@ Shows CPU and memory unitization of PBC containers used in the build. If absent,
     <div class="legend" id="${container.name}-fs-chart-legend"></div>
 </div>
 [/#list]
-<h2 id="network-h2">Per Pod Network read/write IO per second</h2>
+<h2 id="network-h2">Per pod network read/write IO per second</h2>
 <div class="chartContainer">
     <div class="yAxis" id="all-y-axis-net"></div>
     <div class="chart" id="all-net-chart"></div>
