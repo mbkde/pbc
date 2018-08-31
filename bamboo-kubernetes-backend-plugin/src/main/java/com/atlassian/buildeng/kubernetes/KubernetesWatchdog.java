@@ -61,6 +61,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
@@ -564,9 +565,12 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static class ContainerErrorStates implements TerminatePodSelector {
 
         private List<String> errorStates(Pod pod) {
-            return Stream.concat(
-                    waitingStateErrorsStream(pod),
-                    terminatedStateErrorsStream(pod)).collect(Collectors.toList());
+            return Stream.of(
+                        waitingStateErrorsStream(pod),
+                        terminatedStateErrorsStream(pod),
+                        terminatedStateOomKilledStream(pod))
+                    .flatMap(Function.identity())
+                    .collect(Collectors.toList());
         }
         
         @Override
@@ -613,6 +617,15 @@ public class KubernetesWatchdog extends WatchdogJob {
                             + (StringUtils.isBlank(t.getState().getTerminated().getMessage())
                                     ? "<no details>" : t.getState().getTerminated().getMessage()));
         }
+        
+        private Stream<String> terminatedStateOomKilledStream(Pod pod) {
+            return pod.getStatus().getContainerStatuses().stream()
+                    .filter((ContainerStatus t) -> t.getState().getTerminated() != null)
+                    .filter((ContainerStatus t) ->
+                            "OOMKilled".equals(t.getState().getTerminated().getReason()))
+                    .map((ContainerStatus t) -> t.getName() + ":" +  t.getState().getTerminated().getReason());
+        }
+        
         
     }
 }
