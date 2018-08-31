@@ -535,7 +535,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                     .findFirst().get().getState().getTerminated().getMessage();
             return () -> deletePod(
                     client, pod, "Bamboo agent container prematurely exited" 
-                            + (message != null ? ":" + message : ""), false);
+                            + (message != null ? " : " + message : ""), false);
         }
         
     }
