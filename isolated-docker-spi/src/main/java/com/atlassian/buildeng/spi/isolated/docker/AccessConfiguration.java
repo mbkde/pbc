@@ -44,6 +44,7 @@ public class AccessConfiguration {
     private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
     private static final String ENV_MODULE = "pbcEnvironment";
     private static final String DOCKERTASK_MODULE = "dockertask";
+    private static String DEFAULT_IMAGE;
     
     /**
      * Constructs Configuration object for given key value pair. 
@@ -51,7 +52,7 @@ public class AccessConfiguration {
      */
     @Nonnull
     public static Configuration forMap(@Nonnull Map<String, String> cc) {
-        return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
+        return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, DEFAULT_IMAGE))
                     .withEnabled(Boolean.parseBoolean(cc.getOrDefault(ENABLED_FOR_JOB, "false")))
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE,
                             Configuration.ContainerSize.REGULAR.name())))
@@ -132,7 +133,7 @@ public class AccessConfiguration {
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, DEFAULT_IMAGE))
                 .withEnabled(taskDefinition.isEnabled())
                 .withImageSize(Configuration.ContainerSize.valueOf(
                         cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
@@ -166,5 +167,9 @@ public class AccessConfiguration {
         return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
                 environment.getId()).getOrDefault(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE,
                         Collections.emptyMap()));
+    }
+
+    public static void setDefaultImage(String defaultImage) {
+        DEFAULT_IMAGE = defaultImage;
     }
 }
