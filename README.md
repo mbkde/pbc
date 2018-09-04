@@ -14,7 +14,7 @@ Bamboo Compatibility Note
 =========================
 
 * Version 1.x (currently latest is 1.228) was compiled against Bamboo 6.2.0 and should work in any version above that as well.
-* Version 2.x (current master branch) only works in 6.6.0 and later.  Everyone one is encouraged to upgrade to that version.
+* Version 2.x (current master branch) only works in 6.6.0 and later.  Everyone is encouraged to upgrade to this version.
 It it's using a different UI for configuration of the feature. Instead of Miscellaneous tab for Jobs and task for Deployments,
 it's using the new Docker tab in both. 
 
