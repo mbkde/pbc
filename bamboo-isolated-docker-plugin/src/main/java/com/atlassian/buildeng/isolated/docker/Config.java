@@ -16,6 +16,9 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+/**
+ * Simply used for REST JSON serialization/deserialization.
+ */
 public class Config {
     public String defaultImage;
 

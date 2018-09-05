@@ -29,9 +29,12 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 
 
+/**
+ * Spring component that provides access to settings set in the administration panel.
+ */
 public class GlobalConfiguration {
 
-    static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.isolated.docker.default.image";
+    static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
@@ -56,7 +59,6 @@ public class GlobalConfiguration {
         if (!StringUtils.equals(defaultImage, getDefaultImage())) {
             auditLogEntry("PBC Default Image", getDefaultImage(), defaultImage);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DEFAULT_IMAGE, defaultImage);
-            initAccessConfiguration();
         }
     }
 
@@ -65,11 +67,6 @@ public class GlobalConfiguration {
         AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
                 new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
-    }
-
-    @PostConstruct
-    public void initAccessConfiguration() {
-        AccessConfiguration.setDefaultImage(getDefaultImage());
     }
 }
 

@@ -65,18 +65,27 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
 
     @Override
     public DockerHandler getHandler(BuildDefinition bd, boolean create) {
-        Configuration c = bd != null ? AccessConfiguration.forBuildDefinition(bd) 
-                : ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
-        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
+        if (bd != null) {
+            Configuration ac = AccessConfiguration.forBuildDefinition(bd);
+            if (ac.getDockerImage().equals("")) {
+                ac.setDockerImage(globalConfiguration.getDefaultImage());
+            }
+        }
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService, create, c);
     }
 
     @Override
     public DockerHandler getHandler(Environment environment, boolean create) {
-        Configuration c = environment != null 
-                ? AccessConfiguration.forEnvironment(environment, environmentCustomConfigService)
-                : ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
-        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
+        if (environment != null) {
+            Configuration ac = AccessConfiguration.forEnvironment(environment, environmentCustomConfigService);
+            if (ac.getDockerImage().equals("")) {
+                ac.setDockerImage(globalConfiguration.getDefaultImage());
+            }
+        }
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService,
                 create, c);
     }
