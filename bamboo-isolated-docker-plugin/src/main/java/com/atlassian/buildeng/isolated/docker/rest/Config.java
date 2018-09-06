@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.buildeng.isolated.docker;
+package com.atlassian.buildeng.isolated.docker.rest;
 
 /**
  * Simply used for REST JSON serialization/deserialization.

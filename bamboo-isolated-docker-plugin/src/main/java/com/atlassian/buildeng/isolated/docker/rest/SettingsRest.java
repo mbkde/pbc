@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
-import com.atlassian.buildeng.isolated.docker.Config;
 import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import javax.ws.rs.Consumes;
