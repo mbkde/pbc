@@ -44,7 +44,7 @@ public class AccessConfiguration {
     private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
     private static final String ENV_MODULE = "pbcEnvironment";
     private static final String DOCKERTASK_MODULE = "dockertask";
-    
+
     /**
      * Constructs Configuration object for given key value pair. 
      * Assumes the keys relating to jobs/environments, not tasks.

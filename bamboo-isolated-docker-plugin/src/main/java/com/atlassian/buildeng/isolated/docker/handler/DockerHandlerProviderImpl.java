@@ -23,6 +23,7 @@ import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomC
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
 import com.atlassian.bamboo.template.TemplateRenderer;
+import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
@@ -40,18 +41,21 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     private final EnvironmentCustomConfigService environmentCustomConfigService;
     private final EnvironmentRequirementService environmentRequirementService;
     private final WebResourceManager webResourceManager;
+    private final GlobalConfiguration globalConfiguration;
 
     /**
      * New stateless instance.
      */
-    public DockerHandlerProviderImpl(TemplateRenderer templateRenderer, 
-            EnvironmentCustomConfigService environmentCustomConfigService, 
-            EnvironmentRequirementService environmentRequirementService,
-            WebResourceManager webResourceManager) {
+    public DockerHandlerProviderImpl(TemplateRenderer templateRenderer,
+                                     EnvironmentCustomConfigService environmentCustomConfigService,
+                                     EnvironmentRequirementService environmentRequirementService,
+                                     WebResourceManager webResourceManager,
+                                     GlobalConfiguration globalConfiguration) {
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
         this.environmentRequirementService = environmentRequirementService;
         this.webResourceManager = webResourceManager;
+        this.globalConfiguration = globalConfiguration;
     }
     
     @Override
@@ -61,18 +65,27 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
 
     @Override
     public DockerHandler getHandler(BuildDefinition bd, boolean create) {
-        Configuration c = bd != null ? AccessConfiguration.forBuildDefinition(bd) 
-                : ConfigurationBuilder.create("").withEnabled(false).build();
-        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
+        if (bd != null) {
+            Configuration ac = AccessConfiguration.forBuildDefinition(bd);
+            if (ac.getDockerImage().equals("")) {
+                ac.setDockerImage(globalConfiguration.getDefaultImage());
+            }
+        }
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService, create, c);
     }
 
     @Override
     public DockerHandler getHandler(Environment environment, boolean create) {
-        Configuration c = environment != null 
-                ? AccessConfiguration.forEnvironment(environment, environmentCustomConfigService)
-                : ConfigurationBuilder.create("").withEnabled(false).build();
-        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
+        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
+        if (environment != null) {
+            Configuration ac = AccessConfiguration.forEnvironment(environment, environmentCustomConfigService);
+            if (ac.getDockerImage().equals("")) {
+                ac.setDockerImage(globalConfiguration.getDefaultImage());
+            }
+        }
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService,
                 create, c);
     }

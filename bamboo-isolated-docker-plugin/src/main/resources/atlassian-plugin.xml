@@ -100,6 +100,31 @@ limitations under the License.
     <component key="unmetRequirements" class="com.atlassian.buildeng.isolated.docker.UnmetRequirements">
     </component>
 
+    <component key="globalConfiguration" class="com.atlassian.buildeng.isolated.docker.GlobalConfiguration">
+    </component>
+
+    <web-resource key="config-js">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+
+        <resource type="download" name="viewIsolatedDockerConfiguration.js" location="/viewIsolatedDockerConfiguration.js"/>
+        <context>viewIsolatedDockerConfiguration</context>
+    </web-resource>
+
+    <web-item key="isolated-docker-config" name="Configure PBC" section="system.admin/plugins" weight="295">
+        <description key="isolated.docker.config.link.desc"/>
+        <label key="isolated.docker.config.link.label"/>
+        <link linkId="isolated-docker-config-link">/admin/viewIsolatedDockerConfiguration.action</link>
+    </web-item>
+
+    <xwork key="isolated-docker-configuration" name="Configure PBC">
+        <package name="IsolatedDockerConfiguration" extends="admin">
+            <action name="viewIsolatedDockerConfiguration" class="com.atlassian.buildeng.isolated.docker.ConfigurationAction">
+                <result name="success" type="freemarker">/isolatedDockerConfig.ftl</result>
+            </action>
+        </package>
+    </xwork>
+
     <web-resource key="docker-ui-js" name="JavaScript to modify task panels.">
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
         <dependency>com.atlassian.auiplugin:ajs</dependency>
