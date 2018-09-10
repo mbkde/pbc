@@ -67,9 +67,9 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     public DockerHandler getHandler(BuildDefinition bd, boolean create) {
         Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
         if (bd != null) {
-            Configuration ac = AccessConfiguration.forBuildDefinition(bd);
-            if (ac.getDockerImage().equals("")) {
-                ac.setDockerImage(globalConfiguration.getDefaultImage());
+            c = AccessConfiguration.forBuildDefinition(bd);
+            if (c.getDockerImage().equals("")) {
+                c.setDockerImage(globalConfiguration.getDefaultImage());
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
@@ -80,9 +80,9 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     public DockerHandler getHandler(Environment environment, boolean create) {
         Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
         if (environment != null) {
-            Configuration ac = AccessConfiguration.forEnvironment(environment, environmentCustomConfigService);
-            if (ac.getDockerImage().equals("")) {
-                ac.setDockerImage(globalConfiguration.getDefaultImage());
+            c = AccessConfiguration.forEnvironment(environment, environmentCustomConfigService);
+            if (c.getDockerImage().equals("")) {
+                c.setDockerImage(globalConfiguration.getDefaultImage());
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
