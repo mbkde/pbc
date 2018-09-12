@@ -61,6 +61,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -80,6 +81,8 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 600;
     private static final int MAX_RETRY_COUNT = 30;
+    private static final int MAX_WAIT_FOR_TERMINATION_IN_MINUTES = 5;
+    
     
     private final ExecutorService executorService;
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
@@ -183,7 +186,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         
         killedFutures.stream().forEach((Future<Optional<TerminationReason>> t) -> {
             try {
-                Optional<TerminationReason> result = t.get();
+                Optional<TerminationReason> result = t.get(MAX_WAIT_FOR_TERMINATION_IN_MINUTES, TimeUnit.MINUTES);
                 if (result.isPresent()) {
                     TerminationReason reason = result.get();
                     pods.remove(reason.getPod());
@@ -193,6 +196,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                 logger.error("interrupted", ex);
             } catch (ExecutionException ex) {
                 logger.error("Future Execution failed", ex);
+            } catch (TimeoutException ex) {
+                logger.error("timed out", ex);
             }
         });
         if (!killedFutures.isEmpty()) {

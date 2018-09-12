@@ -51,6 +51,7 @@ class KubernetesClient {
     private String executeKubectl(String... args)
             throws InterruptedException, IOException, KubectlException {
         List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
+        kubectlArgs.add(0, Constants.KUBECTL_GLOBAL_OPTIONS);
         kubectlArgs.add(0, Constants.KUBECTL_EXECUTABLE);
         if (globalConfiguration.getCurrentContext() != null) {
             kubectlArgs.addAll(Arrays.asList("--context", globalConfiguration.getCurrentContext()));
