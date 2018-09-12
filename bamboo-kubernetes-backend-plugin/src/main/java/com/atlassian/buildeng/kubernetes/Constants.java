@@ -38,6 +38,14 @@ public interface Constants {
      */
     String STORAGE_DRIVER = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay2");
     
-
+    /**
+     * name of system property that denotes global options to pass to kubectl.
+     */
+    String KUBECTL_GLOBALOPTIONS_PROPERTY = "pbc.kubectl.options";
+    
+    /**
+     * Global options to use for every request.
+     */
+    String KUBECTL_GLOBAL_OPTIONS = System.getProperty(KUBECTL_GLOBALOPTIONS_PROPERTY, "--request-timeout=5m");
     
 }
