@@ -380,13 +380,20 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static Optional<TerminationReason> deletePod(KubernetesClient client, Pod pod, String terminationReason,
             boolean restartPod) {
         String describePod;
-        try {
-            describePod = client.describePod(pod);
-        } catch (IOException | KubernetesClient.KubectlException | InterruptedException e) {
-            describePod = String.format("Could not describe pod %s. %s", KubernetesHelper.getName(pod), e.toString());
-            logger.error(describePod);
+        //describe is expensive operation especially if a lot of events are present and the cluster is large.
+        //this condition hopes to preserve the describe for debugging purposes but avoid it in normal traffic.
+        if (logger.isDebugEnabled()) {
+            try {
+                describePod = client.describePod(pod);
+            } catch (IOException | KubernetesClient.KubectlException | InterruptedException e) {
+                describePod = String.format("Could not describe pod %s. %s", 
+                        KubernetesHelper.getName(pod), e.toString());
+                logger.error(describePod);
+            }
+        } else {
+            describePod = "Pods not described when debug logging not enabled."
+                    + "(com.atlassian.buildeng.kubernetes.KubernetesWatchdog)";
         }
-
         try {
             client.deletePod(pod);
         } catch (InterruptedException | IOException | KubernetesClient.KubectlException e) {
