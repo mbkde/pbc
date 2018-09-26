@@ -44,8 +44,18 @@ public interface Constants {
     String KUBECTL_GLOBALOPTIONS_PROPERTY = "pbc.kubectl.options";
     
     /**
+     * name of system property that denotes how long the delete opeation timeout should take.
+     */
+    String KUBECTL_DELETE_TIMEOUT_PROPERTY = "pbc.kubectl.options";
+    
+    /**
      * Global options to use for every request.
      */
     String KUBECTL_GLOBAL_OPTIONS = System.getProperty(KUBECTL_GLOBALOPTIONS_PROPERTY, "--request-timeout=5m");
+    
+    /**
+     * After what amount of time should kubeclt timeout deletes. Format of --timeout switch (1s, 2m, 1h).
+     */
+    String KUBECTL_DELETE_TIMEOUT = System.getProperty(KUBECTL_DELETE_TIMEOUT_PROPERTY, "2m");
     
 }

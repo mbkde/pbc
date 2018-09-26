@@ -98,7 +98,7 @@ class KubernetesClient {
     
     void deletePod(String podName)
             throws InterruptedException, IOException, KubectlException {
-        executeKubectl("delete", "pod", podName);
+        executeKubectl("delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
     }
     
     class KubectlException extends Exception {
