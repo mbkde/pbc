@@ -151,8 +151,21 @@ public class KubernetesWatchdog extends WatchdogJob {
 
         KubernetesClient client = new KubernetesClient(globalConfiguration);
         long clusterStateQueryTime = System.currentTimeMillis();
-        List<Pod> pods = client.getPods(
-                PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
+        List<String> terminatingPodNames = new ArrayList<>();
+        List<Pod> pods = 
+                client.getPods(PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel())
+                .stream()
+                // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
+                // being terminated, as there is no "Terminating" pod phase
+                .filter((Pod t) -> {
+                    boolean terminating =  t.getMetadata().getDeletionTimestamp() != null;
+                    if (terminating) {
+                        terminatingPodNames.add(KubernetesHelper.getName(t));
+                    }
+                    return !terminating;
+                })
+                .collect(Collectors.toList());
+        
         logger.debug("Time it took query current pods {}", 
                 Duration.ofMillis(System.currentTimeMillis() - clusterStateQueryTime));
         
@@ -170,12 +183,6 @@ public class KubernetesWatchdog extends WatchdogJob {
         
         long killingStart = System.currentTimeMillis();
         for (Pod pod : pods) {
-            // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
-            // being terminated, as there is no "Terminating" pod phase
-            if (pod.getMetadata().getDeletionTimestamp() != null) {
-                continue;
-            }
-            
             selectors.stream()
                     .filter((TerminatePodSelector t) -> t.shouldBeDeleted(pod))
                     .findFirst()
@@ -206,11 +213,6 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
   
         for (Pod pod : pods) {
-            // checking if the deletionTimestamp is set is the easiest way to determine if the pod is currently
-            // being terminated, as there is no "Terminating" pod phase
-            if (pod.getMetadata().getDeletionTimestamp() != null) {
-                continue;
-            }
             //identify if pod is stuck in "imagePullBackOff' loop.
             newBackedOff.addAll(
                     Stream.concat(
@@ -261,7 +263,13 @@ public class KubernetesWatchdog extends WatchdogJob {
             CurrentResult current = context.getCurrentResult();
             String podName = current.getCustomBuildData().get(KubernetesIsolatedDockerImpl.RESULT_PREFIX
                     + KubernetesIsolatedDockerImpl.NAME);
+            logger.debug("Processing {} with podName: {}", context.getResultKey(), podName);
             if (podName != null) {
+                if (terminatingPodNames.contains(podName)) {
+                    logger.debug("Skip handling of already terminating pod {}", podName);
+                    return;
+                }
+                
                 Long queueTime = Long.parseLong(current.getCustomBuildData().get(QUEUE_TIMESTAMP));
                 Pod pod = nameToPod.get(podName);
 
@@ -316,17 +324,17 @@ public class KubernetesWatchdog extends WatchdogJob {
                         errorUpdateHandler.recordError(context.getEntityKey(), logMessage);
                         String errorMessage = "Build terminated for queuing for too long";
 
-                        Optional<TerminationReason> deleted = deletePod(client, pod, errorMessage, false);
-                        if (deleted.isPresent()) {
-                            logger.error("{}\n{}", logMessage, deleted.get().getDescribePod());
-                        }
-
                         current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
                         generateRemoteFailEvent(context, errorMessage, podName, isolatedAgentService,
                                 eventPublisher, globalConfiguration);
 
                         killBuild(deploymentExecutionService, deploymentResultService, logger, buildQueueManager,
                                 context, current);
+
+                        Optional<TerminationReason> deleted = deletePod(client, pod, errorMessage, false);
+                        if (deleted.isPresent()) {
+                            logger.error("{}\n{}", logMessage, deleted.get().getDescribePod());
+                        }
                     }
                 }
             }
