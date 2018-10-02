@@ -83,18 +83,22 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     protected void generateMetricsGraphs(BuildLogger buildLogger, Configuration config, BuildContext context) {
         if (KUBE_POD_NAME != null) {
             if (SUBMIT_TIMESTAMP == null) {
-                buildLogger.addErrorLogEntry("No SUBMIT_TIMESTAMP environment variable found in custom build data.");
+                buildLogger.addBuildLogEntry("No SUBMIT_TIMESTAMP environment variable found in custom build data.");
                 return;
             }
             String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
             if (token == null) {
-                buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
-                return;
+                //TODO eventually remove, it's only here to allow rolling upgrade after renaming the constant.
+                token = buildContext.getCurrentResult().getCustomBuildData().remove("secureToken");
+                if (token == null) {
+                    buildLogger.addBuildLogEntry("No SecureToken found in custom build data.");
+                    return;
+                }
             }
             String prometheusUrl = buildContext.getBuildResult()
                     .getCustomBuildData().get(GlobalConfiguration.BANDANA_PROMETHEUS_URL);
             if (StringUtils.isBlank(prometheusUrl)) {
-                buildLogger.addErrorLogEntry("Prometheus URL not configured on server.");
+                buildLogger.addBuildLogEntry("Prometheus URL not configured on server.");
                 return;
             }
             
@@ -235,12 +239,12 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 Files.write(location, createJsonArtifact(toRet).toString().getBytes());
                 return toRet;
             } catch (IOException e) {
-                buildLogger.addErrorLogEntry(
+                buildLogger.addBuildLogEntry(
                         String.format("Error when attempting to write metrics file to %s", location));
                 return new Datapoint[0];
             }
         } catch (URISyntaxException | IOException | RuntimeException ex) {
-            buildLogger.addErrorLogEntry(
+            buildLogger.addBuildLogEntry(
                     String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
                             prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
             return new Datapoint[0];
