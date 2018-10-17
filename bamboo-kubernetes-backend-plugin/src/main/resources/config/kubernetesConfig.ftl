@@ -33,6 +33,38 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             </div>
         </div>
         <div class="field-group">
+            <div id="fieldArea_useClusterRegistry" class="checkbox">
+                <input type="checkbox" name="useClusterRegistry" id="useClusterRegistry" 
+                    onclick="updateClusterRegistry()" class="checkbox">
+                <label for="useClusterRegistry" id="label_useClusterRegistry">Use Cluster Registry</label>
+                <div class="description" id="desc-useClusterRegistry">
+                    When using Cluster Registry, we query the current context for clusters available 
+                    for running Bamboo agents.
+                </div>
+            </div>
+            <div class="field-group dependsClusterRegistryShow" style="display:none;">
+                <label for="clusterRegistryAvailableSelector">Available cluster label selector</label>
+                <input type="text" class="text long-field" id="clusterRegistryAvailableSelector"
+                       placeholder="If not defined, use all clusters"></input>
+                <div class="description" id="desc-clusterRegistryAvailableSelector">
+                    Provide a Kubernetes label selector to identify clusters that can run pods with Bamboo agents.
+                </div>
+            </div>
+
+            <div class="field-group dependsClusterRegistryShow" style="display:none;">
+                <label for="clusterRegistryPrimarySelector">Primary cluster label selector</label>
+                <input type="text" class="text long-field" id="clusterRegistryPrimarySelector"
+                       placeholder="If not defined, use all available clusters"></input>
+                <div class="description" id="desc-clusterRegistryPrimarySelector">
+                    Provide a Kubernetes label selector to identify clusters that should be used for new pod scheduling.
+                    If empty, will schedule on all available clusters.
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="field-group">
             <label for="podTemplate">Pod Template</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="podTemplate"></textarea>
             <div class="description" id="desc-podTemplate">

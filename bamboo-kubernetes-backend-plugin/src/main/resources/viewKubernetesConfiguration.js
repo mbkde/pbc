@@ -34,6 +34,10 @@
         AJS.$("#podTemplate").val(response.podTemplate);
         AJS.$("#containerSizes").val(response.containerSizes);
         AJS.$("#podLogsUrl").val(response.podLogsUrl);
+        AJS.$("input#useClusterRegistry").prop('checked', response.useClusterRegistry);
+        updateClusterRegistry();
+        AJS.$("#clusterRegistryAvailableSelector").val(response.clusterRegistryAvailableSelector);
+        AJS.$("#clusterRegistryPrimarySelector").val(response.clusterRegistryPrimarySelector);
     }
 
     function setRemoteConfig() {
@@ -43,6 +47,11 @@
         config.podTemplate = AJS.$("#podTemplate").val().trim();
         config.containerSizes = AJS.$("#containerSizes").val().trim();
         config.podLogsUrl = AJS.$("#podLogsUrl").val().trim();
+        var checked = AJS.$("input#useClusterRegistry").is(":checked");
+        config.useClusterRegistry = checked;
+        config.clusterRegistryAvailableSelector = AJS.$("#clusterRegistryAvailableSelector").val().trim();
+        config.clusterRegistryPrimarySelector = AJS.$("#clusterRegistryPrimarySelector").val().trim();
+        
 
         updateStatus("Saving...");
 
@@ -74,6 +83,16 @@
     function hideError() {
         AJS.$("#errorMessage").empty();
     }
+    
+    function updateClusterRegistry() {
+        var checkbox = AJS.$("input#useClusterRegistry");
+        if (checkbox.is(":checked")) {
+            AJS.$(".dependsClusterRegistryShow").show();
+        } else {
+            AJS.$(".dependsClusterRegistryShow").hide();
+        }
+    }
+    
 
 
 AJS.$(document).ready(function() {
