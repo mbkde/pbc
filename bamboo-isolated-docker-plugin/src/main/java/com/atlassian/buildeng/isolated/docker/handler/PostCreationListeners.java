@@ -76,15 +76,13 @@ public class PostCreationListeners {
     private void patchJob(Job job) {
         if (job != null && !job.hasMaster()) {
             boolean isPresent = job.getRequirementSet().getRequirements().stream()
-                    .filter((Requirement t) -> Constants.CAPABILITY_RESULT.equals(t.getKey()))
-                    .findFirst().isPresent();
+                    .anyMatch((Requirement t) -> Constants.CAPABILITY_RESULT.equals(t.getKey()));
             Configuration c = AccessConfiguration.forJob(job);
             if (!isPresent && c.isEnabled()) {
                 DockerHandlerImpl.addResultRequirement(job.getRequirementSet());
             } else if (isPresent && !c.isEnabled()) {
                 DockerHandlerImpl.removeAllRequirements(job.getRequirementSet());
             }
-            pm.savePlan(job);
         }
     }
     
@@ -93,13 +91,13 @@ public class PostCreationListeners {
             HibernateRunner.runWithHibernateSession(() -> {
                 TopLevelPlan plan = pm.getPlanByKeyIfOfType(key, TopLevelPlan.class);
                 if (plan != null && !plan.hasMaster()) {
-                    plan.getAllJobs().forEach((Job t) -> {
-                        patchJob(t);
-                    });
+                    plan.getAllJobs().forEach(this::patchJob);
+                    pm.savePlan(plan);
                 } else {
                     Job job = pm.getPlanByKeyIfOfType(key, Job.class);
                     if (job != null && !job.hasMaster()) {
                         patchJob(job);
+                        pm.savePlan(job);
                     }
                 }
                 return this;
@@ -136,14 +134,13 @@ public class PostCreationListeners {
         if (dp == null || dp.getEnvironments() == null) {
             return;
         } 
-        dp.getEnvironments().stream().forEach((Environment t) -> {
+        dp.getEnvironments().forEach((Environment t) -> {
             try {
                 List<? extends ImmutableRequirement> reqs = environmentRequirementService
                         .getRequirementsForEnvironment(t.getId());
                 Configuration c = AccessConfiguration.forEnvironment(t, environmentCustomConfigService);
                 boolean isPresent = reqs.stream()
-                        .filter((ImmutableRequirement r) -> Constants.CAPABILITY_RESULT.equals(r.getKey()))
-                        .findFirst().isPresent();
+                        .anyMatch((ImmutableRequirement r) -> Constants.CAPABILITY_RESULT.equals(r.getKey()));
                 if (!isPresent && c.isEnabled()) {
                     DockerHandlerImpl.addEnvironementRequirement(t, environmentRequirementService);
                 } else if (isPresent && !c.isEnabled()) {
