@@ -73,17 +73,20 @@ public class PostCreationListeners {
         patchByPlanKey(event.getPlanKey());
     }
 
-    private void patchJob(Job job) {
+    private boolean patchJob(Job job) {
         if (job != null && !job.hasMaster()) {
             boolean isPresent = job.getRequirementSet().getRequirements().stream()
                     .anyMatch((Requirement t) -> Constants.CAPABILITY_RESULT.equals(t.getKey()));
             Configuration c = AccessConfiguration.forJob(job);
             if (!isPresent && c.isEnabled()) {
                 DockerHandlerImpl.addResultRequirement(job.getRequirementSet());
+                return true;
             } else if (isPresent && !c.isEnabled()) {
                 DockerHandlerImpl.removeAllRequirements(job.getRequirementSet());
+                return true;
             }
         }
+        return false;
     }
     
     private void patchByPlanKey(PlanKey key) {
@@ -91,12 +94,16 @@ public class PostCreationListeners {
             HibernateRunner.runWithHibernateSession(() -> {
                 TopLevelPlan plan = pm.getPlanByKeyIfOfType(key, TopLevelPlan.class);
                 if (plan != null && !plan.hasMaster()) {
-                    plan.getAllJobs().forEach(this::patchJob);
-                    pm.savePlan(plan);
+                    boolean changedAny = plan.getAllJobs().stream()
+                            .map(this::patchJob)
+                            .filter((Boolean t) -> Boolean.TRUE.equals(t))
+                            .count() > 0;
+                    if (changedAny) {
+                        pm.savePlan(plan);
+                    }
                 } else {
                     Job job = pm.getPlanByKeyIfOfType(key, Job.class);
-                    if (job != null && !job.hasMaster()) {
-                        patchJob(job);
+                    if (job != null && !job.hasMaster() && patchJob(job)) {
                         pm.savePlan(job);
                     }
                 }
