@@ -111,6 +111,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
         } catch (KubernetesClient.KubectlException e) {
             IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
+            if (e.getCause() instanceof IOException || e.getCause() instanceof InterruptedException) {
+                logger.error("error", e);
+                callback.handle(new IsolatedDockerAgentException(e));
+            } else {
             if (e.getMessage().contains("(AlreadyExists)")) {
                 //full error message example: 
                 //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml": 
@@ -126,8 +130,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             }
             callback.handle(result);
             logger.error(e.getMessage());
-
-        } catch (IOException | InterruptedException e) {
+            }
+        } catch (IOException e) {
             logger.error("error", e);
             callback.handle(new IsolatedDockerAgentException(e));
         }
