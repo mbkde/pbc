@@ -38,26 +38,29 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                     onclick="updateClusterRegistry()" class="checkbox">
                 <label for="useClusterRegistry" id="label_useClusterRegistry">Use Cluster Registry</label>
                 <div class="description" id="desc-useClusterRegistry">
-                    When using Cluster Registry, we query the current context for clusters available 
-                    for running Bamboo agents.
+                    When using Cluster Registry, we query the current context (explicitly defined or implicit default based on bamboo server config)
+                     for cluster(s) available to run Bamboo agents on.
                 </div>
             </div>
             <div class="field-group dependsClusterRegistryShow" style="display:none;">
-                <label for="clusterRegistryAvailableSelector">Available cluster label selector</label>
+                <label for="clusterRegistryAvailableSelector">Available cluster label</label>
                 <input type="text" class="text long-field" id="clusterRegistryAvailableSelector"
-                       placeholder="If not defined, use all clusters"></input>
+                       placeholder=""></input>
                 <div class="description" id="desc-clusterRegistryAvailableSelector">
-                    Provide a Kubernetes label selector to identify clusters that can run pods with Bamboo agents.
+                    Label name on cluster(s) in registry. The expected label value is the name of context defined on Bamboo server.
+                    The value will be used to associate context (cluster url, namespace and credentials) to access the given cluster and
+                    access the cluster from Bamboo server.
                 </div>
             </div>
 
             <div class="field-group dependsClusterRegistryShow" style="display:none;">
-                <label for="clusterRegistryPrimarySelector">Primary cluster label selector</label>
+                <label for="clusterRegistryPrimarySelector">Primary cluster label</label>
                 <input type="text" class="text long-field" id="clusterRegistryPrimarySelector"
-                       placeholder="If not defined, use all available clusters"></input>
+                       placeholder="If not defined randomly select one of available clusters"></input>
                 <div class="description" id="desc-clusterRegistryPrimarySelector">
-                    Provide a Kubernetes label selector to identify clusters that should be used for new pod scheduling.
-                    If empty, will schedule on all available clusters.
+                    Label name on cluster(s) in registry. The label value doesn't matter.
+                    If present, only marked clusters will be used to schedule new pods on. If multiple are marked random one is picked.
+                    If not present on any cluster, one of available clusters is used.
                 </div>
             </div>
 
