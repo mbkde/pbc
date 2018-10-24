@@ -23,17 +23,24 @@ public class Config {
     public String containerSizes;
     public String podLogsUrl;
     public String currentContext;
+    public boolean useClusterRegistry;
+    public String clusterRegistryAvailableSelector;
+    public String clusterRegistryPrimarySelector;
 
     public Config() {
     }
 
     public Config(String sidekickImage, String currentContext, String podTemplate, 
-            String podLogsUrl, String containerSizes) {
+            String podLogsUrl, String containerSizes, boolean useClusterRegistry,
+            String clusterRegistryAvailableSelector, String clusterRegistryPrimarySelector) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
         this.podLogsUrl = podLogsUrl;
         this.containerSizes = containerSizes;
+        this.useClusterRegistry = useClusterRegistry;
+        this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+        this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
     }
 
     public String getSidekickImage() {
@@ -75,5 +82,28 @@ public class Config {
     public void setContainerSizes(String containerSizes) {
         this.containerSizes = containerSizes;
     }
-    
+
+    public boolean isUseClusterRegistry() {
+        return useClusterRegistry;
+    }
+
+    public void setUseClusterRegistry(boolean useClusterRegistry) {
+        this.useClusterRegistry = useClusterRegistry;
+    }
+
+    public String getClusterRegistryAvailableSelector() {
+        return clusterRegistryAvailableSelector;
+    }
+
+    public void setClusterRegistryAvailableSelector(String clusterRegistryAvailableSelector) {
+        this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
+    }
+
+    public String getClusterRegistryPrimarySelector() {
+        return clusterRegistryPrimarySelector;
+    }
+
+    public void setClusterRegistryPrimarySelector(String clusterRegistryPrimarySelector) {
+        this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+    }
 }

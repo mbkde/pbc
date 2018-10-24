@@ -48,6 +48,10 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_CONTAINER_SIZES = "com.atlassian.buildeng.pbc.kubernetes.containerSizes";
     static String BANDANA_POD_LOGS_URL = "com.atlassian.buildeng.pbc.kubernetes.podlogurl";
     static String BANDANA_CURRENT_CONTEXT = "com.atlassian.buildeng.pbc.kubernetes.context";
+    static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
+    static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
+    static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
+    
     private static final String MAIN_PREFIX = "main-";
     private static final String EXTRA_PREFIX = "extra-";
 
@@ -102,6 +106,26 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     public String getCurrentContext() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT);
     }
+    
+    /**
+     * use cluster registry to dynamically discover current clusters.
+     */
+    public boolean isUseClusterRegistry() {
+        Boolean val = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_USE_CLUSTER_REGISTRY);
+        return val != null ? val : false;
+    }
+    
+    public String getClusterRegistryAvailableClusterSelector() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
+    }
+    
+    public String getClusterRegistryPrimaryClusterSelector() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
+    }
+
 
     /**
      * Returns the template yaml file that encodes the server/cluster specific parts of pod definition.
@@ -126,11 +150,16 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
      * Saves changes to the configuration.
      */
     public void persist(String sidekick, String currentContext, String podTemplate, 
-            String podLogUrl, String containerSizes) throws IOException {
+            String podLogUrl, String containerSizes, 
+            boolean useClusterRegistry, String availableSelector, String primarySelector) throws IOException {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(containerSizes), "Container sizes are mandatory");
         validateContainerSizes(containerSizes);
+        if (useClusterRegistry) {
+            Preconditions.checkArgument(StringUtils.isNotBlank(availableSelector), "Clu");
+            Preconditions.checkArgument(StringUtils.isNotBlank(primarySelector), "Clu");
+        }
         
         if (!StringUtils.equals(sidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), sidekick);
@@ -151,6 +180,35 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL);
             } else {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_LOGS_URL, podLogUrl);
+            }
+        }
+        if (isUseClusterRegistry() != useClusterRegistry) {
+            auditLogEntry("PBC Kubernetes Cluster Registry", 
+                    Boolean.toString(isUseClusterRegistry()), Boolean.toString(useClusterRegistry));
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                    BANDANA_USE_CLUSTER_REGISTRY, useClusterRegistry);
+            
+        }
+        if (!StringUtils.equals(availableSelector, getClusterRegistryAvailableClusterSelector())) {
+            auditLogEntry("PBC Kubernetes Cluster Registry Available Cluster Label Selector", 
+                    getClusterRegistryAvailableClusterSelector(), availableSelector);
+            if (StringUtils.isBlank(availableSelector)) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                        BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                        BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR, availableSelector);
+            }
+        }
+        if (!StringUtils.equals(primarySelector, getClusterRegistryPrimaryClusterSelector())) {
+            auditLogEntry("PBC Kubernetes Cluster Registry primary Cluster Label Selector", 
+                    getClusterRegistryPrimaryClusterSelector(), primarySelector);
+            if (StringUtils.isBlank(primarySelector)) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                        BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                        BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
             }
         }
         if (currentContext != null) {

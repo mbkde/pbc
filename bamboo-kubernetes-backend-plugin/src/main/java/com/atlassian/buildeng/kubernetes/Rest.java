@@ -19,8 +19,6 @@ package com.atlassian.buildeng.kubernetes;
 import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -55,6 +53,9 @@ public class Rest {
         c.setPodTemplate(configuration.getPodTemplateAsString());
         c.setContainerSizes(configuration.getContainerSizesAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
+        c.setUseClusterRegistry(configuration.isUseClusterRegistry());
+        c.setClusterRegistryAvailableSelector(configuration.getClusterRegistryAvailableClusterSelector());
+        c.setClusterRegistryPrimarySelector(configuration.getClusterRegistryPrimaryClusterSelector());
         return Response.ok(c).build();
     }
 
@@ -68,7 +69,8 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                    config.getPodLogsUrl(), config.getContainerSizes());
+                    config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
+                    config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
