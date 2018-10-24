@@ -244,7 +244,12 @@ class KubernetesClient {
     }
     
     private List<String> primaryClusterRegistryContexts() throws KubectlException {
-        Supplier<String> label = () -> globalConfiguration.getClusterRegistryPrimaryClusterSelector();
+        Supplier<String> label;
+        if (StringUtils.isNotBlank(globalConfiguration.getClusterRegistryPrimaryClusterSelector())) {
+            label = () -> globalConfiguration.getClusterRegistryPrimaryClusterSelector();
+        } else {
+            label = () -> globalConfiguration.getClusterRegistryAvailableClusterSelector();
+        }
         return registryContexts(label);
     }
     
