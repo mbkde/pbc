@@ -52,6 +52,10 @@ class KubernetesClient {
     private final ContextSupplier globalSupplier = new GlobalContextSupplier();
 
     private final GlobalConfiguration globalConfiguration;
+    
+    private static final String ERROR_MESSAGE_PREFIX = "kubectl returned non-zero exit code.";
+    private static final String PROP_CONTEXT = "context";
+    
 
     KubernetesClient(GlobalConfiguration globalConfiguration) {
         this.globalConfiguration = globalConfiguration;
@@ -72,9 +76,10 @@ class KubernetesClient {
         List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
         kubectlArgs.add(0, Constants.KUBECTL_GLOBAL_OPTIONS);
         kubectlArgs.add(0, Constants.KUBECTL_EXECUTABLE);
-        if (contextSupplier != null) {
+        if (contextSupplier != null && contextSupplier.getValue() != null) {
             kubectlArgs.addAll(Arrays.asList("--context", contextSupplier.getValue()));
         }
+        logger.debug("Executing " + kubectlArgs);
         int ret;
         String output;
         try {
@@ -90,7 +95,7 @@ class KubernetesClient {
             throw new KubectlException("" + x.getMessage(), x);
         }
         if (ret != 0) {
-            throw new KubectlException("kubectl returned non-zero exit code. Output: " + output);
+            throw new KubectlException(ERROR_MESSAGE_PREFIX + " Output: " + output);
         }
         return output;
     }
@@ -101,7 +106,7 @@ class KubernetesClient {
         String label = labelName + '=' + labelValue;
         if (globalConfiguration.isUseClusterRegistry()) {
             return availableClusterRegistryContexts().stream()
-                   .flatMap((String t) -> getPodStream(t, new SimpleContextSupplier(t)))
+                   .flatMap((String t) -> getPodStream(label, new SimpleContextSupplier(t)))
                    .collect(Collectors.toList());
         } else {
             return getPodStream(label, globalSupplier).collect(Collectors.toList());
@@ -114,7 +119,7 @@ class KubernetesClient {
                 .getItems().stream()
                     .map((HasMetadata pod) -> (Pod) pod)
                     .map((Pod t) -> {
-                        t.setAdditionalProperty("context", contextHandler.getValue());
+                        t.setAdditionalProperty(PROP_CONTEXT, contextHandler.getValue());
                         return t;
                     });
     }
@@ -139,7 +144,7 @@ class KubernetesClient {
             supplier = globalSupplier;
         }
         pod = (Pod) executeKubectlAsJson(supplier, "create", "--validate=false", "-f", podFile.getAbsolutePath());
-        pod.setAdditionalProperty("context", globalSupplier.getValue());
+        pod.setAdditionalProperty(PROP_CONTEXT, globalSupplier.getValue());
         return pod;
     }
 
@@ -160,8 +165,16 @@ class KubernetesClient {
         ContextSupplier supplier;
         if (globalConfiguration.isUseClusterRegistry()) {
             availableClusterRegistryContexts().forEach((String t) -> {
-                executeKubectl(new SimpleContextSupplier(t), 
-                        "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
+                try {
+                    executeKubectl(new SimpleContextSupplier(t), 
+                            "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
+                } catch (KubectlException x) {
+                    if (x.getMessage() != null && x.getMessage().startsWith(ERROR_MESSAGE_PREFIX)) {
+                        logger.debug("swallowing error because we are executing in multiple clusters", x);
+                    } else {
+                        throw x;
+                    }
+                }
             });
         } else {
             supplier = globalSupplier;
@@ -172,7 +185,7 @@ class KubernetesClient {
     
     private List<ClusterRegistryItem> getClusters() throws KubectlException {
         //TODO only call once a few seconds.
-        String json = executeKubectl(globalSupplier, "get", "clusters");
+        String json = executeKubectl(globalSupplier, "get", "clusters", "-o", "json");
         //TODO check in future if clusterregistry.k8s.io/v1alpha1 / Cluster is supported by the client lib parsing
         JsonParser parser = new JsonParser();
         JsonElement root = parser.parse(json);
@@ -187,8 +200,9 @@ class KubernetesClient {
                         if (next != null && next.isJsonObject() 
                                 && next.getAsJsonObject().has("kind")
                                 && "Cluster".equals(next.getAsJsonObject().getAsJsonPrimitive("kind").getAsString())) {
-                            String name = next.getAsJsonObject().getAsJsonPrimitive("name").getAsString();
-                            JsonObject labels = next.getAsJsonObject().getAsJsonObject("labels");
+                            JsonObject metadata = next.getAsJsonObject().getAsJsonObject("metadata");
+                            String name = metadata.getAsJsonPrimitive("name").getAsString();
+                            JsonObject labels = metadata.getAsJsonObject("labels");
                             List<Pair<String, String>> labelList = labels == null ? Collections.emptyList()
                                     : labels.entrySet().stream()
                                             .map((Map.Entry<String, JsonElement> t) -> 
@@ -290,7 +304,7 @@ class KubernetesClient {
         
         @Override
         public String getValue() {
-            return (String) pod.getAdditionalProperties().get("context");
+            return (String) pod.getAdditionalProperties().get(PROP_CONTEXT);
         }
     }  
     
