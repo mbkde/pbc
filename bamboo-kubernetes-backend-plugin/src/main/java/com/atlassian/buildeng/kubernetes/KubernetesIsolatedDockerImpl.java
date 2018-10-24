@@ -115,21 +115,21 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.error("error", e);
                 callback.handle(new IsolatedDockerAgentException(e));
             } else {
-            if (e.getMessage().contains("(AlreadyExists)")) {
-                //full error message example: 
-                //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml": 
-                //object is being deleted: pods "plantemplates-srt-job1-..." already exists
-                result = result.withRetryRecoverable(e.getMessage());
-            } else if (e.getMessage().contains("(Timeout)")) {
-                //full error message example: 
-                //Error from server (Timeout): error when creating ".../pod158999025779701949yaml": 
-                // Timeout: request did not complete within allowed duration                
-                result = result.withRetryRecoverable(e.getMessage());
-            } else {
-                result = result.withError(e.getMessage());
-            }
-            callback.handle(result);
-            logger.error(e.getMessage());
+                if (e.getMessage().contains("(AlreadyExists)")) {
+                    //full error message example: 
+                    //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml": 
+                    //object is being deleted: pods "plantemplates-srt-job1-..." already exists
+                    result = result.withRetryRecoverable(e.getMessage());
+                } else if (e.getMessage().contains("(Timeout)")) {
+                    //full error message example: 
+                    //Error from server (Timeout): error when creating ".../pod158999025779701949yaml": 
+                    // Timeout: request did not complete within allowed duration                
+                    result = result.withRetryRecoverable(e.getMessage());
+                } else {
+                    result = result.withError(e.getMessage());
+                }
+                callback.handle(result);
+                logger.error(e.getMessage());
             }
         } catch (IOException e) {
             logger.error("error", e);
