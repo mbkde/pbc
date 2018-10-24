@@ -393,7 +393,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         if (logger.isDebugEnabled()) {
             try {
                 describePod = client.describePod(pod);
-            } catch (IOException | KubernetesClient.KubectlException | InterruptedException e) {
+            } catch (KubernetesClient.KubectlException e) {
                 describePod = String.format("Could not describe pod %s. %s", 
                         KubernetesHelper.getName(pod), e.toString());
                 logger.error(describePod);
@@ -404,7 +404,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
         try {
             client.deletePod(pod);
-        } catch (InterruptedException | IOException | KubernetesClient.KubectlException e) {
+        } catch (KubernetesClient.KubectlException e) {
             logger.error("Failed to delete pod {}. {}", KubernetesHelper.getName(pod), e);
             return Optional.empty();
         }
