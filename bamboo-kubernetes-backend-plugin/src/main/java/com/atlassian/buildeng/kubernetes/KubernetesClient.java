@@ -16,6 +16,9 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -34,6 +37,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,12 +54,20 @@ class KubernetesClient {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesClient.class);
     
     private final ContextSupplier globalSupplier = new GlobalContextSupplier();
+    private final LoadingCache<String, List<ClusterRegistryItem>> cache = 
+            CacheBuilder.newBuilder()
+                .expireAfterWrite(10, TimeUnit.SECONDS)
+                .build(new CacheLoader<String, List<ClusterRegistryItem>>() {
+                    @Override
+                    public List<ClusterRegistryItem> load(String key) throws Exception {
+                        return loadClusters();
+                    }
+                });
 
     private final GlobalConfiguration globalConfiguration;
     
     private static final String ERROR_MESSAGE_PREFIX = "kubectl returned non-zero exit code.";
     private static final String PROP_CONTEXT = "context";
-    
 
     KubernetesClient(GlobalConfiguration globalConfiguration) {
         this.globalConfiguration = globalConfiguration;
@@ -159,7 +171,7 @@ class KubernetesClient {
                 "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
     }
 
-    
+
     void deletePod(String podName)
             throws InterruptedException, IOException, KubectlException {
         ContextSupplier supplier;
@@ -182,9 +194,12 @@ class KubernetesClient {
                     "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
         }
     }
-    
+
     private List<ClusterRegistryItem> getClusters() throws KubectlException {
-        //TODO only call once a few seconds.
+        return cache.getUnchecked("cachedValue");
+    }
+
+    private List<ClusterRegistryItem> loadClusters() throws KubectlException {
         String json = executeKubectl(globalSupplier, "get", "clusters", "-o", "json");
         //TODO check in future if clusterregistry.k8s.io/v1alpha1 / Cluster is supported by the client lib parsing
         JsonParser parser = new JsonParser();
@@ -217,9 +232,9 @@ class KubernetesClient {
         }
         return items;
     }
-    
-    
-    
+
+
+
     private List<String> availableClusterRegistryContexts() throws KubectlException {
         Supplier<String> label = () -> globalConfiguration.getClusterRegistryAvailableClusterSelector();
         return registryContexts(label);
@@ -252,7 +267,7 @@ class KubernetesClient {
         }
         return registryContexts(label);
     }
-    
+
     static class KubectlException extends RuntimeException {
         KubectlException(String message) {
             super(message);
@@ -262,7 +277,7 @@ class KubernetesClient {
             super(cause);
         }
     }
-    
+
     static class ClusterRegistryItem {
         final String name;
         final List<Pair<String, String>> labels;
@@ -285,20 +300,20 @@ class KubernetesClient {
             return globalConfiguration.getCurrentContext();
         }
     }
-    
+
     private static class SimpleContextSupplier implements ContextSupplier {
         private final String context;
 
         public SimpleContextSupplier(@Nullable String context) {
             this.context = context;
         }
-        
+
         @Override
         public String getValue() {
             return context;
         }
     }
-    
+
     private static class PodContextSupplier implements ContextSupplier {
         
         private final Pod pod;
@@ -306,11 +321,11 @@ class KubernetesClient {
         public PodContextSupplier(@Nonnull Pod pod) {
             this.pod = pod;
         }
-        
+
         @Override
         public String getValue() {
             return (String) pod.getAdditionalProperties().get(PROP_CONTEXT);
         }
-    }  
-    
+    }
+
 }
