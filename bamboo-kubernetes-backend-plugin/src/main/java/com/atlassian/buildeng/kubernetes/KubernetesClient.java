@@ -54,6 +54,7 @@ class KubernetesClient {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesClient.class);
     
     private final ContextSupplier globalSupplier = new GlobalContextSupplier();
+    
     private final LoadingCache<String, List<ClusterRegistryItem>> cache = 
             CacheBuilder.newBuilder()
                 .expireAfterWrite(10, TimeUnit.SECONDS)
@@ -68,6 +69,7 @@ class KubernetesClient {
     
     private static final String ERROR_MESSAGE_PREFIX = "kubectl returned non-zero exit code.";
     private static final String PROP_CONTEXT = "context";
+    private static final String CACHED_VALUE = "cachedValue";
 
     KubernetesClient(GlobalConfiguration globalConfiguration) {
         this.globalConfiguration = globalConfiguration;
@@ -117,16 +119,34 @@ class KubernetesClient {
             throws KubectlException {
         String label = labelName + '=' + labelValue;
         if (globalConfiguration.isUseClusterRegistry()) {
-            return availableClusterRegistryContexts().stream()
-                   .flatMap((String t) -> getPodStream(label, new SimpleContextSupplier(t)))
+            List<String> available = availableClusterRegistryContexts();
+            boolean swallow = available.size() > 1;
+            return available.stream()
+                   .flatMap((String t) -> getPodStreamWrapped(label, new SimpleContextSupplier(t), swallow))
                    .collect(Collectors.toList());
         } else {
             return getPodStream(label, globalSupplier).collect(Collectors.toList());
         }
     }
     
-    private Stream<Pod> getPodStream(String label, ContextSupplier contextHandler) 
+    private Stream<Pod> getPodStreamWrapped(String label, ContextSupplier contextHandler, boolean swallowException) 
             throws KubectlException {
+        try {
+            // This is likely the only kube command that benefits from swallowing the error if multiple clusters
+            // are queried. If one cluster fails hard, we still want to have the other cleaned up properly.
+            return getPodStream(label, contextHandler);
+        } catch (KubectlException ex) {
+            if (swallowException) {
+                logger.error("Failed to load pods with Cluster Registry turned on with context:"
+                        + contextHandler.getValue(), ex);
+                return Stream.empty();
+            } else {
+                throw ex;
+            }
+        }
+    }
+    
+    private Stream<Pod> getPodStream(String label, ContextSupplier contextHandler) throws KubectlException {
         return ((KubernetesList) executeKubectlAsJson(contextHandler, "get", "pods", "--selector", label))
                 .getItems().stream()
                     .map((HasMetadata pod) -> (Pod) pod)
@@ -196,7 +216,7 @@ class KubernetesClient {
     }
 
     private List<ClusterRegistryItem> getClusters() throws KubectlException {
-        return cache.getUnchecked("cachedValue");
+        return cache.getUnchecked(CACHED_VALUE);
     }
 
     private List<ClusterRegistryItem> loadClusters() throws KubectlException {
