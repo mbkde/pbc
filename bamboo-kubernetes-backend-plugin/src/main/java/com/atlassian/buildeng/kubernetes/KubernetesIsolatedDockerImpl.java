@@ -95,10 +95,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         logger.debug("Kubernetes processing request for " + request.getResultKey());
-        Map<String, Object> template = loadTemplatePod();
-        Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
-        Map<String, Object> finalPod = mergeMap(template, podDefinition);
         try {
+            Map<String, Object> template = loadTemplatePod();
+            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
+            Map<String, Object> finalPod = mergeMap(template, podDefinition);
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
@@ -132,7 +132,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.error(e.getMessage());
             }
         } catch (IOException e) {
-            logger.error("error", e);
+            logger.error("io error", e);
+            callback.handle(new IsolatedDockerAgentException(e));
+        } catch (Throwable e) {
+            logger.error("unknown error", e);
             callback.handle(new IsolatedDockerAgentException(e));
         }
     }
