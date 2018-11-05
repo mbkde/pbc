@@ -20,6 +20,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -168,7 +169,7 @@ class KubernetesClient {
             }
             Collections.shuffle(primary);
             if (primary.isEmpty()) {
-                throw new KubectlException("Found no cluster available in cluster registry");
+                throw new ClusterRegistryKubectlException("Found no cluster available in cluster registry");
             } else {
                 supplier = new SimpleContextSupplier(primary.get(0));
             }
@@ -215,8 +216,16 @@ class KubernetesClient {
         }
     }
 
-    private List<ClusterRegistryItem> getClusters() throws KubectlException {
-        return cache.getUnchecked(CACHED_VALUE);
+    private List<ClusterRegistryItem> getClusters() throws ClusterRegistryKubectlException {
+        try {
+            return cache.getUnchecked(CACHED_VALUE);
+        } catch (UncheckedExecutionException ex) {
+            if (ex.getCause() instanceof KubectlException) {
+                throw new ClusterRegistryKubectlException(ex.getMessage(), ex.getCause());
+            }
+            logger.error("unknown failure at loading clusters from registry", ex);
+            return Collections.emptyList();
+        }
     }
 
     private List<ClusterRegistryItem> loadClusters() throws KubectlException {
@@ -232,9 +241,11 @@ class KubernetesClient {
                 if (array != null) {
                     for (Iterator iterator = array.iterator(); iterator.hasNext();) {
                         JsonElement next = (JsonElement) iterator.next();
-                        if (next != null && next.isJsonObject() 
+                        if (next != null 
+                                && next.isJsonObject() 
                                 && next.getAsJsonObject().has("kind")
-                                && "Cluster".equals(next.getAsJsonObject().getAsJsonPrimitive("kind").getAsString())) {
+                                && "Cluster".equals(next.getAsJsonObject()
+                                        .getAsJsonPrimitive("kind").getAsString())) {
                             JsonObject metadata = next.getAsJsonObject().getAsJsonObject("metadata");
                             String name = metadata.getAsJsonPrimitive("name").getAsString();
                             JsonObject labels = metadata.getAsJsonObject("labels");
@@ -255,13 +266,13 @@ class KubernetesClient {
 
 
 
-    private List<String> availableClusterRegistryContexts() throws KubectlException {
+    private List<String> availableClusterRegistryContexts() throws ClusterRegistryKubectlException {
         Supplier<String> label = () -> globalConfiguration.getClusterRegistryAvailableClusterSelector();
         return registryContexts(label);
     }
 
     private List<String> registryContexts(Supplier<String> filter) 
-            throws KubectlException {
+            throws ClusterRegistryKubectlException {
         List<ClusterRegistryItem> clusters = getClusters();
         return clusters.stream()
                 .filter((ClusterRegistryItem t) -> t.labels.stream()
@@ -278,7 +289,7 @@ class KubernetesClient {
                 .collect(Collectors.toList());
     }
     
-    private List<String> primaryClusterRegistryContexts() throws KubectlException {
+    private List<String> primaryClusterRegistryContexts() throws ClusterRegistryKubectlException {
         Supplier<String> label;
         if (StringUtils.isNotBlank(globalConfiguration.getClusterRegistryPrimaryClusterSelector())) {
             label = () -> globalConfiguration.getClusterRegistryPrimaryClusterSelector();
@@ -295,6 +306,17 @@ class KubernetesClient {
 
         public KubectlException(String message, Throwable cause) {
             super(cause);
+        }
+    }
+    
+    static class ClusterRegistryKubectlException extends KubectlException {
+
+        public ClusterRegistryKubectlException(String message) {
+            super(message);
+        }
+
+        public ClusterRegistryKubectlException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

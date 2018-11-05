@@ -109,6 +109,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                     .withCustomResultData(NAME, name)
                     .withCustomResultData(UID, pod.getMetadata().getUid()));
 
+        } catch (KubernetesClient.ClusterRegistryKubectlException e) {
+            IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
+            logger.error("Cluster Registry error:" + e.getMessage());
+            callback.handle(result.withRetryRecoverable("Cluster Registry failure: " + e.getMessage()));
         } catch (KubernetesClient.KubectlException e) {
             IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
             if (e.getCause() instanceof IOException || e.getCause() instanceof InterruptedException) {
