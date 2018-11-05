@@ -139,8 +139,18 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             logger.error("io error", e);
             callback.handle(new IsolatedDockerAgentException(e));
         } catch (Throwable e) {
-            logger.error("unknown error", e);
-            callback.handle(new IsolatedDockerAgentException(e));
+            //org.eclipse.gemini.blueprint.service.importer.ServiceProxyDestroyedException
+            //is occassionally thrown when live reloading plugins. reattempt later.
+            //do a dummy name check, not clear how this dependency is even pulled into bamboo,
+            //it's likely part of a plugin only and we would not have the class in question on classpath anyway
+            if (e.getClass().getSimpleName().equals("ServiceProxyDestroyedException")) {
+                IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
+                logger.warn("OSGi plugin system binding error:" + e.getMessage());
+                callback.handle(result.withRetryRecoverable("PBC plugin was reloading/upgrading: " + e.getMessage()));
+            } else {
+                logger.error("unknown error", e);
+                callback.handle(new IsolatedDockerAgentException(e));
+            }
         }
     }
 
@@ -167,6 +177,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @Override
     public void onStop() {
         pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
+        executor.shutdown();
     }
 
     private File createPodFile(Map<String, Object> finalPod) throws IOException {
