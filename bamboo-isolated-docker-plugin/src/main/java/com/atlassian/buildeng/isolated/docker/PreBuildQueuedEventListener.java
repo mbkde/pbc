@@ -111,7 +111,7 @@ public class PreBuildQueuedEventListener {
                 return;
             }
             ConfigurationOverride.applyOverrides(config);
-            logger.info("PBC job {} got queued.", event.getResultKey());
+            logger.debug("PBC job {} got queued.", event.getResultKey());
             config.copyToResult(buildContext.getCurrentResult(), sizeDescriptor);
             jmx.incrementQueued();
             setQueueTimestamp(buildContext);
@@ -179,7 +179,7 @@ public class PreBuildQueuedEventListener {
                                     "Build was not queued due to error:" + error);
                         } else {
                             jmx.incrementScheduled();
-                            logger.info("Scheduled {} with custom data: {}", event.getContext().getEntityKey(),
+                            logger.info("Scheduled {} with custom data: {}", event.getContext().getResultKey(),
                                     result.getCustomResultData());
                         }
                     }
@@ -237,7 +237,7 @@ public class PreBuildQueuedEventListener {
     //2 events related to deployment environments
     @EventListener
     public void deploymentTriggered(DeploymentTriggeredEvent event) {
-        logger.info("deployment triggered event for " + event.getResultKey()
+        logger.debug("deployment triggered event for " + event.getResultKey()
                 + " " + event.getContext().getDeploymentProjectName() + ":" + event.getContext().getEnvironmentName());
         DeploymentContext context = event.getContext();
         Configuration config = AccessConfiguration.forContext(context);
@@ -264,7 +264,7 @@ public class PreBuildQueuedEventListener {
     
     @EventListener
     public void deploymentFinished(DeploymentFinishedEvent event) {
-        logger.info("deployment finished event:" + event.getDeploymentResultId());
+        logger.debug("deployment finished event:" + event.getDeploymentResultId());
         ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
             DeploymentResult dr = deploymentResultService.getDeploymentResult(event.getDeploymentResultId());
             if (dr != null) {

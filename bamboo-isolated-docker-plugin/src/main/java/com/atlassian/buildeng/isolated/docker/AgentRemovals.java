@@ -41,7 +41,7 @@ public class AgentRemovals {
         String agentName = buildAgent.getName();
         buildAgent.setRequestedToBeStopped(true); // Set status correctly
         agentCommandSender.send(new StopAgentNicelyMessage(), agentId);
-        logger.info("Sent remote message to stop PBC agent {} (id: {})", agentName, agentId);
+        logger.debug("Sent remote message to stop PBC agent {} (id: {})", agentName, agentId);
     }
 
     public void stopAgentRemotely(long agentId) {
@@ -65,7 +65,7 @@ public class AgentRemovals {
             String agentName = ba.getName();
             try {
                 agentManager.removeAgent(agentId);        // Remove agent from the UI/server side
-                logger.info("Successfully removed agent {} (id: {})", agentName, agentId);
+                logger.debug("Successfully removed agent {} (id: {})", agentName, agentId);
             } catch (TimeoutException e) {
                 logger.error(String.format("timeout on removing agent %s (id: %s)", agentName, agentId), e);
             }
