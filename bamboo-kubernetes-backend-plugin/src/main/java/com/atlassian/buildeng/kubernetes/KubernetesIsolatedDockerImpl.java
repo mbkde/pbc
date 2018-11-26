@@ -17,6 +17,8 @@
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.utils.Pair;
+import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
+import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
@@ -62,22 +64,27 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
 
-    static final String RESULT_PREFIX = "result.isolated.docker.";
+    public static final String RESULT_PREFIX = "result.isolated.docker.";
     private static final String URL_POD_NAME = "POD_NAME";
     private static final String URL_CONTAINER_NAME = "CONTAINER_NAME";
     static final String UID = "uid";
-    static final String NAME = "name";
+    public static final String NAME = "name";
 
     private static final String PLUGIN_JOB_KEY = "KubernetesIsolatedDockerImpl";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
+    private static final String PLUGIN_JOB_JMX_KEY = "KubeJmxService";
+    private static final long PLUGIN_JOB_JMX_INTERVAL_MILLIS = Duration.ofSeconds(20).toMillis();
 
     private final GlobalConfiguration globalConfiguration;
+    private final KubeJmxService kubeJmxService;
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
 
-    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, PluginScheduler pluginScheduler) {
+    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, 
+            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
+        this.kubeJmxService = kubeJmxService;
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(5, 5,
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
@@ -170,13 +177,17 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
+        config.put("kubeJmxService", kubeJmxService);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class,
                 config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
+        pluginScheduler.scheduleJob(PLUGIN_JOB_JMX_KEY, JmxJob.class, 
+                config, new Date(), PLUGIN_JOB_JMX_INTERVAL_MILLIS);
     }
 
     @Override
     public void onStop() {
         pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
+        pluginScheduler.unscheduleJob(PLUGIN_JOB_JMX_KEY);
         executor.shutdown();
     }
 
