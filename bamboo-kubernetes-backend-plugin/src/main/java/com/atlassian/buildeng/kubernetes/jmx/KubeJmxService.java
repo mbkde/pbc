@@ -102,7 +102,7 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
         agentsCount.minute20.getAndSet(minutes20.get());
         agentsCount.minute25.getAndSet(minutes25.get());
         agentsCount.minute30.getAndSet(minutes30.get());
-        logger.info("total:{} 5min={} 10min={} 15min={} 20min={} 25min={} 30min={}",
+        logger.debug("total:{} 5min={} 10min={} 15min={} 20min={} 25min={} 30min={}",
                 total, minutes5, minutes10, minutes15, minutes20, minutes25, minutes30);
     }
     
