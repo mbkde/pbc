@@ -24,6 +24,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -180,6 +181,11 @@ public class PodCreator {
             }
         }
         cmds.add("--storage-driver=" + Constants.STORAGE_DRIVER);
+        if (StringUtils.isNoneBlank(Constants.DIND_EXTRA_ARGS)) {
+            //do we need to split on space
+            String[] split = StringUtils.split(Constants.DIND_EXTRA_ARGS, "");
+            cmds.addAll(Arrays.asList(split));
+        }
         return cmds;
     }
     

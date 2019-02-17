@@ -37,6 +37,10 @@ public interface Constants {
      * we need to use this one in place of the default vfs that is terribly slow.
      */
     String STORAGE_DRIVER = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay2");
+
+
+    String DIND_EXTRA_ARGS_PROPERTY = "pbc.dind.extra.args";
+    String DIND_EXTRA_ARGS = System.getProperty(DIND_EXTRA_ARGS_PROPERTY, "");
     
     /**
      * name of system property that denotes global options to pass to kubectl.
