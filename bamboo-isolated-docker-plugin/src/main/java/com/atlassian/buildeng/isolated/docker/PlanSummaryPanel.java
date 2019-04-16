@@ -18,6 +18,7 @@ package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.plan.PlanResultKey;
+import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
@@ -37,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PlanSummaryPanel implements WebPanel {
-    
+
     private final BuildQueueManager buildQueueManager;
     private final IsolatedAgentService detail;
 
@@ -45,7 +46,7 @@ public class PlanSummaryPanel implements WebPanel {
         this.buildQueueManager = buildQueueManager;
         this.detail = detail;
     }
-    
+
     @Override
     public String getHtml(Map<String, Object> context) {
         Map<PlanResultKey, BuildContext> map = mapKeyToBuildContext(buildQueueManager);
@@ -54,14 +55,17 @@ public class PlanSummaryPanel implements WebPanel {
         for (ResultsSummary brs : summary.getOrderedJobResultSummaries()) {
             BuildContext buildcontext = map.get(brs.getPlanResultKey());
             //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-            Configuration config = buildcontext != null ? AccessConfiguration.forContext(buildcontext) : AccessConfiguration.forBuildResultSummary((BuildResultsSummary) brs);
+            Configuration config = buildcontext != null ? AccessConfiguration.forContext(buildcontext) :
+                    AccessConfiguration.forBuildResultSummary((BuildResultsSummary) brs);
             if (config.isEnabled()) {
                 String error = brs.getCustomBuildData().get(Constants.RESULT_ERROR);
                 if (buildcontext != null) {
                     error = buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR);
                 }
+                final String planName = brs.getPlanIfExists().isPresent() ?
+                        brs.getPlanIfExists().get().getBuildName() : brs.getPlanName();
                 ret.append("<dt>")
-                   .append(brs.getImmutablePlan().getBuildName())
+                   .append(planName)
                    .append("</dt><dd>")
                    .append(config.getDockerImage());
                 Map<String, String> custom = SummaryPanel.createCustomDataMap(buildcontext, (BuildResultsSummary) brs);
@@ -93,7 +97,7 @@ public class PlanSummaryPanel implements WebPanel {
         Map<PlanResultKey, BuildContext> map = new HashMap<>();
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext t) -> {
             if (t instanceof BuildContext) {
-                map.put(((BuildContext)t).getPlanResultKey(), (BuildContext)t);
+                map.put(((BuildContext) t).getPlanResultKey(), (BuildContext) t);
             }
         });
         return map;
