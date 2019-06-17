@@ -18,11 +18,9 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
@@ -148,8 +146,8 @@ public final class Configuration {
                 "" + sizeDescriptor.getMemory(getSize()));
         storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit", 
                 "" + sizeDescriptor.getMemoryLimit(getSize()));
-            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu",
-                    "" + sizeDescriptor.getCpu(getSize()));
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu",
+                "" + sizeDescriptor.getCpu(getSize()));
         getExtraContainers().forEach((ExtraContainer t) -> {
             storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memory",
                     "" + sizeDescriptor.getMemory(t.getExtraSize()));
@@ -169,33 +167,23 @@ public final class Configuration {
         storageMap.remove(Configuration.DOCKER_IMAGE);
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
-        Iterator<Map.Entry<String, String>> it = storageMap.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> ent = it.next();
-            if (ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL)) {
-                it.remove();
-            }
-        }
+        storageMap.entrySet().removeIf(ent -> ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL));
     }
 
     
-    public static enum ContainerSize {
-        XXLARGE(),
-        XLARGE(),
-        LARGE(),
-        REGULAR(),
-        SMALL(),
-        XSMALL();
-
-        private ContainerSize() {
-        }
-
+    public enum ContainerSize {
+        XXLARGE,
+        XLARGE,
+        LARGE,
+        REGULAR,
+        SMALL,
+        XSMALL
     }
 
     public static class ExtraContainer {
         private final String name;
         private String image;
-        private ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
+        private ExtraContainerSize extraSize;
         private List<String> commands = Collections.emptyList();
         private List<EnvVariable> envVariables = Collections.emptyList();
 
@@ -270,15 +258,12 @@ public final class Configuration {
         }
     }
     
-    public static enum ExtraContainerSize {
-        XXLARGE(),
-        XLARGE(),
-        LARGE(),
-        REGULAR(),
-        SMALL();
-
-        private ExtraContainerSize() {
-        }
+    public enum ExtraContainerSize {
+        XXLARGE,
+        XLARGE,
+        LARGE,
+        REGULAR,
+        SMALL
     }
 
     public static final class EnvVariable {
