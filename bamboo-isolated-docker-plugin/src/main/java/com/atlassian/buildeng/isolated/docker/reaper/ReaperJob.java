@@ -76,8 +76,8 @@ public class ReaperJob implements PluginJob {
         );
 
         // Only care about agents which are remote, idle and 'old' or offline
-        deathList = agents.stream().filter( agent -> {
-            if(agent.isEnabled() && AgentQueries.isDockerAgent(agent)) {
+        deathList = agents.stream().filter(agent -> {
+            if (agent.isEnabled() && AgentQueries.isDockerAgent(agent)) {
                 PipelineDefinition definition = agent.getDefinition();
                 Date creationTime = definition.getCreationDate();
                 long currentTime = System.currentTimeMillis();
@@ -90,7 +90,7 @@ public class ReaperJob implements PluginJob {
                         || !agent.isActive();
             }
             return false;
-        }).map( agent -> {
+        }).map(agent -> {
             agent.accept(new SleeperGraveling(agentManager));
             return agent;
         }).collect(Collectors.toList());
