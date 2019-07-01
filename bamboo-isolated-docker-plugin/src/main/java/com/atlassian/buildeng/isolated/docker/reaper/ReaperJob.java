@@ -84,7 +84,7 @@ public class ReaperJob implements PluginJob {
                 return (agent.getAgentStatus().isIdle()
                         && creationTime != null
                         && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS)
-                        // Ideally Bui BuildCancelledEventListener#onOfflineAgent captures offline agents and remove them.
+                        // Ideally BuildCancelledEventListener#onOfflineAgent captures offline agents and remove them.
                         // However, the removal can fail for other reasons, e.g. bamboo is in a bad state.
                         // This condition check here works as the last defense to clean offline pbc agents
                         || !agent.isActive();
