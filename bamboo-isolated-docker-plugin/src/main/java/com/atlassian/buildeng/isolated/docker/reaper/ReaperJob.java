@@ -28,11 +28,12 @@ import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.sal.api.scheduling.PluginJob;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,28 +72,29 @@ public class ReaperJob implements PluginJob {
                 Reaper.REAPER_AGENTS_HELPER_KEY
         );
         Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
-                ExecutorQuery.newQueryWithoutAssignments(reqs)
+                ExecutorQuery.newQueryWithoutAssignments(reqs).withOfflineIncluded()
         );
-        Collection<BuildAgent> relevantAgents = new ArrayList<>();
 
-        // Only care about agents which are remote, idle and 'old'
-        for (BuildAgent agent: agents) {
-            PipelineDefinition definition = agent.getDefinition();
-            Date creationTime = definition.getCreationDate();
-            long currentTime = System.currentTimeMillis();
-            if (AgentQueries.isDockerAgent(agent)
-                    && agent.getAgentStatus().isIdle()
-                    && creationTime != null
-                    && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS) {
-                relevantAgents.add(agent);
+        // Only care about agents which are remote, idle and 'old' or offline
+        deathList = agents.stream().filter(agent -> {
+            if (agent.isEnabled() && AgentQueries.isDockerAgent(agent)) {
+                PipelineDefinition definition = agent.getDefinition();
+                Date creationTime = definition.getCreationDate();
+                long currentTime = System.currentTimeMillis();
+                return (agent.getAgentStatus().isIdle()
+                        && creationTime != null
+                        && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS)
+                        // Ideally BuildCancelledEventListener#onOfflineAgent captures offline agents and removes them.
+                        // However, the removal can fail for other reasons, e.g. bamboo is in a bad state.
+                        // This condition check here works as the last defense to clean offline pbc agents
+                        || !agent.isActive();
             }
-        }
-
-        // Disable enabled agents
-        relevantAgents.stream().filter(BuildAgent::isEnabled).forEach(agent -> {
+            return false;
+        }).map(agent -> {
             agent.accept(new SleeperGraveling(agentManager));
-            deathList.add(agent);
-        });
+            return agent;
+        }).collect(Collectors.toList());
+
         jobDataMap.put(Reaper.REAPER_DEATH_LIST, deathList);
     }
 }
