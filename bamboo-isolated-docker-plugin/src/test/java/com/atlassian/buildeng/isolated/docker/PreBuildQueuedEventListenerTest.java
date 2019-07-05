@@ -45,6 +45,7 @@ import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
+import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -110,7 +111,6 @@ public class PreBuildQueuedEventListenerTest {
     @Test
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
-        
         Mockito.doAnswer(invocation -> {
             IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
@@ -264,7 +264,6 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext parentBuildContext = mock(BuildContext.class);
         when(buildContext.getParentBuildContext()).thenReturn(parentBuildContext);
         when(parentBuildContext.getTypedPlanKey()).thenReturn(PlanKeys.getPlanKey("AAA-BBB"));
-
         return buildContext;
     }
 

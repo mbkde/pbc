@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.core.BambooEntityOid;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +32,7 @@ public final class ConfigurationBuilder {
     private Configuration.ContainerSize size = Configuration.ContainerSize.REGULAR;
     private boolean enabled = true;
     private final List<Configuration.ExtraContainer> extras = new ArrayList<>();
+    private String bambooOid;
 
     private ConfigurationBuilder(String dockerImage) {
         this.dockerImage = dockerImage;
@@ -64,9 +67,14 @@ public final class ConfigurationBuilder {
         this.dockerRole = dockerRole;
         return this;
     }
+
+    public ConfigurationBuilder withBambooOid(String bambooOid) {
+        this.bambooOid = bambooOid;
+        return this;
+    }
     
     public Configuration build() {
-        return new Configuration(enabled, dockerImage, dockerRole, size, extras);
+        return new Configuration(enabled, dockerImage, dockerRole, size, extras, bambooOid);
     }
 
 }

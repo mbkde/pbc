@@ -121,12 +121,15 @@ public class DockerHandlerImpl implements DockerHandler {
     public void enableAndUpdate(BuildDefinition buildDefinition, Job job, Map<String, Object> webFragmentsContextMap) {
         Configuration config = createFromWebContext(webFragmentsContextMap);
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
+
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_ROLE, config.getDockerRole());
+        cc.put(Configuration.DOCKER_EXTERNAL_ID, job.getParent().getOid().toString());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
+
         removeAllRequirements(job.getRequirementSet());
         addResultRequirement(job.getRequirementSet());
     }
@@ -145,7 +148,7 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_ROLE, config.getDockerRole());
-        cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
+        cc.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
         removeEnvironmentRequirements(environment, environmentRequirementService);
@@ -218,7 +221,7 @@ public class DockerHandlerImpl implements DockerHandler {
             context.put("custom.isolated.docker.image", configuration.getDockerImage());
             context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
             context.put("custom.isolated.docker.role", configuration.getDockerRole());
-            context.put("custom.isolated.docker.externalid", "TODO: How to get Oid here");
+            context.put("custom.isolated.docker.externalid", configuration.getBambooOid());
             context.put("imageSizes", getImageSizes());
             context.put("custom.isolated.docker.extraContainers", 
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());

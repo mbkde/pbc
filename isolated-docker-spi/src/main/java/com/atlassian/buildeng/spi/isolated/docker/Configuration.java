@@ -16,13 +16,13 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.core.BambooEntityOid;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 public final class Configuration {
@@ -64,14 +64,16 @@ public final class Configuration {
     private String dockerRole;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
+    private final String bambooOid;
 
     Configuration(boolean enabled, String dockerImage, String dockerRole,
-                  ContainerSize size, List<ExtraContainer> extraContainers) {
+                  ContainerSize size, List<ExtraContainer> extraContainers, String bambooOid) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
         this.dockerRole = dockerRole;
         this.size = size;
         this.extraContainers = extraContainers;
+        this.bambooOid = bambooOid;
     }
 
     public boolean isEnabled() {
@@ -91,6 +93,8 @@ public final class Configuration {
     }
 
     public String getDockerRole() { return dockerRole; }
+
+    public String getBambooOid() { return bambooOid; }
     
     /**
      * calculate cpu requirements for entire configuration.
