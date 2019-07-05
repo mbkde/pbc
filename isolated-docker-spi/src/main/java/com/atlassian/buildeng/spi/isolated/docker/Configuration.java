@@ -92,9 +92,13 @@ public final class Configuration {
         return size;
     }
 
-    public String getDockerRole() { return dockerRole; }
+    public String getDockerRole() {
+        return dockerRole;
+    }
 
-    public String getBambooOid() { return bambooOid; }
+    public String getBambooOid() {
+        return bambooOid;
+    }
     
     /**
      * calculate cpu requirements for entire configuration.
@@ -162,8 +166,8 @@ public final class Configuration {
                 "" + sizeDescriptor.getMemory(getSize()));
         storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit", 
                 "" + sizeDescriptor.getMemoryLimit(getSize()));
-            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu",
-                    "" + sizeDescriptor.getCpu(getSize()));
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu",
+                "" + sizeDescriptor.getCpu(getSize()));
         getExtraContainers().forEach((ExtraContainer t) -> {
             storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memory",
                     "" + sizeDescriptor.getMemory(t.getExtraSize()));

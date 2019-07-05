@@ -20,9 +20,7 @@ import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
-import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
-import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.task.TaskDefinition;
@@ -30,7 +28,6 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-import org.jetbrains.annotations.NonNls;
 
 import java.util.Collections;
 import java.util.Map;
@@ -56,7 +53,8 @@ public class AccessConfiguration {
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                             Configuration.ContainerSize.REGULAR.name())))
                     .withExtraContainers(
-                            ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                            ConfigurationPersistence.fromJsonString(
+                                cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                     .withRole(cc.getOrDefault(Configuration.DOCKER_ROLE, ""))
                     .withBambooOid(cc.getOrDefault(Configuration.DOCKER_EXTERNAL_ID, ""))
                     .build();

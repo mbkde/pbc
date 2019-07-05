@@ -36,10 +36,11 @@ public final class IsolatedDockerAgentRequest {
      * @param resultKey        - bamboo build result key
      * @param uniqueIdentifier - something to uniquely identifier the request with
      * @param originalQueingTimestamp - timestamp of when the job was originally queued in bamboo.
-     * @param bambooOid
+     * @param bambooOid - The oid of the plan or deployment project
      */
     public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier,
-                                      long originalQueingTimestamp, String buildKey, int retryCount, BambooEntityOid bambooOid) {
+                                      long originalQueingTimestamp, String buildKey,
+                                      int retryCount, BambooEntityOid bambooOid) {
         this.configuration = configuration;
         this.resultKey = resultKey;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -73,6 +74,8 @@ public final class IsolatedDockerAgentRequest {
         return retryCount;
     }
 
-    public BambooEntityOid getBambooOid() { return bambooOid; }
+    public BambooEntityOid getBambooOid() {
+        return bambooOid;
+    }
 
 }

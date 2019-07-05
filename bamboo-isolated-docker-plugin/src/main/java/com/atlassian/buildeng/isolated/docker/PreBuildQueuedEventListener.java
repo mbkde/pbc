@@ -159,7 +159,8 @@ public class PreBuildQueuedEventListener {
         if (event.getContext() instanceof DeploymentContext) {
             // The event is from a deployment
             DeploymentContext deploymentContext = (DeploymentContext) event.getContext();
-            entityOid = deploymentProjectService.getDeploymentProject(deploymentContext.getDeploymentProjectId()).getOid();
+            entityOid = deploymentProjectService.getDeploymentProject(
+                deploymentContext.getDeploymentProjectId()).getOid();
         } else if (event.getContext() instanceof BuildContext) {
             //The event is from a plan
             BuildContext buildContext = (BuildContext) event.getContext();
