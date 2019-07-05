@@ -94,7 +94,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
         String extraCont = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
-        Validator.validate(image, size, extraCont, errorCollection, true);
+        String role = params.getString(Configuration.TASK_DOCKER_ROLE);
+        Validator.validate(image, size, role, extraCont, errorCollection, true);
     }
     
 

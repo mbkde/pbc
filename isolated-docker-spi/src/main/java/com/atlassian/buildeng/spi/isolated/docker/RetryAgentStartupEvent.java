@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.Bamboo;
+import com.atlassian.bamboo.core.BambooEntityOid;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.event.api.AsynchronousPreferred;
 import java.util.UUID;

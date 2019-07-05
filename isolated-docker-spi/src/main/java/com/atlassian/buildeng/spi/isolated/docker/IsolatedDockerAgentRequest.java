@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
+import com.atlassian.bamboo.core.BambooEntityOid;
+
 import java.util.UUID;
 
 public final class IsolatedDockerAgentRequest {
@@ -26,22 +28,25 @@ public final class IsolatedDockerAgentRequest {
     private final long queueTimestamp;
     private final String buildKey;
     private final int retryCount;
+    private final BambooEntityOid bambooOid;
+    
 
     /**
      * @param configuration plan configuration.
      * @param resultKey        - bamboo build result key
      * @param uniqueIdentifier - something to uniquely identifier the request with
-     * @param originalQueingTimestamp - timestamp of when the job was originally queued in bamboo. 
-     *              Only relevant for monitoring purposes.
+     * @param originalQueingTimestamp - timestamp of when the job was originally queued in bamboo.
+     * @param bambooOid
      */
     public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier,
-            long originalQueingTimestamp, String buildKey, int retryCount) {
+                                      long originalQueingTimestamp, String buildKey, int retryCount, BambooEntityOid bambooOid) {
         this.configuration = configuration;
         this.resultKey = resultKey;
         this.uniqueIdentifier = uniqueIdentifier;
         this.queueTimestamp = originalQueingTimestamp;
         this.buildKey = buildKey;
         this.retryCount = retryCount;
+        this.bambooOid = bambooOid;
     }
 
     public Configuration getConfiguration() {
@@ -67,5 +72,7 @@ public final class IsolatedDockerAgentRequest {
     public int getRetryCount() {
         return retryCount;
     }
+
+    public BambooEntityOid getBambooOid() { return bambooOid; }
 
 }

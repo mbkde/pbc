@@ -82,6 +82,9 @@ public class PodCreator {
     public static final String ANN_RESULTID = "pbc.resultId";
     public static final String ANN_RETRYCOUNT = "pbc.retryCount";
     public static final String ANN_UUID = "pbc.uuid";
+    public static final String ANN_ROLE = "iam.amazonaws.com/role";
+    public static final String ANN_EXTERNALID = "iam.amazonaws.com/external-id";
+
     public static final String LABEL_PBC_MARKER = "pbc";
     public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
     
@@ -110,6 +113,9 @@ public class PodCreator {
         annotations.put(ANN_UUID,  r.getUniqueIdentifier().toString());
         annotations.put(ANN_RESULTID, r.getResultKey());
         annotations.put(ANN_RETRYCOUNT, Integer.toString(r.getRetryCount()));
+        annotations.put(ANN_ROLE, r.getConfiguration().getDockerRole());
+        annotations.put(ANN_EXTERNALID, r.getBambooOid().toString());
+
         return annotations;
     }
 

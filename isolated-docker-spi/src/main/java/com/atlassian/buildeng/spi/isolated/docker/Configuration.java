@@ -36,11 +36,15 @@ public final class Configuration {
     public static final String ENABLED_FOR_JOB = PROPERTY_PREFIX + ".enabled"; 
     public static final String DOCKER_IMAGE = PROPERTY_PREFIX + ".image"; 
     public static final String DOCKER_IMAGE_SIZE = PROPERTY_PREFIX + ".imageSize"; 
-    public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers"; 
+    public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers";
+    public static final String DOCKER_ROLE = PROPERTY_PREFIX + ".role";
+    public static final String DOCKER_EXTERNAL_ID = PROPERTY_PREFIX + ".externalid";
+
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
+    public static final String TASK_DOCKER_ROLE = "dockerRole";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
@@ -57,12 +61,15 @@ public final class Configuration {
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private String dockerImage;
+    private String dockerRole;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
 
-    Configuration(boolean enabled, String dockerImage, ContainerSize size, List<ExtraContainer> extraContainers) {
+    Configuration(boolean enabled, String dockerImage, String dockerRole,
+                  ContainerSize size, List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
+        this.dockerRole = dockerRole;
         this.size = size;
         this.extraContainers = extraContainers;
     }
@@ -82,6 +89,8 @@ public final class Configuration {
     public ContainerSize getSize() {
         return size;
     }
+
+    public String getDockerRole() { return dockerRole; }
     
     /**
      * calculate cpu requirements for entire configuration.
@@ -141,6 +150,7 @@ public final class Configuration {
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
+        storageMap.put(Configuration.DOCKER_ROLE, getDockerRole());
         storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
         //write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
@@ -168,6 +178,7 @@ public final class Configuration {
         storageMap.remove(Configuration.ENABLED_FOR_JOB);
         storageMap.remove(Configuration.DOCKER_IMAGE);
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
+        storageMap.remove(Configuration.DOCKER_ROLE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
         Iterator<Map.Entry<String, String>> it = storageMap.entrySet().iterator();
         while (it.hasNext()) {

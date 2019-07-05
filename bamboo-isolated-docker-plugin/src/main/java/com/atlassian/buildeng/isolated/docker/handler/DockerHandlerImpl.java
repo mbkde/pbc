@@ -68,6 +68,7 @@ public class DockerHandlerImpl implements DockerHandler {
     /**
      * Creates new stateful instance.
      */
+
     public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager, 
             TemplateRenderer templateRenderer, 
             EnvironmentCustomConfigService environmentCustomConfigService,
@@ -109,9 +110,10 @@ public class DockerHandlerImpl implements DockerHandler {
         String extraCont = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
         String size = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE_SIZE);
         String image = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE);
+        String role = (String) webFragmentsContextMap.get(Configuration.DOCKER_ROLE);
         String enabled = (String) webFragmentsContextMap.get(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
-        Validator.validate(image, size, extraCont, errs, false);
+        Validator.validate(image, size, role, extraCont, errs, false);
         return errs;
     }
 
@@ -122,6 +124,7 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
+        cc.put(Configuration.DOCKER_ROLE, config.getDockerRole());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         removeAllRequirements(job.getRequirementSet());
@@ -141,6 +144,7 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
+        cc.put(Configuration.DOCKER_ROLE, config.getDockerRole());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
@@ -198,6 +202,7 @@ public class DockerHandlerImpl implements DockerHandler {
         hc.setProperty(Configuration.ENABLED_FOR_JOB, enabled);
         hc.setProperty(Configuration.DOCKER_IMAGE, config.getDockerImage());
         hc.setProperty(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
+        hc.setProperty(Configuration.DOCKER_ROLE, config.getDockerRole());
         hc.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS, 
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         buildConfiguration.clearTree(Configuration.PROPERTY_PREFIX);
@@ -212,6 +217,8 @@ public class DockerHandlerImpl implements DockerHandler {
             final Map<String, Object> context = new HashMap<>();
             context.put("custom.isolated.docker.image", configuration.getDockerImage());
             context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
+            context.put("custom.isolated.docker.role", configuration.getDockerRole());
+            context.put("custom.isolated.docker.externalid", "TODO: How to get Oid here");
             context.put("imageSizes", getImageSizes());
             context.put("custom.isolated.docker.extraContainers", 
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
@@ -221,6 +228,7 @@ public class DockerHandlerImpl implements DockerHandler {
             Map<String, Object> cc = new HashMap<>();
             cc.put("image", configuration.getDockerImage());
             cc.put("imageSize", configuration.getSize().name());
+            cc.put("role", configuration.getDockerRole());
             cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
 
@@ -242,6 +250,7 @@ public class DockerHandlerImpl implements DockerHandler {
                                 Configuration.ContainerSize.REGULAR.name())))
                 .withExtraContainers(ConfigurationPersistence.fromJsonString(
                         (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withRole((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_ROLE, ""))
                 .build();
         return config;
     }

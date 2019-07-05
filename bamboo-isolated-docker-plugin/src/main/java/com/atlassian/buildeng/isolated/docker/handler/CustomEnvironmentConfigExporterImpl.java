@@ -93,9 +93,11 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String size = any.getConfiguration().get(Configuration.DOCKER_IMAGE_SIZE);
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
+            String role = any.getConfiguration().get(Configuration.DOCKER_ROLE);
+
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {        
-                Validator.validate(image, size, extraCont, coll, false);
+                Validator.validate(image, size, role, extraCont, coll, false);
                 return coll.getAllErrorMessages().stream()
                         .map((String t) -> new ValidationProblem(t))
                         .collect(Collectors.toList());

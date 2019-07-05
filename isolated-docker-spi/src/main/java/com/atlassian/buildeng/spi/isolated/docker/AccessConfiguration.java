@@ -16,11 +16,6 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_EXTRA_CONTAINERS;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.ENABLED_FOR_JOB;
-
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
@@ -51,12 +46,13 @@ public class AccessConfiguration {
      */
     @Nonnull
     public static Configuration forMap(@Nonnull Map<String, String> cc) {
-        return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
-                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(ENABLED_FOR_JOB, "false")))
-                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE,
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
+                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                             Configuration.ContainerSize.REGULAR.name())))
                     .withExtraContainers(
-                            ConfigurationPersistence.fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]")))
+                            ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                    .withRole(cc.getOrDefault(Configuration.DOCKER_ROLE, ""))
                     .build();
     }
 
@@ -102,6 +98,7 @@ public class AccessConfiguration {
                 .withExtraContainers(
                         ConfigurationPersistence.fromJsonString(
                                 config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withRole(config.getString(Configuration.DOCKER_ROLE))
                 .build();
     }
 
@@ -140,6 +137,7 @@ public class AccessConfiguration {
                 .withExtraContainers(
                         ConfigurationPersistence.fromJsonString(cc.getOrDefault(
                                 Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withRole(cc.getOrDefault(Configuration.TASK_DOCKER_ROLE, ""))
                 .build();
     }
 
