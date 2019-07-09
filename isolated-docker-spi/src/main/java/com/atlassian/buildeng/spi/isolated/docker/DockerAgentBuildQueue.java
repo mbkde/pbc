@@ -37,14 +37,17 @@ public final class DockerAgentBuildQueue {
         input -> {
             final CommonContext context = input.getView();
 
-                //this filter is crutial for BUILDENG-12837
-            final boolean isIsolated = context.getBuildKey().getKey().equals(context.getCurrentResult().getCustomBuildData().get(BUILD_KEY));
+            //this filter is crutial for BUILDENG-12837
+            final boolean isIsolated = context.getBuildKey().getKey()
+                    .equals(context.getCurrentResult().getCustomBuildData().get(BUILD_KEY));
             final Optional<CommonContext> view = isIsolated ? Optional.of(context) : Optional.empty();
             return new QueueItemView<>(input.getQueuedResultKey(), view);
         };
     
-    private static final LoadingCache<BuildQueueManager, QueueManagerView<CommonContext, Optional<CommonContext>>> cachedQueueManagerView = 
-        CacheBuilder.newBuilder().maximumSize(1).build(new CacheLoader<BuildQueueManager, QueueManagerView<CommonContext, Optional<CommonContext>>>() {
+    private static final LoadingCache<BuildQueueManager,
+            QueueManagerView<CommonContext, Optional<CommonContext>>> cachedQueueManagerView =
+        CacheBuilder.newBuilder().maximumSize(1)
+                .build(new CacheLoader<BuildQueueManager, QueueManagerView<CommonContext, Optional<CommonContext>>>() {
             @Override
             public QueueManagerView<CommonContext, Optional<CommonContext>> load(final BuildQueueManager bqm) {
                 return QueueManagerView.newView(bqm, context2QueueItem);
