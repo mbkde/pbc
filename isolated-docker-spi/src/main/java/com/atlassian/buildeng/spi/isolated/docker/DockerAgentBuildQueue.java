@@ -50,11 +50,12 @@ public final class DockerAgentBuildQueue {
                         .maximumSize(1)
                         .build(new CacheLoader<BuildQueueManager,
                                 QueueManagerView<CommonContext, Optional<CommonContext>>>() {
-                    @Override
-                    public QueueManagerView<CommonContext, Optional<CommonContext>> load(final BuildQueueManager bqm) {
-                        return QueueManagerView.newView(bqm, context2QueueItem);
-                    }
-                });
+                            @Override
+                            public QueueManagerView<CommonContext,
+                                    Optional<CommonContext>> load(final BuildQueueManager bqm) {
+                                return QueueManagerView.newView(bqm, context2QueueItem);
+                            }
+                        });
 
     private static volatile Iterable<QueueItemView<Optional<CommonContext>>> queueView = Collections.emptyList();
 
