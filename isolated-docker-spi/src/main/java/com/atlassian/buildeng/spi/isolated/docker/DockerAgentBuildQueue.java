@@ -46,8 +46,10 @@ public final class DockerAgentBuildQueue {
     
     private static final LoadingCache<BuildQueueManager,
             QueueManagerView<CommonContext, Optional<CommonContext>>> cachedQueueManagerView =
-        CacheBuilder.newBuilder().maximumSize(1)
-                .build(new CacheLoader<BuildQueueManager, QueueManagerView<CommonContext, Optional<CommonContext>>>() {
+                CacheBuilder.newBuilder()
+                        .maximumSize(1)
+                        .build(new CacheLoader<BuildQueueManager,
+                                QueueManagerView<CommonContext, Optional<CommonContext>>>() {
             @Override
             public QueueManagerView<CommonContext, Optional<CommonContext>> load(final BuildQueueManager bqm) {
                 return QueueManagerView.newView(bqm, context2QueueItem);
