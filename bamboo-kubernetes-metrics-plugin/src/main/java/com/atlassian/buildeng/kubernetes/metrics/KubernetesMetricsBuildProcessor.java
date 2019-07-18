@@ -175,10 +175,13 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         String fileName = container + suffix;
         String queryMemory = String.format(query,
                 metricName, KUBE_POD_NAME, container);
-        generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
+        Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
                 queryMemory, container, prometheusUrl, buildLogger);
-        publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+
+        if(dp.length != 0){ // Metric file exists
+            publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
+                    BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+        }
     }    
     
     
@@ -189,8 +192,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 metricName, KUBE_POD_NAME, container);
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
                 queryMemory, container, prometheusUrl, buildLogger);
-        publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+        if(dp.length != 0){ // Metric file exists
+            publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
+                    BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+        }
         return dp;
     }
 
