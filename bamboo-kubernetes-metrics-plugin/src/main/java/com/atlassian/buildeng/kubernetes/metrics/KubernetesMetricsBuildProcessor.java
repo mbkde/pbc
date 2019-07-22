@@ -249,9 +249,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 return new Datapoint[0];
             }
         } catch (URISyntaxException | IOException | RuntimeException ex) {
-            buildLogger.addBuildLogEntry(
-                    String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
-                            prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
+            logger.warn(String.format("Error when querying Prometheus server, metric won't be published: %s. Query: %s Response %s",
+                        prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
             return new Datapoint[0];
         }
     }
