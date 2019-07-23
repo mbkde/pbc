@@ -178,7 +178,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
                 queryMemory, container, prometheusUrl, buildLogger);
 
-        if(dp.length != 0){ // Metric file exists
+        if (dp.length != 0) { // Metric file exists
             publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                     BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
         }
@@ -192,7 +192,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 metricName, KUBE_POD_NAME, container);
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
                 queryMemory, container, prometheusUrl, buildLogger);
-        if(dp.length != 0){ // Metric file exists
+        if (dp.length != 0) { // Metric file exists
             publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
                     BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
         }
