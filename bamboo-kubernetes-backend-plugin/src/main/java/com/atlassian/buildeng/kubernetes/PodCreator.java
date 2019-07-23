@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -144,6 +145,9 @@ public class PodCreator {
             if (isDockerInDockerImage(t.getImage())) {
                 map.put("securityContext", ImmutableMap.of("privileged", Boolean.TRUE));
                 map.put("args", adjustCommandsForDind(t.getCommands()));
+                List<Configuration.EnvVariable> currentEnvVariable = new LinkedList<>(t.getEnvVariables());
+                currentEnvVariable.add(new Configuration.EnvVariable("DOCKER_TLS_CERTDIR", ""));
+                t.setEnvVariables(currentEnvVariable);
             } else {
                 map.put("args", t.getCommands());
             }
