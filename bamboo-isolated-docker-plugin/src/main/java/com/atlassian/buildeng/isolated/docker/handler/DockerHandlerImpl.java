@@ -148,6 +148,7 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_ROLE, config.getDockerRole());
+        cc.put(Configuration.DOCKER_EXTERNAL_ID, String.valueOf(environment.getDeploymentProjectId()));
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
