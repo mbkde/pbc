@@ -62,7 +62,6 @@ limitations under the License.
                             com.atlassian.spring.container.*;
                             com.google.common.collect.*,
                             com.google.common.base.*,
-                            com.google.common.cache.*,
                             com.google.gson.*,
                             org.slf4j.*,
                             javax.annotation.*,
