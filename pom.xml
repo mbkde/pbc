@@ -36,7 +36,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <bamboo.version>6.10.0-m067</bamboo.version>
-        <amps.version>6.2.11</amps.version>
+        <amps.version>8.0.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>3.0.4</platform.version>
         <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
@@ -117,7 +117,7 @@
             <plugins>
                 <plugin>
                     <groupId>com.atlassian.maven.plugins</groupId>
-                    <artifactId>maven-bamboo-plugin</artifactId>
+                    <artifactId>bamboo-maven-plugin</artifactId>
                     <version>${amps.version}</version>
                     <configuration>
                         <productVersion>${bamboo.version}</productVersion>
