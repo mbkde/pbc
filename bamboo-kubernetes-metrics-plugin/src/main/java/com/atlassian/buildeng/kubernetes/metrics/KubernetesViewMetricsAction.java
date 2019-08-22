@@ -194,11 +194,21 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
     private String loadArtifact(String containerName, String suffix) {
         String artifactName = ARTIFACT_PREFIX + containerName + suffix;
+
         Artifact artifact = createArtifact(
                 artifactName, resultsSummary.getPlanResultKey(),
                 resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
-        ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(
-                artifact);
+
+        ArtifactLinkDataProvider artifactLinkDataProvider;
+
+        try {
+            artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
+        } catch (IllegalArgumentException e) {
+            addActionError("Value for " + MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY + " is an empty string." +
+                "No metrics found");
+            return null;
+        }
+
         if (artifactLinkDataProvider == null) {
             addActionError("Unable to find artifact link data provider for artifact link");
             return null;

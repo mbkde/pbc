@@ -27,12 +27,9 @@ import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.PreJobActionImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -42,8 +39,6 @@ import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.codehaus.plexus.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -73,6 +68,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String SUBMIT_TIMESTAMP = System.getenv("SUBMIT_TIMESTAMP");
     private static final String STEP_PERIOD = "15s";
+
 
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager,
             ArtifactManager artifactManager) {
@@ -209,26 +205,8 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             String containerName, String prometheusUrl, BuildLogger buildLogger) {
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
         try {
-            URI uri = new URIBuilder(prometheusUrl)
-                    .setPath("api/v1/query_range")
-                    .setParameter("query", query)
-                    .setParameter("step", STEP_PERIOD)
-                    .setParameter("start", Long.toString(submitTimestamp))
-                    .setParameter("end", Long.toString(Instant.now().getEpochSecond()))
-                    .build();
-            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Accept-Charset", "UTF-8");
-            connection.setConnectTimeout((int)Duration.ofSeconds(10).toMillis());
-            connection.setReadTimeout((int)Duration.ofSeconds(60).toMillis());
-
-            String response;
-            try {
-                response = IOUtils.toString(connection.getInputStream(), "UTF-8");
-            } finally {
-                connection.disconnect();
-            }
-            JSONObject jsonResponse = new JSONObject(response);
+            JSONObject jsonResponse = QueryPrometheus.query(prometheusUrl, query, STEP_PERIOD,
+                submitTimestamp, Instant.now().getEpochSecond());
             JSONArray result = jsonResponse
                     .getJSONObject("data")
                     .getJSONArray("result");

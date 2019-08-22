@@ -28,16 +28,12 @@ import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.utils.URIBuilder;
+
 import org.codehaus.plexus.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -91,27 +87,7 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
     
     private JSONObject loadJson(String prometheusUrl, String query) throws URISyntaxException, IOException {
         long now = Instant.now().getEpochSecond();
-        URI uri = new URIBuilder(prometheusUrl)
-                .setPath("api/v1/query_range")
-                .setParameter("query", query)
-                .setParameter("step", STEP_PERIOD)
-                .setParameter("start", Long.toString(now - 1000))
-                .setParameter("end", Long.toString(now))
-                .build();
-        
-        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setRequestProperty("Accept-Charset", "UTF-8");
-        connection.setConnectTimeout((int)Duration.ofSeconds(10).toMillis());
-        connection.setReadTimeout((int)Duration.ofSeconds(60).toMillis());
-        String response;
-        try {
-            response = IOUtils.toString(connection.getInputStream(), "UTF-8");
-        } finally {
-            connection.disconnect();
-        }
-        return new JSONObject(response);
-
+        return QueryPrometheus.query(prometheusUrl, query, STEP_PERIOD, now - 1000, now);
     }
     
     private void loadImageDetails(String prometheusUrl, String query, 
