@@ -204,8 +204,7 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         try {
             artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(artifact);
         } catch (IllegalArgumentException e) {
-            addActionError("Value for " + MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY + " is an empty string." +
-                "No metrics found");
+            addActionError("Failed to get artifactLinkManager: " + e.getMessage());
             return null;
         }
 
