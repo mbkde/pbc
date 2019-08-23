@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.codehaus.plexus.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;

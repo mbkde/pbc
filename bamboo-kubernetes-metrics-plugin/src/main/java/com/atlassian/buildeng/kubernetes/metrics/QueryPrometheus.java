@@ -1,15 +1,14 @@
 package com.atlassian.buildeng.kubernetes.metrics;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.utils.URIBuilder;
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONObject;
 
 public class QueryPrometheus {
     private static final Integer MAX_RETRIES = 3;
