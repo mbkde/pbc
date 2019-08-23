@@ -10,10 +10,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 
+
 public class QueryPrometheus {
     private static final Integer MAX_RETRIES = 3;
     private static final Integer RETRY_DELAY_SECONDS = 1;
 
+    /**
+     * Static method to query prometheus.
+     */
     public static JSONObject query(String prometheusUrl, String query, String stepPeriod, Long start, Long end)
         throws URISyntaxException, IOException {
         URI uri = new URIBuilder(prometheusUrl)
@@ -34,7 +38,7 @@ public class QueryPrometheus {
 
             try {
                 response = IOUtils.toString(connection.getInputStream(), "UTF-8");
-            } catch(IOException e) {
+            } catch (IOException e) {
                 //Wait 1s before retrying
                 if (retryCount < MAX_RETRIES - 1) {
                     try {
