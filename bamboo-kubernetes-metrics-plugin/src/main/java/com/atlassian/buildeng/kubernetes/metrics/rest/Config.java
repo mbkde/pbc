@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.kubernetes.metrics.rest;
 
 /**
+ * Config that stores the prometheus url for the Kubernetes metrics backend.
  *
  * @author mkleint
  */

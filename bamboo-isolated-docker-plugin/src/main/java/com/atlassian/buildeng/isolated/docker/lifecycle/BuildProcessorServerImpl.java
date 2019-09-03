@@ -26,6 +26,7 @@ import com.atlassian.bamboo.specs.api.model.pbc.EnvProperties;
 import com.atlassian.bamboo.specs.api.model.pbc.ExtraContainerProperties;
 import com.atlassian.bamboo.specs.api.model.pbc.PerBuildContainerForJobProperties;
 import com.atlassian.bamboo.specs.api.validators.common.ValidationProblem;
+import com.atlassian.bamboo.specs.yaml.Node;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BaseConfigurablePlugin;
@@ -37,18 +38,23 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.Validator;
+import com.atlassian.buildeng.isolated.docker.yaml.YamlConfigParser;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,9 +63,8 @@ import org.slf4j.LoggerFactory;
  * after the job completion fails.
  * The one use case we know about is BUILDENG-10514 where the agent fails to run any
  * pre or post actions on the agent if artifact download fails.
- * 
  */
-public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements CustomBuildProcessorServer, 
+public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements CustomBuildProcessorServer,
         ImportExportAwarePlugin<PerBuildContainerForJob, PerBuildContainerForJobProperties> {
     private static final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
     public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
@@ -95,14 +100,14 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
 
     @NotNull
     @Override
-    public BuildContext call() throws Exception {
+    public BuildContext call() {
         Configuration conf = AccessConfiguration.forContext(buildContext);
         CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails
         // and our StopDockerAgentBuildProcessor is not executed. absence of the marker property 
         // tells us that we didn't run on agent
-        if (conf.isEnabled() &&  null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF)) {
+        if (conf.isEnabled() && null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF)) {
             CurrentlyBuilding building = buildExecutionManager.getCurrentlyBuildingByBuildResult(buildContext);
             Long agentId = null;
             if (building != null) {
@@ -111,26 +116,26 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             if (building != null && agentId != null) {
                 agentRemovals.stopAgentRemotely(agentId);
                 agentRemovals.removeAgent(agentId);
-                LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.", 
+                LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.",
                         buildContext.getBuildResultKey(), agentId);
             } else {
                 LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getBuildResultKey());
             }
-            
+
         }
         return buildContext;
     }
 
+    @NotNull
     @Override
     public Set<String> getConfigurationKeys() {
-        return new HashSet(Arrays.asList(new String[] {
-            Configuration.ENABLED_FOR_JOB,
-            Configuration.DOCKER_IMAGE,
-            Configuration.DOCKER_IMAGE_SIZE,
-            Configuration.DOCKER_EXTRA_CONTAINERS
-        }));
+        return new HashSet<>(Arrays.asList(Configuration.ENABLED_FOR_JOB,
+                Configuration.DOCKER_IMAGE,
+                Configuration.DOCKER_IMAGE_SIZE,
+                Configuration.DOCKER_EXTRA_CONTAINERS));
     }
 
+    @NotNull
     @Override
     public PerBuildContainerForJob toSpecsEntity(HierarchicalConfiguration buildConfiguration) {
         String enabled = buildConfiguration.getString(Configuration.ENABLED_FOR_JOB, "false");
@@ -152,22 +157,29 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         return new PerBuildContainerForJob().enabled(c.isEnabled())
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
-                .extraContainers(c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
-                    return new ExtraContainer()
-                        .name(t.getName())
-                        .image(t.getImage())
-                        .size(t.getExtraSize().name())
-                        .commands(t.getCommands())
-                        .envVariables(t.getEnvVariables().stream().map((Configuration.EnvVariable t2) -> {
-                            return new EnvVar(t2.getName(), t2.getValue());
-                        })
+                .extraContainers(c.getExtraContainers().stream()
+                        .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
-                }).collect(Collectors.toList()));
     }
-    
+
+    /**
+     * Converter for extra container.
+     */
+    @NotNull
+    public static Function<Configuration.ExtraContainer, ExtraContainer> getExtraContainerExtraContainerFunction() {
+        return (Configuration.ExtraContainer t) -> new ExtraContainer()
+                .name(t.getName())
+                .image(t.getImage())
+                .size(t.getExtraSize().name())
+                .commands(t.getCommands())
+                .envVariables(t.getEnvVariables().stream()
+                        .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
+                        .collect(Collectors.toList()));
+    }
+
     @Override
-    public void addToBuildConfiguration(PerBuildContainerForJobProperties specsProperties, 
-            HierarchicalConfiguration buildConfiguration) {
+    public void addToBuildConfiguration(PerBuildContainerForJobProperties specsProperties,
+                                        @NotNull HierarchicalConfiguration buildConfiguration) {
         if (specsProperties.isEnabled()) {
             //apparently unlike in CustomEnvironmentConfigPluginExporter there is no explicit validation callback
             // and the infra is not calling it either. Doing it here for the lack of a better place.
@@ -178,17 +190,33 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             if (errorCollection.hasAnyErrors()) {
                 throw new PropertiesValidationException(
                         errorCollection.getAllErrorMessages().stream()
-                            .map((String t) -> {
-                                return new ValidationProblem(t);
-                            })
-                            .collect(Collectors.toList()));
+                                .map(ValidationProblem::new)
+                                .collect(Collectors.toList()));
             }
         }
         buildConfiguration.setProperty(Configuration.ENABLED_FOR_JOB, specsProperties.isEnabled());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
-        buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS, 
+        buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 toJsonString(specsProperties.getExtraContainers()));
+    }
+
+    @Nullable
+    @Override
+    public PerBuildContainerForJob fromYaml(@NotNull Node node) {
+        YamlConfigParser parser = new YamlConfigParser();
+        Configuration config = parser.parse(node);
+        if (config == null) {
+            return null;
+        } else {
+            return new PerBuildContainerForJob()
+                    .enabled(config.isEnabled())
+                    .image(config.getDockerImage())
+                    .size(config.getSize().name())
+                    .extraContainers(config.getExtraContainers().stream()
+                            .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
+                            .collect(Collectors.toList()));
+        }
     }
 
     /**

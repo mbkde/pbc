@@ -19,7 +19,6 @@ package com.atlassian.buildeng.spi.isolated.docker;
 import com.atlassian.bamboo.core.BambooEntityOid;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -188,33 +187,23 @@ public final class Configuration {
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
         storageMap.remove(Configuration.DOCKER_ROLE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
-        Iterator<Map.Entry<String, String>> it = storageMap.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> ent = it.next();
-            if (ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL)) {
-                it.remove();
-            }
-        }
+        storageMap.entrySet().removeIf(ent -> ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL));
     }
 
     
-    public static enum ContainerSize {
-        XXLARGE(),
-        XLARGE(),
-        LARGE(),
-        REGULAR(),
-        SMALL(),
-        XSMALL();
-
-        private ContainerSize() {
-        }
-
+    public enum ContainerSize {
+        XXLARGE,
+        XLARGE,
+        LARGE,
+        REGULAR,
+        SMALL,
+        XSMALL
     }
 
     public static class ExtraContainer {
         private final String name;
         private String image;
-        private ExtraContainerSize extraSize = ExtraContainerSize.REGULAR;
+        private ExtraContainerSize extraSize;
         private List<String> commands = Collections.emptyList();
         private List<EnvVariable> envVariables = Collections.emptyList();
 
@@ -289,15 +278,12 @@ public final class Configuration {
         }
     }
     
-    public static enum ExtraContainerSize {
-        XXLARGE(),
-        XLARGE(),
-        LARGE(),
-        REGULAR(),
-        SMALL();
-
-        private ExtraContainerSize() {
-        }
+    public enum ExtraContainerSize {
+        XXLARGE,
+        XLARGE,
+        LARGE,
+        REGULAR,
+        SMALL
     }
 
     public static final class EnvVariable {

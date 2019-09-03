@@ -21,72 +21,83 @@ import com.atlassian.bamboo.specs.api.builders.deployment.configuration.Environm
 import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
 import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
 import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment;
+import com.atlassian.bamboo.specs.api.exceptions.PropertiesValidationException;
 import com.atlassian.bamboo.specs.api.model.deployment.configuration.AnyPluginConfigurationProperties;
 import com.atlassian.bamboo.specs.api.model.deployment.configuration.EnvironmentPluginConfigurationProperties;
 import com.atlassian.bamboo.specs.api.model.pbc.PerBuildContainerForEnvironmentProperties;
 import com.atlassian.bamboo.specs.api.validators.common.ValidationProblem;
+import com.atlassian.bamboo.specs.yaml.Node;
 import com.atlassian.bamboo.task.export.TaskValidationContext;
 import com.atlassian.bamboo.util.Narrow;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
+import com.atlassian.buildeng.isolated.docker.yaml.YamlConfigParser;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.jetbrains.annotations.NotNull;
+
 public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentConfigPluginExporter {
 
     // these things can never ever change value, because they end up as part of export
-    static final String ENV_CONFIG_MODULE_KEY = 
+    static final String ENV_CONFIG_MODULE_KEY =
             "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
 
+    @NotNull
     @Override
-    public EnvironmentPluginConfiguration toSpecsEntity(Map<String, String> map) {
+    public EnvironmentPluginConfiguration toSpecsEntity(@NotNull Map<String, String> map) {
         Configuration config = AccessConfiguration.forMap(map);
         return new PerBuildContainerForEnvironment()
                 .enabled(config.isEnabled())
                 .image(config.getDockerImage())
                 .size(config.getSize().name())
-                .extraContainers(config.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
-                    return new ExtraContainer()
-                        .name(t.getName())
-                        .image(t.getImage())
-                        .size(t.getExtraSize().name())
-                        .commands(t.getCommands())
-                        .envVariables(t.getEnvVariables().stream().map((Configuration.EnvVariable t2) -> {
-                            return new EnvVar(t2.getName(), t2.getValue());
-                        })
+                .extraContainers(config.getExtraContainers().stream()
+                        .map((Configuration.ExtraContainer t) ->
+                                new ExtraContainer()
+                                        .name(t.getName())
+                                        .image(t.getImage())
+                                        .size(t.getExtraSize().name())
+                                        .commands(t.getCommands())
+                                        .envVariables(t.getEnvVariables().stream()
+                                                .map((Configuration.EnvVariable t2)
+                                                        -> new EnvVar(t2.getName(), t2.getValue()))
+                                                .collect(Collectors.toList())))
                         .collect(Collectors.toList()));
-                }).collect(Collectors.toList()));
     }
 
+    @NotNull
     @Override
-    public Map<String, String> toConfiguration(EnvironmentPluginConfigurationProperties epcp) {
+    public Map<String, String> toConfiguration(@NotNull EnvironmentPluginConfigurationProperties epcp) {
         final AnyPluginConfigurationProperties any = Narrow.downTo(epcp, AnyPluginConfigurationProperties.class);
         if (any != null) {
             return any.getConfiguration();
         }
-        final PerBuildContainerForEnvironmentProperties custom =  
+        final PerBuildContainerForEnvironmentProperties custom =
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (custom != null) {
-            Map<String, String> toRet = new HashMap();
+            Map<String, String> toRet = new HashMap<>();
             toRet.put(Configuration.ENABLED_FOR_JOB, "" + custom.isEnabled());
             toRet.put(Configuration.DOCKER_IMAGE, custom.getImage());
             toRet.put(Configuration.DOCKER_IMAGE_SIZE, custom.getSize());
-            toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
+            toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     BuildProcessorServerImpl.toJsonString(custom.getExtraContainers()));
             return toRet;
         }
         throw new IllegalStateException("Don't know how to import configuration of type: " + epcp.getClass().getName());
     }
 
+    @NotNull
     @Override
-    public List<ValidationProblem> validate(TaskValidationContext tvc, EnvironmentPluginConfigurationProperties epcp) {
+    public List<ValidationProblem> validate(@NotNull TaskValidationContext tvc,
+                                            @NotNull EnvironmentPluginConfigurationProperties epcp) {
         final AnyPluginConfigurationProperties any = Narrow.downTo(epcp, AnyPluginConfigurationProperties.class);
         if (any != null) {
             String enabled = any.getConfiguration().get(Configuration.ENABLED_FOR_JOB);
@@ -96,24 +107,40 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String role = any.getConfiguration().get(Configuration.DOCKER_ROLE);
 
             ErrorCollection coll = new SimpleErrorCollection();
-            if (Boolean.parseBoolean(enabled)) {        
+            if (Boolean.parseBoolean(enabled)) {
                 Validator.validate(image, size, role, extraCont, coll, false);
                 return coll.getAllErrorMessages().stream()
-                        .map((String t) -> new ValidationProblem(t))
+                        .map(ValidationProblem::new)
                         .collect(Collectors.toList());
             }
         }
-        final PerBuildContainerForEnvironmentProperties pbc = 
+        final PerBuildContainerForEnvironmentProperties pbc =
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
-            Validator.validate(pbc.getImage(), pbc.getSize(), 
+            Validator.validate(pbc.getImage(), pbc.getSize(),
                     BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
             return coll.getAllErrorMessages().stream()
-                    .map((String t) -> new ValidationProblem(t))
+                    .map(ValidationProblem::new)
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
-    
+
+    @Override
+    public PerBuildContainerForEnvironment fromYaml(@NotNull Node node) throws PropertiesValidationException {
+        YamlConfigParser parser = new YamlConfigParser();
+        Configuration config = parser.parse(node);
+        if (config == null) {
+            return null;
+        } else {
+            return new PerBuildContainerForEnvironment()
+                    .enabled(config.isEnabled())
+                    .image(config.getDockerImage())
+                    .size(config.getSize().name())
+                    .extraContainers(config.getExtraContainers().stream()
+                            .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
+                            .collect(Collectors.toList()));
+        }
+    }
 }

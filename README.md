@@ -78,9 +78,40 @@ Documentation
 * [Gotchas and known limitations](knownlimitations.md)
 * [Differences between agents on ECS and Kube](extra-containers.md)
 
-Tests
+Bamboo Specs
 =====
+YAML Bamboo Specs configuration is supported since Bamboo 6.10.0
 
+Short format
+```yaml
+version: 2
+...
+job:
+  other: 
+    pbc: mkleint/sidekick-openjdk
+
+```
+Long format
+```yaml
+version: 2
+...
+job:
+  other:
+    pbc:
+      image: mkleint/sidekick-openjdk
+      size: REGULAR # XXLARGE, XLARGE, LARGE, SMALL, XSMALL
+      extra-containers:
+         -   
+           name: test
+           image: mkleint/sidekick-openjdk-extra
+           size: REGULAR # XXLARGE, XLARGE, LARGE, SMALL
+           commands: 
+             - echo hi
+             - touch /etc/info
+           variables:
+             var1: value1
+             var2: value2
+```
 
 Contributors
 ============

@@ -40,6 +40,7 @@ limitations under the License.
         <package name="viewMetrics" extends="buildResultView">
             <action name="viewMetrics" class="com.atlassian.buildeng.kubernetes.metrics.KubernetesViewMetricsAction">
                 <result name="success" type="freemarker">/viewMetrics.ftl</result>
+                <result name="input" type="freemarker">/viewNoMetrics.ftl</result>
             </action>
         </package>
     </xwork>
