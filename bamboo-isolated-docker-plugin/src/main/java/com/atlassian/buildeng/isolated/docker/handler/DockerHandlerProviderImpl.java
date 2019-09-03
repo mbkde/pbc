@@ -22,6 +22,7 @@ import com.atlassian.bamboo.build.docker.DockerHandlerProvider;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
+import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
@@ -42,6 +43,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     private final EnvironmentRequirementService environmentRequirementService;
     private final WebResourceManager webResourceManager;
     private final GlobalConfiguration globalConfiguration;
+    private final DeploymentProjectService deploymentProjectService;
 
     /**
      * New stateless instance.
@@ -50,12 +52,13 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
                                      EnvironmentCustomConfigService environmentCustomConfigService,
                                      EnvironmentRequirementService environmentRequirementService,
                                      WebResourceManager webResourceManager,
-                                     GlobalConfiguration globalConfiguration) {
+                                     GlobalConfiguration globalConfiguration, DeploymentProjectService deploymentProjectService) {
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
         this.environmentRequirementService = environmentRequirementService;
         this.webResourceManager = webResourceManager;
         this.globalConfiguration = globalConfiguration;
+        this.deploymentProjectService = deploymentProjectService;
     }
     
     @Override
@@ -73,7 +76,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
-                environmentCustomConfigService, environmentRequirementService, create, c);
+                environmentCustomConfigService, environmentRequirementService, deploymentProjectService, create, c);
     }
 
     @Override
@@ -86,7 +89,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
-                environmentCustomConfigService, environmentRequirementService,
+                environmentCustomConfigService, environmentRequirementService, deploymentProjectService,
                 create, c);
     }
     
@@ -94,7 +97,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     public DockerHandler getHandler(Map<String, Object> webFragmentsContextMap, boolean create) {
         Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
-                environmentCustomConfigService, environmentRequirementService,
+                environmentCustomConfigService, environmentRequirementService, deploymentProjectService,
                 create, c);
     }
 
