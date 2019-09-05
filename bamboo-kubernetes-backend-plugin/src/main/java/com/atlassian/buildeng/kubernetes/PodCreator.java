@@ -114,8 +114,11 @@ public class PodCreator {
         annotations.put(ANN_UUID,  r.getUniqueIdentifier().toString());
         annotations.put(ANN_RESULTID, r.getResultKey());
         annotations.put(ANN_RETRYCOUNT, Integer.toString(r.getRetryCount()));
-        annotations.put(ANN_ROLE, r.getConfiguration().getDockerRole());
-        annotations.put(ANN_EXTERNALID, r.getBambooOid().toString());
+        String dockerRole = r.getConfiguration().getDockerRole();
+        if (!StringUtils.isEmpty(dockerRole)) {
+            annotations.put(ANN_ROLE, dockerRole);
+            annotations.put(ANN_EXTERNALID, r.getBambooOid().toString());
+        }
 
         return annotations;
     }
@@ -127,7 +130,6 @@ public class PodCreator {
         //TODO remove these two in the future, no need to have them as labels.
         labels.put(ANN_RESULTID, StringUtils.abbreviate(r.getResultKey(), 59) + "Z");
         labels.put(ANN_UUID,  r.getUniqueIdentifier().toString());
-        
         labels.put(LABEL_BAMBOO_SERVER, c.getBambooBaseUrlAskKubeLabel());
         return labels;
     }
