@@ -55,9 +55,9 @@ public class SummaryPanel implements WebPanel {
         if (configuration.isEnabled()) {
             ret.append("<h2>Built with Per-build Container Agent</h2>")
                .append("<dl class=\"details-list\"><dt>Image(s) used:</dt><dd>")
-               .append(configuration.getDockerImage());
+               .append(ConfigurationOverride.reverseRegistryOverride(configuration.getDockerImage()));
             configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
-                ret.append("<br/>").append(t.getImage());
+                ret.append("<br/>").append(ConfigurationOverride.reverseRegistryOverride(t.getImage()));
             });
             ret.append("</dd>");
 

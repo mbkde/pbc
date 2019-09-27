@@ -67,7 +67,7 @@ public class PlanSummaryPanel implements WebPanel {
                 ret.append("<dt>")
                    .append(planName)
                    .append("</dt><dd>")
-                   .append(config.getDockerImage());
+                   .append(ConfigurationOverride.reverseRegistryOverride(config.getDockerImage()));
                 Map<String, String> custom = SummaryPanel.createCustomDataMap(buildcontext, (BuildResultsSummary) brs);
                 Map<String, URL> containerLogs = detail.getContainerLogs(config, custom);
                 if (!containerLogs.isEmpty()) {
