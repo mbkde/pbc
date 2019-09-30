@@ -61,8 +61,8 @@ public class PlanSummaryPanel implements WebPanel {
                 if (buildcontext != null) {
                     error = buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR);
                 }
-                final String planName = brs.getPlanIfExists().isPresent() ?
-                        brs.getPlanIfExists().get().getBuildName() : brs.getPlanName();
+                final String planName = brs.getPlanIfExists().isPresent()
+                        ? brs.getPlanIfExists().get().getBuildName() : brs.getPlanName();
                 ret.append("<dt>")
                    .append(planName)
                    .append("</dt><dd>")
@@ -78,8 +78,8 @@ public class PlanSummaryPanel implements WebPanel {
                 }
                 if (error != null) {
                     ret.append("<br/><span class=\"errorText\">")
-                       .append(error)
-                       .append("</span>");
+                            .append(error)
+                            .append("</span>");
                 }
                 ret.append("</dd>");
             }
