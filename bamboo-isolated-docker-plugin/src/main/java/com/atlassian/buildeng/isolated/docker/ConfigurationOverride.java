@@ -1,5 +1,10 @@
 package com.atlassian.buildeng.isolated.docker;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.google.common.annotations.VisibleForTesting;
+import io.atlassian.fugue.Pair;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,15 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.google.common.annotations.VisibleForTesting;
-import io.atlassian.fugue.Pair;
 import org.apache.commons.lang3.StringUtils;
 
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public final class ConfigurationOverride {
+final class ConfigurationOverride {
     // a system property containing a map of Docker registries to replace other Docker registries when used in
     // image names. The actual format is a comma separated list of registries, where every other registry
     // is the registry that should replace the preceding registry.
@@ -28,7 +27,7 @@ public final class ConfigurationOverride {
     /**
      * Takes an existing configuration object and applies the system property overrides to it.
      */
-    public static Configuration applyOverrides(Configuration config) {
+    static Configuration applyOverrides(Configuration config) {
         for (Configuration.ExtraContainer e : config.getExtraContainers()) {
             e.setImage(overrideRegistry(e.getImage(), registryOverrides));
         }
@@ -52,7 +51,7 @@ public final class ConfigurationOverride {
     // In some situations, we replace the docker registry specified in plan config by system property pbc.
     // In order to hide that from end users, in job summary page, we need to replace the actual image with
     // the one configured in UI
-    public static String reverseRegistryOverride(String imageString) {
+    static String reverseRegistryOverride(String imageString) {
         checkNotNull(imageString);
         return reverseRegistryOverride(imageString, registryOverrides);
     }
@@ -65,10 +64,10 @@ public final class ConfigurationOverride {
             String repo = registryAndRepo.right();
             Optional<Map.Entry<String, String>> match = registryMapping
                     .entrySet()
-                    .stream().
-                            filter((it) -> { return registry.equals(it.getValue()); })
+                    .stream()
+                    .filter((it) -> { return registry.equals(it.getValue()); })
                     .findFirst();
-            if(match.isPresent()) {
+            if (match.isPresent()) {
                 return match.get().getKey() + "/" + repo;
             }
         }
