@@ -1,10 +1,5 @@
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.google.common.annotations.VisibleForTesting;
-import io.atlassian.fugue.Pair;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,6 +7,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.google.common.annotations.VisibleForTesting;
+import io.atlassian.fugue.Pair;
+import org.apache.commons.lang3.StringUtils;
+
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -64,7 +65,8 @@ public final class ConfigurationOverride {
             String repo = registryAndRepo.right();
             Optional<Map.Entry<String, String>> match = registryMapping
                     .entrySet()
-                    .stream().filter((it) -> { return registry.equals(it.getValue());})
+                    .stream().
+                            filter((it) -> { return registry.equals(it.getValue()); })
                     .findFirst();
             if(match.isPresent()) {
                 return match.get().getKey() + "/" + repo;
