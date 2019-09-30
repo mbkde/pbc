@@ -289,6 +289,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                         TerminationReason reason = terminationReasons.get(podName);
                         if (reason != null && reason.isRestartPod() 
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
+                            client.deletePod(reason.getPod());
                             retryPodCreation(context, reason.getPod(), reason.getErrorMessage(), podName,
                                     getRetryCount(reason.getPod()), eventPublisher, agentCreationRescheduler,
                                     globalConfiguration);
