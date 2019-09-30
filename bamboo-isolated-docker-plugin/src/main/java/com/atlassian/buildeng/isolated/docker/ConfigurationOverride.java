@@ -49,7 +49,8 @@ public final class ConfigurationOverride {
     }
 
     // In some situations, we replace the docker registry specified in plan config by system property pbc.
-    // In order to hide that from end users, in job summary page, we need to replace the actual image with the one configured in UI
+    // In order to hide that from end users, in job summary page, we need to replace the actual image with
+    // the one configured in UI
     public static String reverseRegistryOverride(String imageString) {
         checkNotNull(imageString);
         return reverseRegistryOverride(imageString, registryOverrides);
