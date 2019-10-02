@@ -291,7 +291,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             try {
                                 client.deletePod(reason.getPod());
-                            } catch (KubernetesClient.KubectlException e){
+                            } catch (KubernetesClient.KubectlException e) {
                                 logger.debug("Unable to delete pod before retry for reason: "
                                     + e.getMessage() + " proceeding with retry anyway");
                             }
