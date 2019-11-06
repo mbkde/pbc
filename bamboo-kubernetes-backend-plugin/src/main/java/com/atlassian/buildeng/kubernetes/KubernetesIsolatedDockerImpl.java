@@ -126,6 +126,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.error("error", e);
                 callback.handle(new IsolatedDockerAgentException(e));
             } else {
+                // TODO move kubectl error message parsing close to code that invokes kubectl
                 if (e.getMessage().contains("(AlreadyExists)")) {
                     //full error message example: 
                     //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml": 
@@ -135,6 +136,11 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                     //full error message example: 
                     //Error from server (Timeout): error when creating ".../pod158999025779701949yaml": 
                     // Timeout: request did not complete within allowed duration                
+                    result = result.withRetryRecoverable(e.getMessage());
+                } else if (e.getMessage().contains("exceeded quota")) {
+                    //full error message example:
+                    //error when creating "pod.yaml": pods "test-pod" is forbidden:
+                    //exceeded quota: pod-demo, requested: pods=1, used: pods=2, limited: pods=2
                     result = result.withRetryRecoverable(e.getMessage());
                 } else {
                     result = result.withError(e.getMessage());
