@@ -19,15 +19,43 @@ package com.atlassian.buildeng.kubernetes;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.sal.api.scheduling.PluginScheduler;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+@RunWith(MockitoJUnitRunner.class)
 public class KubernetesIsolatedDockerImplTest {
+    @Mock
+    GlobalConfiguration globalConfiguration;
+    @Mock
+    KubeJmxService kubeJmxService;
+    @Mock
+    PluginScheduler pluginScheduler;
+    @Mock
+    ExecutorService executor;
+
+    @InjectMocks
+    KubernetesIsolatedDockerImpl kubernetesIsolatedDocker;
+
     @Test
     @SuppressWarnings("unchecked")
     public void testContainersMergedByName() {
@@ -99,5 +127,24 @@ public class KubernetesIsolatedDockerImplTest {
                 .flatMap((Map<String, Object> t) -> ((List<String>) t.get("hostnames")).stream())
                 .count());
         
+    }
+
+    @Test
+    public void pbcShouldRetryOnExceedingQuota() {
+        KubernetesClient.KubectlException ke = new KubernetesClient.KubectlException("exceeded quota");
+        final AtomicBoolean retry = new AtomicBoolean(false);
+        IsolatedDockerRequestCallback callback = new IsolatedDockerRequestCallback() {
+            @Override
+            public void handle(IsolatedDockerAgentResult result) {
+                retry.set(result.isRetryRecoverable());
+            }
+
+            @Override
+            public void handle(IsolatedDockerAgentException exception) {
+
+            }
+        };
+        kubernetesIsolatedDocker.handleKubeCtlException(callback, ke);
+        assertTrue("PBC should retry on exceeding kube quota", retry.get());
     }
 }
