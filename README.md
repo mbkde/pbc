@@ -80,7 +80,7 @@ Documentation
 
 Bamboo Specs
 =====
-YAML Bamboo Specs configuration is supported since Bamboo 6.10.0
+YAML Bamboo Specs configuration is supported since Bamboo 6.10.0 and plugin v2.42+ 
 
 Short format
 ```yaml
