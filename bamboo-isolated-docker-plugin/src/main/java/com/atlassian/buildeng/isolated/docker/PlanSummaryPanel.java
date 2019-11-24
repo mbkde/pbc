@@ -18,7 +18,6 @@ package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.chains.ChainResultsSummary;
 import com.atlassian.bamboo.plan.PlanResultKey;
-import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildContext;
@@ -62,12 +61,12 @@ public class PlanSummaryPanel implements WebPanel {
                 if (buildcontext != null) {
                     error = buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR);
                 }
-                final String planName = brs.getPlanIfExists().isPresent() ?
-                        brs.getPlanIfExists().get().getBuildName() : brs.getPlanName();
+                final String planName = brs.getPlanIfExists().isPresent()
+                        ? brs.getPlanIfExists().get().getBuildName() : brs.getPlanName();
                 ret.append("<dt>")
                    .append(planName)
                    .append("</dt><dd>")
-                   .append(config.getDockerImage());
+                   .append(ConfigurationOverride.reverseRegistryOverride(config.getDockerImage()));
                 Map<String, String> custom = SummaryPanel.createCustomDataMap(buildcontext, (BuildResultsSummary) brs);
                 Map<String, URL> containerLogs = detail.getContainerLogs(config, custom);
                 if (!containerLogs.isEmpty()) {
@@ -79,8 +78,8 @@ public class PlanSummaryPanel implements WebPanel {
                 }
                 if (error != null) {
                     ret.append("<br/><span class=\"errorText\">")
-                       .append(error)
-                       .append("</span>");
+                            .append(error)
+                            .append("</span>");
                 }
                 ret.append("</dd>");
             }

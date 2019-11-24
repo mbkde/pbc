@@ -27,6 +27,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import com.google.common.annotations.VisibleForTesting;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
@@ -121,27 +122,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             logger.error("Cluster Registry error:" + e.getMessage());
             callback.handle(result.withRetryRecoverable("Cluster Registry failure: " + e.getMessage()));
         } catch (KubernetesClient.KubectlException e) {
-            IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
-            if (e.getCause() instanceof IOException || e.getCause() instanceof InterruptedException) {
-                logger.error("error", e);
-                callback.handle(new IsolatedDockerAgentException(e));
-            } else {
-                if (e.getMessage().contains("(AlreadyExists)")) {
-                    //full error message example: 
-                    //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml": 
-                    //object is being deleted: pods "plantemplates-srt-job1-..." already exists
-                    result = result.withRetryRecoverable(e.getMessage());
-                } else if (e.getMessage().contains("(Timeout)")) {
-                    //full error message example: 
-                    //Error from server (Timeout): error when creating ".../pod158999025779701949yaml": 
-                    // Timeout: request did not complete within allowed duration                
-                    result = result.withRetryRecoverable(e.getMessage());
-                } else {
-                    result = result.withError(e.getMessage());
-                }
-                callback.handle(result);
-                logger.error(e.getMessage());
-            }
+            handleKubeCtlException(callback, e);
         } catch (IOException e) {
             logger.error("io error", e);
             callback.handle(new IsolatedDockerAgentException(e));
@@ -158,6 +139,37 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.error("unknown error", e);
                 callback.handle(new IsolatedDockerAgentException(e));
             }
+        }
+    }
+
+    @VisibleForTesting
+    void handleKubeCtlException(IsolatedDockerRequestCallback callback, KubernetesClient.KubectlException e) {
+        IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
+        if (e.getCause() instanceof IOException || e.getCause() instanceof InterruptedException) {
+            logger.error("error", e);
+            callback.handle(new IsolatedDockerAgentException(e));
+        } else {
+            // TODO move kubectl error message parsing close to code that invokes kubectl
+            if (e.getMessage().contains("(AlreadyExists)")) {
+                //full error message example:
+                //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml":
+                //object is being deleted: pods "plantemplates-srt-job1-..." already exists
+                result = result.withRetryRecoverable(e.getMessage());
+            } else if (e.getMessage().contains("(Timeout)")) {
+                //full error message example:
+                //Error from server (Timeout): error when creating ".../pod158999025779701949yaml":
+                // Timeout: request did not complete within allowed duration
+                result = result.withRetryRecoverable(e.getMessage());
+            } else if (e.getMessage().contains("exceeded quota")) {
+                //full error message example:
+                //error when creating "pod.yaml": pods "test-pod" is forbidden:
+                //exceeded quota: pod-demo, requested: pods=1, used: pods=2, limited: pods=2
+                result = result.withRetryRecoverable(e.getMessage());
+            } else {
+                result = result.withError(e.getMessage());
+            }
+            callback.handle(result);
+            logger.error(e.getMessage());
         }
     }
 
