@@ -228,12 +228,12 @@ public class DockerHandlerImpl implements DockerHandler {
         final ResourceLocation resourceLocation = moduleDescriptor.getResourceLocation("freemarker", name);
         if (resourceLocation != null) {
             final Map<String, Object> context = new HashMap<>();
-            context.put("custom.isolated.docker.image", configuration.getDockerImage());
-            context.put("custom.isolated.docker.imageSize", configuration.getSize().name());
-            context.put("custom.isolated.docker.role", configuration.getDockerRole());
-            context.put("custom.isolated.docker.externalid", configuration.getBambooOid());
+            context.put(Configuration.DOCKER_IMAGE, configuration.getDockerImage());
+            context.put(Configuration.DOCKER_IMAGE_SIZE, configuration.getSize().name());
+            context.put(Configuration.DOCKER_ROLE, configuration.getDockerRole());
+            context.put(Configuration.DOCKER_EXTERNAL_ID, configuration.getBambooOid());
             context.put("imageSizes", getImageSizes());
-            context.put("custom.isolated.docker.extraContainers", 
+            context.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             OgnlStackUtils.putAll(context);
             
