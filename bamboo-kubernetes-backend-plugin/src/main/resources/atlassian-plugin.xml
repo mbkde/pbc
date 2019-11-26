@@ -34,6 +34,8 @@ limitations under the License.
     
     <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
 
+    <component key="externalIdService" class="com.atlassian.buildeng.kubernetes.ExternalIdServiceImpl"/>
+
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
         <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>

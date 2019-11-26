@@ -125,6 +125,7 @@
                     <groupId>com.atlassian.maven.plugins</groupId>
                     <artifactId>bamboo-maven-plugin</artifactId>
                     <version>${amps.version}</version>
+                    <extensions>true</extensions>
                     <configuration>
                         <productVersion>${bamboo.version}</productVersion>
                         <excludeAllTestDependencies>true</excludeAllTestDependencies>
@@ -132,6 +133,7 @@
                             <xvfb.enable>${xvfb.enable}</xvfb.enable>
                             <webdriver.browser>chrome</webdriver.browser>
                         </systemPropertyVariables>
+                        <enableQuickReload>true</enableQuickReload>
                     </configuration>
                 </plugin>
                 <plugin>
