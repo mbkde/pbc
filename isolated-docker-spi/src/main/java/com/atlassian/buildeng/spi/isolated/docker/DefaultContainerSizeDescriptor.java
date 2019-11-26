@@ -34,6 +34,8 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     @Override
     public int getCpu(Configuration.ContainerSize size) {
         switch (size) {
+            case LARGE_8X: return 20480;
+            case LARGE_4X: return 10240;
             case XXLARGE: return 5120;
             case XLARGE:  return 4096;
             case LARGE:   return 3072;
@@ -51,6 +53,8 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     @Override
     public int getCpu(Configuration.ExtraContainerSize size) {
         switch (size) {
+            case LARGE_8X: return 12288;
+            case LARGE_4X: return 6144;
             case XXLARGE: return 3072;
             case XLARGE:  return 2048;
             case LARGE:   return 1024;
@@ -67,6 +71,8 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     @Override
     public int getMemory(Configuration.ContainerSize size) {
         switch (size) {
+            case LARGE_8X: return 80000;
+            case LARGE_4X: return 40000;
             case XXLARGE: return 20000;
             case XLARGE:  return 16000;
             case LARGE:   return 12000;
@@ -83,6 +89,8 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     @Override
     public int getMemory(Configuration.ExtraContainerSize size) {
         switch (size) {
+            case LARGE_8X: return 48000;
+            case LARGE_4X: return 24000;
             case XXLARGE: return 12000;
             case XLARGE:  return 8000;
             case LARGE:   return 4000;
@@ -108,6 +116,8 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     @Override
     public String getLabel(Configuration.ContainerSize size) {
         switch (size) {
+            case LARGE_8X: return "8X Large (~80G memory, 20 vCPU)";
+            case LARGE_4X: return "4X Large (~40G memory, 10 vCPU)";
             case XXLARGE: return "Extra Extra Large (~20G memory, 5 vCPU)";
             case XLARGE:  return "Extra Large (~16G memory, 4 vCPU)";
             case LARGE:   return "Large (~12G memory, 3 vCPU)";
@@ -124,6 +134,8 @@ public class DefaultContainerSizeDescriptor implements ContainerSizeDescriptor {
     @Override
     public String getLabel(Configuration.ExtraContainerSize size) {
         switch (size) {
+            case LARGE_8X: return "8X Large size (~ 48G)";
+            case LARGE_4X: return "4X Large size (~ 24G)";
             case XXLARGE: return "XX Large size (~ 12G)";
             case XLARGE:  return "X Large size (~ 8G)";
             case LARGE:   return "Large size (~ 4G)";

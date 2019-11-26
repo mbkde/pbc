@@ -23,6 +23,8 @@
                     <div class="field-group long-label">
                         <label class="long-label" for="dockerExtraImage-size" id="dockerExtraImage-sizeLabel">Size</label>
                         <select name="dockerExtraImage-size" id="dockerExtraImage-size" class="select">
+                                <option value="LARGE_8X" selected="selected">8X Large (~48G memory, 12 vCPU)</option>
+                                <option value="LARGE_4X" selected="selected">4X Large (~24G memory, 6 vCPU)</option>
                                 <option value="XXLARGE" selected="selected">XX Large (~12G memory, 3 vCPU)</option>
                                 <option value="XLARGE" selected="selected">X Large (~8G memory, 2 vCPU)</option>
                                 <option value="LARGE" selected="selected">Large (~4G memory, 1 vCPU)</option>

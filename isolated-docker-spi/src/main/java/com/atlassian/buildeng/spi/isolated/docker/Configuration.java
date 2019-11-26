@@ -172,6 +172,8 @@ public final class Configuration {
 
     
     public enum ContainerSize {
+        LARGE_8X,
+        LARGE_4X,
         XXLARGE,
         XLARGE,
         LARGE,
@@ -259,6 +261,8 @@ public final class Configuration {
     }
     
     public enum ExtraContainerSize {
+        LARGE_8X,
+        LARGE_4X,
         XXLARGE,
         XLARGE,
         LARGE,
