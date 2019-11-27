@@ -8,7 +8,7 @@
             var content = $(
                 '<li><a class="aui-icon-container" href="' + AJS.contextPath()
                 + '/rest/pbc-kubernetes/1.0/externalIdForDeployment/' + deploymentId
-                + '">View External ID for PBC</a></li>'
+                + '">View AWS IAM External ID for PBC</a></li>'
             );
 
             content.appendTo(element.parentNode.parentNode);

@@ -147,7 +147,7 @@ public class PreBuildQueuedEventListener {
             }
             setBuildkeyCustomData(event.getContext());
         }
-        boolean isPlan = true;
+        boolean isPlan;
         if (event.getContext() instanceof DeploymentContext) {
             // The event is from a deployment
             isPlan = false;
