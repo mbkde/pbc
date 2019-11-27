@@ -1,6 +1,20 @@
 {
     "main" : [
         {
+          "name" : "LARGE_8X",
+          "cpu" : 20480,
+          "memory" : 80000,
+          "memoryLimit" : 90000,
+          "label" : "8X Large (~80G memory, 20 vCPU)"
+        },
+        {
+            "name" : "LARGE_4X",
+            "cpu" : 10240,
+            "memory" : 40000,
+            "memoryLimit" : 45000,
+            "label" : "4X Large (~40G memory, 10 vCPU)"
+        },
+        {
             "name" : "XXLARGE",
             "cpu" : 5120,
             "memory" : 20000,
@@ -45,6 +59,20 @@
         }
     ],
     "extra" : [
+        {
+          "name" : "LARGE_8X",
+          "cpu" : 12288,
+          "memory" : 48000,
+          "memoryLimit" : 56000,
+          "label" : "8X Large size (~ 48G)"
+        },
+        {
+          "name" : "LARGE_4X",
+          "cpu" : 6144,
+          "memory" : 24000,
+          "memoryLimit" : 30000,
+          "label" : "4X Large size (~ 24G)"
+        },
         {
             "name" : "XXLARGE",
             "cpu" : 3072,

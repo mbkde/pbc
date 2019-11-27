@@ -145,6 +145,12 @@ pbcConfig = {
         else if (size.toUpperCase() === 'XXLARGE') {
             sizeUI = "<p>XX Large size (~ 12G)</p>";
         }
+        else if (size.toUpperCase() === 'LARGE_4X') {
+          sizeUI = "<p>4X Large size (~ 24G)</p>";
+        }
+        else if (size.toUpperCase() === 'LARGE_8X') {
+          sizeUI = "<p>8X Large size (~ 48G)</p>";
+        }
         var envvarsUI = "";
         var commandsUI = "";
         var commands = pbcConfig.toExtraContainerArray(item.commands);

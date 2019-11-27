@@ -60,7 +60,7 @@ Installation
 
 * First and foremost, you need an existing Bamboo installation.
 * IMPORTANT: Enable remote agents and make sure 'Remote agent authentication is disabled'. When using PBC, each build will register a new remote agent 
-and that agent needs to be allowed to pick up teh job without manual agent approvals.
+and that agent needs to be allowed to pick up the job without manual agent approvals.
 * Then you need to decide what Docker clustering solution to use (where your builds will be running).
 We recommend AWS ECS or Kubernetes right now as these are the most battle-hardened. See [ECS infrastructure requirements](ecs-scheduler-service/README.md)
 * Generate a [sidekick](sidekick/README.md) Docker image and push to your Docker registry.

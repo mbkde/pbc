@@ -284,7 +284,9 @@ public class DockerHandlerImpl implements DockerHandler {
             Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
             Pair.make(Configuration.ContainerSize.LARGE.name(), "Large (~12G memory, 3 vCPU)"),
             Pair.make(Configuration.ContainerSize.XLARGE.name(), "Extra Large (~16G memory, 4 vCPU)"),
-            Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"));
+            Pair.make(Configuration.ContainerSize.XXLARGE.name(), "Extra Extra Large (~20G memory, 5 vCPU)"),
+            Pair.make(Configuration.ContainerSize.LARGE_4X.name(), "4xLarge (~40G memory, 10 vCPU)"),
+            Pair.make(Configuration.ContainerSize.LARGE_8X.name(), "8xLarge (~80G memory, 20 vCPU)"));
     }
     
     
