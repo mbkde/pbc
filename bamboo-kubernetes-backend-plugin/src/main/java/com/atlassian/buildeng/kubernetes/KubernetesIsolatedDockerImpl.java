@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
@@ -48,7 +49,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -80,9 +80,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final KubeJmxService kubeJmxService;
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
+    private final ExternalIdService externalIdService;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, 
-            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService) {
+            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService, ExternalIdService externalIdService) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
@@ -91,6 +92,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 new LinkedBlockingQueue<>());
         tpe.allowCoreThreadTimeOut(true);
         executor = tpe;
+        this.externalIdService = externalIdService;
     }
 
     @Override
@@ -105,7 +107,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             Map<String, Object> template = loadTemplatePod();
-            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
+            String externalId;
+            if (request.isPlan()) {
+                externalId = externalIdService.getExternalId(PlanKeys.getPlanKey(request.getResultKey()));
+            } else {
+                // Result Key comes in the format projectId-EnvironmentId-ResultId, we just need the project Id
+                Long deploymentId = Long.parseLong(request.getResultKey().split("-")[0]);
+                externalId = externalIdService.getExternalId(deploymentId);
+            }
+            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, externalId);
             Map<String, Object> finalPod = mergeMap(template, podDefinition);
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);

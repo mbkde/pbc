@@ -18,10 +18,11 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.deployments.projects.DeploymentProject;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
-import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.PlanManager;
+import com.atlassian.bamboo.plan.cache.CachedPlanManager;
+import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.security.acegi.acls.BambooPermission;
 import com.atlassian.buildeng.kubernetes.rest.Config;
@@ -46,7 +47,7 @@ public class Rest {
     private final ExternalIdService externalIdService;
     private final DeploymentProjectService deploymentProjectService;
     private BambooPermissionManager bambooPermissionManager;
-    private final PlanManager planManager;
+    private final CachedPlanManager cachedPlanManager;
 
 
 
@@ -55,12 +56,12 @@ public class Rest {
                 ExternalIdService externalIdService,
                 DeploymentProjectService deploymentProjectService,
                 BambooPermissionManager bambooPermissionManager,
-                PlanManager planManager) {
+                PlanManager planManager, CachedPlanManager cachedPlanManager) {
         this.configuration = configuration;
         this.externalIdService = externalIdService;
         this.deploymentProjectService = deploymentProjectService;
         this.bambooPermissionManager = bambooPermissionManager;
-        this.planManager = planManager;
+        this.cachedPlanManager = cachedPlanManager;
     }
 
     /**
@@ -125,7 +126,7 @@ public class Rest {
     public Response getExternalIdPlan(@PathParam("planKey") String planKey) {
         try {
             PlanKey pk = PlanKeys.getPlanKey(planKey);
-            Plan plan = planManager.getPlanByKey(pk);
+            ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
             if (plan == null) {
                 return Response.status(Response.Status.NOT_FOUND).entity("Can not found build plan with key: " + planKey).build();
             }

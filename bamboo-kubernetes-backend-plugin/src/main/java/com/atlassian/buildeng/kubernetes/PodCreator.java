@@ -88,7 +88,7 @@ public class PodCreator {
 
     public static final String LABEL_PBC_MARKER = "pbc";
     public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
-    
+
     /**
      * generate volume with memory fs at /dev/shm via https://docs.openshift.org/latest/dev_guide/shared_memory.html
      * the preferable solution is to modify the docker daemon's --default-shm-size parameter on hosts but it only
@@ -97,19 +97,19 @@ public class PodCreator {
      */
     private static final boolean GENERATE_SHM_VOLUME = Boolean.parseBoolean(
             System.getProperty("pbc.kube.shm.generate", "true"));
-    
 
-    static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
+
+    static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration, String externalId) {
         Configuration c = r.getConfiguration();
         Map<String, Object> root = new HashMap<>();
         root.put("apiVersion", "v1");
         root.put("kind", "Pod");
-        root.put("metadata", createMetadata(globalConfiguration, r));
+        root.put("metadata", createMetadata(globalConfiguration, r, externalId));
         root.put("spec", createSpec(globalConfiguration, r));
         return root;
     }
 
-    private static Map<String, String> createAnnotations(IsolatedDockerAgentRequest r) {
+    private static Map<String, String> createAnnotations(IsolatedDockerAgentRequest r, String externalId) {
         Map<String, String> annotations = new HashMap<>();
         annotations.put(ANN_UUID,  r.getUniqueIdentifier().toString());
         annotations.put(ANN_RESULTID, r.getResultKey());
@@ -117,7 +117,7 @@ public class PodCreator {
         String dockerRole = r.getConfiguration().getDockerRole();
         if (!StringUtils.isEmpty(dockerRole)) {
             annotations.put(ANN_ROLE, dockerRole);
-            annotations.put(ANN_EXTERNALID, r.getBambooOid().toString());
+            annotations.put(ANN_EXTERNALID, externalId);
         }
 
         return annotations;
@@ -209,11 +209,11 @@ public class PodCreator {
     }
     
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
-            IsolatedDockerAgentRequest r) {
+            IsolatedDockerAgentRequest r, String externalId) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
         map.put("labels", createLabels(r, globalConfiguration));
-        map.put("annotations", createAnnotations(r));
+        map.put("annotations", createAnnotations(r, externalId));
         return map;
     }
 

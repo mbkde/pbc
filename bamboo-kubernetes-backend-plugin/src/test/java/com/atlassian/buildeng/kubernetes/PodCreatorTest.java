@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import com.atlassian.bamboo.core.BambooEntityOid;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import java.util.UUID;
 import org.junit.Assert;
@@ -32,7 +31,7 @@ public class PodCreatorTest {
         String result = PodCreator.createPodName(
                 new IsolatedDockerAgentRequest(null, 
                         "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455", 
-                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, BambooEntityOid.create(1L)));
+                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
         Assert.assertEquals("shardspipeline-servicedeskembeddablesservicede-455-379ad7b0-b4f5-4fae-914b-070e9442c0a9", 
                 result);
         
@@ -43,7 +42,7 @@ public class PodCreatorTest {
         String result = PodCreator.createPodName(
                 new IsolatedDockerAgentRequest(null, 
                         "shar-servicedeskembeddablesservicedeskemb-bd-45555", 
-                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, BambooEntityOid.create(1L)));
+                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
         Assert.assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
                 result);
     }
@@ -53,7 +52,7 @@ public class PodCreatorTest {
         String result = PodCreator.createPodName(
                 new IsolatedDockerAgentRequest(null, 
                         "shar-servicedeskembeddablesservicedeskemb-bdx-45555", 
-                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, BambooEntityOid.create(1L)));
+                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
         Assert.assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
                 result);
     }

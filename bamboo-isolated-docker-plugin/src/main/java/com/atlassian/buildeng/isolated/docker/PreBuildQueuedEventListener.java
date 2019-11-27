@@ -17,16 +17,13 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.core.BambooEntityOid;
 import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
-import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.deployments.results.DeploymentResult;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
-import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.security.ImpersonationHelper;
 import com.atlassian.bamboo.utils.BambooRunnables;
 import com.atlassian.bamboo.v2.build.BuildContext;
@@ -73,8 +70,7 @@ public class PreBuildQueuedEventListener {
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
     private final ContainerSizeDescriptor sizeDescriptor;
-    private final CachedPlanManager cachedPlanManager;
-    private final DeploymentProjectService deploymentProjectService;
+
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
@@ -88,9 +84,7 @@ public class PreBuildQueuedEventListener {
                                         AgentRemovals agentRemovals,
                                         AgentLicenseLimits agentLicenseLimits,
                                         DockerSoxService dockerSoxService,
-                                        ContainerSizeDescriptor sizeDescriptor,
-                                        CachedPlanManager cachedPlanManager,
-                                        DeploymentProjectService deploymentProjectService) {
+                                        ContainerSizeDescriptor sizeDescriptor) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -103,8 +97,6 @@ public class PreBuildQueuedEventListener {
         this.deploymentExecutionService = deploymentExecutionService;
         this.agentLicenseLimits = agentLicenseLimits;
         this.sizeDescriptor = sizeDescriptor;
-        this.deploymentProjectService = deploymentProjectService;
-        this.cachedPlanManager = cachedPlanManager;
     }
 
     @EventListener
@@ -155,16 +147,13 @@ public class PreBuildQueuedEventListener {
             }
             setBuildkeyCustomData(event.getContext());
         }
-        BambooEntityOid entityOid;
+        boolean isPlan = true;
         if (event.getContext() instanceof DeploymentContext) {
             // The event is from a deployment
-            DeploymentContext deploymentContext = (DeploymentContext) event.getContext();
-            entityOid = deploymentProjectService.getDeploymentProject(
-                deploymentContext.getDeploymentProjectId()).getOid();
+            isPlan = false;
         } else if (event.getContext() instanceof BuildContext) {
             //The event is from a plan
-            BuildContext buildContext = (BuildContext) event.getContext();
-            entityOid = cachedPlanManager.getPlanByKey(buildContext.getParentBuildContext().getTypedPlanKey()).getOid();
+            isPlan = true;
         } else {
             terminateBuild("Unrecognised Context for " + event.getContext().getBuildKey(), event.getContext());
             return;
@@ -174,7 +163,7 @@ public class PreBuildQueuedEventListener {
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
                         event.getUniqueIdentifier(), 
                         getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
-                        event.getRetryCount(), entityOid),
+                        event.getRetryCount(), isPlan),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
