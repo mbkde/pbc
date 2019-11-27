@@ -40,6 +40,13 @@ users:
 * Preexisting kubernetes cluster with automatic scaling, the Bamboo plugin itself only adds pods to the cluster, not scaling.
 We are using [escalator](https://github.com/atlassian/escalator) for scaling the cluster in AWS infrastructure.
 
+* For per-plan/per-deployment AWS IAM Role to work in Kubernetes, the cluster has to run https://github.com/jtblin/kube2iam as service.
+The Bamboo plugin will only add relevant annotations (iam.amazonaws.com/role + iam.amazonaws.com/external-id) to the Kubernetes pod (https://github.com/jtblin/kube2iam#kubernetes-annotation)
+While role is configurable by user, external-id is generated per plan/deployment to uniquely identify the plan in question. That way only certain builds
+can be whitelisted to be able to assume given role.
+If a default fallback IAM role or plain one role per Bamboo server is required, it has to be defined as part of the Pod template global
+configuration. See below for example.
+
 Usage
 =====
 
@@ -106,5 +113,5 @@ and collect per agent metrics via Prometheus.
 
 To access AWS resources, we are running a combination of Kube secrets and https://github.com/jtblin/kube2iam as service in our cluster and the Pod Template Bamboo configuration
 includes the kube2iam annotations to have the agent container assume the given role per Bamboo server.
-
+Per-plan/per-deployment AWS IAM Role is also supported since version 2.59 and relies on the same kube2iam service.
 
