@@ -50,7 +50,6 @@ public class Rest {
     private final CachedPlanManager cachedPlanManager;
 
 
-
     @Autowired
     public Rest(GlobalConfiguration configuration,
                 ExternalIdService externalIdService,
@@ -93,8 +92,8 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                    config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
-                    config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
+                config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
+                config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
@@ -134,7 +133,7 @@ public class Rest {
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                    return Response.ok(externalIdService.getExternalId(plan)).build();
+                return Response.ok(externalIdService.getExternalId(plan)).build();
 
             } else {
                 return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this plan: " + planKey).build();
@@ -153,19 +152,18 @@ public class Rest {
     public Response getExternalIdDeployment(@PathParam("deploymentId") String deploymentId) {
         try {
             DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
-            if(deploymentProject == null)
-            {
+            if (deploymentProject == null) {
                 return Response.status(Response.Status.NOT_FOUND).entity("Can not found deployment project with id: " + deploymentId).build();
             }
-            if(bambooPermissionManager.hasPermission(BambooPermission.BUILD, deploymentProject, null)
+            if (bambooPermissionManager.hasPermission(BambooPermission.BUILD, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-            return Response.ok(externalIdService.getExternalId(deploymentProject)).build();
+                return Response.ok(externalIdService.getExternalId(deploymentProject)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: " + deploymentId).build();
             }
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
         }
     }

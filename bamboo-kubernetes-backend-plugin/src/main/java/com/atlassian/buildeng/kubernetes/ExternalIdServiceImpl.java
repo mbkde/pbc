@@ -26,13 +26,16 @@ public class ExternalIdServiceImpl implements ExternalIdService {
 
     @Override
     public String getExternalId(ImmutablePlan plan) {
-        return admConfAccessor.getAdministrationConfiguration().getInstanceName()+":"+plan.getPlanKey()+":"+plan.getOid();
-
+        return admConfAccessor.getAdministrationConfiguration().getInstanceName()
+            + ":" + plan.getPlanKey()
+            + ":" + plan.getOid();
     }
 
     @Override
     public String getExternalId(DeploymentProject deploymentProject) {
-        return admConfAccessor.getAdministrationConfiguration().getInstanceName() + ":" + deploymentProject.getId() + ":" + deploymentProject.getOid();
+        return admConfAccessor.getAdministrationConfiguration().getInstanceName()
+            + ":" + deploymentProject.getId()
+            + ":" + deploymentProject.getOid();
     }
 
     @Override
