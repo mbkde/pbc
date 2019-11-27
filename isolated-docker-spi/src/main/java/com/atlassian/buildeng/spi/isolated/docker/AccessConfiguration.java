@@ -56,7 +56,6 @@ public class AccessConfiguration {
                             ConfigurationPersistence.fromJsonString(
                                 cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                     .withRole(cc.getOrDefault(Configuration.DOCKER_ROLE, ""))
-                    .withBambooOid(cc.getOrDefault(Configuration.DOCKER_EXTERNAL_ID, ""))
                     .build();
     }
 

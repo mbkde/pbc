@@ -231,7 +231,6 @@ public class DockerHandlerImpl implements DockerHandler {
             context.put(Configuration.DOCKER_IMAGE, configuration.getDockerImage());
             context.put(Configuration.DOCKER_IMAGE_SIZE, configuration.getSize().name());
             context.put(Configuration.DOCKER_ROLE, configuration.getDockerRole());
-            context.put(Configuration.DOCKER_EXTERNAL_ID, configuration.getBambooOid());
             context.put("imageSizes", getImageSizes());
             context.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());

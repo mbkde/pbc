@@ -15,12 +15,6 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
         labelKey='isolated.docker.role' name='custom.isolated.docker.role' descriptionKey="isolated.docker.role.description"
     /]
 
-[#if custom.isolated.docker.role?has_content]
-    [@ww.textfield cssClass='long-field ui-state-disabled' required=false
-        labelKey='isolated.docker.externalid' name='custom.isolated.docker.externalid' descriptionKey="isolated.docker.externalid.description" readonly=true
-    /]
-[/#if]
-
 [/@ui.bambooSection]
 
 [#include "extraContainersDialog.ftl"]
