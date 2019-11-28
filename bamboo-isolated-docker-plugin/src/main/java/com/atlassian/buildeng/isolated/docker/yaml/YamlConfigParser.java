@@ -21,7 +21,7 @@ public class YamlConfigParser {
         String YAML_ROOT = "pbc";
         String IMAGE = "image";
         String SIZE = "size";
-        String AWS_ROLE = "awsIamRole";
+        String AWS_ROLE = "awsRole";
         String EXTRA_CONTAINERS = "extra-containers";
     }
 
