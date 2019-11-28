@@ -59,6 +59,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 .enabled(config.isEnabled())
                 .image(config.getDockerImage())
                 .size(config.getSize().name())
+                .awsRole(config.getDockerRole())
                 .extraContainers(config.getExtraContainers().stream()
                         .map((Configuration.ExtraContainer t) ->
                                 new ExtraContainer()
@@ -87,6 +88,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             toRet.put(Configuration.ENABLED_FOR_JOB, "" + custom.isEnabled());
             toRet.put(Configuration.DOCKER_IMAGE, custom.getImage());
             toRet.put(Configuration.DOCKER_IMAGE_SIZE, custom.getSize());
+            toRet.put(Configuration.DOCKER_ROLE, custom.getAwsRole());
             toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     BuildProcessorServerImpl.toJsonString(custom.getExtraContainers()));
             return toRet;
@@ -104,11 +106,11 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String size = any.getConfiguration().get(Configuration.DOCKER_IMAGE_SIZE);
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
-            String role = any.getConfiguration().get(Configuration.DOCKER_ROLE);
+            String awsRole = any.getConfiguration().get(Configuration.DOCKER_ROLE);
 
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
-                Validator.validate(image, size, role, extraCont, coll, false);
+                Validator.validate(image, size, awsRole, extraCont, coll, false);
                 return coll.getAllErrorMessages().stream()
                         .map(ValidationProblem::new)
                         .collect(Collectors.toList());
@@ -138,6 +140,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .enabled(config.isEnabled())
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
+                    .awsRole(config.getDockerRole())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
