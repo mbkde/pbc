@@ -107,15 +107,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             Map<String, Object> template = loadTemplatePod();
-            String externalId;
-            if (request.isPlan()) {
-                externalId = externalIdService.getExternalId(PlanKeys.getPlanKey(request.getResultKey()));
-            } else {
-                // Result Key comes in the format projectId-EnvironmentId-ResultId, we just need the project Id
-                Long deploymentId = Long.parseLong(request.getResultKey().split("-")[0]);
-                externalId = externalIdService.getExternalId(deploymentId);
-            }
-            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, externalId);
+            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, getExternalId(request));
             Map<String, Object> finalPod = mergeMap(template, podDefinition);
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
@@ -150,6 +142,19 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 callback.handle(new IsolatedDockerAgentException(e));
             }
         }
+    }
+
+    @VisibleForTesting
+    String getExternalId(IsolatedDockerAgentRequest request) {
+        String externalId;
+        if (request.isPlan()) {
+            externalId = externalIdService.getExternalId(PlanKeys.getPlanKey(request.getResultKey()));
+        } else {
+            // Result Key comes in the format projectId-EnvironmentId-ResultId, we just need the project Id
+            Long deploymentId = Long.parseLong(request.getResultKey().split("-")[0]);
+            externalId = externalIdService.getExternalId(deploymentId);
+        }
+        return externalId;
     }
 
     @VisibleForTesting

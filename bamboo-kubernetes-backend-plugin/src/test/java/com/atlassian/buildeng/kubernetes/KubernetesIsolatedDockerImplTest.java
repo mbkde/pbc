@@ -19,21 +19,26 @@ package com.atlassian.buildeng.kubernetes;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
+import com.atlassian.bamboo.plan.PlanKey;
+import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
+import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -52,6 +57,8 @@ public class KubernetesIsolatedDockerImplTest {
     PluginScheduler pluginScheduler;
     @Mock
     ExecutorService executor;
+    @Mock
+    ExternalIdService externalIdService;
 
     @InjectMocks
     KubernetesIsolatedDockerImpl kubernetesIsolatedDocker;
@@ -146,5 +153,30 @@ public class KubernetesIsolatedDockerImplTest {
         };
         kubernetesIsolatedDocker.handleKubeCtlException(callback, ke);
         assertTrue("PBC should retry on exceeding kube quota", retry.get());
+    }
+
+    @Test
+    public void testExternalIdForPlan() {
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
+            "TEST-PLAN-JOB1",
+            UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+            0, "bk", 0, true);
+
+        when(externalIdService.getExternalId(any(PlanKey.class))).thenReturn("mock-external-id");
+
+        kubernetesIsolatedDocker.getExternalId(request);
+        verify(externalIdService).getExternalId(PlanKeys.getPlanKey("TEST-PLAN-JOB1"));
+    }
+
+    @Test
+    public void testExternalIdForDeployment() {
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
+            "111-222-333",
+            UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+            0, "bk", 0, false);
+
+        when(externalIdService.getExternalId(any(Long.class))).thenReturn("mock-external-id");
+        kubernetesIsolatedDocker.getExternalId(request);
+        verify(externalIdService).getExternalId(111L);
     }
 }
