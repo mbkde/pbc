@@ -114,9 +114,9 @@ public class PodCreator {
         annotations.put(ANN_UUID,  r.getUniqueIdentifier().toString());
         annotations.put(ANN_RESULTID, r.getResultKey());
         annotations.put(ANN_RETRYCOUNT, Integer.toString(r.getRetryCount()));
-        String dockerRole = r.getConfiguration().getDockerRole();
-        if (!StringUtils.isEmpty(dockerRole)) {
-            annotations.put(ANN_ROLE, dockerRole);
+        String awsRole = r.getConfiguration().getAwsRole();
+        if (!StringUtils.isEmpty(awsRole)) {
+            annotations.put(ANN_ROLE, awsRole);
             annotations.put(ANN_EXTERNALID, externalId);
         }
 

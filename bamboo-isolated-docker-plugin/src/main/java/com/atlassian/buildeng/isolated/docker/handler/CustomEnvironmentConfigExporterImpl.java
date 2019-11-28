@@ -104,7 +104,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String size = any.getConfiguration().get(Configuration.DOCKER_IMAGE_SIZE);
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
-            String role = any.getConfiguration().get(Configuration.DOCKER_ROLE);
+            String role = any.getConfiguration().get(Configuration.DOCKER_AWS_ROLE);
 
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {

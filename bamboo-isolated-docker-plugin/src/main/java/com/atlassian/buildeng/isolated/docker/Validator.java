@@ -35,7 +35,7 @@ public class Validator {
     public static void validate(String image, String size, String role, String extraCont,
             ErrorCollection errorCollection, boolean task) {
         if (role != null && !StringUtils.deleteWhitespace(role).equals(role)) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_ROLE : Configuration.DOCKER_ROLE,
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                 "Docker Role cannot contain whitespace.");
         }
         Validator.validate(image, size, extraCont, errorCollection, task);
