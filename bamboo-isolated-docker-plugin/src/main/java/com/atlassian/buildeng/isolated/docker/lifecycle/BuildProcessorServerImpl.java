@@ -132,7 +132,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         return new HashSet<>(Arrays.asList(Configuration.ENABLED_FOR_JOB,
                 Configuration.DOCKER_IMAGE,
                 Configuration.DOCKER_IMAGE_SIZE,
-                Configuration.DOCKER_ROLE,
+                Configuration.DOCKER_AWS_ROLE,
                 Configuration.DOCKER_EXTRA_CONTAINERS));
     }
 
@@ -154,15 +154,15 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         if (extra != null) {
             cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, extra);
         }
-        String role = buildConfiguration.getString(Configuration.DOCKER_ROLE);
+        String role = buildConfiguration.getString(Configuration.DOCKER_AWS_ROLE);
         if (role != null) {
-            cc.put(Configuration.DOCKER_ROLE, role);
+            cc.put(Configuration.DOCKER_AWS_ROLE, role);
         }
         Configuration c = AccessConfiguration.forMap(cc);
         return new PerBuildContainerForJob().enabled(c.isEnabled())
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
-                .awsRole(c.getDockerRole())
+                .awsRole(c.getAwsRole())
                 .extraContainers(c.getExtraContainers().stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
@@ -203,7 +203,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         buildConfiguration.setProperty(Configuration.ENABLED_FOR_JOB, specsProperties.isEnabled());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
-        buildConfiguration.setProperty(Configuration.DOCKER_ROLE, specsProperties.getAwsRole());
+        buildConfiguration.setProperty(Configuration.DOCKER_AWS_ROLE, specsProperties.getAwsRole());
         buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 toJsonString(specsProperties.getExtraContainers()));
     }
@@ -220,7 +220,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .enabled(config.isEnabled())
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
-                    .awsRole(config.getDockerRole())
+                    .awsRole(config.getAwsRole())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
