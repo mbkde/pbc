@@ -98,16 +98,17 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         logger.debug("Kubernetes received request for " + request.getResultKey());
+        String externalId = getExternalId(request);
         executor.submit(() -> {
-            exec(request, callback);
+            exec(request, callback, externalId);
         });
     }
 
-    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback, String externalId) {
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             Map<String, Object> template = loadTemplatePod();
-            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, getExternalId(request));
+            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, externalId);
             Map<String, Object> finalPod = mergeMap(template, podDefinition);
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
