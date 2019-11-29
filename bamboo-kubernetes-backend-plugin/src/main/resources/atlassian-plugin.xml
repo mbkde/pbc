@@ -27,7 +27,7 @@ limitations under the License.
         <description>External Id Generator Menu Item</description>
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="ext_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/externalIdForPlan/${planKey}</link>
-        <condition class="com.atlassian.buildeng.kubernetes.condition.LoggedInUser" />
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
     </web-item>
 
     <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl" public="true">
