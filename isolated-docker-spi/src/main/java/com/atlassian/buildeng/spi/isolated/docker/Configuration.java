@@ -41,7 +41,7 @@ public final class Configuration {
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
-    public static final String TASK_DOCKER_AWS_ROLE = "AwsRole";
+    public static final String TASK_DOCKER_AWS_ROLE = "awsRole";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
