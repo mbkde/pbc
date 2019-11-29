@@ -21,6 +21,7 @@ public class YamlConfigParser {
         String YAML_ROOT = "pbc";
         String IMAGE = "image";
         String SIZE = "size";
+        String AWS_ROLE = "awsRole";
         String EXTRA_CONTAINERS = "extra-containers";
     }
 
@@ -47,6 +48,9 @@ public class YamlConfigParser {
                     final String sizeStr = pbcMapNode.getOptionalString(YamlTags.SIZE)
                             .map(StringNode::get)
                             .orElse(DEFAULT_IMAGE_SIZE);
+                    final String awsRole = pbcMapNode.getOptionalString(YamlTags.AWS_ROLE)
+                            .map(StringNode::get)
+                            .orElse(null);
                     final Configuration.ContainerSize size;
                     try {
                         size = Configuration.ContainerSize.valueOf(sizeStr.toUpperCase());
@@ -67,6 +71,7 @@ public class YamlConfigParser {
                                     .forEach(extraContainers::add));
                     return ConfigurationBuilder.create(dockerImage)
                             .withImageSize(size)
+                            .withRole(awsRole)
                             .withExtraContainers(extraContainers)
                             .build();
                 }

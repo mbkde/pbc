@@ -23,6 +23,13 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="bamboo-kubernetes-backend-plugin"/>
 
+    <web-item key="ext_id" name="External ID Generator for PBC" section="chain.actions/chainActions" weight="70">
+        <description>External Id Generator Menu Item</description>
+        <label key="kubernetes-config-link.generator"/>
+        <link  linkd_id="ext_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/externalIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+    </web-item>
+
     <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
@@ -33,6 +40,8 @@ limitations under the License.
     </component>
     
     <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
+
+    <component key="externalIdService" class="com.atlassian.buildeng.kubernetes.ExternalIdServiceImpl"/>
 
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
@@ -51,6 +60,7 @@ limitations under the License.
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
 
         <resource type="download" name="viewKubernetesConfiguration.js" location="/viewKubernetesConfiguration.js"/>
+        <resource type="download" name="insertViewExternalId.js" location="/insertViewExternalId.js"/>
         <context>viewKubernetesConfiguration</context>
     </web-resource>
 

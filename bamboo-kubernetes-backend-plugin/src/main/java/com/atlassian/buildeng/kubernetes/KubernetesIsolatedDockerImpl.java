@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
@@ -48,7 +49,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -80,9 +80,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final KubeJmxService kubeJmxService;
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
+    private final ExternalIdService externalIdService;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, 
-            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService) {
+            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService, ExternalIdService externalIdService) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
@@ -91,21 +92,23 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 new LinkedBlockingQueue<>());
         tpe.allowCoreThreadTimeOut(true);
         executor = tpe;
+        this.externalIdService = externalIdService;
     }
 
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         logger.debug("Kubernetes received request for " + request.getResultKey());
+        String externalId = getExternalId(request);
         executor.submit(() -> {
-            exec(request, callback);
+            exec(request, callback, externalId);
         });
     }
 
-    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback, String externalId) {
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             Map<String, Object> template = loadTemplatePod();
-            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
+            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, externalId);
             Map<String, Object> finalPod = mergeMap(template, podDefinition);
             File podFile = createPodFile(finalPod);
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
@@ -140,6 +143,19 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 callback.handle(new IsolatedDockerAgentException(e));
             }
         }
+    }
+
+    @VisibleForTesting
+    String getExternalId(IsolatedDockerAgentRequest request) {
+        String externalId;
+        if (request.isPlan()) {
+            externalId = externalIdService.getExternalId(PlanKeys.getPlanKey(request.getResultKey()));
+        } else {
+            // Result Key comes in the format projectId-EnvironmentId-ResultId, we just need the project Id
+            Long deploymentId = Long.parseLong(request.getResultKey().split("-")[0]);
+            externalId = externalIdService.getExternalId(deploymentId);
+        }
+        return externalId;
     }
 
     @VisibleForTesting

@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.buildeng.ecs.exceptions.RestableIsolatedDockerException;
@@ -25,32 +24,32 @@ import com.atlassian.buildeng.ecs.rest.Config;
 import com.atlassian.buildeng.ecs.rest.DockerMapping;
 import com.atlassian.buildeng.ecs.rest.GetAllImagesResponse;
 import com.atlassian.buildeng.ecs.rest.GetValidClustersResponse;
+import com.atlassian.buildeng.ecs.rest.JobsUsingImageResponse;
 import com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import java.io.OutputStream;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @WebSudoRequired
 @Path("/")

@@ -16,13 +16,24 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.deployments.projects.DeploymentProject;
+import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
+import com.atlassian.bamboo.plan.PlanKey;
+import com.atlassian.bamboo.plan.PlanKeys;
+import com.atlassian.bamboo.plan.PlanManager;
+import com.atlassian.bamboo.plan.cache.CachedPlanManager;
+import com.atlassian.bamboo.plan.cache.ImmutablePlan;
+import com.atlassian.bamboo.security.BambooPermissionManager;
+import com.atlassian.bamboo.security.acegi.acls.BambooPermission;
 import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import com.google.common.base.Throwables;
 import java.io.IOException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,11 +44,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Rest {
 
     private final GlobalConfiguration configuration;
+    private final ExternalIdService externalIdService;
+    private final DeploymentProjectService deploymentProjectService;
+    private BambooPermissionManager bambooPermissionManager;
+    private final CachedPlanManager cachedPlanManager;
 
 
     @Autowired
-    public Rest(GlobalConfiguration configuration) {
+    public Rest(GlobalConfiguration configuration,
+                ExternalIdService externalIdService,
+                DeploymentProjectService deploymentProjectService,
+                BambooPermissionManager bambooPermissionManager,
+                PlanManager planManager, CachedPlanManager cachedPlanManager) {
         this.configuration = configuration;
+        this.externalIdService = externalIdService;
+        this.deploymentProjectService = deploymentProjectService;
+        this.bambooPermissionManager = bambooPermissionManager;
+        this.cachedPlanManager = cachedPlanManager;
     }
 
     /**
@@ -69,8 +92,8 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                    config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
-                    config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
+                config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
+                config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
@@ -92,4 +115,57 @@ public class Rest {
         }
         return Response.noContent().build();
     }
+
+    /**
+     * GET externalID used in roles for plans
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/externalIdForPlan/{planKey}")
+    public Response getExternalIdPlan(@PathParam("planKey") String planKey) {
+        try {
+            PlanKey pk = PlanKeys.getPlanKey(planKey);
+            ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
+            if (plan == null) {
+                return Response.status(Response.Status.NOT_FOUND).entity("Can not found build plan with key: " + planKey).build();
+            }
+            if (bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk)
+                || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
+                || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
+                || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
+                return Response.ok(externalIdService.getExternalId(plan)).build();
+
+            } else {
+                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this plan: " + planKey).build();
+            }
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
+        }
+    }
+
+    /**
+     * GET externalID used in roles for deployments
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/externalIdForDeployment/{deploymentId}")
+    public Response getExternalIdDeployment(@PathParam("deploymentId") String deploymentId) {
+        try {
+            DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
+            if (deploymentProject == null) {
+                return Response.status(Response.Status.NOT_FOUND).entity("Can not found deployment project with id: " + deploymentId).build();
+            }
+            if (bambooPermissionManager.hasPermission(BambooPermission.BUILD, deploymentProject, null)
+                || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
+                || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
+                || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
+                return Response.ok(externalIdService.getExternalId(deploymentProject)).build();
+            } else {
+                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: " + deploymentId).build();
+            }
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
+        }
+    }
+
 }

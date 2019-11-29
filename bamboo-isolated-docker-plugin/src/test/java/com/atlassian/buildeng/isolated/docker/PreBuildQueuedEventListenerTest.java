@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -28,14 +27,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.core.BambooEntityOid;
-import com.atlassian.bamboo.deployments.projects.DeploymentProject;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
-import com.atlassian.bamboo.plan.Plan;
-import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.v2.build.BuildContext;
@@ -45,7 +41,6 @@ import com.atlassian.bamboo.v2.build.events.BuildQueuedEvent;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -96,15 +91,6 @@ public class PreBuildQueuedEventListenerTest {
     @Before
     public void mockSox() {
         when(dockerSoxService.checkSoxCompliance(any())).thenReturn(Boolean.TRUE);
-    }
-    @Before
-    public void mockBambooOid() {
-        DeploymentProject deploymentProject = mock(DeploymentProject.class);
-        Plan plan = mock(Plan.class);
-        when(deploymentProjectService.getDeploymentProject(anyLong())).thenReturn(deploymentProject);
-        when(cachedPlanManager.getPlanByKey(any(PlanKey.class))).thenReturn(plan);
-        when(plan.getOid()).thenReturn(BambooEntityOid.create(1L));
-        when(deploymentProject.getOid()).thenReturn(BambooEntityOid.create(1L));
     }
 
 
