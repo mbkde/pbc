@@ -30,10 +30,8 @@ import static org.mockito.Mockito.when;
 
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
@@ -78,10 +76,6 @@ public class PreBuildQueuedEventListenerTest {
     private AgentLicenseLimits agentLicenseLimits;
     @Mock 
     private ContainerSizeDescriptor sizeDescriptor;
-    @Mock
-    private CachedPlanManager cachedPlanManager;
-    @Mock
-    private DeploymentProjectService deploymentProjectService;
             
     @InjectMocks
     private PreBuildQueuedEventListener listener;

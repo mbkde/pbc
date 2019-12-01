@@ -71,7 +71,7 @@ public class YamlConfigParser {
                                     .forEach(extraContainers::add));
                     return ConfigurationBuilder.create(dockerImage)
                             .withImageSize(size)
-                            .withRole(awsRole)
+                            .withAwsRole(awsRole)
                             .withExtraContainers(extraContainers)
                             .build();
                 }

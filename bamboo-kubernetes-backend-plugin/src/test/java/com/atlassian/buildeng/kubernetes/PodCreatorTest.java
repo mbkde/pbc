@@ -84,7 +84,7 @@ public class PodCreatorTest {
     public void testRole() {
 
         Configuration config = ConfigurationBuilder.create("testImage")
-            .withRole("arn:aws:iam::123456789012:role/testrole")
+            .withAwsRole("arn:aws:iam::123456789012:role/testrole")
             .withImageSize(Configuration.ContainerSize.REGULAR)
             .build();
 

@@ -22,8 +22,6 @@ import com.atlassian.bamboo.build.docker.DockerHandler;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
-import com.atlassian.bamboo.deployments.projects.DeploymentProject;
-import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.exception.WebValidationException;
 import com.atlassian.bamboo.struts.OgnlStackUtils;
 import com.atlassian.bamboo.template.TemplateRenderer;
@@ -66,7 +64,6 @@ public class DockerHandlerImpl implements DockerHandler {
     private final Configuration configuration;
     private final WebResourceManager webResourceManager;
     private final EnvironmentRequirementService environmentRequirementService;
-    private final DeploymentProjectService deploymentProjectService;
 
     /**
      * Creates new stateful instance.
@@ -76,7 +73,6 @@ public class DockerHandlerImpl implements DockerHandler {
             TemplateRenderer templateRenderer, 
             EnvironmentCustomConfigService environmentCustomConfigService,
             EnvironmentRequirementService environmentRequirementService,
-                             DeploymentProjectService deploymentProjectService,
             boolean create, Configuration configuration) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
@@ -85,7 +81,6 @@ public class DockerHandlerImpl implements DockerHandler {
         this.create = create;
         this.configuration = configuration;
         this.webResourceManager = webResourceManager;
-        this.deploymentProjectService = deploymentProjectService;
     }
 
     
@@ -148,9 +143,6 @@ public class DockerHandlerImpl implements DockerHandler {
             cc = new HashMap<>();
             all.put(CustomEnvironmentConfigExporterImpl.ENV_CONFIG_MODULE_KEY, cc);
         }
-        DeploymentProject deploymentProject =
-            deploymentProjectService.getDeploymentProject(environment.getDeploymentProjectId());
-        String deploymentProjectOid = deploymentProject != null ? deploymentProject.getOid().toString() : "";
 
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
@@ -260,7 +252,7 @@ public class DockerHandlerImpl implements DockerHandler {
                                 Configuration.ContainerSize.REGULAR.name())))
                 .withExtraContainers(ConfigurationPersistence.fromJsonString(
                         (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
-                .withRole((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_AWS_ROLE, ""))
+                .withAwsRole((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_AWS_ROLE, ""))
                 .build();
         return config;
     }

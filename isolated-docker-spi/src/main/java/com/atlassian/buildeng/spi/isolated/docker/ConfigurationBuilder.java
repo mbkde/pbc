@@ -60,7 +60,7 @@ public final class ConfigurationBuilder {
         return this;
     }
 
-    public ConfigurationBuilder withRole(String awsRole) {
+    public ConfigurationBuilder withAwsRole(String awsRole) {
         this.awsRole = awsRole;
         return this;
     }
