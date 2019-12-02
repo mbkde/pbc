@@ -26,19 +26,12 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.isolated.docker.handler.DockerHandlerImpl;
-import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.struts.TextProvider;
 import com.google.common.collect.Sets;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -94,7 +87,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
         String extraCont = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
-        Validator.validate(image, size, extraCont, errorCollection, true);
+        String role = params.getString(Configuration.TASK_DOCKER_AWS_ROLE);
+        Validator.validate(image, size, role, extraCont, errorCollection, true);
     }
     
 

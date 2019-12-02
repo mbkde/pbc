@@ -10,6 +10,11 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
     [/@ww.select]
     [@ww.hidden cssClass='long-field docker-extra-containers' name='custom.isolated.docker.extraContainers' /]
     [#include "extraContainersUI.ftl"]
+
+    [@ww.textfield cssClass='long-field' required=false
+        labelKey='isolated.docker.awsRole' name='custom.isolated.docker.awsRole' descriptionKey="isolated.docker.awsRole.description"
+    /]
+
 [/@ui.bambooSection]
 
 [#include "extraContainersDialog.ftl"]

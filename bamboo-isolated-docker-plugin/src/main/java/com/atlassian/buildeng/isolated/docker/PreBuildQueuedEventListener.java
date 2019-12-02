@@ -70,6 +70,7 @@ public class PreBuildQueuedEventListener {
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
     private final ContainerSizeDescriptor sizeDescriptor;
+
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
@@ -134,8 +135,7 @@ public class PreBuildQueuedEventListener {
             //TODO cancel future reservations if any
             jmx.incrementCancelled();
             return;
-        }        
-        
+        }
         synchronized (this) {
             clearResultCustomData(event.getContext());
             //done between clear and set to avoid counting the current one.
@@ -147,12 +147,23 @@ public class PreBuildQueuedEventListener {
             }
             setBuildkeyCustomData(event.getContext());
         }
-        
+        boolean isPlan;
+        if (event.getContext() instanceof DeploymentContext) {
+            // The event is from a deployment
+            isPlan = false;
+        } else if (event.getContext() instanceof BuildContext) {
+            //The event is from a plan
+            isPlan = true;
+        } else {
+            terminateBuild("Unrecognised Context for " + event.getContext().getBuildKey(), event.getContext());
+            return;
+        }
+
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
                         event.getUniqueIdentifier(), 
                         getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
-                        event.getRetryCount()),
+                        event.getRetryCount(), isPlan),
                         new IsolatedDockerRequestCallback() {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {

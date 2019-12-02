@@ -32,30 +32,40 @@ public class Validator {
      * Validate configuration.
      * Errors are collected in ErrorCollection parameter passed in.
      */
-    public static void validate(String image, String size, String extraCont, 
+    public static void validate(String image, String size, String role, String extraCont,
             ErrorCollection errorCollection, boolean task) {
+        if (role != null && !StringUtils.deleteWhitespace(role).equals(role)) {
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
+                "Docker Role cannot contain whitespace.");
+        }
+        Validator.validate(image, size, extraCont, errorCollection, task);
+    }
+
+    public static void validate(String image, String size, String extraCont,
+                                ErrorCollection errorCollection, boolean task) {
         validateExtraContainers(extraCont, errorCollection);
 
         if (StringUtils.isBlank(image)) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE, 
-                    "Docker Image cannot be empty.");
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE,
+                "Docker Image cannot be empty.");
         } else if (image != null && !StringUtils.deleteWhitespace(image).equals(image)) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE, 
-                    "Docker Image cannot contain whitespace.");
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE,
+                "Docker Image cannot contain whitespace.");
         }
-        
+
         try {
             if (size == null) {
                 errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
-                        "Image size must be defined and one of:" 
-                                + Arrays.toString(Configuration.ContainerSize.values()));
+                    "Image size must be defined and one of:"
+                        + Arrays.toString(Configuration.ContainerSize.values()));
             } else {
                 Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
             }
         } catch (IllegalArgumentException e) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE, 
-                    "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
+                "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
         }
+
     }
     
     //TODO a bit unfortunate that the field associated with extra containers is hidden
@@ -104,6 +114,4 @@ public class Validator {
             }
         }
     }
-    
-    
 }

@@ -34,11 +34,14 @@ public final class Configuration {
     public static final String ENABLED_FOR_JOB = PROPERTY_PREFIX + ".enabled"; 
     public static final String DOCKER_IMAGE = PROPERTY_PREFIX + ".image"; 
     public static final String DOCKER_IMAGE_SIZE = PROPERTY_PREFIX + ".imageSize"; 
-    public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers"; 
+    public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers";
+    public static final String DOCKER_AWS_ROLE = PROPERTY_PREFIX + ".awsRole";
+
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
+    public static final String TASK_DOCKER_AWS_ROLE = "awsRole";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
@@ -55,12 +58,15 @@ public final class Configuration {
     //when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private String dockerImage;
+    private String awsRole;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
 
-    Configuration(boolean enabled, String dockerImage, ContainerSize size, List<ExtraContainer> extraContainers) {
+    Configuration(boolean enabled, String dockerImage, String awsRole,
+                  ContainerSize size, List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
+        this.awsRole = awsRole;
         this.size = size;
         this.extraContainers = extraContainers;
     }
@@ -80,7 +86,11 @@ public final class Configuration {
     public ContainerSize getSize() {
         return size;
     }
-    
+
+    public String getAwsRole() {
+        return awsRole;
+    }
+
     /**
      * calculate cpu requirements for entire configuration.
      * @param sizeDescriptor component able to resolve the symbolic size to numbers
@@ -139,6 +149,7 @@ public final class Configuration {
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
+        storageMap.put(Configuration.DOCKER_AWS_ROLE, getAwsRole());
         storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
         //write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
@@ -166,6 +177,7 @@ public final class Configuration {
         storageMap.remove(Configuration.ENABLED_FOR_JOB);
         storageMap.remove(Configuration.DOCKER_IMAGE);
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
+        storageMap.remove(Configuration.DOCKER_AWS_ROLE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
         storageMap.entrySet().removeIf(ent -> ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL));
     }

@@ -154,7 +154,9 @@ public class TaskDefinitionRegistrations {
             req.withContainerDefinitions(d);
             main.withLinks(t.getName());
         });
-        if (env.getECSTaskRoleARN() != null) {
+        if (configuration.getAwsRole() != null) {
+            req.withTaskRoleArn(configuration.getAwsRole());
+        } else if (env.getECSTaskRoleARN() != null) {
             req.withTaskRoleArn(env.getECSTaskRoleARN());
         }
         return req;

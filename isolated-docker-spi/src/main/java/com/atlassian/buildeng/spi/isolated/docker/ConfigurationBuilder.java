@@ -26,6 +26,7 @@ public final class ConfigurationBuilder {
     }
     
     private final String dockerImage;
+    private String awsRole;
     private Configuration.ContainerSize size = Configuration.ContainerSize.REGULAR;
     private boolean enabled = true;
     private final List<Configuration.ExtraContainer> extras = new ArrayList<>();
@@ -58,9 +59,14 @@ public final class ConfigurationBuilder {
         this.extras.addAll(extras);
         return this;
     }
+
+    public ConfigurationBuilder withAwsRole(String awsRole) {
+        this.awsRole = awsRole;
+        return this;
+    }
     
     public Configuration build() {
-        return new Configuration(enabled, dockerImage, size, extras);
+        return new Configuration(enabled, dockerImage, awsRole, size, extras);
     }
 
 }

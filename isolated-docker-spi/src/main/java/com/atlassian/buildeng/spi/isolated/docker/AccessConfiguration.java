@@ -16,11 +16,6 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_EXTRA_CONTAINERS;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.DOCKER_IMAGE_SIZE;
-import static com.atlassian.buildeng.spi.isolated.docker.Configuration.ENABLED_FOR_JOB;
-
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
@@ -33,6 +28,7 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -45,18 +41,21 @@ public class AccessConfiguration {
     private static final String ENV_MODULE = "pbcEnvironment";
     private static final String DOCKERTASK_MODULE = "dockertask";
 
+
     /**
      * Constructs Configuration object for given key value pair. 
      * Assumes the keys relating to jobs/environments, not tasks.
      */
     @Nonnull
     public static Configuration forMap(@Nonnull Map<String, String> cc) {
-        return ConfigurationBuilder.create(cc.getOrDefault(DOCKER_IMAGE, ""))
-                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(ENABLED_FOR_JOB, "false")))
-                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(DOCKER_IMAGE_SIZE,
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
+                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                             Configuration.ContainerSize.REGULAR.name())))
                     .withExtraContainers(
-                            ConfigurationPersistence.fromJsonString(cc.getOrDefault(DOCKER_EXTRA_CONTAINERS, "[]")))
+                            ConfigurationPersistence.fromJsonString(
+                                cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                    .withAwsRole(cc.getOrDefault(Configuration.DOCKER_AWS_ROLE, ""))
                     .build();
     }
 
@@ -102,6 +101,7 @@ public class AccessConfiguration {
                 .withExtraContainers(
                         ConfigurationPersistence.fromJsonString(
                                 config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withAwsRole(config.getString(Configuration.DOCKER_AWS_ROLE))
                 .build();
     }
 
@@ -140,6 +140,7 @@ public class AccessConfiguration {
                 .withExtraContainers(
                         ConfigurationPersistence.fromJsonString(cc.getOrDefault(
                                 Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withAwsRole(cc.getOrDefault(Configuration.TASK_DOCKER_AWS_ROLE, ""))
                 .build();
     }
 
