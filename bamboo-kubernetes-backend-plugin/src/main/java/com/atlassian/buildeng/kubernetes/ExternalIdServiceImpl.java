@@ -26,14 +26,14 @@ public class ExternalIdServiceImpl implements ExternalIdService {
 
     @Override
     public String getExternalId(ImmutablePlan plan) {
-        return admConfAccessor.getAdministrationConfiguration().getInstanceName()
+        return getInstanceName()
             + ":" + plan.getPlanKey()
             + ":" + plan.getOid();
     }
 
     @Override
     public String getExternalId(DeploymentProject deploymentProject) {
-        return admConfAccessor.getAdministrationConfiguration().getInstanceName()
+        return getInstanceName()
             + ":" + deploymentProject.getId()
             + ":" + deploymentProject.getOid();
     }
@@ -56,5 +56,9 @@ public class ExternalIdServiceImpl implements ExternalIdService {
             throw new NotFoundException("Could not find deployment project with id: " + deploymentId);
         }
         return getExternalId(deploymentProject);
+    }
+
+    private String getInstanceName() {
+        return admConfAccessor.getAdministrationConfiguration().getInstanceName().toLowerCase().replaceAll("\\s", "-");
     }
 }
