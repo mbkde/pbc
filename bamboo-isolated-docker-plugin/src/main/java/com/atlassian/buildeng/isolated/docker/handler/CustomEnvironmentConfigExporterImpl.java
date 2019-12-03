@@ -120,7 +120,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
-            Validator.validate(pbc.getImage(), pbc.getSize(),
+            Validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
                     BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
             return coll.getAllErrorMessages().stream()
                     .map(ValidationProblem::new)
