@@ -120,7 +120,7 @@ public class Rest {
      * GET externalID used in roles for plans
      */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     @Path("/externalIdForPlan/{planKey}")
     public Response getExternalIdPlan(@PathParam("planKey") String planKey) {
         try {
@@ -147,7 +147,7 @@ public class Rest {
      * GET externalID used in roles for deployments
      */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     @Path("/externalIdForDeployment/{deploymentId}")
     public Response getExternalIdDeployment(@PathParam("deploymentId") String deploymentId) {
         try {
