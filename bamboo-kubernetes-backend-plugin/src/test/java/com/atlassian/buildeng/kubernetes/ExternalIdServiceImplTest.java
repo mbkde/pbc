@@ -102,6 +102,13 @@ public class ExternalIdServiceImplTest {
         assertEquals("test-bamboo:TEST-PARENT:1", externalIdService.getExternalId(TEST_JOB_KEY));
     }
 
+    @Test
+    public void testCorrectInstanceName() {
+        when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("Test Bamboo");
+        assertEquals("test-bamboo:TEST-PLAN:1", externalIdService.getExternalId(TEST_PLAN));
+
+    }
+
     private ImmutablePlan mockPlan(PlanKey planKey) {
         ImmutablePlan plan = mock(ImmutablePlan.class);
         when(plan.getPlanKey()).thenReturn(planKey);
