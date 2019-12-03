@@ -149,7 +149,9 @@ public final class Configuration {
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
-        storageMap.put(Configuration.DOCKER_AWS_ROLE, getAwsRole());
+        if (getAwsRole() != null) {
+            storageMap.put(Configuration.DOCKER_AWS_ROLE, getAwsRole());
+        }
         storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
         //write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
