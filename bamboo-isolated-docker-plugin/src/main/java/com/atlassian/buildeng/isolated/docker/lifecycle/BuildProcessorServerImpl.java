@@ -191,7 +191,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             // and the infra is not calling it either. Doing it here for the lack of a better place.
             specsProperties.validate();
             ErrorCollection errorCollection = new SimpleErrorCollection();
-            Validator.validate(specsProperties.getImage(), specsProperties.getSize(),
+            Validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
                     toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
             if (errorCollection.hasAnyErrors()) {
                 throw new PropertiesValidationException(

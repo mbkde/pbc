@@ -24,6 +24,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 
 public class Validator {
@@ -34,15 +35,16 @@ public class Validator {
      */
     public static void validate(String image, String size, String role, String extraCont,
             ErrorCollection errorCollection, boolean task) {
-        if (role != null && !StringUtils.deleteWhitespace(role).equals(role)) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
-                "Docker Role cannot contain whitespace.");
+        if (role != null) {
+            if (!StringUtils.deleteWhitespace(role).equals(role)) {
+                errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
+                    "AWS IAM Role cannot contain whitespace.");
+            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9_\\-]+").matcher(role).matches()) {
+                errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
+                    "AWS IAM Role doesn't match ARN pattern.");
+            }
         }
-        Validator.validate(image, size, extraCont, errorCollection, task);
-    }
 
-    public static void validate(String image, String size, String extraCont,
-                                ErrorCollection errorCollection, boolean task) {
         validateExtraContainers(extraCont, errorCollection);
 
         if (StringUtils.isBlank(image)) {
