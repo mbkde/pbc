@@ -60,8 +60,15 @@ limitations under the License.
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
 
         <resource type="download" name="viewKubernetesConfiguration.js" location="/viewKubernetesConfiguration.js"/>
-        <resource type="download" name="insertViewExternalId.js" location="/insertViewExternalId.js"/>
         <context>viewKubernetesConfiguration</context>
+    </web-resource>
+
+    <web-resource key="externalId-viewer">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.plugins.jquery:jquery</dependency>
+
+        <resource type="download" name="insertViewExternalId.js" location="/insertViewExternalId.js"/>
+        <context>bamboo.deployment</context>
     </web-resource>
 
     <web-item key="kubernetes-config" name="Configure Kubernetes Backend" section="system.admin/plugins" weight="296">
