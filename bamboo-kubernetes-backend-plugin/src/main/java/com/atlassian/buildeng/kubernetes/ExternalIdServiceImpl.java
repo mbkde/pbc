@@ -27,15 +27,15 @@ public class ExternalIdServiceImpl implements ExternalIdService {
     @Override
     public String getExternalId(ImmutablePlan plan) {
         return getInstanceName()
-            + ":" + plan.getPlanKey()
-            + ":" + plan.getOid();
+            + "/" + plan.getPlanKey()
+            + "/" + plan.getOid();
     }
 
     @Override
     public String getExternalId(DeploymentProject deploymentProject) {
         return getInstanceName()
-            + ":" + deploymentProject.getId()
-            + ":" + deploymentProject.getOid();
+            + "/" + deploymentProject.getId()
+            + "/" + deploymentProject.getOid();
     }
 
     @Override
