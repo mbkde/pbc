@@ -93,12 +93,12 @@ public class PodCreatorTest {
             UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
             0, "bk", 0, true);
 
-        Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration,"test-bamboo:TEST-PLAN:abc123");
+        Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration,"test-bamboo/TEST-PLAN/abc123");
         Map<String, Object> metadata = (Map<String, Object>) podRequest.get("metadata");
         Map<String, Object> annotations = (Map<String, Object>) metadata.get("annotations");
 
         assertEquals( "arn:aws:iam::123456789012:role/testrole" , annotations.get("iam.amazonaws.com/role"));
-        assertEquals("test-bamboo:TEST-PLAN:abc123", annotations.get("iam.amazonaws.com/external-id"));
+        assertEquals("test-bamboo/TEST-PLAN/abc123", annotations.get("iam.amazonaws.com/external-id"));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class PodCreatorTest {
             UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
             0, "bk", 0, true);
 
-        Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration,"test-bamboo:TEST-PLAN:abc123");
+        Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration,"test-bamboo/TEST-PLAN/abc123");
         Map<String, Object> metadata = (Map<String, Object>) podRequest.get("metadata");
         Map<String, Object> annotations = (Map<String, Object>) metadata.get("annotations");
 

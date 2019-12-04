@@ -68,23 +68,23 @@ public class ExternalIdServiceImplTest {
 
     @Test
     public void testExternalIdWithPlan() {
-        assertEquals("test-bamboo:TEST-PLAN:1",
+        assertEquals("test-bamboo/TEST-PLAN/1",
             externalIdService.getExternalId(TEST_PLAN));
     }
 
     @Test
     public void testExternalIdWithDeployment() {
-        assertEquals("test-bamboo:12345:1", externalIdService.getExternalId(TEST_DEPLOYMENT));
+        assertEquals("test-bamboo/12345/1", externalIdService.getExternalId(TEST_DEPLOYMENT));
     }
 
     @Test
     public void testExternalIdWithPlanKey() {
-        assertEquals("test-bamboo:TEST-PLAN:1", externalIdService.getExternalId(TEST_PLAN_KEY));
+        assertEquals("test-bamboo/TEST-PLAN/1", externalIdService.getExternalId(TEST_PLAN_KEY));
     }
 
     @Test
     public void testExternalIdWithId() {
-        assertEquals("test-bamboo:12345:1", externalIdService.getExternalId(TEST_DEPLOYMENT_ID));
+        assertEquals("test-bamboo/12345/1", externalIdService.getExternalId(TEST_DEPLOYMENT_ID));
     }
 
     @Test(expected = NotFoundException.class)
@@ -99,13 +99,13 @@ public class ExternalIdServiceImplTest {
 
     @Test
     public void testJob() {
-        assertEquals("test-bamboo:TEST-PARENT:1", externalIdService.getExternalId(TEST_JOB_KEY));
+        assertEquals("test-bamboo/TEST-PARENT/1", externalIdService.getExternalId(TEST_JOB_KEY));
     }
 
     @Test
     public void testCorrectInstanceName() {
         when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("Test Bamboo");
-        assertEquals("test-bamboo:TEST-PLAN:1", externalIdService.getExternalId(TEST_PLAN));
+        assertEquals("test-bamboo/TEST-PLAN/1", externalIdService.getExternalId(TEST_PLAN));
 
     }
 
