@@ -40,7 +40,10 @@ public class ExternalIdServiceImplTest {
     ExternalIdServiceImpl externalIdService;
 
     private final PlanKey TEST_PLAN_KEY = PlanKeys.getPlanKey("TEST-PLAN");
-    private final ImmutablePlan TEST_PLAN = mockPlan(TEST_PLAN_KEY);
+    private final ImmutablePlan TEST_PLAN = mockPlan(TEST_PLAN_KEY, 1L);
+    private final PlanKey TEST_PLAN_BRANCH_KEY= PlanKeys.getPlanKey("TEST-PLAN12345");
+    private final ImmutablePlan TEST_PLAN_BRANCH = mockPlan(TEST_PLAN_BRANCH_KEY, 2L);
+
     private final PlanKey TEST_PLAN_NOT_FOUND_KEY = PlanKeys.getPlanKey("TEST-NOTFOUND");
     private final PlanKey TEST_JOB_KEY = PlanKeys.getPlanKey("TEST-PARENT-JOB1");
     private final PlanKey TEST_PARENT_KEY = PlanKeys.getPlanKey("TEST-PARENT");
@@ -63,6 +66,9 @@ public class ExternalIdServiceImplTest {
 
         when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
         when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_NOT_FOUND)).thenReturn(null);
+
+        when(TEST_PLAN_BRANCH.getMaster()).thenReturn(TEST_PLAN);
+        when(TEST_PLAN_BRANCH.hasMaster()).thenReturn(true);
 
     }
 
@@ -109,10 +115,15 @@ public class ExternalIdServiceImplTest {
 
     }
 
-    private ImmutablePlan mockPlan(PlanKey planKey) {
+    @Test
+    public void testExternalIdwithPlanBranch() {
+        assertEquals("test-bamboo/TEST-PLAN/1", externalIdService.getExternalId(TEST_PLAN_BRANCH));
+    }
+
+    private ImmutablePlan mockPlan(PlanKey planKey, long entityOid) {
         ImmutablePlan plan = mock(ImmutablePlan.class);
         when(plan.getPlanKey()).thenReturn(planKey);
-        when(plan.getOid()).thenReturn(BambooEntityOid.create(1L));
+        when(plan.getOid()).thenReturn(BambooEntityOid.create(entityOid));
         when(plan.getPlanType()).thenReturn(PlanType.CHAIN);
         return plan;
     }
