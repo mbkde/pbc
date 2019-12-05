@@ -26,6 +26,7 @@ public class ExternalIdServiceImpl implements ExternalIdService {
 
     @Override
     public String getExternalId(ImmutablePlan plan) {
+        plan = plan.hasMaster() ? plan.getMaster() : plan;
         return getInstanceName()
             + "/" + plan.getPlanKey()
             + "/" + plan.getOid();
