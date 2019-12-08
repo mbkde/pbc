@@ -60,7 +60,11 @@ public class SummaryPanel implements WebPanel {
                 ret.append("<br/>").append(ConfigurationOverride.reverseRegistryOverride(t.getImage()));
             });
             ret.append("</dd>");
-
+            
+            if (configuration.getAwsRole() != null) {
+                ret.append("<dt>AWS IAM Role:</dt><dd>").append(configuration.getAwsRole()).append("</dd>");
+            }
+            
             Map<String, String> customData =
                     createCustomDataMap(buildcontext, summary);
 
