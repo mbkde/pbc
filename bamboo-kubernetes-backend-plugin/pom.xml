@@ -61,11 +61,24 @@ limitations under the License.
     </build>
     <dependencies>
         <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-api</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-web</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>isolated-docker-spi</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -117,12 +130,6 @@ limitations under the License.
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.bamboo</groupId>
-            <artifactId>atlassian-bamboo-web</artifactId>
-            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.core.BambooEntityOid;
@@ -23,6 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockSettings;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -129,11 +130,11 @@ public class ExternalIdServiceImplTest {
     }
 
     private ImmutableJob mockJob(PlanKey planKey) {
-        ImmutableJob job = mock(ImmutableJob.class);
+        ImmutableJob job = mock(ImmutableJob.class, Mockito.withSettings().lenient());
         when(job.getPlanKey()).thenReturn(planKey);
         when(job.getPlanType()).thenReturn(PlanType.JOB);
 
-        ImmutableChain parent = mock(ImmutableChain.class);
+        ImmutableChain parent = mock(ImmutableChain.class, Mockito.withSettings().lenient());
         when(parent.getPlanKey()).thenReturn(TEST_PARENT_KEY);
         when(parent.getOid()).thenReturn(BambooEntityOid.create(1L));
         when(parent.getPlanType()).thenReturn(PlanType.CHAIN);

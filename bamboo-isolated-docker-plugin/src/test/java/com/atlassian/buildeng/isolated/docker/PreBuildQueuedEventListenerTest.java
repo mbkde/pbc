@@ -74,7 +74,7 @@ public class PreBuildQueuedEventListenerTest {
     private JMXAgentsService jmx;
     @Mock
     private AgentLicenseLimits agentLicenseLimits;
-    @Mock 
+    @Mock
     private ContainerSizeDescriptor sizeDescriptor;
             
     @InjectMocks
@@ -92,7 +92,7 @@ public class PreBuildQueuedEventListenerTest {
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         Mockito.doAnswer(invocation -> {
-            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
@@ -108,7 +108,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
         Mockito.doAnswer(invocation -> {
-            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentException("throw"));
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
@@ -143,7 +143,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         when(scheduler.reschedule(anyObject())).thenReturn(Boolean.TRUE);
         Mockito.doAnswer(invocation -> {
-            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withRetryRecoverable("error"));
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
@@ -160,7 +160,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
 
         Mockito.doAnswer(invocation -> {
-            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
@@ -172,7 +172,7 @@ public class PreBuildQueuedEventListenerTest {
         
         //now check the rerun
         Mockito.doAnswer(invocation -> {
-            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult());
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
@@ -189,7 +189,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         
         Mockito.doAnswer(invocation -> {
-            IsolatedDockerRequestCallback cb = invocation.getArgumentAt(1, IsolatedDockerRequestCallback.class);
+            IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withError("Error1"));
             return null;
         }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
@@ -226,7 +226,7 @@ public class PreBuildQueuedEventListenerTest {
     }    
 
     private BuildContext mockBuildContext(boolean dockerEnabled, String image, LifeCycleState state) {
-        BuildContext buildContext = mock(BuildContext.class);
+        BuildContext buildContext = mock(BuildContext.class, Mockito.withSettings().lenient());
         CurrentBuildResult result = mock(CurrentBuildResult.class);
         when(buildContext.getCurrentResult()).thenReturn(result);
         BuildDefinition bd = mock(BuildDefinition.class);
@@ -243,7 +243,6 @@ public class PreBuildQueuedEventListenerTest {
 
         BuildContext parentBuildContext = mock(BuildContext.class);
         when(buildContext.getParentBuildContext()).thenReturn(parentBuildContext);
-        when(parentBuildContext.getTypedPlanKey()).thenReturn(PlanKeys.getPlanKey("AAA-BBB"));
         return buildContext;
     }
 

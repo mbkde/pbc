@@ -18,6 +18,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -867,7 +868,7 @@ public class CyclingECSSchedulerTest {
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances, Set<String> asgInstances) throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
-        when(mocked.getInstances(anyList())).thenReturn(ec2Instances);
+        when(mocked.getInstances(anySet())).thenReturn(ec2Instances);
         mockASG(asgInstances, mocked);
         when(mocked.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
             DockerHost foo = (DockerHost) invocationOnMock.getArguments()[0];
@@ -880,6 +881,7 @@ public class CyclingECSSchedulerTest {
         AutoScalingGroup asg = new AutoScalingGroup();
         asg.setMaxSize(50);
         asg.setDesiredCapacity(asgInstances.size());
+        asg.setAutoScalingGroupName("test-asg");
         asg.setInstances(asgInstances.stream().map((String t) -> {
             com.amazonaws.services.autoscaling.model.Instance i = new com.amazonaws.services.autoscaling.model.Instance();
             i.setInstanceId(t);
@@ -936,10 +938,11 @@ public class CyclingECSSchedulerTest {
         return ECSInstance.DEFAULT_INSTANCE.getCpu() * percentage / 100;
     }
 
-    class IsListOfTwoElements extends ArgumentMatcher<List> {
-     @Override
-     public boolean matches(Object list) {
-         return ((List) list).size() == 2;
-     }
+    class IsListOfTwoElements implements ArgumentMatcher<List> {
+        @Override
+        public boolean matches(List list) {
+            return list.size() == 2;
+        }
+    }
  }
-}
+
