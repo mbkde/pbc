@@ -27,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
@@ -52,7 +53,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockSettings;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -74,7 +74,7 @@ public class PreBuildQueuedEventListenerTest {
     private JMXAgentsService jmx;
     @Mock
     private AgentLicenseLimits agentLicenseLimits;
-    @Mock 
+    @Mock
     private ContainerSizeDescriptor sizeDescriptor;
             
     @InjectMocks
@@ -243,7 +243,6 @@ public class PreBuildQueuedEventListenerTest {
 
         BuildContext parentBuildContext = mock(BuildContext.class);
         when(buildContext.getParentBuildContext()).thenReturn(parentBuildContext);
-        when(parentBuildContext.getTypedPlanKey()).thenReturn(PlanKeys.getPlanKey("AAA-BBB"));
         return buildContext;
     }
 
