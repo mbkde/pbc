@@ -20,9 +20,9 @@ import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.bamboo.v2.build.queue.QueueManagerView;
 import com.google.common.base.Functions;
+import io.atlassian.fugue.Iterables;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.apache.commons.collections4.IterableUtils;
 
 public final class DockerAgentBuildQueue {
     public static final String BUILD_KEY = "custom.isolated.docker.buildkey";
@@ -37,7 +37,7 @@ public final class DockerAgentBuildQueue {
         QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager,
                 Functions.<BuildQueueManager.QueueItemView<CommonContext>>identity());
 
-        return StreamSupport.stream(queue.getQueueView(IterableUtils.emptyIterable()).spliterator(), false)
+        return StreamSupport.stream(queue.getQueueView(Iterables.emptyIterable()).spliterator(), false)
                 .map((BuildQueueManager.QueueItemView<CommonContext> t) -> t.getView())
                 //this filter is crutial for BUILDENG-12837
                 .filter((CommonContext t) ->
