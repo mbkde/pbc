@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -107,7 +108,9 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
             String awsRole = any.getConfiguration().get(Configuration.DOCKER_AWS_ROLE);
-
+            if (StringUtils.isBlank(awsRole)) {
+                awsRole = null;
+            }
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
                 Validator.validate(image, size, awsRole, extraCont, coll, false);

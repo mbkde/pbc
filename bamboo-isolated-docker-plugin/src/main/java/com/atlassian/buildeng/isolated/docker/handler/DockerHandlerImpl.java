@@ -111,6 +111,9 @@ public class DockerHandlerImpl implements DockerHandler {
         String size = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE_SIZE);
         String image = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE);
         String role = (String) webFragmentsContextMap.get(Configuration.DOCKER_AWS_ROLE);
+        if (StringUtils.isBlank(role)) {
+            role = null;
+        }
         String enabled = (String) webFragmentsContextMap.get(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
         Validator.validate(image, size, role, extraCont, errs, false);
@@ -243,7 +246,10 @@ public class DockerHandlerImpl implements DockerHandler {
     
     static Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
         String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
-        
+        String role = (String) webFragmentsContextMap.get(Configuration.DOCKER_AWS_ROLE);
+        if (StringUtils.isBlank(role)) {
+            role = null;
+        }
         Configuration config = ConfigurationBuilder
                 .create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                 .withEnabled(true)
@@ -252,7 +258,7 @@ public class DockerHandlerImpl implements DockerHandler {
                                 Configuration.ContainerSize.REGULAR.name())))
                 .withExtraContainers(ConfigurationPersistence.fromJsonString(
                         (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
-                .withAwsRole((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_AWS_ROLE, ""))
+                .withAwsRole(role)
                 .build();
         return config;
     }
