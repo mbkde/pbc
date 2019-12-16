@@ -35,7 +35,7 @@ public class Validator {
      */
     public static void validate(String image, String size, String role, String extraCont,
             ErrorCollection errorCollection, boolean task) {
-        if (role != null && !role.isEmpty()) {
+        if (role != null) {
             if (!StringUtils.deleteWhitespace(role).equals(role)) {
                 errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                     "AWS IAM Role cannot contain whitespace.");
