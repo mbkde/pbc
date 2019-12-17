@@ -48,6 +48,10 @@ public class AccessConfiguration {
      */
     @Nonnull
     public static Configuration forMap(@Nonnull Map<String, String> cc) {
+        String role = cc.getOrDefault(Configuration.DOCKER_AWS_ROLE, null);
+        if (role != null && "".equals(role)) {
+            role = null;
+        }
         return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                     .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
@@ -55,7 +59,7 @@ public class AccessConfiguration {
                     .withExtraContainers(
                             ConfigurationPersistence.fromJsonString(
                                 cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
-                    .withAwsRole(cc.getOrDefault(Configuration.DOCKER_AWS_ROLE, null))
+                    .withAwsRole(role)
                     .build();
     }
 
