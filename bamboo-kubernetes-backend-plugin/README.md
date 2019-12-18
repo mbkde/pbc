@@ -96,7 +96,7 @@ spec:
         resources:
             limits:
                 cpu: "40000m"
-                memory : "178000"
+                memory: "178000m"
         volumeMounts:
         -   name: secrets
             mountPath: /buildeng-kube-secret
