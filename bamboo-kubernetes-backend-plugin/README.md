@@ -93,6 +93,10 @@ spec:
             secretName: staging-bamboo
     containers:
     -   name: bamboo-agent
+        resources:
+            limits:
+                cpu: "40000m"
+                memory: "178000m"
         volumeMounts:
         -   name: secrets
             mountPath: /buildeng-kube-secret
