@@ -20,6 +20,8 @@ import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
 import com.atlassian.bamboo.chains.plugins.PostJobAction;
+import com.atlassian.bamboo.plan.cache.ImmutableChain;
+import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
 import com.atlassian.bamboo.v2.build.BuildKey;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
@@ -27,14 +29,16 @@ import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
-import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+
+import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
 
 /**
  * runs on server and removes the agent from db after StopDockerAgentBuildProcessor killed it.
@@ -54,7 +58,11 @@ public class PostJobActionImpl implements PostJobAction {
 
     @Override
     public void execute(@NotNull StageExecution stageExecution, @NotNull Job job,
-            @NotNull BuildResultsSummary buildResultsSummary) {
+                        @NotNull BuildResultsSummary buildResultsSummary) {
+        execute(stageExecution, (ImmutableJob)job, buildResultsSummary);
+    }
+
+    public void execute(@NotNull StageExecution stageExecution, @NotNull ImmutableJob job, @NotNull BuildResultsSummary buildResultsSummary) {
         //cleanup future reservations in case of failure.
         //We do it here because we want to reset the reservation as soon as possible.
         ReserveFutureCapacityPostStageAction.FutureState state = ReserveFutureCapacityPostStageAction
@@ -81,7 +89,7 @@ public class PostJobActionImpl implements PostJobAction {
         }
     }
 
-    private BuildAgent findAgent(Job job, BuildResultsSummary buildResultsSummary) {
+    private BuildAgent findAgent(ImmutableJob job, BuildResultsSummary buildResultsSummary) {
         Long agentId = buildResultsSummary.getBuildAgentId();
         if (agentId == null) {
             //not sure why the build agent id is null sometimes. but because it is,
@@ -92,10 +100,10 @@ public class PostJobActionImpl implements PostJobAction {
                     })
                     .findFirst();
             if (found.isPresent()) {
-                LOG.info("Found missing build agent for job " + job.getId());
+                LOG.info("Found missing build agent for job " + job.getPlanKey());
                 return found.get();
             } else {
-                LOG.error("Unable to find build agent for job " + job.getId());
+                LOG.error("Unable to find build agent for job " + job.getPlanKey());
                 return null;
             }
         } else {
@@ -105,12 +113,12 @@ public class PostJobActionImpl implements PostJobAction {
             if (test == null) {
                 // on a rerun is the buildResultSummary still holding the old agentId sometimes?
                 LOG.error("Agent {} for job {} referenced from buildResultSummary but missing in db.",
-                        agentId, job.getId());
+                        agentId, job.getPlanKey());
                 return null;
             } else if (!AgentQueries.isDockerAgent(test)) {
                 //could it be an elastic/remote agent that was running the job while the plan was changed?
                 LOG.error("Agent {} for job {} referenced from buildResultSummary wa not PBC agent",
-                        agentId, job.getId());
+                        agentId, job.getPlanKey());
                 return null;
             }
             return test;
