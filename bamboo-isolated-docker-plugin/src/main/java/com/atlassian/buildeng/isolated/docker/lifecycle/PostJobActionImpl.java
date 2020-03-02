@@ -29,16 +29,14 @@ import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-
-import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
 
 /**
  * runs on server and removes the agent from db after StopDockerAgentBuildProcessor killed it.
@@ -57,12 +55,15 @@ public class PostJobActionImpl implements PostJobAction {
     }
 
     @Override
-    public void execute(@NotNull StageExecution stageExecution, @NotNull Job job,
+    public void execute(@NotNull StageExecution stageExecution,
+                        @NotNull Job job,
                         @NotNull BuildResultsSummary buildResultsSummary) {
         execute(stageExecution, (ImmutableJob)job, buildResultsSummary);
     }
 
-    public void execute(@NotNull StageExecution stageExecution, @NotNull ImmutableJob job, @NotNull BuildResultsSummary buildResultsSummary) {
+    public void execute(@NotNull StageExecution stageExecution,
+                        @NotNull ImmutableJob job,
+                        @NotNull BuildResultsSummary buildResultsSummary) {
         //cleanup future reservations in case of failure.
         //We do it here because we want to reset the reservation as soon as possible.
         ReserveFutureCapacityPostStageAction.FutureState state = ReserveFutureCapacityPostStageAction
