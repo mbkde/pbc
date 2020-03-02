@@ -65,7 +65,7 @@ final class ConfigurationOverride {
             Optional<Map.Entry<String, String>> match = registryMapping
                     .entrySet()
                     .stream()
-                    .filter((it) -> { return registry.equals(it.getValue()); })
+                    .filter((it) -> registry.equals(it.getValue()))
                     .findFirst();
             if (match.isPresent()) {
                 return match.get().getKey() + "/" + repo;
@@ -75,7 +75,7 @@ final class ConfigurationOverride {
     }
 
     /**
-     * Split a docker image in to a pare of <registry, repository>.
+     * Split a docker image in to a pare of (registry, repository).
      * registry is empty String if the image is from dockerhub. e.g. postgres
      * @return
      */

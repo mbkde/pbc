@@ -29,7 +29,9 @@ import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+
 import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
+
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.Optional;
@@ -61,6 +63,9 @@ public class PostJobActionImpl implements PostJobAction {
         execute(stageExecution, (ImmutableJob)job, buildResultsSummary);
     }
 
+    /**
+     * Remove PBC agent from db once job is finished.
+     */
     public void execute(@NotNull StageExecution stageExecution,
                         @NotNull ImmutableJob job,
                         @NotNull BuildResultsSummary buildResultsSummary) {
