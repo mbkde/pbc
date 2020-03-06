@@ -110,7 +110,21 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             Map<String, Object> template = loadTemplatePod();
             Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, externalId);
             Map<String, Object> finalPod = mergeMap(template, podDefinition);
-            File podFile = createPodFile(finalPod);
+            List<Map<String, Object>> podSpecList = new ArrayList<>();
+            podSpecList.add(finalPod);
+
+            if (request.getConfiguration().isAwsRoleDefined()) {
+                Map<String, Object> iamRequest = PodCreator.createIAMRequest(request, globalConfiguration, externalId);
+                Map<String, Object> iamRequestTemplate = loadTemplateIamRequest();
+
+                Map<String, Object> finalIamRequest = mergeMap(iamRequestTemplate, iamRequest);
+                //Temporary Workaround until we fully migrate to IRSA
+                removeDefaultRole(finalPod);
+                podSpecList.add(finalIamRequest) ;
+            }
+
+            File podFile = createPodFile(podSpecList);
+
             Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
             String name = KubernetesHelper.getName(pod);
@@ -195,6 +209,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadTemplateIamRequest() {
+        Yaml yaml =  new Yaml(new SafeConstructor());
+        return (Map<String, Object>) yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
+    }
+
     @Override
     public List<String> getKnownDockerImages() {
         return Collections.emptyList();
@@ -219,19 +239,37 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         executor.shutdown();
     }
 
-    private File createPodFile(Map<String, Object> finalPod) throws IOException {
+    private File createPodFile(List<Map<String, Object>> podSpecList) throws IOException {
+        File f = File.createTempFile("pod", "yaml");
+        writeSpecToFile(podSpecList, f);
+        return f;
+    }
+
+    //A hacky way to remove a default role being provided by kube2iam
+    //Will remove once we fully migrate to IRSA
+    private void removeDefaultRole(Map<String, Object> finalPod) throws IOException {
+        if (finalPod.containsKey("metadata")) {
+            Map<String, Object> metadata = (Map<String, Object>) finalPod.get("metadata");
+            if (metadata.containsKey("annotations")) {
+                Map<String, Object> annotations = (Map<String, Object>) metadata.get("annotations");
+                annotations.remove("iam.amazonaws.com/role");
+            }
+        }
+    }
+
+    private void writeSpecToFile(List<Map<String, Object>> document, File f) throws IOException {
         DumperOptions options = new DumperOptions();
+        options.setExplicitStart(true);
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setDefaultScalarStyle(DumperOptions.ScalarStyle.SINGLE_QUOTED);
         options.setIndent(4);
         options.setCanonical(false);
         Yaml yaml = new Yaml(options);
+
         logger.debug("YAML----------");
-        logger.debug(yaml.dump(finalPod));
+        logger.debug(yaml.dumpAll(document.iterator()));
         logger.debug("YAMLEND----------");
-        File f = File.createTempFile("pod", "yaml");
-        FileUtils.write(f, yaml.dump(finalPod), "UTF-8");
-        return f;
+        FileUtils.write(f, yaml.dumpAll(document.iterator()), "UTF-8", false);
     }
 
     @SuppressWarnings("unchecked")

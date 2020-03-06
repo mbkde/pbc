@@ -74,6 +74,15 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                 Add your pod configuration here
             </div>
         </div>
+
+        <div class="field-group">
+            <label for="iamRequestTemplate">IAM Request Template</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="iamRequestTemplate"></textarea>
+            <div class="description" id="desc-iamRequestTemplate">
+                Add your IAM request configuration here
+            </div>
+        </div>
+
         <div class="field-group">
             <label for="containerSizes">Container size definitions</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="containerSizes"></textarea>

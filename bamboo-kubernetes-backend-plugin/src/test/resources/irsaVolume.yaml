@@ -1,0 +1,9 @@
+name: aws-iam-token
+projected:
+    defaultMode: 420
+    sources:
+    -   secret:
+            name: IRSA-token
+            items:
+            -   key: token
+                path: token

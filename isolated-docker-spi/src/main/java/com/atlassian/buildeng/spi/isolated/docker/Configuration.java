@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.StringUtils;
 
 public final class Configuration {
     
@@ -89,6 +90,10 @@ public final class Configuration {
 
     public String getAwsRole() {
         return awsRole;
+    }
+
+    public Boolean isAwsRoleDefined() {
+        return !StringUtils.isEmpty(awsRole);
     }
 
     /**

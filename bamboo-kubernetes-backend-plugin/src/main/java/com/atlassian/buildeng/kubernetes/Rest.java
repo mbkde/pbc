@@ -74,6 +74,7 @@ public class Rest {
         c.setSidekickImage(configuration.getCurrentSidekick());
         c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
+        c.setIamRequestTemplate(configuration.getBandanaIamRequestTemplateAsString());
         c.setContainerSizes(configuration.getContainerSizesAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
@@ -92,7 +93,8 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
+                config.getIamRequestTemplate(), config.getPodLogsUrl(),
+                config.getContainerSizes(), config.isUseClusterRegistry(),
                 config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
