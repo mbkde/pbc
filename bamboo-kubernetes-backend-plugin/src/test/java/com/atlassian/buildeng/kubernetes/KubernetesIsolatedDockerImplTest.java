@@ -28,22 +28,17 @@ import static org.mockito.Mockito.when;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
-import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -69,19 +64,6 @@ public class KubernetesIsolatedDockerImplTest {
 
     @InjectMocks
     KubernetesIsolatedDockerImpl kubernetesIsolatedDocker;
-
-    @Before
-    public void setup() throws IOException {
-        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
-        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
-        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
-
-        String iamRequestTemplate = FileUtils.readFileToString(new File(this.getClass().getResource("/iamRequestTemplate.yaml").getFile()), "UTF-8");
-        String podRequestTemplate = FileUtils.readFileToString(new File(this.getClass().getResource("/podTemplate.yaml").getFile()), "UTF-8");
-
-        when(globalConfiguration.getPodTemplateAsString()).thenReturn(podRequestTemplate);
-        when(globalConfiguration.getBandanaIamRequestTemplateAsString()).thenReturn(iamRequestTemplate);
-    }
 
     @Test
     @SuppressWarnings("unchecked")
