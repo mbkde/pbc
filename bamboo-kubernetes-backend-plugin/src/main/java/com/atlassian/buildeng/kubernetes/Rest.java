@@ -129,7 +129,8 @@ public class Rest {
             PlanKey pk = PlanKeys.getPlanKey(planKey);
             ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
             if (plan == null) {
-                return Response.status(Response.Status.NOT_FOUND).entity("Can not found build plan with key: " + planKey).build();
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Can not found build plan with key: " + planKey).build();
             }
             if (bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
@@ -138,7 +139,8 @@ public class Rest {
                 return Response.ok(externalIdService.getExternalId(plan)).build();
 
             } else {
-                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this plan: " + planKey).build();
+                return Response.status(Response.Status.FORBIDDEN)
+                    .entity("You need Build permission on this plan: " + planKey).build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
@@ -153,9 +155,11 @@ public class Rest {
     @Path("/externalIdForDeployment/{deploymentId}")
     public Response getExternalIdDeployment(@PathParam("deploymentId") String deploymentId) {
         try {
-            DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
+            DeploymentProject deploymentProject =
+                deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
             if (deploymentProject == null) {
-                return Response.status(Response.Status.NOT_FOUND).entity("Can not found deployment project with id: " + deploymentId).build();
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Can not found deployment project with id: " + deploymentId).build();
             }
             if (bambooPermissionManager.hasPermission(BambooPermission.BUILD, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)

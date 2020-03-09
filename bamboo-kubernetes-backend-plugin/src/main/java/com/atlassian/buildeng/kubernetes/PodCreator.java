@@ -108,17 +108,17 @@ public class PodCreator {
         System.getProperty("pbc.kube.shm.generate", "true"));
 
 
-    static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration, String externalId) {
-        Configuration c = r.getConfiguration();
+    static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Map<String, Object> root = new HashMap<>();
         root.put("apiVersion", "v1");
         root.put("kind", "Pod");
-        root.put("metadata", createMetadata(globalConfiguration, r, externalId));
+        root.put("metadata", createMetadata(globalConfiguration, r));
         root.put("spec", createSpec(globalConfiguration, r));
         return root;
     }
 
-    static Map<String, Object> createIamRequest(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration, String externalId) {
+    static Map<String, Object> createIamRequest(IsolatedDockerAgentRequest r,
+                                                GlobalConfiguration globalConfiguration, String externalId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
         iamRequest.put("metadata", ImmutableMap.of("name", createPodName(r)));
@@ -126,7 +126,7 @@ public class PodCreator {
         return iamRequest;
     }
 
-    private static Map<String, String> createAnnotations(IsolatedDockerAgentRequest r, String externalId) {
+    private static Map<String, String> createAnnotations(IsolatedDockerAgentRequest r) {
         Map<String, String> annotations = new HashMap<>();
         annotations.put(ANN_UUID, r.getUniqueIdentifier().toString());
         annotations.put(ANN_RESULTID, r.getResultKey());
@@ -236,11 +236,11 @@ public class PodCreator {
     }
 
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
-                                                      IsolatedDockerAgentRequest r, String externalId) {
+                                                      IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
         map.put("labels", createLabels(r, globalConfiguration));
-        map.put("annotations", createAnnotations(r, externalId));
+        map.put("annotations", createAnnotations(r));
         return map;
     }
 
@@ -390,8 +390,8 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
         envs.add(ImmutableMap.of("name", KUBE_NUM_EXTRA_CONTAINERS, "value",
             "" + r.getConfiguration().getExtraContainers().size()));
-        String awsRole = r.getConfiguration().getAwsRole();
         if (r.getConfiguration().isAwsRoleDefined()) {
+            String awsRole = r.getConfiguration().getAwsRole();
             envs.add(ImmutableMap.of("name", ENV_AWS_ROLE_ARN, "value", awsRole));
             envs.add(ImmutableMap.of("name", ENV_AWS_WEB_IDENTITY, "value", AWS_WEB_IDENTITY_TOKEN_FILE + "token"));
         }

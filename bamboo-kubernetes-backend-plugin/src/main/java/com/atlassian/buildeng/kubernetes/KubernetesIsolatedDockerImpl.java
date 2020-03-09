@@ -104,11 +104,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         });
     }
 
-    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback, String externalId) {
+    private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback,
+                      String externalId) {
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             Map<String, Object> template = loadTemplatePod();
-            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration, externalId);
+            Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
             Map<String, Object> finalPod = mergeMap(template, podDefinition);
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
