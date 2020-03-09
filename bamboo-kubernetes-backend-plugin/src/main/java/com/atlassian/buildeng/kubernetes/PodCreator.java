@@ -54,12 +54,12 @@ public class PodCreator {
     static final String ENV_VAR_RESULT_ID = "RESULT_ID";
 
     /**
-     * The environment variable to set the aws role
+     * The environment variable to set the aws role.
      */
     static final String ENV_AWS_ROLE_ARN = "AWS_ROLE_ARN";
 
     /**
-     * The environment variable to set the location of the web identity token for IRSA
+     * The environment variable to set the location of the web identity token for IRSA.
      */
     static final String ENV_AWS_WEB_IDENTITY = "AWS_WEB_IDENTITY_TOKEN_FILE";
 
@@ -118,7 +118,7 @@ public class PodCreator {
         return root;
     }
 
-    static Map<String, Object> createIAMRequest(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration, String externalId) {
+    static Map<String, Object> createIamRequest(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration, String externalId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
         iamRequest.put("metadata", ImmutableMap.of("name", createPodName(r)));
@@ -181,7 +181,7 @@ public class PodCreator {
                 List<Configuration.EnvVariable> currentEnvVariable = new LinkedList<>(t.getEnvVariables());
                 currentEnvVariable.add(new Configuration.EnvVariable(ENV_AWS_ROLE_ARN, c.getAwsRole()));
                 currentEnvVariable.add(new Configuration.EnvVariable(
-                    ENV_AWS_WEB_IDENTITY, AWS_WEB_IDENTITY_TOKEN_FILE+"token"));
+                    ENV_AWS_WEB_IDENTITY, AWS_WEB_IDENTITY_TOKEN_FILE + "token"));
                 t.setEnvVariables(currentEnvVariable);
             }
 
@@ -393,7 +393,7 @@ public class PodCreator {
         String awsRole = r.getConfiguration().getAwsRole();
         if (r.getConfiguration().isAwsRoleDefined()) {
             envs.add(ImmutableMap.of("name", ENV_AWS_ROLE_ARN, "value", awsRole));
-            envs.add(ImmutableMap.of("name", ENV_AWS_WEB_IDENTITY, "value", AWS_WEB_IDENTITY_TOKEN_FILE+"token"));
+            envs.add(ImmutableMap.of("name", ENV_AWS_WEB_IDENTITY, "value", AWS_WEB_IDENTITY_TOKEN_FILE + "token"));
         }
         return envs;
     }

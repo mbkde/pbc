@@ -119,7 +119,7 @@ public class Rest {
     }
 
     /**
-     * GET externalID used in roles for plans
+     * GET externalID used in roles for plans.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -146,7 +146,7 @@ public class Rest {
     }
 
     /**
-     * GET externalID used in roles for deployments
+     * GET externalID used in roles for deployments.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)

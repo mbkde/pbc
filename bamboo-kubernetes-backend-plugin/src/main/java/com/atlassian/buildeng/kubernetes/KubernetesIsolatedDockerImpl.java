@@ -114,7 +114,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             podSpecList.add(finalPod);
 
             if (request.getConfiguration().isAwsRoleDefined()) {
-                Map<String, Object> iamRequest = PodCreator.createIAMRequest(request, globalConfiguration, externalId);
+                Map<String, Object> iamRequest = PodCreator.createIamRequest(request, globalConfiguration, externalId);
                 Map<String, Object> iamRequestTemplate = loadTemplateIamRequest();
 
                 Map<String, Object> finalIamRequest = mergeMap(iamRequestTemplate, iamRequest);

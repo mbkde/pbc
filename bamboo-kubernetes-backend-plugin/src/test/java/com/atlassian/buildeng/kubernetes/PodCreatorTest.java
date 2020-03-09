@@ -186,7 +186,7 @@ public class PodCreatorTest {
             UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
             0, "bk", 0, true);
 
-        Map<String, Object> iamRequest = PodCreator.createIAMRequest(request, globalConfiguration, "test-bamboo/TEST-PLAN/abc123");
+        Map<String, Object> iamRequest = PodCreator.createIamRequest(request, globalConfiguration, "test-bamboo/TEST-PLAN/abc123");
 
         String expectedIamRequest = FileUtils.readFileToString(new File(this.getClass().getResource("/iamRequest.yaml").getFile()), "UTF-8");
 
