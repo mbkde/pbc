@@ -1,6 +1,6 @@
 metadata:
-    name: test-plan-job-1-379ad7b0-b4f5-4fae-914b-070e9442c0a9
+    name: test-plan-job-1-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9
 kind: IAMRequest
 spec:
     subjectID: test-bamboo/TEST-PLAN/abc123
-    outputSecretName: IRSA-token
+    outputSecretName: test-plan-job-1-irsatoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9

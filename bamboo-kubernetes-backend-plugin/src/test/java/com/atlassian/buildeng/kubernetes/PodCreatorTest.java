@@ -75,6 +75,28 @@ public class PodCreatorTest {
                 result);
         
     }
+
+    @Test
+    public void testCreateIrsaSecretName() {
+        String result = PodCreator.createIrsaSecretName(
+            new IsolatedDockerAgentRequest(null,
+                "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
+        assertEquals("shardspipeline-servicedeskembeddable-455-irsatoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+            result);
+
+    }
+
+    @Test
+    public void testCreateIamRequestName() {
+        String result = PodCreator.createIamRequestName(
+            new IsolatedDockerAgentRequest(null,
+                "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
+        assertEquals("shardspipeline-servicedeskembeddabl-455-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+            result);
+
+    }
     
     @Test
     public void testCreatePodNameExactly51Chars() {

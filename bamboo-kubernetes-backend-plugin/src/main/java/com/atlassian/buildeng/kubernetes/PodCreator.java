@@ -88,7 +88,6 @@ public class PodCreator {
      */
     static final String PBC_DIR = "/pbc/kube";
     static final String AWS_WEB_IDENTITY_TOKEN_FILE = "/var/run/secrets/eks.amazonaws.com/serviceaccount/";
-    static final String IRSA_TOKEN_SECRET_NAME = "IRSA-token";
 
     static final String CONTAINER_NAME_BAMBOOAGENT = "bamboo-agent";
 
@@ -121,8 +120,8 @@ public class PodCreator {
                                                 GlobalConfiguration globalConfiguration, String externalId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
-        iamRequest.put("metadata", ImmutableMap.of("name", createPodName(r)));
-        iamRequest.put("spec", ImmutableMap.of("subjectID", externalId, "outputSecretName", IRSA_TOKEN_SECRET_NAME));
+        iamRequest.put("metadata", ImmutableMap.of("name", createIamRequestName(r)));
+        iamRequest.put("spec", ImmutableMap.of("subjectID", externalId, "outputSecretName", createIrsaSecretName(r)));
         return iamRequest;
     }
 
@@ -245,19 +244,45 @@ public class PodCreator {
     }
 
     static String createPodName(IsolatedDockerAgentRequest r) {
+        return createName(r,"");
+    }
+
+    static String createIrsaSecretName(IsolatedDockerAgentRequest r)  {
+        return createName(r, "irsatoken");
+    }
+
+    static String createIamRequestName(IsolatedDockerAgentRequest r) {
+        return createName(r, "iamrequest");
+    }
+
+    /**
+     * A character for some resources are necessary. This functions reduces the name of a plan to 50 characters
+     * while keeping identifying characteristics.
+     */
+    private static String createName(IsolatedDockerAgentRequest r, String suffix) {
         //50 is magic constant that attempts to limit the overall length of the name.
         String key = r.getResultKey();
-        if (key.length() > 50) {
+        String name = suffix.isEmpty() ? key : key + "-" + suffix;
+        if (name.length() > 50) {
             PlanResultKey prk = PlanKeys.getPlanResultKey(key);
             String pk = prk.getPlanKey().toString();
             int len = 50 - ("" + prk.getBuildNumber()).length() - 1;
-            key = pk.substring(0,
-                Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
+            if (suffix.isEmpty()) {
+                name = pk.substring(0,
+                    Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
+            } else {
+                //Remove the length of the suffix and a '-'
+                len -= suffix.length() + 1;
+                name = pk.substring(0,
+                    Math.min(pk.length(), len))  + "-" + prk.getBuildNumber() + "-" + suffix;
+            }
+
         }
         //together with the identifier we are not at 88 max,in BUILDENG-15619 the failure in CNI plugin network creation
         // was linked both to pod name and namespace lengths. this way we should accomodate fairly long namespace names.
-        return key.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString();
+        return name.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString();
     }
+
 
     private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
@@ -297,7 +322,7 @@ public class PodCreator {
                         .put("defaultMode", 420)
                         .put("sources", ImmutableList.<Map<String, Object>>builder()
                             .add(ImmutableMap.of("secret", ImmutableMap.builder()
-                                .put("name", IRSA_TOKEN_SECRET_NAME)
+                                .put("name", createIrsaSecretName(r))
                                 .put("items", ImmutableList.of(ImmutableMap.of("key", "token", "path", "token")))
                                 .build()))
                             .build())
