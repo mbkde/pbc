@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockSettings;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -44,6 +43,9 @@ public class ExternalIdServiceImplTest {
     private final ImmutablePlan TEST_PLAN = mockPlan(TEST_PLAN_KEY, 1L);
     private final PlanKey TEST_PLAN_BRANCH_KEY= PlanKeys.getPlanKey("TEST-PLAN12345");
     private final ImmutablePlan TEST_PLAN_BRANCH = mockPlan(TEST_PLAN_BRANCH_KEY, 2L);
+    private final PlanKey TEST_VERY_LONG_PLAN_KEY = PlanKeys.getPlanKey("TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOLONGTOBEREALWHYISITSOLONG");
+    private final ImmutablePlan TEST_VERY_LONG_PLAN = mockPlan(TEST_VERY_LONG_PLAN_KEY, 1234566789L);
+
 
     private final PlanKey TEST_PLAN_NOT_FOUND_KEY = PlanKeys.getPlanKey("TEST-NOTFOUND");
     private final PlanKey TEST_JOB_KEY = PlanKeys.getPlanKey("TEST-PARENT-JOB1");
@@ -63,6 +65,7 @@ public class ExternalIdServiceImplTest {
         when(cachedPlanManager.getPlanByKey(TEST_PLAN_KEY)).thenReturn(TEST_PLAN);
         when(cachedPlanManager.getPlanByKey(TEST_PLAN_NOT_FOUND_KEY)).thenReturn(null);
         when(cachedPlanManager.getPlanByKey(TEST_JOB_KEY)).thenReturn(TEST_JOB);
+        when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
 
 
         when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
@@ -117,8 +120,20 @@ public class ExternalIdServiceImplTest {
     }
 
     @Test
-    public void testExternalIdwithPlanBranch() {
+    public void testExternalIdWithPlanBranch() {
         assertEquals("test-bamboo/TEST-PLAN/1", externalIdService.getExternalId(TEST_PLAN_BRANCH));
+    }
+
+    @Test
+    public void testVeryLongPlanKey() {
+        assertEquals("test-bamboo/TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOLONGTOB/kf11tx", externalIdService.getExternalId(TEST_VERY_LONG_PLAN_KEY));
+    }
+
+    @Test
+    public void testLongInstanceName() {
+        when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("this-is-a-very-long-instance-name-this-is-way-too-long-who-would-make-a-name-this-long");
+        assertEquals("this-is-a-very-long-instance-name-this-is-way-too-long-/12345/1", externalIdService.getExternalId(TEST_DEPLOYMENT_ID));
+        assertEquals("this-is-a-very-long-instance-name-this-is-way-too-long-w/kf11tx", externalIdService.getExternalId(TEST_VERY_LONG_PLAN_KEY));
     }
 
     private ImmutablePlan mockPlan(PlanKey planKey, long entityOid) {

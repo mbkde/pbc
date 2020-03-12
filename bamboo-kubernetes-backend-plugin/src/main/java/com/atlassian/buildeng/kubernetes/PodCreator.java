@@ -98,6 +98,14 @@ public class PodCreator {
     public static final String LABEL_PBC_MARKER = "pbc";
     public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
 
+    static final Integer KUBE_NAME_MAX_LENGTH = 87;
+    static final Integer IRSA_SECRET_MAX_LENGTH = 63;
+
+    //very short suffix as we have a much stricter limit for labels
+    static final String IRSA_SECRET_NAME_SUFFIX = "it";
+    static final String IAM_REQUEST_NAME_SUFFIX = "iamrequest";
+
+
     /**
      * generate volume with memory fs at /dev/shm via https://docs.openshift.org/latest/dev_guide/shared_memory.html
      * the preferable solution is to modify the docker daemon's --default-shm-size parameter on hosts but it only
@@ -244,29 +252,31 @@ public class PodCreator {
     }
 
     static String createPodName(IsolatedDockerAgentRequest r) {
-        return createName(r,"");
+        return createName(r,"", KUBE_NAME_MAX_LENGTH);
     }
 
     static String createIrsaSecretName(IsolatedDockerAgentRequest r)  {
-        return createName(r, "irsatoken");
+        return createName(r, IRSA_SECRET_NAME_SUFFIX, IRSA_SECRET_MAX_LENGTH);
     }
 
     static String createIamRequestName(IsolatedDockerAgentRequest r) {
-        return createName(r, "iamrequest");
+        return createName(r, IAM_REQUEST_NAME_SUFFIX, KUBE_NAME_MAX_LENGTH);
     }
 
     /**
      * A character for some resources are necessary. This functions reduces the name of a plan to 50 characters
      * while keeping identifying characteristics.
      */
-    private static String createName(IsolatedDockerAgentRequest r, String suffix) {
+    private static String createName(IsolatedDockerAgentRequest r, String suffix, Integer maxLength) {
         //50 is magic constant that attempts to limit the overall length of the name.
         String key = r.getResultKey();
         String name = suffix.isEmpty() ? key : key + "-" + suffix;
-        if (name.length() > 50) {
+
+        int maxNameLength = maxLength - r.getUniqueIdentifier().toString().length() - 1;
+        if (name.length() > maxNameLength) {
             PlanResultKey prk = PlanKeys.getPlanResultKey(key);
             String pk = prk.getPlanKey().toString();
-            int len = 50 - ("" + prk.getBuildNumber()).length() - 1;
+            int len = maxNameLength - ("" + prk.getBuildNumber()).length() - 1;
             if (suffix.isEmpty()) {
                 name = pk.substring(0,
                     Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
