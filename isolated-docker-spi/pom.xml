@@ -64,6 +64,7 @@ limitations under the License.
                             com.google.common.base.*,
                             com.google.gson.*,
                             org.slf4j.*,
+                            org.apache.commons.*,
                             javax.annotation.*,
                             io.atlassian.fugue.*,
                         </Import-Package>

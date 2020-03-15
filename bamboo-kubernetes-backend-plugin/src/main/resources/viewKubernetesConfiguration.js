@@ -32,6 +32,7 @@
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#currentContext").val(response.currentContext);
         AJS.$("#podTemplate").val(response.podTemplate);
+        AJS.$("#iamRequestTemplate").val(response.iamRequestTemplate);
         AJS.$("#containerSizes").val(response.containerSizes);
         AJS.$("#podLogsUrl").val(response.podLogsUrl);
         AJS.$("input#useClusterRegistry").prop('checked', response.useClusterRegistry);
@@ -45,6 +46,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.currentContext = AJS.$("#currentContext").val().trim();
         config.podTemplate = AJS.$("#podTemplate").val().trim();
+        config.iamRequestTemplate = AJS.$("#iamRequestTemplate").val().trim();
         config.containerSizes = AJS.$("#containerSizes").val().trim();
         config.podLogsUrl = AJS.$("#podLogsUrl").val().trim();
         var checked = AJS.$("input#useClusterRegistry").is(":checked");

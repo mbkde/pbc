@@ -59,6 +59,8 @@ public class KubernetesIsolatedDockerImplTest {
     ExecutorService executor;
     @Mock
     ExternalIdService externalIdService;
+    @Mock
+    KubernetesClient kubernetesClient;
 
     @InjectMocks
     KubernetesIsolatedDockerImpl kubernetesIsolatedDocker;

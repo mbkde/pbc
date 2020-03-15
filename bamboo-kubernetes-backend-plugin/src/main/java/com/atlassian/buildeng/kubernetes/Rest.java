@@ -74,6 +74,7 @@ public class Rest {
         c.setSidekickImage(configuration.getCurrentSidekick());
         c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
+        c.setIamRequestTemplate(configuration.getBandanaIamRequestTemplateAsString());
         c.setContainerSizes(configuration.getContainerSizesAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
@@ -92,7 +93,8 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                config.getPodLogsUrl(), config.getContainerSizes(), config.isUseClusterRegistry(),
+                config.getIamRequestTemplate(), config.getPodLogsUrl(),
+                config.getContainerSizes(), config.isUseClusterRegistry(),
                 config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
@@ -117,7 +119,7 @@ public class Rest {
     }
 
     /**
-     * GET externalID used in roles for plans
+     * GET externalID used in roles for plans.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -127,7 +129,8 @@ public class Rest {
             PlanKey pk = PlanKeys.getPlanKey(planKey);
             ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
             if (plan == null) {
-                return Response.status(Response.Status.NOT_FOUND).entity("Can not found build plan with key: " + planKey).build();
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Can not found build plan with key: " + planKey).build();
             }
             if (bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
@@ -136,7 +139,8 @@ public class Rest {
                 return Response.ok(externalIdService.getExternalId(plan)).build();
 
             } else {
-                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this plan: " + planKey).build();
+                return Response.status(Response.Status.FORBIDDEN)
+                    .entity("You need Build permission on this plan: " + planKey).build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
@@ -144,16 +148,18 @@ public class Rest {
     }
 
     /**
-     * GET externalID used in roles for deployments
+     * GET externalID used in roles for deployments.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/externalIdForDeployment/{deploymentId}")
     public Response getExternalIdDeployment(@PathParam("deploymentId") String deploymentId) {
         try {
-            DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
+            DeploymentProject deploymentProject =
+                deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
             if (deploymentProject == null) {
-                return Response.status(Response.Status.NOT_FOUND).entity("Can not found deployment project with id: " + deploymentId).build();
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Can not found deployment project with id: " + deploymentId).build();
             }
             if (bambooPermissionManager.hasPermission(BambooPermission.BUILD, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)

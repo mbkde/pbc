@@ -1,0 +1,9 @@
+name: aws-iam-token
+projected:
+    defaultMode: 420
+    sources:
+    -   secret:
+            name: test-plan-job-1-it-379ad7b0-b4f5-4fae-914b-070e9442c0a9
+            items:
+            -   key: token
+                path: token
