@@ -134,6 +134,12 @@ public class PodCreatorTest {
 
         Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
+        Map<String, Object> metadata = (Map<String, Object>) podRequest.get("metadata");
+        Map<String, String> annotations = (Map<String, String>) metadata.get("annotations");
+
+        assertTrue(annotations.containsKey("pbc.iamRequestName"));
+        assertEquals("test-plan-job-1-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9", annotations.get("pbc.iamRequestName"));
+
         List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
 
         //Test env variables

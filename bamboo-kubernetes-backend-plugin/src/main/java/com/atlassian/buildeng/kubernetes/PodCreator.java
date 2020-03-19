@@ -94,6 +94,9 @@ public class PodCreator {
     public static final String ANN_RESULTID = "pbc.resultId";
     public static final String ANN_RETRYCOUNT = "pbc.retryCount";
     public static final String ANN_UUID = "pbc.uuid";
+    public static final String ANN_IAM_REQUEST_NAME = "pbc.iamRequestName";
+    public static final String ANN_POD_NAME = "pbc.podName";
+
 
     public static final String LABEL_PBC_MARKER = "pbc";
     public static final String LABEL_BAMBOO_SERVER = "pbc.bamboo.server";
@@ -128,7 +131,10 @@ public class PodCreator {
                                                 GlobalConfiguration globalConfiguration, String externalId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
-        iamRequest.put("metadata", ImmutableMap.of("name", createIamRequestName(r)));
+        iamRequest.put("metadata",
+            ImmutableMap.of("name", createIamRequestName(r),
+                        "annotations", ImmutableMap.of(ANN_POD_NAME, createPodName(r)))
+        );
         iamRequest.put("spec", ImmutableMap.of("subjectID", externalId, "outputSecretName", createIrsaSecretName(r)));
         return iamRequest;
     }
@@ -139,6 +145,9 @@ public class PodCreator {
         annotations.put(ANN_RESULTID, r.getResultKey());
         annotations.put(ANN_RETRYCOUNT, Integer.toString(r.getRetryCount()));
 
+        if (r.getConfiguration().isAwsRoleDefined()) {
+            annotations.put(ANN_IAM_REQUEST_NAME, createIamRequestName(r));
+        }
         return annotations;
     }
 
