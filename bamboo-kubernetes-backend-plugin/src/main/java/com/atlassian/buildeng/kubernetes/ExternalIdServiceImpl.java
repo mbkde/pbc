@@ -51,23 +51,24 @@ public class ExternalIdServiceImpl implements ExternalIdService {
 
     @Override
     public String getExternalId(DeploymentProject deploymentProject) {
-        String externalID = getInstanceName() + "/" + deploymentProject.getPlanKey() + "/D/" + deploymentProject.getId();
+        String externalId = getInstanceName() + "/" + deploymentProject.getPlanKey() + "/D/"
+                + deploymentProject.getId();
         // IAM Request validator has a limit of 63 characters
-        if (externalID.length() > IAM_REQUEST_LIMIT) {
+        if (externalId.length() > IAM_REQUEST_LIMIT) {
             //Again, the ID is unique, so we should not truncate it. The user defined instance name and plan
             //key should be truncated instead.
 
             String toBeTruncated = getInstanceName() + "/" + deploymentProject.getPlanKey();
 
             //Truncate the instance-name to fit a '/D/<ID>' at the end.
-            //-3 as we need to fit two '/'
+            //-3 as we need to fit '/D/'
 
             int endIndex = IAM_REQUEST_LIMIT - Objects.toString(deploymentProject.getId()).length() - 3;
 
-            externalID = toBeTruncated.substring(0, endIndex) + "/D/" + deploymentProject.getId();
+            externalId = toBeTruncated.substring(0, endIndex) + "/D/" + deploymentProject.getId();
         }
 
-        return externalID;
+        return externalId;
     }
 
     @Override
