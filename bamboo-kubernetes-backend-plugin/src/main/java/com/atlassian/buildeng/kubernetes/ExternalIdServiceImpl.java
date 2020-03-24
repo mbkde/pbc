@@ -1,6 +1,5 @@
 package com.atlassian.buildeng.kubernetes;
 
-import com.amazonaws.util.StringUtils;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.deployments.projects.DeploymentProject;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
@@ -30,39 +29,42 @@ public class ExternalIdServiceImpl implements ExternalIdService {
     @Override
     public String getExternalId(ImmutablePlan plan) {
         plan = plan.hasMaster() ? plan.getMaster() : plan;
-        String externalId = getInstanceName() + "/" + plan.getPlanKey() + "/" + plan.getOid();
+        String externalId = getInstanceName() + "/" + plan.getPlanKey() + "/B/" + plan.getId();
         // IAM Request validator has a limit of 63 characters
         if (externalId.length() > IAM_REQUEST_LIMIT) {
-            //Since the OID is unique, we need to make sure it's not truncate. The user-defined instance name and
+            //Since the ID is unique, we need to make sure it's not truncate. The user-defined instance name and
             //plan need to be truncated.
             String toBeTruncated = getInstanceName() + "/" + plan.getPlanKey();
 
-            //We need to truncate the string to fit a '/<OID>' at the end without going over the limit
-            // -1 as we need to fit the '/'
-            int endIndex = IAM_REQUEST_LIMIT - plan.getOid().toString().length() - 1;
+            //We need to truncate the string to fit a '/<ID>' at the end without going over the limit
+            // -3 as we need to fit the '/B/'
+            int endIndex = IAM_REQUEST_LIMIT - String.valueOf(plan.getId()).length() - 3;
 
-            externalId = toBeTruncated.substring(0, endIndex) + "/" + plan.getOid();
+            externalId = toBeTruncated.substring(0, endIndex) + "/B/" + plan.getId();
         }
         return externalId;
     }
 
     @Override
     public String getExternalId(DeploymentProject deploymentProject) {
-        String externalID = getInstanceName() + "/" + deploymentProject.getId() + "/" + deploymentProject.getOid();
+        String externalId = getInstanceName() + "/" + deploymentProject.getPlanKey() + "/D/"
+                + deploymentProject.getId();
         // IAM Request validator has a limit of 63 characters
-        if (externalID.length() > IAM_REQUEST_LIMIT) {
-            //Both the deploymentID and OID should not be truncated. Only the instance-name should be truncated
+        if (externalId.length() > IAM_REQUEST_LIMIT) {
+            //Again, the ID is unique, so we should not truncate it. The user defined instance name and plan
+            //key should be truncated instead.
 
-            //Truncate the instance-name to fit a '/<DEPLOYMENT_ID>/<OID>' at the end.
-            //-2 as we need to fit two '/'
-            int endIndex = IAM_REQUEST_LIMIT - deploymentProject.getOid().toString().length()
-                - StringUtils.fromLong(deploymentProject.getId()).length() - 2;
+            String toBeTruncated = getInstanceName() + "/" + deploymentProject.getPlanKey();
 
-            externalID = getInstanceName().substring(0, endIndex)
-                + "/" + deploymentProject.getId() + "/" + deploymentProject.getOid();
+            //Truncate the instance-name to fit a '/D/<ID>' at the end.
+            //-3 as we need to fit '/D/'
+
+            int endIndex = IAM_REQUEST_LIMIT - String.valueOf(deploymentProject.getId()).length() - 3;
+
+            externalId = toBeTruncated.substring(0, endIndex) + "/D/" + deploymentProject.getId();
         }
 
-        return externalID;
+        return externalId;
     }
 
     @Override
