@@ -234,7 +234,9 @@ class KubernetesClient {
             executeKubectl(contextSupplier, "delete", "iam", "-l", PodCreator.ANN_POD_NAME + "=" + podName,
                 "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT);
         } catch (KubectlException e) {
-            if (!e.getMessage().contains("(NotFound)")) {
+            if (e.getMessage() != null && e.getMessage().startsWith(ERROR_MESSAGE_PREFIX)) {
+                logger.debug("swallowing error because we are executing in multiple clusters", e);
+            } else {
                 throw e;
             }
         }
