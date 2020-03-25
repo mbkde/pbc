@@ -1,5 +1,7 @@
 metadata:
     name: test-plan-job-1-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9
+    annotations:
+        pbc.podName: test-plan-job-1-379ad7b0-b4f5-4fae-914b-070e9442c0a9
 kind: IAMRequest
 spec:
     subjectID: test-bamboo/TEST-PLAN/abc123

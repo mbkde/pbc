@@ -190,6 +190,9 @@ class KubernetesClient {
             throws KubectlException {
         executeKubectl(new PodContextSupplier(pod), 
                 "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
+        if (pod.getMetadata().getAnnotations().containsKey(PodCreator.ANN_IAM_REQUEST_NAME)) {
+            deleteIamRequest(pod);
+        }
     }
 
 
@@ -201,6 +204,7 @@ class KubernetesClient {
                 try {
                     executeKubectl(new SimpleContextSupplier(t), 
                             "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
+                    deleteIamRequest(new SimpleContextSupplier(t), podName);
                 } catch (KubectlException x) {
                     if (x.getMessage() != null && x.getMessage().startsWith(ERROR_MESSAGE_PREFIX)) {
                         logger.debug("swallowing error because we are executing in multiple clusters", x);
@@ -213,6 +217,28 @@ class KubernetesClient {
             supplier = globalSupplier;
             executeKubectl(supplier, 
                     "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
+            deleteIamRequest(supplier, podName);
+        }
+    }
+
+    void deleteIamRequest(Pod pod) throws KubectlException {
+        executeKubectl(new PodContextSupplier(pod),
+            "delete", "iam", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT,
+            pod.getMetadata().getAnnotations().get(PodCreator.ANN_IAM_REQUEST_NAME));
+    }
+
+    //The problem with only having the String is that we can't tell if the IAMRequest is meant to exist.
+    //So we just blindly delete and ignore failures if it can't find the iamRequest
+    void deleteIamRequest(ContextSupplier contextSupplier, String podName) throws KubectlException {
+        try {
+            executeKubectl(contextSupplier, "delete", "iam", "-l", PodCreator.ANN_POD_NAME + "=" + podName,
+                "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT);
+        } catch (KubectlException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith(ERROR_MESSAGE_PREFIX)) {
+                logger.debug("swallowing error because we are executing in multiple clusters", e);
+            } else {
+                throw e;
+            }
         }
     }
 
