@@ -5,4 +5,4 @@ metadata:
 kind: IAMRequest
 spec:
     subjectID: test-bamboo/TEST-PLAN/abc123
-    outputSecretName: test-plan-job-1-it-379ad7b0-b4f5-4fae-914b-070e9442c0a9
+    outputSecretName: iamtoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9

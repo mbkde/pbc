@@ -265,7 +265,7 @@ public class PodCreator {
     }
 
     static String createIrsaSecretName(IsolatedDockerAgentRequest r)  {
-        return createName(r, IRSA_SECRET_NAME_SUFFIX, IRSA_SECRET_MAX_LENGTH);
+        return "iamtoken-" + r.getUniqueIdentifier().toString();
     }
 
     static String createIamRequestName(IsolatedDockerAgentRequest r) {
