@@ -82,7 +82,7 @@ public class PodCreatorTest {
             new IsolatedDockerAgentRequest(null,
                 "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
                 UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
-        assertEquals("shardspipeline-serv-455-it-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+        assertEquals("iamtoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
             result);
 
     }
