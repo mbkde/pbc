@@ -128,14 +128,14 @@ public class PodCreator {
     }
 
     static Map<String, Object> createIamRequest(IsolatedDockerAgentRequest r,
-                                                GlobalConfiguration globalConfiguration, String externalId) {
+                                                GlobalConfiguration globalConfiguration, String subjectId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
         iamRequest.put("metadata",
             ImmutableMap.of("name", createIamRequestName(r),
                         "annotations", ImmutableMap.of(ANN_POD_NAME, createPodName(r)))
         );
-        iamRequest.put("spec", ImmutableMap.of("subjectID", externalId, "outputSecretName", createIrsaSecretName(r)));
+        iamRequest.put("spec", ImmutableMap.of("subjectID", subjectId, "outputSecretName", createIrsaSecretName(r)));
         return iamRequest;
     }
 

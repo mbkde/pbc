@@ -7,8 +7,8 @@
             var element = $('#create-deployment-version').get(0);
             var content = $(
                 '<li><a class="aui-icon-container" href="' + AJS.contextPath()
-                + '/rest/pbc-kubernetes/1.0/externalIdForDeployment/' + deploymentId
-                + '">View AWS IAM External ID for PBC</a></li>'
+                + '/rest/pbc-kubernetes/1.0/subjectIdForDeployment/' + deploymentId
+                + '">View AWS IAM Subject ID for PBC</a></li>'
             );
 
             content.appendTo(element.parentNode.parentNode);

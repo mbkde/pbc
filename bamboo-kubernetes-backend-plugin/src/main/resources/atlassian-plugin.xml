@@ -23,10 +23,32 @@ limitations under the License.
     <!-- add our i18n resource -->
     <resource type="i18n" name="i18n" location="bamboo-kubernetes-backend-plugin"/>
 
-    <web-item key="ext_id" name="External ID Generator for PBC" section="chain.actions/chainActions" weight="70">
-        <description>External Id Generator Menu Item</description>
+    <!-- Same web item but in different sections -->
+    <web-item key="sub_id" name="Subject ID Generator for PBC" section="chain.actions/chainActions" weight="70">
+        <description>Subject Id Generator Menu Item</description>
         <label key="kubernetes-config-link.generator"/>
-        <link  linkd_id="ext_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/externalIdForPlan/${planKey}</link>
+        <link  linkd_id="sub_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+    </web-item>
+
+    <web-item key="sub_id_result" name="Subject ID Generator for PBC in Plan Result" section="chainResult.actions/chainResultActions" weight="70">
+        <description>Subject Id Generator Menu Item in Plan Result</description>
+        <label key="kubernetes-config-link.generator"/>
+        <link  linkd_id="sub_id_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+    </web-item>
+
+    <web-item key="sub_id_job" name="Subject ID Generator for PBC in Job" section="job.actions/jobActions" weight="70">
+        <description>Subject Id Generator Menu Item in Job</description>
+        <label key="kubernetes-config-link.generator"/>
+        <link  linkd_id="sub_id_job_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+    </web-item>
+
+    <web-item key="sub_id_job_result" name="Subject ID Generator for PBC in Job Result" section="jobResult.actions/jobResultActions" weight="70">
+        <description>Subject Id Generator Menu Item in Job Result</description>
+        <label key="kubernetes-config-link.generator"/>
+        <link  linkd_id="sub_id_job_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
     </web-item>
 
@@ -41,7 +63,7 @@ limitations under the License.
     
     <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
 
-    <component key="externalIdService" class="com.atlassian.buildeng.kubernetes.ExternalIdServiceImpl"/>
+    <component key="subjectIdService" class="com.atlassian.buildeng.kubernetes.SubjectIdServiceImpl"/>
 
     <component-import key="pluginScheduler">
         <description>SAL Scheduler</description>
@@ -63,11 +85,11 @@ limitations under the License.
         <context>viewKubernetesConfiguration</context>
     </web-resource>
 
-    <web-resource key="externalId-viewer">
+    <web-resource key="subjectId-viewer">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
 
-        <resource type="download" name="insertViewExternalId.js" location="/insertViewExternalId.js"/>
+        <resource type="download" name="insertViewSubjectId.js" location="/insertViewSubjectId.js"/>
         <context>bamboo.deployment</context>
     </web-resource>
 
