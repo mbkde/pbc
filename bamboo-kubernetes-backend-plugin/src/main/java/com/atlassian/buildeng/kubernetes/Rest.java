@@ -75,6 +75,7 @@ public class Rest {
         c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
         c.setIamRequestTemplate(configuration.getBandanaIamRequestTemplateAsString());
+        c.setIamSubjectIdPrefix(configuration.getIamSubjectIdPrefix());
         c.setContainerSizes(configuration.getContainerSizesAsString());
         c.setPodLogsUrl(configuration.getPodLogsUrl());
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
@@ -93,9 +94,9 @@ public class Rest {
     public Response setConfig(Config config) {
         try {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                config.getIamRequestTemplate(), config.getPodLogsUrl(),
-                config.getContainerSizes(), config.isUseClusterRegistry(),
-                config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
+                config.getIamRequestTemplate(), config.getIamSubjectIdPrefix(),
+                    config.getPodLogsUrl(), config.getContainerSizes(),
+                    config.isUseClusterRegistry(), config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
@@ -136,7 +137,7 @@ public class Rest {
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                return Response.ok(externalIdService.getExternalId(plan)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix() + externalIdService.getExternalId(plan)).build();
 
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
@@ -165,7 +166,7 @@ public class Rest {
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-                return Response.ok(externalIdService.getExternalId(deploymentProject)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix() + externalIdService.getExternalId(deploymentProject)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: " + deploymentId).build();
             }

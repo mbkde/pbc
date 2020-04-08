@@ -46,6 +46,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
     static String BANDANA_POD_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.podtemplate";
     static String BANDANA_IAM_REQUEST_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.iamRequesttemplate";
+    static String BANDANA_IAM_SUBJECT_ID_PREFIX = "com.atlassian.buildeng.pbc.kubernetes.iamSubjectIdPrefix";
     static String BANDANA_CONTAINER_SIZES = "com.atlassian.buildeng.pbc.kubernetes.containerSizes";
     static String BANDANA_POD_LOGS_URL = "com.atlassian.buildeng.pbc.kubernetes.podlogurl";
     static String BANDANA_CURRENT_CONTEXT = "com.atlassian.buildeng.pbc.kubernetes.context";
@@ -150,7 +151,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         }
         return template;
     }
-    
+
+    public String getIamSubjectIdPrefix() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_IAM_SUBJECT_ID_PREFIX);
+    }
+
     public String getPodLogsUrl() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_POD_LOGS_URL);
@@ -160,8 +166,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
      * Saves changes to the configuration.
      */
     public void persist(String sidekick, String currentContext, String podTemplate, String iamRequestTemplate,
-            String podLogUrl, String containerSizes, 
-            boolean useClusterRegistry, String availableSelector, String primarySelector) throws IOException {
+                        String iamSubjectIdPrefix, String podLogUrl, String containerSizes,
+                        boolean useClusterRegistry, String availableSelector, String primarySelector) throws IOException {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(containerSizes), "Container sizes are mandatory");
@@ -182,6 +188,10 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         if (!StringUtils.equals(iamRequestTemplate, getBandanaIamRequestTemplateAsString())) {
             auditLogEntry("PBC Kuberenetes IAM Request Template", getBandanaIamRequestTemplateAsString(), iamRequestTemplate);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE, iamRequestTemplate);
+        }
+        if (!StringUtils.equals(iamSubjectIdPrefix, getIamSubjectIdPrefix())) {
+            auditLogEntry("PBC Kuberenetes IAM Subject ID Prefix", getIamSubjectIdPrefix(), iamSubjectIdPrefix);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX, iamSubjectIdPrefix);
         }
         if (!StringUtils.equals(containerSizes, getContainerSizesAsString())) {
             auditLogEntry("PBC Kubernetes Container Sizes", getContainerSizesAsString(), containerSizes);

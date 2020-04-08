@@ -84,6 +84,14 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
         </div>
 
         <div class="field-group">
+            <label for="iamSubjectIdPrefix">IAM Subject ID Prefix</label>
+            <textarea type="text" style="height: 200px" class="text text-field" id="iamSubjectIdPrefix"></textarea>
+            <div class="description" id="desc-iamSubjectIdPrefix">
+                Add your IAM Subject ID prefix here
+            </div>
+        </div>
+
+        <div class="field-group">
             <label for="containerSizes">Container size definitions</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="containerSizes"></textarea>
             <div class="description" id="desc-containerSizes">
