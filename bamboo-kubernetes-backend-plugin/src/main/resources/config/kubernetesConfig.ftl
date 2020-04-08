@@ -87,7 +87,8 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             <label for="iamSubjectIdPrefix">IAM Subject ID Prefix</label>
             <textarea type="text" style="height: 200px" class="text text-field" id="iamSubjectIdPrefix"></textarea>
             <div class="description" id="desc-iamSubjectIdPrefix">
-                Add your IAM Subject ID prefix here
+                Add your IAM Subject ID prefix here. This prefix is only used when displaying the Subject ID from the
+                "View AWS IAM Subject ID for PBC" and not internally.
             </div>
         </div>
 
