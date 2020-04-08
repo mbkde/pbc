@@ -186,12 +186,15 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
         }
         if (!StringUtils.equals(iamRequestTemplate, getBandanaIamRequestTemplateAsString())) {
-            auditLogEntry("PBC Kuberenetes IAM Request Template", getBandanaIamRequestTemplateAsString(), iamRequestTemplate);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE, iamRequestTemplate);
+            auditLogEntry("PBC Kuberenetes IAM Request Template",
+                    getBandanaIamRequestTemplateAsString(), iamRequestTemplate);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_IAM_REQUEST_TEMPLATE, iamRequestTemplate);
         }
         if (!StringUtils.equals(iamSubjectIdPrefix, getIamSubjectIdPrefix())) {
             auditLogEntry("PBC Kuberenetes IAM Subject ID Prefix", getIamSubjectIdPrefix(), iamSubjectIdPrefix);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX, iamSubjectIdPrefix);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_IAM_SUBJECT_ID_PREFIX, iamSubjectIdPrefix);
         }
         if (!StringUtils.equals(containerSizes, getContainerSizesAsString())) {
             auditLogEntry("PBC Kubernetes Container Sizes", getContainerSizesAsString(), containerSizes);

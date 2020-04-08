@@ -96,7 +96,8 @@ public class Rest {
             configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
                 config.getIamRequestTemplate(), config.getIamSubjectIdPrefix(),
                     config.getPodLogsUrl(), config.getContainerSizes(),
-                    config.isUseClusterRegistry(), config.getClusterRegistryAvailableSelector(), config.getClusterRegistryPrimarySelector());
+                    config.isUseClusterRegistry(), config.getClusterRegistryAvailableSelector(),
+                    config.getClusterRegistryPrimarySelector());
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
@@ -137,7 +138,8 @@ public class Rest {
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                return Response.ok(configuration.getIamSubjectIdPrefix() + externalIdService.getExternalId(plan)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix() +
+                        externalIdService.getExternalId(plan)).build();
 
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
@@ -166,7 +168,8 @@ public class Rest {
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-                return Response.ok(configuration.getIamSubjectIdPrefix() + externalIdService.getExternalId(deploymentProject)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix() +
+                        externalIdService.getExternalId(deploymentProject)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: " + deploymentId).build();
             }
