@@ -167,7 +167,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
      */
     public void persist(String sidekick, String currentContext, String podTemplate, String iamRequestTemplate,
                         String iamSubjectIdPrefix, String podLogUrl, String containerSizes,
-                        boolean useClusterRegistry, String availableSelector, String primarySelector) throws IOException {
+                        boolean useClusterRegistry, String availableSelector, String primarySelector)
+            throws IOException {
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(containerSizes), "Container sizes are mandatory");

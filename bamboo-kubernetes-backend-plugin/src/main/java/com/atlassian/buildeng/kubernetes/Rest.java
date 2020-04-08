@@ -138,8 +138,8 @@ public class Rest {
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                return Response.ok(configuration.getIamSubjectIdPrefix() +
-                        externalIdService.getExternalId(plan)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix()
+                        + externalIdService.getExternalId(plan)).build();
 
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
@@ -168,10 +168,11 @@ public class Rest {
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-                return Response.ok(configuration.getIamSubjectIdPrefix() +
-                        externalIdService.getExternalId(deploymentProject)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix()
+                        + externalIdService.getExternalId(deploymentProject)).build();
             } else {
-                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: " + deploymentId).build();
+                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: "
+                        + deploymentId).build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
