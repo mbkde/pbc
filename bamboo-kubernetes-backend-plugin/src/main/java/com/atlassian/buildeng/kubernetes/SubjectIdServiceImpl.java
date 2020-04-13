@@ -10,7 +10,7 @@ import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 
-public class ExternalIdServiceImpl implements ExternalIdService {
+public class SubjectIdServiceImpl implements SubjectIdService {
 
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final CachedPlanManager cachedPlanManager;
@@ -18,20 +18,20 @@ public class ExternalIdServiceImpl implements ExternalIdService {
 
     private static final Integer IAM_REQUEST_LIMIT = 63;
 
-    public ExternalIdServiceImpl(AdministrationConfigurationAccessor admConfAccessor,
-                                 CachedPlanManager cachedPlanManager,
-                                 DeploymentProjectService deploymentProjectService) {
+    public SubjectIdServiceImpl(AdministrationConfigurationAccessor admConfAccessor,
+                                CachedPlanManager cachedPlanManager,
+                                DeploymentProjectService deploymentProjectService) {
         this.admConfAccessor = admConfAccessor;
         this.cachedPlanManager = cachedPlanManager;
         this.deploymentProjectService = deploymentProjectService;
     }
 
     @Override
-    public String getExternalId(ImmutablePlan plan) {
+    public String getSubjectId(ImmutablePlan plan) {
         plan = plan.hasMaster() ? plan.getMaster() : plan;
-        String externalId = getInstanceName() + "/" + plan.getPlanKey() + "/B/" + plan.getId();
+        String subjectId = getInstanceName() + "/" + plan.getPlanKey() + "/B/" + plan.getId();
         // IAM Request validator has a limit of 63 characters
-        if (externalId.length() > IAM_REQUEST_LIMIT) {
+        if (subjectId.length() > IAM_REQUEST_LIMIT) {
             //Since the ID is unique, we need to make sure it's not truncate. The user-defined instance name and
             //plan need to be truncated.
             String toBeTruncated = getInstanceName() + "/" + plan.getPlanKey();
@@ -40,17 +40,17 @@ public class ExternalIdServiceImpl implements ExternalIdService {
             // -3 as we need to fit the '/B/'
             int endIndex = IAM_REQUEST_LIMIT - String.valueOf(plan.getId()).length() - 3;
 
-            externalId = toBeTruncated.substring(0, endIndex) + "/B/" + plan.getId();
+            subjectId = toBeTruncated.substring(0, endIndex) + "/B/" + plan.getId();
         }
-        return externalId;
+        return subjectId;
     }
 
     @Override
-    public String getExternalId(DeploymentProject deploymentProject) {
-        String externalId = getInstanceName() + "/" + deploymentProject.getPlanKey() + "/D/"
+    public String getSubjectId(DeploymentProject deploymentProject) {
+        String subjectId = getInstanceName() + "/" + deploymentProject.getPlanKey() + "/D/"
                 + deploymentProject.getId();
         // IAM Request validator has a limit of 63 characters
-        if (externalId.length() > IAM_REQUEST_LIMIT) {
+        if (subjectId.length() > IAM_REQUEST_LIMIT) {
             //Again, the ID is unique, so we should not truncate it. The user defined instance name and plan
             //key should be truncated instead.
 
@@ -61,30 +61,30 @@ public class ExternalIdServiceImpl implements ExternalIdService {
 
             int endIndex = IAM_REQUEST_LIMIT - String.valueOf(deploymentProject.getId()).length() - 3;
 
-            externalId = toBeTruncated.substring(0, endIndex) + "/D/" + deploymentProject.getId();
+            subjectId = toBeTruncated.substring(0, endIndex) + "/D/" + deploymentProject.getId();
         }
 
-        return externalId;
+        return subjectId;
     }
 
     @Override
-    public String getExternalId(PlanKey planKey) {
+    public String getSubjectId(PlanKey planKey) {
         ImmutablePlan plan = cachedPlanManager.getPlanByKey(planKey);
         if (plan == null) {
             throw new NotFoundException("Could not find plan with plankey: " + planKey.toString());
         } else if (plan.getPlanType().equals(PlanType.JOB)) {
             plan = ((ImmutableJob) plan).getParent();
         }
-        return getExternalId(plan);
+        return getSubjectId(plan);
     }
 
     @Override
-    public String getExternalId(Long deploymentId) {
+    public String getSubjectId(Long deploymentId) {
         DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(deploymentId);
         if (deploymentProject == null) {
             throw new NotFoundException("Could not find deployment project with id: " + deploymentId);
         }
-        return getExternalId(deploymentProject);
+        return getSubjectId(deploymentProject);
     }
 
     private String getInstanceName() {

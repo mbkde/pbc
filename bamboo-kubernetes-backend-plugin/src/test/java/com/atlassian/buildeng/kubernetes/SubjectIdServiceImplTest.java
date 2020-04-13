@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import aQute.bnd.service.Deploy;
+
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.core.BambooEntityOid;
@@ -27,7 +27,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ExternalIdServiceImplTest {
+public class SubjectIdServiceImplTest {
     @Mock
     AdministrationConfigurationAccessor admConfAccessor;
 
@@ -38,7 +38,7 @@ public class ExternalIdServiceImplTest {
     DeploymentProjectService deploymentProjectService;
 
     @InjectMocks
-    ExternalIdServiceImpl externalIdService;
+    SubjectIdServiceImpl subjectIdService;
 
     private final PlanKey TEST_PLAN_KEY = PlanKeys.getPlanKey("TEST-PLAN");
     private final ImmutablePlan TEST_PLAN = mockPlan(TEST_PLAN_KEY, 1L);
@@ -83,69 +83,69 @@ public class ExternalIdServiceImplTest {
     }
 
     @Test
-    public void testExternalIdWithPlan() {
+    public void testSubjectIdWithPlan() {
         assertEquals("test-bamboo/TEST-PLAN/B/1",
-            externalIdService.getExternalId(TEST_PLAN));
+            subjectIdService.getSubjectId(TEST_PLAN));
     }
 
     @Test
-    public void testExternalIdWithDeployment() {
-        assertEquals("test-bamboo/TEST-PLAN/D/12345", externalIdService.getExternalId(TEST_DEPLOYMENT));
+    public void testSubjectIdWithDeployment() {
+        assertEquals("test-bamboo/TEST-PLAN/D/12345", subjectIdService.getSubjectId(TEST_DEPLOYMENT));
     }
 
     @Test
-    public void testExternalIdWithPlanKey() {
-        assertEquals("test-bamboo/TEST-PLAN/B/1", externalIdService.getExternalId(TEST_PLAN_KEY));
+    public void testSubjectIdWithPlanKey() {
+        assertEquals("test-bamboo/TEST-PLAN/B/1", subjectIdService.getSubjectId(TEST_PLAN_KEY));
     }
 
     @Test
-    public void testExternalIdWithId() {
-        assertEquals("test-bamboo/TEST-PLAN/D/12345", externalIdService.getExternalId(TEST_DEPLOYMENT_ID));
+    public void testSubjectIdWithId() {
+        assertEquals("test-bamboo/TEST-PLAN/D/12345", subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID));
     }
 
     @Test(expected = NotFoundException.class)
     public void testPlanNotFound() {
-        externalIdService.getExternalId(TEST_PLAN_NOT_FOUND_KEY);
+        subjectIdService.getSubjectId(TEST_PLAN_NOT_FOUND_KEY);
     }
 
     @Test(expected = NotFoundException.class)
     public void testDeploymentNotFound() {
-        externalIdService.getExternalId(TEST_DEPLOYMENT_NOT_FOUND);
+        subjectIdService.getSubjectId(TEST_DEPLOYMENT_NOT_FOUND);
     }
 
     @Test
     public void testJob() {
-        assertEquals("test-bamboo/TEST-PARENT/B/1", externalIdService.getExternalId(TEST_JOB_KEY));
+        assertEquals("test-bamboo/TEST-PARENT/B/1", subjectIdService.getSubjectId(TEST_JOB_KEY));
     }
 
     @Test
     public void testCorrectInstanceName() {
         when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("Test Bamboo");
-        assertEquals("test-bamboo/TEST-PLAN/B/1", externalIdService.getExternalId(TEST_PLAN));
+        assertEquals("test-bamboo/TEST-PLAN/B/1", subjectIdService.getSubjectId(TEST_PLAN));
 
     }
 
     @Test
-    public void testExternalIdWithPlanBranch() {
-        assertEquals("test-bamboo/TEST-PLAN/B/1", externalIdService.getExternalId(TEST_PLAN_BRANCH));
+    public void testSubjectIdWithPlanBranch() {
+        assertEquals("test-bamboo/TEST-PLAN/B/1", subjectIdService.getSubjectId(TEST_PLAN_BRANCH));
     }
 
     @Test
     public void testVeryLongPlanKey() {
-        assertEquals("test-bamboo/TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOL/B/1234566789", externalIdService.getExternalId(TEST_VERY_LONG_PLAN_KEY));
-        assert(externalIdService.getExternalId(TEST_VERY_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
+        assertEquals("test-bamboo/TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOL/B/1234566789", subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY));
+        assert(subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
 
-        assertEquals("test-bamboo/TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOLONGTOBE/D/987", externalIdService.getExternalId(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY));
-        assert(externalIdService.getExternalId(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
+        assertEquals("test-bamboo/TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOLONGTOBE/D/987", subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY));
+        assert(subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
     }
 
     @Test
     public void testLongInstanceName() {
         when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("this-is-a-very-long-instance-name-this-is-way-too-long-who-would-make-a-name-this-long");
-        assertEquals("this-is-a-very-long-instance-name-this-is-way-too-long-/D/12345", externalIdService.getExternalId(TEST_DEPLOYMENT_ID));
-        assert(externalIdService.getExternalId(TEST_DEPLOYMENT_ID).length() <= IAM_REQUEST_LIMIT);
-        assertEquals("this-is-a-very-long-instance-name-this-is-way-too-/B/1234566789", externalIdService.getExternalId(TEST_VERY_LONG_PLAN_KEY));
-        assert(externalIdService.getExternalId(TEST_VERY_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
+        assertEquals("this-is-a-very-long-instance-name-this-is-way-too-long-/D/12345", subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID));
+        assert(subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID).length() <= IAM_REQUEST_LIMIT);
+        assertEquals("this-is-a-very-long-instance-name-this-is-way-too-/B/1234566789", subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY));
+        assert(subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
     }
 
     private ImmutablePlan mockPlan(PlanKey planKey, long planId) {

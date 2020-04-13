@@ -80,10 +80,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final KubeJmxService kubeJmxService;
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
-    private final ExternalIdService externalIdService;
+    private final SubjectIdService subjectIdService;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, 
-            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService, ExternalIdService externalIdService) {
+            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService, SubjectIdService subjectIdService) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
@@ -92,20 +92,20 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 new LinkedBlockingQueue<>());
         tpe.allowCoreThreadTimeOut(true);
         executor = tpe;
-        this.externalIdService = externalIdService;
+        this.subjectIdService = subjectIdService;
     }
 
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         logger.debug("Kubernetes received request for " + request.getResultKey());
-        String externalId = getExternalId(request);
+        String subjectId = getSubjectId(request);
         executor.submit(() -> {
-            exec(request, callback, externalId);
+            exec(request, callback, subjectId);
         });
     }
 
     private void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback,
-                      String externalId) {
+                      String subjectId) {
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             Map<String, Object> template = loadTemplatePod();
@@ -115,7 +115,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             podSpecList.add(finalPod);
 
             if (request.getConfiguration().isAwsRoleDefined()) {
-                Map<String, Object> iamRequest = PodCreator.createIamRequest(request, globalConfiguration, externalId);
+                Map<String, Object> iamRequest = PodCreator.createIamRequest(request, globalConfiguration, subjectId);
                 Map<String, Object> iamRequestTemplate = loadTemplateIamRequest();
 
                 Map<String, Object> finalIamRequest = mergeMap(iamRequestTemplate, iamRequest);
@@ -161,16 +161,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @VisibleForTesting
-    String getExternalId(IsolatedDockerAgentRequest request) {
-        String externalId;
+    String getSubjectId(IsolatedDockerAgentRequest request) {
+        String subjectId;
         if (request.isPlan()) {
-            externalId = externalIdService.getExternalId(PlanKeys.getPlanKey(request.getResultKey()));
+            subjectId = subjectIdService.getSubjectId(PlanKeys.getPlanKey(request.getResultKey()));
         } else {
             // Result Key comes in the format projectId-EnvironmentId-ResultId, we just need the project Id
             Long deploymentId = Long.parseLong(request.getResultKey().split("-")[0]);
-            externalId = externalIdService.getExternalId(deploymentId);
+            subjectId = subjectIdService.getSubjectId(deploymentId);
         }
-        return externalId;
+        return subjectId;
     }
 
     @VisibleForTesting
