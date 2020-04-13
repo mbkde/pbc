@@ -58,7 +58,7 @@ public class KubernetesIsolatedDockerImplTest {
     @Mock
     ExecutorService executor;
     @Mock
-    ExternalIdService externalIdService;
+    SubjectIdService subjectIdService;
     @Mock
     KubernetesClient kubernetesClient;
 
@@ -158,27 +158,27 @@ public class KubernetesIsolatedDockerImplTest {
     }
 
     @Test
-    public void testExternalIdForPlan() {
+    public void testSubjectIdForPlan() {
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
             "TEST-PLAN-JOB1",
             UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
             0, "bk", 0, true);
 
-        when(externalIdService.getExternalId(any(PlanKey.class))).thenReturn("mock-external-id");
+        when(subjectIdService.getSubjectId(any(PlanKey.class))).thenReturn("mock-subject-id");
 
-        kubernetesIsolatedDocker.getExternalId(request);
-        verify(externalIdService).getExternalId(PlanKeys.getPlanKey("TEST-PLAN-JOB1"));
+        kubernetesIsolatedDocker.getSubjectId(request);
+        verify(subjectIdService).getSubjectId(PlanKeys.getPlanKey("TEST-PLAN-JOB1"));
     }
 
     @Test
-    public void testExternalIdForDeployment() {
+    public void testSubjectIdForDeployment() {
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
             "111-222-333",
             UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
             0, "bk", 0, false);
 
-        when(externalIdService.getExternalId(any(Long.class))).thenReturn("mock-external-id");
-        kubernetesIsolatedDocker.getExternalId(request);
-        verify(externalIdService).getExternalId(111L);
+        when(subjectIdService.getSubjectId(any(Long.class))).thenReturn("mock-subject-id");
+        kubernetesIsolatedDocker.getSubjectId(request);
+        verify(subjectIdService).getSubjectId(111L);
     }
 }

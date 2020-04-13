@@ -44,7 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Rest {
 
     private final GlobalConfiguration configuration;
-    private final ExternalIdService externalIdService;
+    private final SubjectIdService subjectIdService;
     private final DeploymentProjectService deploymentProjectService;
     private BambooPermissionManager bambooPermissionManager;
     private final CachedPlanManager cachedPlanManager;
@@ -52,12 +52,12 @@ public class Rest {
 
     @Autowired
     public Rest(GlobalConfiguration configuration,
-                ExternalIdService externalIdService,
+                SubjectIdService subjectIdService,
                 DeploymentProjectService deploymentProjectService,
                 BambooPermissionManager bambooPermissionManager,
                 PlanManager planManager, CachedPlanManager cachedPlanManager) {
         this.configuration = configuration;
-        this.externalIdService = externalIdService;
+        this.subjectIdService = subjectIdService;
         this.deploymentProjectService = deploymentProjectService;
         this.bambooPermissionManager = bambooPermissionManager;
         this.cachedPlanManager = cachedPlanManager;
@@ -119,12 +119,12 @@ public class Rest {
     }
 
     /**
-     * GET externalID used in roles for plans.
+     * GET Subject ID used in roles for plans.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("/externalIdForPlan/{planKey}")
-    public Response getExternalIdPlan(@PathParam("planKey") String planKey) {
+    @Path("/subjectIdForPlan/{planKey}")
+    public Response getSubjectIdPlan(@PathParam("planKey") String planKey) {
         try {
             PlanKey pk = PlanKeys.getPlanKey(planKey);
             ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
@@ -136,7 +136,7 @@ public class Rest {
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                return Response.ok(externalIdService.getExternalId(plan)).build();
+                return Response.ok(subjectIdService.getSubjectId(plan)).build();
 
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
@@ -148,12 +148,12 @@ public class Rest {
     }
 
     /**
-     * GET externalID used in roles for deployments.
+     * GET Subject ID used in roles for deployments.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("/externalIdForDeployment/{deploymentId}")
-    public Response getExternalIdDeployment(@PathParam("deploymentId") String deploymentId) {
+    @Path("/subjectIdForDeployment/{deploymentId}")
+    public Response getSubjectIdDeployment(@PathParam("deploymentId") String deploymentId) {
         try {
             DeploymentProject deploymentProject =
                 deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
@@ -165,7 +165,7 @@ public class Rest {
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-                return Response.ok(externalIdService.getExternalId(deploymentProject)).build();
+                return Response.ok(subjectIdService.getSubjectId(deploymentProject)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: " + deploymentId).build();
             }
