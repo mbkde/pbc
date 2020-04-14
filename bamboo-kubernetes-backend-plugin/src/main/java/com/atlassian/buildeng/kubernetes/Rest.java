@@ -138,7 +138,7 @@ public class Rest {
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                return Response.ok(subjectIdService.getSubjectId(plan)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(plan)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
                     .entity("You need Build permission on this plan: " + planKey).build();
@@ -166,7 +166,7 @@ public class Rest {
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-                return Response.ok(subjectIdService.getSubjectId(deploymentProject)).build();
+                return Response.ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(deploymentProject)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: "
                         + deploymentId).build();
