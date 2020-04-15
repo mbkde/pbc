@@ -159,7 +159,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     public String getIamSubjectIdPrefix() {
         String iamSubjectId = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_IAM_SUBJECT_ID_PREFIX);
-        // String.valueOf(null) = "null", which causes the displayed value to show null{subjectId}
+        // (String) null = "null", which causes the displayed value to show null{subjectId}
         // If the subject ID is null, return an empty string instead
         if (iamSubjectId == null) {
             return "";
