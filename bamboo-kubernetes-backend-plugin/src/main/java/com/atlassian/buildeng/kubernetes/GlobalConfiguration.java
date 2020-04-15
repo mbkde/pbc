@@ -153,8 +153,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     }
 
     public String getIamSubjectIdPrefix() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+        String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_IAM_SUBJECT_ID_PREFIX);
+        if (template == null) {
+            return "";
+        }
+        return template;
     }
 
     public String getPodLogsUrl() {
