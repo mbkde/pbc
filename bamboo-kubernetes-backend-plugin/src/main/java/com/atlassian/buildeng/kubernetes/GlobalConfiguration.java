@@ -152,6 +152,10 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         return template;
     }
 
+    /**
+     * Returns the IAM Subject ID prefix specified. If none specified, returns an empty string.
+     * @return String of prefix
+     */
     public String getIamSubjectIdPrefix() {
         String iamSubjectId = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_IAM_SUBJECT_ID_PREFIX);
