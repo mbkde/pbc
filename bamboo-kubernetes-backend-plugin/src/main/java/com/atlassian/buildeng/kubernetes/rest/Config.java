@@ -21,6 +21,7 @@ public class Config {
     public String sidekickImage;
     public String podTemplate;
     public String iamRequestTemplate;
+    public String iamSubjectIdPrefix;
     public String containerSizes;
     public String podLogsUrl;
     public String currentContext;
@@ -32,12 +33,13 @@ public class Config {
     }
 
     public Config(String sidekickImage, String currentContext, String podTemplate, String iamRequestTemplate,
-            String podLogsUrl, String containerSizes, boolean useClusterRegistry,
-            String clusterRegistryAvailableSelector, String clusterRegistryPrimarySelector) {
+                  String iamSubjectIdPrefix, String podLogsUrl, String containerSizes, boolean useClusterRegistry,
+                  String clusterRegistryAvailableSelector, String clusterRegistryPrimarySelector) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
         this.iamRequestTemplate = iamRequestTemplate;
+        this.iamSubjectIdPrefix = iamSubjectIdPrefix;
         this.podLogsUrl = podLogsUrl;
         this.containerSizes = containerSizes;
         this.useClusterRegistry = useClusterRegistry;
@@ -75,6 +77,14 @@ public class Config {
 
     public String getIamRequestTemplate() {
         return iamRequestTemplate;
+    }
+
+    public void setIamSubjectIdPrefix(String iamSubjectIdPrefix) {
+        this.iamSubjectIdPrefix = iamSubjectIdPrefix;
+    }
+
+    public String getIamSubjectIdPrefix() {
+        return iamSubjectIdPrefix;
     }
 
     public String getPodLogsUrl() {
