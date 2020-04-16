@@ -119,10 +119,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
             //not specific to container
             collectMetric(PROMETHEUS_NET_WRITE, "net-write",
-                    "sum(irate(%s{pod_name=\"%s\"}[1m]))",
+                    "sum(irate(%s{pod=\"%s\"}[1m]))",
                     "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
             collectMetric(PROMETHEUS_NET_READ, "net-read",
-                    "sum(irate(%s{pod_name=\"%s\"}[1m]))",
+                    "sum(irate(%s{pod=\"%s\"}[1m]))",
                     "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
 
             for (ReservationSize containerPair : containers) {
@@ -144,10 +144,10 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 collectCpuMetric(PROMETHEUS_CPU_SYSTEM_METRIC, "-cpu-system", container, buildLogger,
                         secureToken, prometheusUrl, buildWorkingDirectory);
                 collectMetric(PROMETHEUS_FS_WRITE, "-fs-write",
-                        "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                        "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
                         container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
                 collectMetric(PROMETHEUS_FS_READ, "-fs-read",
-                        "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+                        "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
                         container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
 
                 artifactsJsonDetails.put(generateArtifactDetailsJson(containerPair));
@@ -162,7 +162,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
     private void collectCpuMetric(String metricName, String suffix, String container,
         BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
-        collectMetric(metricName, suffix, "sum(irate(%s{pod_name=\"%s\",container_name=\"%s\"}[1m]))",
+        collectMetric(metricName, suffix, "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
             container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
     }
 
@@ -184,7 +184,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private Datapoint[] collectMemoryMetric(String metricName, String suffix, String container,
             BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
         String fileName = container + suffix;
-        String queryMemory = String.format("%s{pod_name=\"%s\",container_name=\"%s\"}",
+        String queryMemory = String.format("%s{pod=\"%s\",container=\"%s\"}",
                 metricName, KUBE_POD_NAME, container);
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
                 queryMemory, container, prometheusUrl, buildLogger);
