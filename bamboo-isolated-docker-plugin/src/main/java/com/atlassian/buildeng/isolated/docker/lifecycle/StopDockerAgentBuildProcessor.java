@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Responsible for stopping the Docker-based Bamboo agent so it won't run more than one job.
  * Runs on agent and in coordination with PostJobActionImpl
@@ -64,9 +66,21 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
         return buildContext;
     }
 
-    private void stopAgent(BuildLogger buildLogger, ExecutableBuildAgent buildAgent) {
+    private void stopAgent(BuildLogger buildLogger, final ExecutableBuildAgent buildAgent) {
         try {
-            buildAgent.stopNicely();
+            // Delay agent stop so all build info can be send to server
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        TimeUnit.SECONDS.sleep(5);
+                    } catch (InterruptedException e) {
+                        logger.error("Error while waiting for build to complete", e);
+                    }
+                    buildAgent.stopNicely();
+                }
+            }).start();
+
             // in some cases, eg. when artifact subscription has failed the execution
             // we don't get here to stop the agent. 
             // the marker result custom data is here to notify the server processing 
