@@ -76,7 +76,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
                 @Override
                 public void run() {
                     try {
-                        TimeUnit.SECONDS.sleep(5);
+                        TimeUnit.SECONDS.sleep(30);
                     } catch (InterruptedException e) {
                         logger.error("Error while waiting for build to complete", e);
                     }
