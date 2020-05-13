@@ -35,7 +35,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>7.0.0-m061</bamboo.version>
+        <bamboo.version>7.1.0-m231</bamboo.version>
         <amps.version>8.0.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.0.19</platform.version>

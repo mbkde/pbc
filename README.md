@@ -100,6 +100,7 @@ job:
     pbc:
       image: mkleint/sidekick-openjdk
       size: REGULAR # XXLARGE, XLARGE, LARGE, SMALL, XSMALL
+      awsRole: arn:aws:iam::123:role/igor
       extra-containers:
          -   
            name: test
