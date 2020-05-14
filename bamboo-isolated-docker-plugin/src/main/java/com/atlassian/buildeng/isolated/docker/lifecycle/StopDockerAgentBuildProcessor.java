@@ -93,9 +93,9 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
             // that we already called stopNicely();
             buildContext.getBuildResult().getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "true");
         } catch (RuntimeException e) {
-            buildLogger.addErrorLogEntry(String.format("Failed to stop agent %s (id: %s) due to: %s. " +
-                            "Please notify Build Engineering about this. " +
-                            "More information can be found in the agent's log file.",
+            buildLogger.addErrorLogEntry(String.format("Failed to stop agent %s (id: %s) due to: %s. "
+                            + "Please notify Build Engineering about this. "
+                            + "More information can be found in the agent's log file.",
                     buildAgent.getName(), buildAgent.getId(), e.getMessage()));
             logger.warn("Failed to stop agent {} (id: {}) due to: {}",
                     buildAgent.getName(), buildAgent.getId(), e.getMessage(), e);
