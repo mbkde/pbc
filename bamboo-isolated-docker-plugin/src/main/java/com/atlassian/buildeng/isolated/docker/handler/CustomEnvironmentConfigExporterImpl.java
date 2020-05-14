@@ -156,7 +156,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
 
     @Nullable
     @Override
-    public <T extends EnvironmentPluginConfiguration<P>, P extends EnvironmentPluginConfigurationProperties> Node toYaml(@NotNull P specsProperties) {
+    public <T extends EnvironmentPluginConfiguration<P>, P extends EnvironmentPluginConfigurationProperties>
+    Node toYaml(@NotNull P specsProperties) {
         YamlConfigParser parser = new YamlConfigParser();
         return parser.toYaml(toConfig((PerBuildContainerForEnvironmentProperties) specsProperties));
     }
@@ -177,7 +178,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
 
     /**
      * Convert extra container.
-     * @param builder builder
+     *
+     * @param builder   builder
      * @param container container
      */
     public static void convertExtraContainer(ConfigurationBuilder builder, ExtraContainerProperties container) {

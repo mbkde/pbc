@@ -24,6 +24,7 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
-    
+
     private final BuildQueueManager buildQueueManager;
     private final IsolatedAgentService detail;
 
@@ -41,30 +42,30 @@ public class SummaryPanel implements WebPanel {
         this.buildQueueManager = buildQueueManager;
         this.detail = detail;
     }
-    
+
     @Override
     public String getHtml(Map<String, Object> context) {
         BuildResultsSummary summary = (BuildResultsSummary) context.get("resultSummary");
         Map<PlanResultKey, BuildContext> map = PlanSummaryPanel.mapKeyToBuildContext(buildQueueManager);
         BuildContext buildcontext = map.get(summary.getPlanResultKey());
-        
+
         //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-        Configuration configuration = buildcontext != null ? AccessConfiguration.forContext(buildcontext) 
+        Configuration configuration = buildcontext != null ? AccessConfiguration.forContext(buildcontext)
                 : AccessConfiguration.forBuildResultSummary(summary);
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
             ret.append("<h2>Built with Per-build Container Agent</h2>")
-               .append("<dl class=\"details-list\"><dt>Image(s) used:</dt><dd>")
-               .append(ConfigurationOverride.reverseRegistryOverride(configuration.getDockerImage()));
+                    .append("<dl class=\"details-list\"><dt>Image(s) used:</dt><dd>")
+                    .append(ConfigurationOverride.reverseRegistryOverride(configuration.getDockerImage()));
             configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
                 ret.append("<br/>").append(ConfigurationOverride.reverseRegistryOverride(t.getImage()));
             });
             ret.append("</dd>");
-            
+
             if (configuration.getAwsRole() != null) {
                 ret.append("<dt>AWS IAM Role:</dt><dd>").append(configuration.getAwsRole()).append("</dd>");
             }
-            
+
             Map<String, String> customData =
                     createCustomDataMap(buildcontext, summary);
 
@@ -76,21 +77,21 @@ public class SummaryPanel implements WebPanel {
                 ).collect(Collectors.joining(",&nbsp;&nbsp;")));
                 ret.append("</dd>");
             }
-            String error = buildcontext != null 
-                    ? buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR) 
+            String error = buildcontext != null
+                    ? buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR)
                     : summary.getCustomBuildData().get(Constants.RESULT_ERROR);
             if (error != null) {
                 ret.append("<dt>Error:</dt><dd class=\"errorText\">")
-                   .append(error)
-                   .append("</dd>");
+                        .append(error)
+                        .append("</dd>");
             }
             customData.entrySet().stream()
                     .filter((Map.Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
                     .forEach((Map.Entry<String, String> entry) -> {
-                        ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
-                        ret.append("<dd>").append(entry.getValue()).append("</dd>");
-                    }
-            );
+                                ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
+                                ret.append("<dd>").append(entry.getValue()).append("</dd>");
+                            }
+                    );
             ret.append("</dl>");
 //TODO more information
 //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");

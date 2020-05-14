@@ -101,7 +101,7 @@ public class YamlConfigParser {
     public Node toYaml(@NotNull Configuration configuration) {
         final Map<String, Object> config = new LinkedHashMap<>();
         config.put(YamlTags.IMAGE, configuration.getDockerImage());
-            config.put(YamlTags.SIZE, configuration.getSize().name());
+        config.put(YamlTags.SIZE, configuration.getSize().name());
         if (StringUtils.isNotBlank(configuration.getAwsRole())) {
             config.put(YamlTags.AWS_ROLE, configuration.getAwsRole());
         }
@@ -127,7 +127,10 @@ public class YamlConfigParser {
         if (extraContainer.getEnvVariables() != null && !extraContainer.getEnvVariables().isEmpty()) {
             container.put(YamlTags.EXTRA_CONTAINER_VARIABLES,
                     extraContainer.getEnvVariables().stream()
-                            .collect(Collectors.toMap(Configuration.EnvVariable::getName, Configuration.EnvVariable::getValue))
+                            .collect(Collectors.toMap(
+                                    Configuration.EnvVariable::getName,
+                                    Configuration.EnvVariable::getValue)
+                            )
             );
         }
         return container;
