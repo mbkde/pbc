@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -156,8 +156,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
 
     @Nullable
     @Override
-    public <T extends EnvironmentPluginConfiguration<P>, P extends EnvironmentPluginConfigurationProperties>
-    Node toYaml(@NotNull P specsProperties) {
+    public Node toYaml(@NotNull EnvironmentPluginConfigurationProperties specsProperties) {
         YamlConfigParser parser = new YamlConfigParser();
         return parser.toYaml(toConfig((PerBuildContainerForEnvironmentProperties) specsProperties));
     }
@@ -165,7 +164,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     private Configuration toConfig(PerBuildContainerForEnvironmentProperties specsProperties) {
         ConfigurationBuilder builder = ConfigurationBuilder.create(specsProperties.getImage());
         builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(specsProperties.getAwsRole())) {
+        if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
             builder.withAwsRole(specsProperties.getAwsRole());
         }
         if (specsProperties.getExtraContainers() != null) {
