@@ -24,6 +24,7 @@ import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironme
 import com.atlassian.bamboo.specs.api.exceptions.PropertiesValidationException;
 import com.atlassian.bamboo.specs.api.model.deployment.configuration.AnyPluginConfigurationProperties;
 import com.atlassian.bamboo.specs.api.model.deployment.configuration.EnvironmentPluginConfigurationProperties;
+import com.atlassian.bamboo.specs.api.model.pbc.ExtraContainerProperties;
 import com.atlassian.bamboo.specs.api.model.pbc.PerBuildContainerForEnvironmentProperties;
 import com.atlassian.bamboo.specs.api.validators.common.ValidationProblem;
 import com.atlassian.bamboo.specs.yaml.Node;
@@ -36,15 +37,18 @@ import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl
 import com.atlassian.buildeng.isolated.docker.yaml.YamlConfigParser;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
+
+import org.apache.commons.lang3.StringUtils;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentConfigPluginExporter {
 
@@ -148,5 +152,47 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
         }
+    }
+
+    @Nullable
+    @Override
+    public Node toYaml(@NotNull EnvironmentPluginConfigurationProperties specsProperties) {
+        YamlConfigParser parser = new YamlConfigParser();
+        return parser.toYaml(toConfig((PerBuildContainerForEnvironmentProperties) specsProperties));
+    }
+
+    private Configuration toConfig(PerBuildContainerForEnvironmentProperties specsProperties) {
+        ConfigurationBuilder builder = ConfigurationBuilder.create(specsProperties.getImage());
+        builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
+        if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
+            builder.withAwsRole(specsProperties.getAwsRole());
+        }
+        if (specsProperties.getExtraContainers() != null) {
+            specsProperties.getExtraContainers().forEach(container -> {
+                convertExtraContainer(builder, container);
+            });
+        }
+        return builder.build();
+    }
+
+    /**
+     * Convert extra container.
+     *
+     * @param builder   builder
+     * @param container container
+     */
+    public static void convertExtraContainer(ConfigurationBuilder builder, ExtraContainerProperties container) {
+        Configuration.ExtraContainer extra = new Configuration.ExtraContainer(container.getName(),
+                container.getImage(),
+                Configuration.ExtraContainerSize.valueOf(container.getSize()));
+        extra.setCommands(container.getCommands());
+        if (container.getEnvironments() != null) {
+            extra.setEnvVariables(
+                    container.getEnvironments().stream()
+                            .map(var -> new Configuration.EnvVariable(var.getKey(), var.getValue()))
+                            .collect(Collectors.toList())
+            );
+        }
+        builder.withExtraContainer(extra);
     }
 }

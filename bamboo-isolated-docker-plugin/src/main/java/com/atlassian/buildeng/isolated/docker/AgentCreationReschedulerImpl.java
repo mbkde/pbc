@@ -109,6 +109,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
             executor.shutdown();
             executor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
+            logger.debug(ex.getMessage());
         } finally {
             executor.shutdownNow();
         }

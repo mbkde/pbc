@@ -16,15 +16,14 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
-
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.isolated.docker.sox.SoxRestConfig;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.POST;
 
 @Path("/sox")
 @WebSudoRequired

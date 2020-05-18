@@ -38,9 +38,11 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.Validator;
+import com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigExporterImpl;
 import com.atlassian.buildeng.isolated.docker.yaml.YamlConfigParser;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 
 import java.util.Arrays;
@@ -53,6 +55,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -227,6 +230,13 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         }
     }
 
+    @Nullable
+    @Override
+    public Node toYaml(@NotNull PerBuildContainerForJobProperties specsProperties) {
+        final YamlConfigParser parser = new YamlConfigParser();
+        return parser.toYaml(toConfig(specsProperties));
+    }
+
     /**
      * Convert list of ExtraContainerProperties definitions into a json string.
      */
@@ -242,5 +252,19 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     return ec;
                 })
                 .collect(Collectors.toList())).toString();
+    }
+
+    private Configuration toConfig(PerBuildContainerForJobProperties specsProperties) {
+        ConfigurationBuilder builder = ConfigurationBuilder.create(specsProperties.getImage());
+        builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
+        if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
+            builder.withAwsRole(specsProperties.getAwsRole());
+        }
+        if (specsProperties.getExtraContainers() != null) {
+            specsProperties.getExtraContainers().forEach(container -> {
+                CustomEnvironmentConfigExporterImpl.convertExtraContainer(builder, container);
+            });
+        }
+        return builder.build();
     }
 }

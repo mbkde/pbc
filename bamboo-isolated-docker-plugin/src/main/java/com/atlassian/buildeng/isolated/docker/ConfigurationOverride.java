@@ -77,7 +77,7 @@ final class ConfigurationOverride {
     /**
      * Split a docker image in to a pare of (registry, repository).
      * registry is empty String if the image is from dockerhub. e.g. postgres
-     * @return
+     * @return registry and repo
      */
     private static Pair<String, String> getRegistryAndRepo(String imageString) {
         String[] parts = imageString.split("/", 2);

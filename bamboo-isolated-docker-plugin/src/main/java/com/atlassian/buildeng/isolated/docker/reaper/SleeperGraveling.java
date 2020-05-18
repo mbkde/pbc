@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
@@ -29,7 +30,7 @@ import org.slf4j.LoggerFactory;
 public class SleeperGraveling implements BuildAgentVisitor {
     private final AgentManager agentManager;
 
-    private final Logger LOG = LoggerFactory.getLogger(SleeperGraveling.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SleeperGraveling.class);
 
     public SleeperGraveling(AgentManager agentManager) {
         this.agentManager = agentManager;
