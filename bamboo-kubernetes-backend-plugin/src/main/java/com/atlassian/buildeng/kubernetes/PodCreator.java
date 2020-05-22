@@ -69,6 +69,12 @@ public class PodCreator {
      */
     static final String KUBE_NUM_EXTRA_CONTAINERS = "KUBE_NUM_EXTRA_CONTAINERS";
 
+    /**
+     * Extra container CPU limit. This needs to be injected at run time and cannot be specified in the top level pod
+     * template as it needs to be specified in the container section, which cannot be known until runtime, as users
+     * can choose an arbitrary container name.
+     */
+    static final int EXTRA_CONTAINER_CPU_LIMIT = 20480;
 
     /**
      * Sidekick container limits. Specific to Kubernetes as we have to run the container and copy files
@@ -176,8 +182,9 @@ public class PodCreator {
             map.put("imagePullPolicy", "Always");
             ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
             map.put("resources", createResources(sizeDescriptor.getMemory(t.getExtraSize()),
-                sizeDescriptor.getMemoryLimit(t.getExtraSize()),
-                sizeDescriptor.getCpu(t.getExtraSize())));
+                    sizeDescriptor.getMemoryLimit(t.getExtraSize()),
+                    sizeDescriptor.getCpu(t.getExtraSize()),
+                    EXTRA_CONTAINER_CPU_LIMIT));
             if (isDockerInDockerImage(t.getImage())) {
                 map.put("securityContext", ImmutableMap.of("privileged", Boolean.TRUE));
                 map.put("args", adjustCommandsForDind(t.getCommands()));
@@ -379,6 +386,16 @@ public class PodCreator {
         return ImmutableMap.of(
             "limits", ImmutableMap.of("memory", "" + hardMemory + "Mi"),
             "requests", ImmutableMap.of("memory", "" + softMemory + "Mi", "cpu", "" + cpu + "m")
+        );
+    }
+
+    /**
+     * Overloaded createResources() specifically for creating extra containers.
+     */
+    private static Map<String, Object> createResources(int softMemory, int hardMemory, int cpu, int cpuLimit) {
+        return ImmutableMap.of(
+                "limits", ImmutableMap.of("memory", "" + hardMemory + "Mi", "cpu", "" + cpuLimit + "m"),
+                "requests", ImmutableMap.of("memory", "" + softMemory + "Mi", "cpu", "" + cpu + "m")
         );
     }
 
