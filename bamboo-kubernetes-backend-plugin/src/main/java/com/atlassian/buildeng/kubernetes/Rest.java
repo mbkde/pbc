@@ -171,8 +171,8 @@ public class Rest {
                 return Response.ok(configuration.getIamSubjectIdPrefix()
                         + subjectIdService.getSubjectId(deploymentProject)).build();
             } else {
-                return Response.status(Response.Status.FORBIDDEN).entity("You need at least View permission on this deployment project: "
-                        + deploymentId).build();
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("You need at least View permission on this project: " + deploymentId).build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
