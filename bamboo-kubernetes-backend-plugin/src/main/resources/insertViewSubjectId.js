@@ -13,7 +13,7 @@
             // of the items. Grab something lower down on the list so the new button appears at the bottom.
             // Both are still needed, as "Deploy" permission only grants the "Create release button" elsewhere in the UI
             const menuElement = $("#edit-deployment-project").get(0) || $("#create-deployment-version").get(0);
-            const content = $(
+            var content = $(
                 '<li><a class="aui-icon-container" href="' +
                 hrefPath +
                 '">View AWS IAM Subject ID for PBC</a></li>'
@@ -24,7 +24,7 @@
             const innerHeaderElement = document.querySelector("#content > header > div");
 
             // Need absolute position if no buttons since the header won't expand to full size otherwise
-            const content = $(
+            var content = $(
                 '<a id="subject-id-button" class="aui-buttons aui-button" ' +
                 'style="right: 10px; position: absolute; font-size: 14px; top: 30px; margin-left: 20px;" ' +
                 'href="' +
