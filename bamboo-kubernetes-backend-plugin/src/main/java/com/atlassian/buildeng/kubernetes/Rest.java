@@ -134,7 +134,8 @@ public class Rest {
                 return Response.status(Response.Status.NOT_FOUND)
                     .entity("Can not found build plan with key: " + planKey).build();
             }
-            if (bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk)
+            if (bambooPermissionManager.hasPlanPermission(BambooPermission.READ, pk)
+                || bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
                 || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
@@ -142,7 +143,7 @@ public class Rest {
                         + subjectIdService.getSubjectId(plan)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
-                    .entity("You need Build permission on this plan: " + planKey).build();
+                    .entity("You need at least View permission on this plan: " + planKey).build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
@@ -163,15 +164,15 @@ public class Rest {
                 return Response.status(Response.Status.NOT_FOUND)
                     .entity("Can not found deployment project with id: " + deploymentId).build();
             }
-            if (bambooPermissionManager.hasPermission(BambooPermission.BUILD, deploymentProject, null)
+            if (bambooPermissionManager.hasPermission(BambooPermission.READ, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
                 return Response.ok(configuration.getIamSubjectIdPrefix()
                         + subjectIdService.getSubjectId(deploymentProject)).build();
             } else {
-                return Response.status(Response.Status.FORBIDDEN).entity("You need Build permission on this project: "
-                        + deploymentId).build();
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("You need at least View permission on this project: " + deploymentId).build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
