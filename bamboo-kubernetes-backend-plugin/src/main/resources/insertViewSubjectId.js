@@ -7,7 +7,9 @@
         if (
             $("#project-configuration-actions").length ||
             $("#deployment-configuration-actions").length ||
-            $("#environment-configuration-actions").length
+            $("#environment-configuration-actions").length ||
+            $("#deployment-version-actions").length ||
+            $("#configure-result-actions").length
         ) {
             // "Configure deployment project" screen has "Create release" button in a separate section to the rest
             // of the items. Grab something lower down on the list so the new button appears at the bottom.
