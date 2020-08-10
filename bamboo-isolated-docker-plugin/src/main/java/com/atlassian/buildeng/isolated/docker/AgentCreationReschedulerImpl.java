@@ -16,7 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
+import com.atlassian.bamboo.deployments.events.DeploymentQueuedEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.executor.NamedExecutors;
 import com.atlassian.bamboo.v2.build.BuildContext;
@@ -94,7 +94,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
                         if (t.getView() instanceof BuildContext) {
                             eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
                         } else if (t.getView() instanceof DeploymentContext) {
-                            eventPublisher.publish(new DeploymentTriggeredEvent((DeploymentContext) t.getView()));
+                            eventPublisher.publish(new DeploymentQueuedEvent((DeploymentContext) t.getView()));
                         }
                     }
                 }
