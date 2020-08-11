@@ -114,8 +114,13 @@ public class SubjectIdServiceImplTest {
     }
 
     @Test
-    public void testJob() {
+    public void testJobKey() {
         assertEquals("test-bamboo/TEST-PARENT/B/1", subjectIdService.getSubjectId(TEST_JOB_KEY));
+    }
+
+    @Test
+    public void testJob() {
+        assertEquals("test-bamboo/TEST-PARENT/B/1", subjectIdService.getSubjectId(TEST_JOB));
     }
 
     @Test
