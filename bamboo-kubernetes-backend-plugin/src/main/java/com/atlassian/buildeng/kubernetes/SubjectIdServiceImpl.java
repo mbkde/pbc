@@ -29,6 +29,8 @@ public class SubjectIdServiceImpl implements SubjectIdService {
     @Override
     public String getSubjectId(ImmutablePlan plan) {
         plan = plan.hasMaster() ? plan.getMaster() : plan;
+        // Check if plan is a "job" that has been casted to ImmutablePlan; get the containing plan if so.
+        plan = plan.getPlanType().equals(PlanType.JOB) ? ((ImmutableJob) plan).getParent() : plan;
         String subjectId = getInstanceName() + "/" + plan.getPlanKey() + "/B/" + plan.getId();
         // IAM Request validator has a limit of 63 characters
         if (subjectId.length() > IAM_REQUEST_LIMIT) {
@@ -72,8 +74,6 @@ public class SubjectIdServiceImpl implements SubjectIdService {
         ImmutablePlan plan = cachedPlanManager.getPlanByKey(planKey);
         if (plan == null) {
             throw new NotFoundException("Could not find plan with plankey: " + planKey.toString());
-        } else if (plan.getPlanType().equals(PlanType.JOB)) {
-            plan = ((ImmutableJob) plan).getParent();
         }
         return getSubjectId(plan);
     }
