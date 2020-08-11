@@ -29,6 +29,7 @@ public class SubjectIdServiceImpl implements SubjectIdService {
     @Override
     public String getSubjectId(ImmutablePlan plan) {
         plan = plan.hasMaster() ? plan.getMaster() : plan;
+        plan = plan.getPlanType().equals(PlanType.JOB) ? ((ImmutableJob) plan).getParent() : plan;
         String subjectId = getInstanceName() + "/" + plan.getPlanKey() + "/B/" + plan.getId();
         // IAM Request validator has a limit of 63 characters
         if (subjectId.length() > IAM_REQUEST_LIMIT) {
