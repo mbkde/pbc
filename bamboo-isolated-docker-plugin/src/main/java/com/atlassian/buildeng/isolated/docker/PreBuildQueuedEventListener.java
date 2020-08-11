@@ -17,7 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.builder.LifeCycleState;
-import com.atlassian.bamboo.deployments.events.DeploymentTriggeredEvent;
+import com.atlassian.bamboo.deployments.events.DeploymentQueuedEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.events.DeploymentFinishedEvent;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
@@ -247,7 +247,7 @@ public class PreBuildQueuedEventListener {
     
     //2 events related to deployment environments
     @EventListener
-    public void deploymentTriggered(DeploymentTriggeredEvent event) {
+    public void deploymentTriggered(DeploymentQueuedEvent event) {
         logger.debug("deployment triggered event for " + event.getResultKey()
                 + " " + event.getContext().getDeploymentProjectName() + ":" + event.getContext().getEnvironmentName());
         DeploymentContext context = event.getContext();
