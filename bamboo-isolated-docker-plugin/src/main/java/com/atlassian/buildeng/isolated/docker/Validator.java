@@ -39,7 +39,7 @@ public class Validator {
             if (!StringUtils.deleteWhitespace(role).equals(role)) {
                 errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                     "AWS IAM Role cannot contain whitespace.");
-            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9_\\-]+").matcher(role).matches()) {
+            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9+=,.@_\\-]+").matcher(role).matches()) {
                 errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                     "AWS IAM Role doesn't match ARN pattern.");
             }
