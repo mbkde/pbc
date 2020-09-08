@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.73</version>
+        <version>2.74-SNAPSHOT</version>
     </parent>
     <artifactId>ecs-shared</artifactId>
     <packaging>jar</packaging>
