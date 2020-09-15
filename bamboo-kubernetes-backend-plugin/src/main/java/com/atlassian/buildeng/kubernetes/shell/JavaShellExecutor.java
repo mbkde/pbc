@@ -2,10 +2,10 @@ package com.atlassian.buildeng.kubernetes.shell;
 
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
-import org.apache.commons.io.IOUtils;
-
 import java.io.IOException;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
+
 
 public class JavaShellExecutor implements ShellExecutor {
     @Override

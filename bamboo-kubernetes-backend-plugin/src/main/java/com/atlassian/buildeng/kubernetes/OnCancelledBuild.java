@@ -23,9 +23,8 @@ import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.event.api.EventListener;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
+import org.slf4j.LoggerFactory;
 
 
 public class OnCancelledBuild {
