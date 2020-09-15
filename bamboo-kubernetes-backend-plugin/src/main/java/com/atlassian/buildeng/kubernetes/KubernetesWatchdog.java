@@ -43,18 +43,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -153,7 +142,8 @@ public class KubernetesWatchdog extends WatchdogJob {
         KubernetesClient client = new KubernetesClient(globalConfiguration, new JavaShellExecutor());
         long clusterStateQueryTime = System.currentTimeMillis();
         List<String> terminatingPodNames = new LinkedList<>();
-        List<Pod> bambooPods = client.getPodsByLabel(PodCreator.LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
+        String label = globalConfiguration.getBambooBaseUrlAskKubeLabel();
+        List<Pod> bambooPods = client.getPodsByLabel(PodCreator.LABEL_BAMBOO_SERVER, label);
         List<Pod> alivePods = new LinkedList<>();
 
         for (Pod pod : bambooPods) {
