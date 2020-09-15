@@ -19,17 +19,19 @@ package com.atlassian.buildeng.kubernetes;
 import com.atlassian.bamboo.event.BuildCanceledEvent;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.event.api.EventListener;
-import java.io.IOException;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 
 public class OnCancelledBuild {
-    
+
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(OnCancelledBuild.class);
-    
+
     private final ResultsSummaryManager resultSummaryManager;
     private final GlobalConfiguration globalConfiguration;
 
@@ -49,7 +51,7 @@ public class OnCancelledBuild {
                     String podName = result.getCustomBuildData()
                             .get(KubernetesIsolatedDockerImpl.RESULT_PREFIX + KubernetesIsolatedDockerImpl.NAME);
                     if (podName != null) {
-                        KubernetesClient client = new KubernetesClient(globalConfiguration);
+                        KubernetesClient client = new KubernetesClient(globalConfiguration, new JavaShellExecutor());
                         try {
                             client.deletePod(podName);
                             logger.info("Deleted pod for cancelled build:{}", podName);

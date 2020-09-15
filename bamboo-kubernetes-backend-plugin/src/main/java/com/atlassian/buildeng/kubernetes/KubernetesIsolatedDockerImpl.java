@@ -20,35 +20,13 @@ import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
-import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
+import com.atlassian.buildeng.spi.isolated.docker.*;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Pod;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -57,6 +35,19 @@ import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Kubernetes implementation of backend PBC service.
@@ -126,7 +117,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
             File podFile = createPodFile(podSpecList);
 
-            Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
+            Pod pod = new KubernetesClient(globalConfiguration, new JavaShellExecutor()).createPod(podFile);
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
             String name = KubernetesHelper.getName(pod);
             logger.info("Kubernetes successfully processed request for {} in {}, pod name: {}", 
