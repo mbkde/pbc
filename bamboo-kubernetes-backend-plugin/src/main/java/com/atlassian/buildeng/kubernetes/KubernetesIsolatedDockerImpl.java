@@ -20,6 +20,7 @@ import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
+import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
@@ -126,7 +127,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
             File podFile = createPodFile(podSpecList);
 
-            Pod pod = new KubernetesClient(globalConfiguration).createPod(podFile);
+            Pod pod = new KubernetesClient(globalConfiguration, new JavaShellExecutor()).createPod(podFile);
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
             String name = KubernetesHelper.getName(pod);
             logger.info("Kubernetes successfully processed request for {} in {}, pod name: {}", 

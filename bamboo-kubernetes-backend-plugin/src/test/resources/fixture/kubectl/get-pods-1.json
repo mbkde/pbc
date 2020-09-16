@@ -1,0 +1,200 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "annotations": {
+          "atlassian.com/business_unit": "PaaS/Build and Deploy",
+          "cni.projectcalico.org/podIP": "10.36.3.4/32",
+          "cni.projectcalico.org/podIPs": "10.36.3.4/32",
+          "kubernetes.io/psp": "restricted",
+          "seccomp.security.alpha.kubernetes.io/pod": "docker/default"
+        },
+        "creationTimestamp": "2020-09-07T03:30:39Z",
+        "generateName": "tiller-deploy-8596f464bc-",
+        "labels": {
+          "app": "helm",
+          "name": "tiller",
+          "pod-template-hash": "8596f464bc"
+        },
+        "name": "tiller-deploy-8596f464bc-x5fh9",
+        "namespace": "spinnaker",
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "ReplicaSet",
+            "name": "tiller-deploy-8596f464bc",
+            "uid": "d0492f41-b242-49c7-b824-e1fe499d44fa"
+          }
+        ],
+        "resourceVersion": "233758645",
+        "selfLink": "/api/v1/namespaces/spinnaker/pods/tiller-deploy-8596f464bc-x5fh9",
+        "uid": "8864b6af-8914-4389-8ac4-87e505c33493"
+      },
+      "spec": {
+        "automountServiceAccountToken": true,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "TILLER_NAMESPACE",
+                "value": "spinnaker"
+              },
+              {
+                "name": "TILLER_HISTORY_MAX",
+                "value": "0"
+              }
+            ],
+            "image": "gcr.io/kubernetes-helm/tiller:v2.16.1",
+            "imagePullPolicy": "IfNotPresent",
+            "livenessProbe": {
+              "failureThreshold": 3,
+              "httpGet": {
+                "path": "/liveness",
+                "port": 44135,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 1,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 1
+            },
+            "name": "tiller",
+            "ports": [
+              {
+                "containerPort": 44134,
+                "name": "tiller",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 44135,
+                "name": "http",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 3,
+              "httpGet": {
+                "path": "/readiness",
+                "port": 44135,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 1,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 1
+            },
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "name": "namespace-admin-token-rw7xh",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "nodeName": "ip-10-178-1-171.us-west-2.compute.internal",
+        "priority": 0,
+        "priorityClassName": "default-priority",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "namespace-admin",
+        "serviceAccountName": "namespace-admin",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          },
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          }
+        ],
+        "volumes": [
+          {
+            "name": "namespace-admin-token-rw7xh",
+            "secret": {
+              "defaultMode": 420,
+              "secretName": "namespace-admin-token-rw7xh"
+            }
+          }
+        ]
+      },
+      "status": {
+        "conditions": [
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2020-09-07T03:30:39Z",
+            "status": "True",
+            "type": "Initialized"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2020-09-07T03:30:50Z",
+            "status": "True",
+            "type": "Ready"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2020-09-07T03:30:50Z",
+            "status": "True",
+            "type": "ContainersReady"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2020-09-07T03:30:39Z",
+            "status": "True",
+            "type": "PodScheduled"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "containerID": "containerd://03fa982d97fa69b76a80ef660183f5c8915a314f49a21ac0a611deaa0923fad2",
+            "image": "gcr.io/kubernetes-helm/tiller:v2.16.1",
+            "imageID": "gcr.io/kubernetes-helm/tiller@sha256:3c70ee359d3ec305ca469395a2481b2375d569c6b4a928389ca07d829d12ec51",
+            "lastState": {},
+            "name": "tiller",
+            "ready": true,
+            "restartCount": 0,
+            "started": true,
+            "state": {
+              "running": {
+                "startedAt": "2020-09-07T03:30:46Z"
+              }
+            }
+          }
+        ],
+        "hostIP": "10.178.1.171",
+        "phase": "Running",
+        "podIP": "10.36.3.4",
+        "podIPs": [
+          {
+            "ip": "10.36.3.4"
+          }
+        ],
+        "qosClass": "BestEffort",
+        "startTime": "2020-09-07T03:30:39Z"
+      }
+    }
+  ],
+  "kind": "List",
+  "metadata": {
+    "resourceVersion": "",
+    "selfLink": ""
+  }
+}
