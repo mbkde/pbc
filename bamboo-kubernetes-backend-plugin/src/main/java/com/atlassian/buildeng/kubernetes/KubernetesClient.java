@@ -189,7 +189,7 @@ class KubernetesClient {
         } catch (KubectlException e) {
             try {
                 String body = FileUtils.readFileToString(podFile, Charsets.UTF_8);
-                logger.error("Invalid kubectl request. File at fault: \n" + body);
+                logger.error("Invalid kubectl request. File at fault: \n" + body, e);
             } catch (IOException ioException) {
                 //We don't log the file content in case of error
             }
