@@ -21,6 +21,7 @@ import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.atlassian.buildeng.kubernetes.serialization.StringResponseMapper;
 import com.atlassian.buildeng.kubernetes.shell.ShellException;
 import com.atlassian.buildeng.kubernetes.shell.ShellExecutor;
+import com.google.common.base.Charsets;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -48,6 +49,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -182,7 +184,17 @@ class KubernetesClient {
         } else {
             supplier = globalSupplier;
         }
-        pod = (Pod) executeKubectlAsObject(supplier, "create", "--validate=false", "-f", podFile.getAbsolutePath());
+        try {
+            pod = (Pod) executeKubectlAsObject(supplier, "create", "--validate=false", "-f", podFile.getAbsolutePath());
+        } catch (KubectlException e) {
+            try {
+                String body = FileUtils.readFileToString(podFile, Charsets.UTF_8);
+                logger.error("Invalid kubectl request. File at fault: \n" + body);
+            } catch (IOException ioException) {
+                //We don't log the file content in case of error
+            }
+            throw e;
+        }
         pod.setAdditionalProperty(PROP_CONTEXT, globalSupplier.getValue());
         return pod;
     }
