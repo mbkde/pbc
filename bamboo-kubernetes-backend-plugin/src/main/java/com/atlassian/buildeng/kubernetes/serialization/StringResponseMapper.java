@@ -7,7 +7,11 @@ import org.apache.commons.io.IOUtils;
 
 public class StringResponseMapper implements ResponseMapper<String> {
     @Override
-    public String map(InputStream inputStream) throws IOException {
-        return IOUtils.toString(inputStream, Charsets.UTF_8);
+    public String map(InputStream inputStream) throws DeserializationException {
+        try {
+            return IOUtils.toString(inputStream, Charsets.UTF_8);
+        } catch (IOException e) {
+            throw new DeserializationException(e);
+        }
     }
 }

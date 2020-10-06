@@ -1,8 +1,8 @@
 package com.atlassian.buildeng.kubernetes.shell;
 
+import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class StubShellExecutor implements ShellExecutor {
 
         try {
             return responseMapper.map(getClass().getResourceAsStream(response));
-        } catch (IOException e) {
+        } catch (DeserializationException e) {
             throw new RuntimeException("Did you forget to create a stub file at '" + response + "' ?");
         }
     }
