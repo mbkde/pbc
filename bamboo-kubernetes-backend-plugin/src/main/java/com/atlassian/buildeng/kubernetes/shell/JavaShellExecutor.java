@@ -1,5 +1,6 @@
 package com.atlassian.buildeng.kubernetes.shell;
 
+import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class JavaShellExecutor implements ShellExecutor {
             }
 
             return output;
-        } catch (IOException | InterruptedException x) {
+        } catch (IOException | InterruptedException | DeserializationException x) {
             throw new ShellException("" + x.getMessage(), x);
         }
     }
