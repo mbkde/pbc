@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class AwsPullModelLoader implements ModelLoader {
-    private final static Logger logger = LoggerFactory.getLogger(AwsPullModelLoader.class);
+    private static final Logger logger = LoggerFactory.getLogger(AwsPullModelLoader.class);
     private final SchedulerBackend schedulerBackend;
     private final EventPublisher eventPublisher;
     private final ECSConfiguration globalConfiguration;
@@ -77,8 +77,8 @@ public final class AwsPullModelLoader implements ModelLoader {
     //AZRebalance kills running agents, we need to suspend it.
     //not possible to do via terraform now, let's do explicitly from the plugin.
     private void checkSuspendedProcesses(AutoScalingGroup asg) throws ECSException {
-        if (asg.getSuspendedProcesses() == null ||
-            !asg.getSuspendedProcesses().stream()
+        if (asg.getSuspendedProcesses() == null
+                || !asg.getSuspendedProcesses().stream()
                     .map((SuspendedProcess t) -> t.getProcessName())
                     //it's a pity aws lib doesn't have these as constants or enums
                     .filter((String t) -> "AZRebalance".equals(t))
