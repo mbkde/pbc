@@ -1,0 +1,1 @@
+error: error when creating "/opt/atlassian/bamboo/temp/pod5012513975582810641yaml": Post https://kubernetes.cicd-prod1.us-east-1.kubernetes-cluster.net/api/v1/namespaces/buildeng-xxx-bamboo/pods?timeout=5m0s: net/http: TLS handshake timeout

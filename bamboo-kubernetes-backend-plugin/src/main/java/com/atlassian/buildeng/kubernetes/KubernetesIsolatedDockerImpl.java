@@ -18,6 +18,8 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
+import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
+import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
 import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
@@ -61,6 +63,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * Kubernetes implementation of backend PBC service.
+ *
  * @author mkleint
  */
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
@@ -83,8 +86,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
 
-    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration, 
-            PluginScheduler pluginScheduler, KubeJmxService kubeJmxService, SubjectIdService subjectIdService) {
+    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
+                                        PluginScheduler pluginScheduler,
+                                        KubeJmxService kubeJmxService,
+                                        SubjectIdService subjectIdService) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
@@ -122,7 +127,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 Map<String, Object> finalIamRequest = mergeMap(iamRequestTemplate, iamRequest);
                 //Temporary Workaround until we fully migrate to IRSA
                 removeDefaultRole(finalPod);
-                podSpecList.add(finalIamRequest) ;
+                podSpecList.add(finalIamRequest);
             }
 
             File podFile = createPodFile(podSpecList);
@@ -130,17 +135,17 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             Pod pod = new KubernetesClient(globalConfiguration, new JavaShellExecutor()).createPod(podFile);
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
             String name = KubernetesHelper.getName(pod);
-            logger.info("Kubernetes successfully processed request for {} in {}, pod name: {}", 
+            logger.info("Kubernetes successfully processed request for {} in {}, pod name: {}",
                     request.getResultKey(), servedIn, name);
             callback.handle(new IsolatedDockerAgentResult()
                     .withCustomResultData(NAME, name)
                     .withCustomResultData(UID, pod.getMetadata().getUid()));
 
-        } catch (KubernetesClient.ClusterRegistryKubectlException e) {
+        } catch (ClusterRegistryKubectlException e) {
             IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
             logger.error("Cluster Registry error:" + e.getMessage());
             callback.handle(result.withRetryRecoverable("Cluster Registry failure: " + e.getMessage()));
-        } catch (KubernetesClient.KubectlException e) {
+        } catch (KubectlException e) {
             handleKubeCtlException(callback, e);
         } catch (IOException e) {
             logger.error("io error", e);
@@ -175,45 +180,29 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @VisibleForTesting
-    void handleKubeCtlException(IsolatedDockerRequestCallback callback, KubernetesClient.KubectlException e) {
+    void handleKubeCtlException(IsolatedDockerRequestCallback callback, KubectlException e) {
         IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
         if (e.getCause() instanceof IOException || e.getCause() instanceof InterruptedException) {
             logger.error("error", e);
             callback.handle(new IsolatedDockerAgentException(e));
+        } else if (e.isRecoverable()) {
+            result = result.withRetryRecoverable(e.getMessage());
         } else {
-            // TODO move kubectl error message parsing close to code that invokes kubectl
-            if (e.getMessage().contains("(AlreadyExists)")) {
-                //full error message example:
-                //Error from server (AlreadyExists): error when creating ".../pod1409421494114698314yaml":
-                //object is being deleted: pods "plantemplates-srt-job1-..." already exists
-                result = result.withRetryRecoverable(e.getMessage());
-            } else if (e.getMessage().contains("(Timeout)")) {
-                //full error message example:
-                //Error from server (Timeout): error when creating ".../pod158999025779701949yaml":
-                // Timeout: request did not complete within allowed duration
-                result = result.withRetryRecoverable(e.getMessage());
-            } else if (e.getMessage().contains("exceeded quota")) {
-                //full error message example:
-                //error when creating "pod.yaml": pods "test-pod" is forbidden:
-                //exceeded quota: pod-demo, requested: pods=1, used: pods=2, limited: pods=2
-                result = result.withRetryRecoverable(e.getMessage());
-            } else {
-                result = result.withError(e.getMessage());
-            }
-            callback.handle(result);
-            logger.error(e.getMessage());
+            result = result.withError(e.getMessage());
         }
+        callback.handle(result);
+        logger.error(e.getMessage());
     }
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> loadTemplatePod() {
-        Yaml yaml =  new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor());
         return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
     }
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> loadTemplateIamRequest() {
-        Yaml yaml =  new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor());
         return (Map<String, Object>) yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
     }
 
@@ -230,7 +219,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         config.put("kubeJmxService", kubeJmxService);
         pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class,
                 config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
-        pluginScheduler.scheduleJob(PLUGIN_JOB_JMX_KEY, JmxJob.class, 
+        pluginScheduler.scheduleJob(PLUGIN_JOB_JMX_KEY, JmxJob.class,
                 config, new Date(), PLUGIN_JOB_JMX_INTERVAL_MILLIS);
     }
 
@@ -280,16 +269,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         overrides.forEach((String t, Object u) -> {
             Object originalEntry = merged.get(t);
             if (originalEntry instanceof Map && u instanceof Map) {
-                merged.put(t, mergeMap((Map)originalEntry, (Map)u));
+                merged.put(t, mergeMap((Map) originalEntry, (Map) u));
             } else if (originalEntry instanceof Collection && u instanceof Collection) {
                 ArrayList<Map<String, Object>> lst = new ArrayList<>();
 
                 if (t.equals("containers")) {
-                    mergeById("name", lst, 
-                            (Collection<Map<String, Object>>)originalEntry, (Collection<Map<String, Object>>)u);
+                    mergeById("name", lst,
+                            (Collection<Map<String, Object>>) originalEntry, (Collection<Map<String, Object>>) u);
                 } else if (t.equals("hostAliases")) {
-                    mergeById("ip", lst, 
-                            (Collection<Map<String, Object>>)originalEntry, (Collection<Map<String, Object>>)u);
+                    mergeById("ip", lst,
+                            (Collection<Map<String, Object>>) originalEntry, (Collection<Map<String, Object>>) u);
                 } else {
                     lst.addAll((Collection) originalEntry);
                     lst.addAll((Collection) u);
@@ -301,9 +290,9 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         });
         return merged;
     }
-    
-    private static void mergeById(String id, ArrayList<Map<String, Object>> lst, 
-            Collection<Map<String, Object>> originalEntry, Collection<Map<String, Object>> u) {
+
+    private static void mergeById(String id, ArrayList<Map<String, Object>> lst,
+                                  Collection<Map<String, Object>> originalEntry, Collection<Map<String, Object>> u) {
         Map<String, Map<String, Object>> containers1 = originalEntry
                 .stream().collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
         Map<String, Map<String, Object>> containers2 = u
@@ -334,11 +323,11 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 return Pair.make(t, bb.build().toURL());
             } catch (URISyntaxException | MalformedURLException ex) {
                 logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL)null);
+                return Pair.make(t, (URL) null);
             }
         }).filter((Pair t) -> t.getSecond() != null)
-          .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+                .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
-    
-    
+
+
 }

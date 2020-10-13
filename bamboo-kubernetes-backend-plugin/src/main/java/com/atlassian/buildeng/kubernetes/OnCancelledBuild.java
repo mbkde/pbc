@@ -19,6 +19,7 @@ package com.atlassian.buildeng.kubernetes;
 import com.atlassian.bamboo.event.BuildCanceledEvent;
 import com.atlassian.bamboo.resultsummary.ResultsSummary;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -54,7 +55,7 @@ public class OnCancelledBuild {
                         try {
                             client.deletePod(podName);
                             logger.info("Deleted pod for cancelled build:{}", podName);
-                        } catch (InterruptedException | IOException | KubernetesClient.KubectlException ex) {
+                        } catch (InterruptedException | IOException | KubectlException ex) {
                             logger.error("Failed to delete cancelled pod", ex);
                         }
                     }

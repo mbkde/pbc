@@ -2,13 +2,16 @@ package com.atlassian.buildeng.kubernetes.shell;
 
 import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
+import com.google.common.base.Charsets;
+import org.apache.commons.io.IOUtils;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class StubShellExecutor implements ShellExecutor {
-    private Map<String, String> responses = new HashMap<>();
+    private Map<String, ResponseStub> responses = new HashMap<>();
 
     public StubShellExecutor() {
     }
@@ -22,19 +25,34 @@ public class StubShellExecutor implements ShellExecutor {
         }
 
         builder.deleteCharAt(builder.length() - 1);
-        String response = responses.get(builder.toString());
+        ResponseStub response = responses.get(builder.toString());
         if (response == null) {
             throw new RuntimeException("Did you forget to setup a shell stubPath for '" + builder.toString() + "' ?");
         }
 
+        if (response.getReturnCode() != 0) {
+            String stdout = null;
+            String stderr = null;
+            try {
+                stdout = IOUtils.toString(getClass().getResourceAsStream(response.getStdout()), Charsets.UTF_8);
+                stderr = IOUtils.toString(getClass().getResourceAsStream(response.getStderr()), Charsets.UTF_8);
+            } catch (IOException e) {
+                throw new RuntimeException("Invalid configuration of stubs");
+            }
+            throw new ShellException("Non-zero exit code",
+                    stdout,
+                    stderr,
+                    response.getReturnCode());
+        }
+
         try {
-            return responseMapper.map(getClass().getResourceAsStream(response));
+            return responseMapper.map(getClass().getResourceAsStream(response.getStdout()));
         } catch (DeserializationException e) {
-            throw new RuntimeException("Did you forget to create a stub file at '" + response + "' ?");
+            throw new ShellException("Unable to parse kubectl response", e.getMessage(), "", 0);
         }
     }
 
-    public void addStub(String execString, String stubPath) {
+    public void addStub(String execString, ResponseStub stubPath) {
         responses.put(execString, stubPath);
     }
 }
