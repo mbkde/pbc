@@ -143,6 +143,10 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         return template;
     }
 
+    /**
+     * Loads IAM request yaml template either from configuration or defaults to "kind: IAMRequest".
+     * @return IAM k8s request template string
+     */
     public String getBandanaIamRequestTemplateAsString() {
         String template = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
             BANDANA_IAM_REQUEST_TEMPLATE);

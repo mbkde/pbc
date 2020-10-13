@@ -45,6 +45,11 @@ public class ClusterFactory {
                 });
     }
 
+    /**
+     * Lazy method to get current list of available clusters either from cache or from kubectl.
+     * @return list of clusters
+     * @throws ClusterRegistryKubectlException if an exception was thrown while loading the clusters
+     */
     public List<ClusterRegistryItem> getClusters() throws ClusterRegistryKubectlException {
         try {
             return cache.getUnchecked(CACHED_VALUE);

@@ -39,7 +39,11 @@ public class OnCancelledBuild {
         this.resultSummaryManager = resultSummaryManager;
         this.globalConfiguration = globalConfiguration;
     }
-    
+
+    /**
+     * Listener for canceled builds.
+     * @param event build canceled event from Bamboo
+     */
     @EventListener
     public void onCancelledBuild(BuildCanceledEvent event) {
         Long agentId = event.getAgentId();

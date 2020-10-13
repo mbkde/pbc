@@ -3,11 +3,17 @@ package com.atlassian.buildeng.kubernetes.exception;
 import com.atlassian.buildeng.kubernetes.shell.ShellException;
 
 public class KubernetesExceptionParser {
-    public KubectlException map(String errorMessagePrefix, ShellException exception) {
+    /**
+     * Parses the process output to determine an appropriate exception.
+     * @param errorMessage error message text
+     * @param exception shell exception that needs parsing
+     * @return appropriate KubectlException for the particular error message
+     */
+    public KubectlException map(String errorMessage, ShellException exception) {
         String stdout = exception.getStdout();
 
         if (stdout == null) {
-            return new KubectlException(errorMessagePrefix, exception);
+            return new KubectlException(errorMessage, exception);
         }
 
         if (stdout.contains("Operation cannot be fulfilled on resourcequotas \"pod-limit\": the object has been modified")) {
@@ -21,6 +27,6 @@ public class KubernetesExceptionParser {
             throw new PodAlreadyExistsException("pod already exists");
         }
 
-        return new KubectlException(errorMessagePrefix, exception);
+        return new KubectlException(errorMessage, exception);
     }
 }
