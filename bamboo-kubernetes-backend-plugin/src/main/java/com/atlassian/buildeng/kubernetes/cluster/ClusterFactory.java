@@ -40,7 +40,10 @@ public class ClusterFactory {
                 .build(new CacheLoader<String, List<ClusterRegistryItem>>() {
                     @Override
                     public List<ClusterRegistryItem> load(String key) throws Exception {
-                        return loadClusters();
+                        logger.debug("Attempting to load clusters");
+                        List<ClusterRegistryItem> clusterRegistryItems = loadClusters();
+                        logger.debug("Successfully loaded {} clusters", clusterRegistryItems.size());
+                        return clusterRegistryItems;
                     }
                 });
     }
@@ -54,7 +57,9 @@ public class ClusterFactory {
         try {
             return cache.getUnchecked(CACHED_VALUE);
         } catch (UncheckedExecutionException ex) {
+            logger.error("Got exception", ex);
             if (ex.getCause() instanceof KubectlException) {
+                logger.error("failure at loading clusters from registry", ex);
                 throw new ClusterRegistryKubectlException(ex.getMessage(), ex.getCause());
             }
             logger.error("unknown failure at loading clusters from registry", ex);
