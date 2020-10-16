@@ -1,0 +1,1 @@
+Error from server (Forbidden): error when creating "/opt/atlassian/bamboo/temp/pod1865616184205650212yaml": pods "atlasbi-atlasbidaily472-sonar-5-eb2e3f05-bed4-48ec-bca4-85d7f1c52ffb" is forbidden: exceeded quota: pod-limit, requested: pods=1, used: pods=1500, limited: pods=1500

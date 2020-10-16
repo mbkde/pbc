@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 public class AwsLogs {
 
-    private final static Logger logger = LoggerFactory.getLogger(AwsLogs.class);
+    static final private Logger logger = LoggerFactory.getLogger(AwsLogs.class);
 
     private static String constructLogStream(String prefix, String containerName, String taskArn) {
         String task = taskArn.substring(taskArn.indexOf("task/") + "task/".length());

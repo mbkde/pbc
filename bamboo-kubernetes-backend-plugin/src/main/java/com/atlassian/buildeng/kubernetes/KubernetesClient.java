@@ -16,21 +16,22 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.buildeng.kubernetes.cluster.ClusterFactory;
+import com.atlassian.buildeng.kubernetes.cluster.ClusterRegistryItem;
+import com.atlassian.buildeng.kubernetes.context.ContextSupplier;
+import com.atlassian.buildeng.kubernetes.context.GlobalContextSupplier;
+import com.atlassian.buildeng.kubernetes.context.PodContextSupplier;
+import com.atlassian.buildeng.kubernetes.context.SimpleContextSupplier;
+import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
+import com.atlassian.buildeng.kubernetes.exception.KubectlException;
+import com.atlassian.buildeng.kubernetes.exception.KubernetesExceptionParser;
 import com.atlassian.buildeng.kubernetes.serialization.JsonResponseMapper;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.atlassian.buildeng.kubernetes.serialization.StringResponseMapper;
 import com.atlassian.buildeng.kubernetes.shell.ShellException;
 import com.atlassian.buildeng.kubernetes.shell.ShellExecutor;
 import com.google.common.base.Charsets;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesList;
@@ -40,50 +41,35 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-class KubernetesClient {
+public class KubernetesClient {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesClient.class);
-
-    private final ContextSupplier globalSupplier = new GlobalContextSupplier();
-
-    private ShellExecutor shellExecutor;
-
-    private final GlobalConfiguration globalConfiguration;
-    private StringResponseMapper defaultResponseMapper = new StringResponseMapper();
-
     private static final String ERROR_MESSAGE_PREFIX = "kubectl returned non-zero exit code.";
-    private static final String PROP_CONTEXT = "context";
-    private static final String CACHED_VALUE = "cachedValue";
-    private final LoadingCache<String, List<ClusterRegistryItem>> cache =
-            CacheBuilder.newBuilder()
-                    .expireAfterWrite(10, TimeUnit.SECONDS)
-                    .build(new CacheLoader<String, List<ClusterRegistryItem>>() {
-                        @Override
-                        public List<ClusterRegistryItem> load(String key) throws Exception {
-                            return loadClusters();
-                        }
-                    });
-    private JsonResponseMapper jsonResponseMapper = new JsonResponseMapper();
+
+    private final ClusterFactory clusterFactory;
+    private final ContextSupplier globalContextSupplier;
+    private final ShellExecutor shellExecutor;
+    private final GlobalConfiguration globalConfiguration;
+    private final StringResponseMapper defaultResponseMapper = new StringResponseMapper();
+    private final JsonResponseMapper jsonResponseMapper = new JsonResponseMapper();
+    private final KubernetesExceptionParser kubernetesExceptionParser = new KubernetesExceptionParser();
 
     KubernetesClient(GlobalConfiguration globalConfiguration, ShellExecutor shellExecutor) {
         this.globalConfiguration = globalConfiguration;
         this.shellExecutor = shellExecutor;
+
+        globalContextSupplier = new GlobalContextSupplier(globalConfiguration);
+        clusterFactory = new ClusterFactory(this, globalContextSupplier);
     }
 
     private Object executeKubectlAsObject(ContextSupplier contextHandler, String... args)
@@ -105,11 +91,11 @@ class KubernetesClient {
         try {
             return shellExecutor.exec(kubectlArgs, responseMapper);
         } catch (ShellException e) {
-            throw new KubectlException(ERROR_MESSAGE_PREFIX, e);
+            throw kubernetesExceptionParser.map(ERROR_MESSAGE_PREFIX, e);
         }
     }
 
-    private String executeKubectl(ContextSupplier contextSupplier, String... args) throws KubectlException {
+    public String executeKubectl(ContextSupplier contextSupplier, String... args) throws KubectlException {
         return executeKubectlWithResponseMapper(contextSupplier, defaultResponseMapper, args);
     }
 
@@ -139,7 +125,7 @@ class KubernetesClient {
 
             return collectedPods;
         } else {
-            return getPods(selector, globalSupplier);
+            return getPods(selector, globalContextSupplier);
         }
     }
 
@@ -155,7 +141,7 @@ class KubernetesClient {
 
             for (HasMetadata entity : items) {
                 Pod pod = (Pod) entity;
-                pod.setAdditionalProperty(PROP_CONTEXT, contextHandler.getValue());
+                pod.setAdditionalProperty(Const.PROP_CONTEXT, contextHandler.getValue());
                 pods.add(pod);
             }
 
@@ -182,7 +168,7 @@ class KubernetesClient {
                 supplier = new SimpleContextSupplier(primary.get(0));
             }
         } else {
-            supplier = globalSupplier;
+            supplier = globalContextSupplier;
         }
         try {
             pod = (Pod) executeKubectlAsObject(supplier, "create", "--validate=false", "-f", podFile.getAbsolutePath());
@@ -195,7 +181,7 @@ class KubernetesClient {
             }
             throw e;
         }
-        pod.setAdditionalProperty(PROP_CONTEXT, globalSupplier.getValue());
+        pod.setAdditionalProperty(Const.PROP_CONTEXT, globalContextSupplier.getValue());
         return pod;
     }
 
@@ -232,7 +218,7 @@ class KubernetesClient {
                 }
             });
         } else {
-            supplier = globalSupplier;
+            supplier = globalContextSupplier;
             executeKubectl(supplier,
                     "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
             deleteIamRequest(supplier, podName);
@@ -260,55 +246,6 @@ class KubernetesClient {
         }
     }
 
-    private List<ClusterRegistryItem> getClusters() throws ClusterRegistryKubectlException {
-        try {
-            return cache.getUnchecked(CACHED_VALUE);
-        } catch (UncheckedExecutionException ex) {
-            if (ex.getCause() instanceof KubectlException) {
-                throw new ClusterRegistryKubectlException(ex.getMessage(), ex.getCause());
-            }
-            logger.error("unknown failure at loading clusters from registry", ex);
-            return Collections.emptyList();
-        }
-    }
-
-    private List<ClusterRegistryItem> loadClusters() throws KubectlException {
-        String json = executeKubectl(globalSupplier, "get", "clusters", "-o", "json");
-        //TODO check in future if clusterregistry.k8s.io/v1alpha1 / Cluster is supported by the client lib parsing
-        JsonParser parser = new JsonParser();
-        JsonElement root = parser.parse(json);
-        List<ClusterRegistryItem> items = new ArrayList<>();
-        if (root != null && root.isJsonObject()) {
-            JsonObject rootObj = root.getAsJsonObject();
-            if (rootObj.has("items") && rootObj.has("kind")) {
-                JsonArray array = rootObj.getAsJsonArray("items");
-                if (array != null) {
-                    for (Iterator iterator = array.iterator(); iterator.hasNext(); ) {
-                        JsonElement next = (JsonElement) iterator.next();
-                        if (next != null
-                                && next.isJsonObject()
-                                && next.getAsJsonObject().has("kind")
-                                && "Cluster".equals(next.getAsJsonObject()
-                                .getAsJsonPrimitive("kind").getAsString())) {
-                            JsonObject metadata = next.getAsJsonObject().getAsJsonObject("metadata");
-                            String name = metadata.getAsJsonPrimitive("name").getAsString();
-                            JsonObject labels = metadata.getAsJsonObject("labels");
-                            List<Pair<String, String>> labelList = labels == null ? Collections.emptyList()
-                                    : labels.entrySet().stream()
-                                    .map((Map.Entry<String, JsonElement> t) ->
-                                            new ImmutablePair<>(t.getKey(),
-                                                    t.getValue().getAsJsonPrimitive().getAsString()))
-                                    .collect(Collectors.toList());
-                            items.add(new ClusterRegistryItem(name, labelList));
-                        }
-                    }
-                }
-            }
-        }
-        return items;
-    }
-
-
     private List<String> availableClusterRegistryContexts() throws ClusterRegistryKubectlException {
         Supplier<String> label = () -> globalConfiguration.getClusterRegistryAvailableClusterSelector();
         return registryContexts(label);
@@ -316,12 +253,12 @@ class KubernetesClient {
 
     private List<String> registryContexts(Supplier<String> filter)
             throws ClusterRegistryKubectlException {
-        List<ClusterRegistryItem> clusters = getClusters();
+        List<ClusterRegistryItem> clusters = clusterFactory.getClusters();
         return clusters.stream()
-                .filter((ClusterRegistryItem t) -> t.labels.stream()
+                .filter((ClusterRegistryItem t) -> t.getLabels().stream()
                         .anyMatch((Pair<String, String> t1) -> StringUtils.equals(t1.getKey(), filter.get())))
                 .map((ClusterRegistryItem t) ->
-                        t.labels.stream()
+                        t.getLabels().stream()
                                 .filter((Pair<String, String> t1) ->
                                         StringUtils.equals(t1.getKey(),
                                                 globalConfiguration.getClusterRegistryAvailableClusterSelector()))
@@ -340,77 +277,6 @@ class KubernetesClient {
             label = () -> globalConfiguration.getClusterRegistryAvailableClusterSelector();
         }
         return registryContexts(label);
-    }
-
-    static class KubectlException extends RuntimeException {
-        KubectlException(String message) {
-            super(message);
-        }
-
-        public KubectlException(String message, Throwable cause) {
-            super(cause);
-        }
-    }
-
-    static class ClusterRegistryKubectlException extends KubectlException {
-
-        public ClusterRegistryKubectlException(String message) {
-            super(message);
-        }
-
-        public ClusterRegistryKubectlException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
-    static class ClusterRegistryItem {
-        final String name;
-        final List<Pair<String, String>> labels;
-
-        public ClusterRegistryItem(String name, List<Pair<String, String>> labels) {
-            this.name = name;
-            this.labels = labels;
-        }
-
-    }
-
-    private interface ContextSupplier {
-        String getValue();
-    }
-
-    private class GlobalContextSupplier implements ContextSupplier {
-
-        @Override
-        public String getValue() {
-            return globalConfiguration.getCurrentContext();
-        }
-    }
-
-    private static class SimpleContextSupplier implements ContextSupplier {
-        private final String context;
-
-        public SimpleContextSupplier(@Nullable String context) {
-            this.context = context;
-        }
-
-        @Override
-        public String getValue() {
-            return context;
-        }
-    }
-
-    private static class PodContextSupplier implements ContextSupplier {
-
-        private final Pod pod;
-
-        public PodContextSupplier(@Nonnull Pod pod) {
-            this.pod = pod;
-        }
-
-        @Override
-        public String getValue() {
-            return (String) pod.getAdditionalProperties().get(PROP_CONTEXT);
-        }
     }
 
 }

@@ -3,8 +3,10 @@ package com.atlassian.buildeng.kubernetes.shell;
 import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
+
 import java.io.IOException;
 import java.util.List;
+
 import org.apache.commons.io.IOUtils;
 
 
@@ -17,14 +19,22 @@ public class JavaShellExecutor implements ShellExecutor {
             // kubectl requires HOME env to find the config, but the Bamboo server JVM might not have it setup.
             pb.environment().put("HOME", System.getProperty("user.home"));
             Process process = pb.start();
-            T output = responseMapper.map(process.getInputStream());
             int ret = process.waitFor();
+
             if (ret != 0) {
-                throw new ShellException(IOUtils.toString(process.getErrorStream(), Charsets.UTF_8));
+                throw new ShellException(
+                        "Non-zero exit code",
+                        IOUtils.toString(process.getInputStream(), Charsets.UTF_8),
+                        IOUtils.toString(process.getErrorStream(), Charsets.UTF_8),
+                        ret
+                );
             }
 
+            T output = responseMapper.map(process.getInputStream());
             return output;
-        } catch (IOException | InterruptedException | DeserializationException x) {
+        } catch (DeserializationException x) {
+            throw new ShellException("Unable to parse kubectl response", x.getMessage(), "", 0);
+        } catch (IOException | InterruptedException x) {
             throw new ShellException("" + x.getMessage(), x);
         }
     }

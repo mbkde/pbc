@@ -24,6 +24,7 @@ import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeFailEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentKubeRestartEvent;
+import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler;
@@ -117,7 +118,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     }
 
     private void executeImpl(Map<String, Object> jobDataMap)
-            throws InterruptedException, IOException, KubernetesClient.KubectlException {
+            throws InterruptedException, IOException, KubectlException {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
@@ -298,7 +299,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             try {
                                 deletePod(client, pod, "Delete existing Pod before retry", false);
-                            } catch (KubernetesClient.KubectlException e) {
+                            } catch (KubectlException e) {
                                 logger.debug("Unable to delete pod before retry for reason: "
                                     + e.getMessage() + " proceeding with retry anyway");
                             }
@@ -406,7 +407,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         if (logger.isDebugEnabled()) {
             try {
                 describePod = client.describePod(pod);
-            } catch (KubernetesClient.KubectlException e) {
+            } catch (KubectlException e) {
                 describePod = String.format("Could not describe pod %s. %s", 
                         KubernetesHelper.getName(pod), e.toString());
                 logger.error(describePod);
@@ -417,7 +418,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
         try {
             client.deletePod(pod);
-        } catch (KubernetesClient.KubectlException e) {
+        } catch (KubectlException e) {
             logger.error("Failed to delete pod {}. {}", KubernetesHelper.getName(pod), e);
             return Optional.empty();
         }

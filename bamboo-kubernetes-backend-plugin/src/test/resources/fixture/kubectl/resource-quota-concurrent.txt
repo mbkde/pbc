@@ -1,0 +1,1 @@
+Error from server (Conflict): error when creating "/opt/atlassian/bamboo/temp/pod7487677061895695960yaml": Operation cannot be fulfilled on resourcequotas "pod-limit": the object has been modified; please apply your changes to the latest version and try again

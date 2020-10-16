@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
+import com.atlassian.buildeng.kubernetes.exception.KubectlException;
+import com.atlassian.buildeng.kubernetes.exception.PodLimitQuotaExceededException;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -140,7 +142,7 @@ public class KubernetesIsolatedDockerImplTest {
 
     @Test
     public void pbcShouldRetryOnExceedingQuota() {
-        KubernetesClient.KubectlException ke = new KubernetesClient.KubectlException("exceeded quota");
+        KubectlException ke = new PodLimitQuotaExceededException("exceeded quota");
         final AtomicBoolean retry = new AtomicBoolean(false);
         IsolatedDockerRequestCallback callback = new IsolatedDockerRequestCallback() {
             @Override
