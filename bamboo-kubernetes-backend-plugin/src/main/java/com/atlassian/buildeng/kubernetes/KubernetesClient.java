@@ -91,6 +91,7 @@ public class KubernetesClient {
         try {
             return shellExecutor.exec(kubectlArgs, responseMapper);
         } catch (ShellException e) {
+            logger.debug("mapping shell exception");
             throw kubernetesExceptionParser.map(ERROR_MESSAGE_PREFIX, e);
         }
     }
@@ -157,14 +158,18 @@ public class KubernetesClient {
         Pod pod;
         ContextSupplier supplier;
         if (globalConfiguration.isUseClusterRegistry()) {
+            logger.debug("loading primary cluster contexts");
             List<String> primary = primaryClusterRegistryContexts();
             if (primary.isEmpty()) {
+                logger.debug("loading available contexts");
                 primary = availableClusterRegistryContexts();
             }
             Collections.shuffle(primary);
             if (primary.isEmpty()) {
+                logger.debug("Found no cluster available in cluster registry");
                 throw new ClusterRegistryKubectlException("Found no cluster available in cluster registry");
             } else {
+                logger.debug("using {} context", primary.get(0));
                 supplier = new SimpleContextSupplier(primary.get(0));
             }
         } else {

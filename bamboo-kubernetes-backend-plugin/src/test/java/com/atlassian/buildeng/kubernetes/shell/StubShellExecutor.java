@@ -3,12 +3,12 @@ package com.atlassian.buildeng.kubernetes.shell;
 import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
-import org.apache.commons.io.IOUtils;
-
+import io.fabric8.utils.Files;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 
 public class StubShellExecutor implements ShellExecutor {
     private Map<String, ResponseStub> responses = new HashMap<>();
@@ -46,8 +46,9 @@ public class StubShellExecutor implements ShellExecutor {
         }
 
         try {
-            return responseMapper.map(getClass().getResourceAsStream(response.getStdout()));
-        } catch (DeserializationException e) {
+            byte[] bytes = Files.readBytes(getClass().getResourceAsStream(response.getStdout()));
+            return responseMapper.map(bytes);
+        } catch (DeserializationException | IOException e) {
             throw new ShellException("Unable to parse kubectl response", e.getMessage(), "", 0);
         }
     }
