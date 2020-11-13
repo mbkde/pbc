@@ -151,7 +151,7 @@ public class Rest {
     }
 
     /**
-     * GET Subject ID used in roles for deployments.
+     * GET Subject ID used in roles for deployments, when obtained from anywhere besides an environment config page.
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -162,20 +162,48 @@ public class Rest {
                 deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
             if (deploymentProject == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Can not found deployment project with id: " + deploymentId).build();
+                    .entity("Cannot find deployment project with ID: " + deploymentId).build();
             }
-            if (bambooPermissionManager.hasPermission(BambooPermission.READ, deploymentProject, null)
+            return getSubjectIdDeploymentProject(deploymentProject);
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
+        }
+    }
+
+    /**
+     * GET Subject ID used in roles for deployments, when obtained from inside an environment configuration page.
+     */
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/subjectIdForDeploymentEnvironment/{environmentId}")
+    public Response getSubjectIdDeploymentEnvironment(@PathParam("environmentId") String environmentId) {
+        try {
+            DeploymentProject deploymentProject =
+                    deploymentProjectService.getDeploymentProjectForEnvironment(Long.parseLong(environmentId));
+            if (deploymentProject == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Cannot find deployment project for environment with ID: " + environmentId).build();
+            }
+            return getSubjectIdDeploymentProject(deploymentProject);
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
+        }
+    }
+
+    /**
+     * GET Subject ID used in roles for deployments. Internal method for environment and deployment projects.
+     */
+    private Response getSubjectIdDeploymentProject(DeploymentProject deploymentProject) {
+        if (bambooPermissionManager.hasPermission(BambooPermission.READ, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-                return Response.ok(configuration.getIamSubjectIdPrefix()
-                        + subjectIdService.getSubjectId(deploymentProject)).build();
-            } else {
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity("You need at least View permission on this project: " + deploymentId).build();
-            }
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
+            return Response.ok(configuration.getIamSubjectIdPrefix()
+                    + subjectIdService.getSubjectId(deploymentProject)).build();
+        } else {
+            // If this is called from an environment, we won't have the deployment's ID, so fetch it
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity("You need at least View permission on this project: " + deploymentProject.getId()).build();
         }
     }
 

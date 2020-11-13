@@ -1,11 +1,14 @@
 (function ($) {
     $(document).ready(function () {
         const searchStr = new URLSearchParams(window.location.search);
-        const deploymentId = searchStr.get("id");
-        const hrefPath = AJS.contextPath() + "/rest/pbc-kubernetes/1.0/subjectIdForDeployment/" + deploymentId;
+        const isEnv = window.location.href.includes("viewEnvironment");
+        const id = searchStr.get("id");
+        const hrefPath = AJS.contextPath() + "/rest/pbc-kubernetes/1.0/subjectIdForDeployment"
+            + (isEnv ? "Environment/" : "/") + id;
 
         // Prevents running on deployment pages not specific to a deployment
-        if (deploymentId) {
+        // Need to use var because of YUI JS compressor. It does not like multi-line const/let
+        if (id) {
             if (
                 $("#project-configuration-actions").length ||
                 $("#deployment-configuration-actions").length ||
