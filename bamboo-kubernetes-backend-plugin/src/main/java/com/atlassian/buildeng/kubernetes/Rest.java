@@ -156,15 +156,15 @@ public class Rest {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/subjectIdForDeployment/{deploymentId}")
-    public Response getSubjectIdDeployment(@PathParam("deploymentId") String deploymentId) {
+    public Response getSubjectIdDeployment(@PathParam("deploymentId") Long deploymentId) {
         try {
             DeploymentProject deploymentProject =
-                deploymentProjectService.getDeploymentProject(Long.parseLong(deploymentId));
+                deploymentProjectService.getDeploymentProject(deploymentId);
             if (deploymentProject == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                     .entity("Cannot find deployment project with ID: " + deploymentId).build();
             }
-            return getSubjectIdDeploymentProject(deploymentProject);
+            return getSubjectIdDeploymentProject(deploymentProject, deploymentId);
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
         }
@@ -176,15 +176,15 @@ public class Rest {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/subjectIdForDeploymentEnvironment/{environmentId}")
-    public Response getSubjectIdDeploymentEnvironment(@PathParam("environmentId") String environmentId) {
+    public Response getSubjectIdDeploymentEnvironment(@PathParam("environmentId") Long environmentId) {
         try {
             DeploymentProject deploymentProject =
-                    deploymentProjectService.getDeploymentProjectForEnvironment(Long.parseLong(environmentId));
+                    deploymentProjectService.getDeploymentProjectForEnvironment(environmentId);
             if (deploymentProject == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity("Cannot find deployment project for environment with ID: " + environmentId).build();
             }
-            return getSubjectIdDeploymentProject(deploymentProject);
+            return getSubjectIdDeploymentProject(deploymentProject, deploymentProject.getId());
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
         }
@@ -193,7 +193,7 @@ public class Rest {
     /**
      * GET Subject ID used in roles for deployments. Internal method for environment and deployment projects.
      */
-    private Response getSubjectIdDeploymentProject(DeploymentProject deploymentProject) {
+    private Response getSubjectIdDeploymentProject(DeploymentProject deploymentProject, Long deploymentProjectId) {
         if (bambooPermissionManager.hasPermission(BambooPermission.READ, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
                 || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
@@ -201,9 +201,8 @@ public class Rest {
             return Response.ok(configuration.getIamSubjectIdPrefix()
                     + subjectIdService.getSubjectId(deploymentProject)).build();
         } else {
-            // If this is called from an environment, we won't have the deployment's ID, so fetch it
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity("You need at least View permission on this project: " + deploymentProject.getId()).build();
+                    .entity("You need at least View permission on this project: " + deploymentProjectId).build();
         }
     }
 
