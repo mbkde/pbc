@@ -156,5 +156,5 @@
         <module>metrics-shared</module>
         <module>bamboo-ecs-metrics-plugin</module>
         <module>bamboo-kubernetes-metrics-plugin</module>
-  </modules>
+    </modules>
 </project>
