@@ -55,12 +55,6 @@ public class IsolatedDockerSpec {
                                                 .inlineBodyFromPath(Paths.get("src/main/resources/check-bamboo-version.sh")))))
                 .linkedRepositories("bamboo-isolated-docker")
 
-                .triggers(new BitbucketServerTrigger()
-                        .conditions(new AnyTriggerCondition()
-                                .config(new MapBuilder()
-                                        .put("custom.rejectBranchBuildWithoutChange.enabled", "false")
-                                        .put("custom.requireIdleChildPlans.enabled", "false")
-                                        .build())))
                 .planBranchManagement(new PlanBranchManagement()
                         .delete(new BranchCleanup())
                         .notificationForCommitters())
