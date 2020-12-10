@@ -3,7 +3,7 @@
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>5.0.28</version>
+        <version>6.0.2</version>
         <relativePath/>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -34,7 +34,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>7.2.0-m329</bamboo.version>
+        <bamboo.version>7.3.0-m038</bamboo.version>
         <amps.version>8.0.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.0.19</platform.version>
