@@ -16,12 +16,14 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentAssignmentMap;
 import com.atlassian.bamboo.buildqueue.manager.AgentAssignmentService;
 import com.atlassian.bamboo.buildqueue.manager.AgentAssignmentServiceHelper;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
+import com.atlassian.bamboo.deployments.DeploymentResultKeyImpl;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
 import com.atlassian.bamboo.plan.PlanKey;
@@ -87,13 +89,14 @@ public class UnmetRequirements {
         Capability resultCap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
         if (resultCap != null) {
             String resultKey = resultCap.getValue();
-            final PlanResultKey key = PlanKeys.getPlanResultKey(resultKey);
+            final ResultKey key = PlanKeys.isPlanResultKey(resultKey) ? PlanKeys.getPlanResultKey(resultKey) : DeploymentResultKeyImpl.from(resultKey);
             Optional<CommonContext> found = DockerAgentBuildQueue.currentlyQueued(buildQueueManager)
                     .filter((CommonContext t) -> key.equals(t.getResultKey()))
                     .findFirst();
             if (found.isPresent() && found.get() instanceof BuildContext) {
+                final PlanResultKey planResultKey = (PlanResultKey)key;
                 CurrentResult current = found.get().getCurrentResult();
-                final ImmutableBuildable build = cachedPlanManager.getPlanByKey(key.getPlanKey(), 
+                final ImmutableBuildable build = cachedPlanManager.getPlanByKey(planResultKey.getPlanKey(),
                         ImmutableBuildable.class);
                 if (build != null) {
                     //only builds
@@ -115,7 +118,7 @@ public class UnmetRequirements {
 
                         List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
                         errorUpdateHandler.recordError(found.get().getEntityKey(),
-                                "Capabilities of PBC agent don't match job " + key.getPlanKey()
+                                "Capabilities of PBC agent don't match job " + planResultKey.getPlanKey()
                                         + " requirements (" + found.get().getResultKey() 
                                         + "). Affected requirements:" + missingReqKeys);
                         eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getEntityKey(),
@@ -124,7 +127,7 @@ public class UnmetRequirements {
                     }
                     AgentAssignmentMap assignments = agentAssignmentService.getAgentAssignments();
                     //because build.getMaster() is null
-                    PlanKey planKey = PlanKeys.getChainKeyIfJobKey(key.getPlanKey());
+                    PlanKey planKey = PlanKeys.getChainKeyIfJobKey(planResultKey.getPlanKey());
                     ImmutablePlan plan = cachedPlanManager.getPlanByKey(planKey);
                     Set<AgentAssignmentService.AgentAssignmentExecutor> dedicatedAgents = assignments.forExecutables(
                             Iterables.concat(
@@ -140,7 +143,7 @@ public class UnmetRequirements {
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
                         agentRemovals.removeAgent(pipelineDefinition.getId());
                         errorUpdateHandler.recordError(found.get().getEntityKey(),
-                                "Please undedictate job " + key.getPlanKey() + " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
+                                "Please undedictate job " + planResultKey.getPlanKey() + " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
                         eventPublisher.publish(new DockerAgentDedicatedJobEvent(found.get().getEntityKey()));
                         return true;
                     }
