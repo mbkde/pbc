@@ -15,12 +15,12 @@
     <packaging>pom</packaging>
     <organization>
         <name>Atlassian Pty Ltd</name>
-        <url>http://www.atlassian.com/</url>
+        <url>https://www.atlassian.com/</url>
     </organization>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
