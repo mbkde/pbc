@@ -43,9 +43,9 @@ public class IsolatedDockerSpec {
                         .jobs(new Job("Default Job",
                                 new BambooKey("JOB1"))
                                 .pluginConfigurations(
-                                new PerBuildContainerForJob()
-                                    .image("docker.atl-paas.net/buildeng/agent-baseagent:staging")
-                                    .size(ContainerSize.REGULAR))
+                                        new PerBuildContainerForJob()
+                                                .image("docker.atl-paas.net/buildeng/agent-baseagent:staging")
+                                                .size(ContainerSize.REGULAR))
                                 .tasks(new VcsCheckoutTask()
                                                 .description("Checkout Default Repository")
                                                 .checkoutItems(new CheckoutItem()
