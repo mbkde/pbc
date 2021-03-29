@@ -23,6 +23,7 @@ import com.atlassian.bamboo.persister.AuditLogMessage;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
@@ -53,6 +54,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
     static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
     static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
+    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.kubernetes.maxAgentsStartup";
     
     private static final String MAIN_PREFIX = "main-";
     private static final String EXTRA_PREFIX = "extra-";
@@ -176,17 +178,36 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 BANDANA_POD_LOGS_URL);
     }
 
+    public Integer getMaxAgentCreationPerMinute() {
+        Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
+        if (maxAgents == null) {
+            return 100;
+        }
+        return maxAgents;
+    }
+
     /**
      * Saves changes to the configuration.
      */
-    public void persist(String sidekick, String currentContext, String podTemplate, String iamRequestTemplate,
-                        String iamSubjectIdPrefix, String podLogUrl, String containerSizes,
-                        boolean useClusterRegistry, String availableSelector, String primarySelector)
-            throws IOException {
+    public void persist(Config config) throws IOException {
+        String sidekick = config.getSidekickImage();
+        String currentContext = config.getCurrentContext();
+        String podTemplate = config.getPodTemplate();
+        String iamRequestTemplate = config.getIamRequestTemplate();
+        String iamSubjectIdPrefix = config.getIamSubjectIdPrefix();
+        String podLogUrl = config.getPodLogsUrl();
+        String containerSizes = config.getContainerSizes();
+        boolean useClusterRegistry = config.isUseClusterRegistry();
+        String availableSelector = config.getClusterRegistryAvailableSelector();
+        String primarySelector = config.getClusterRegistryPrimarySelector();
+        Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
+
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(containerSizes), "Container sizes are mandatory");
         validateContainerSizes(containerSizes);
+
         if (useClusterRegistry) {
             Preconditions.checkArgument(StringUtils.isNotBlank(availableSelector), "Clu");
             Preconditions.checkArgument(StringUtils.isNotBlank(primarySelector), "Clu");
@@ -252,6 +273,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
                         BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
             }
+        }
+        if (!(maxAgentCreationPerMinute.equals(getMaxAgentCreationPerMinute()))) {
+            auditLogEntry("PBC Maximum Number of Agent Creation Per Minute",
+                    Integer.toString(getMaxAgentCreationPerMinute()), Integer.toString(maxAgentCreationPerMinute));
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
         }
         if (currentContext != null) {
             persistCurrentContext(currentContext);

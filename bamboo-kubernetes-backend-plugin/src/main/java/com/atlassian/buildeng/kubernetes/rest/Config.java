@@ -28,13 +28,15 @@ public class Config {
     public boolean useClusterRegistry;
     public String clusterRegistryAvailableSelector;
     public String clusterRegistryPrimarySelector;
+    public Integer maxAgentCreationPerMinute;
 
     public Config() {
     }
 
     public Config(String sidekickImage, String currentContext, String podTemplate, String iamRequestTemplate,
                   String iamSubjectIdPrefix, String podLogsUrl, String containerSizes, boolean useClusterRegistry,
-                  String clusterRegistryAvailableSelector, String clusterRegistryPrimarySelector) {
+                  String clusterRegistryAvailableSelector, String clusterRegistryPrimarySelector,
+                  Integer maxAgentCreationPerMinute) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -45,6 +47,7 @@ public class Config {
         this.useClusterRegistry = useClusterRegistry;
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
+        this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
     }
 
     public String getSidekickImage() {
@@ -125,5 +128,11 @@ public class Config {
 
     public void setClusterRegistryPrimarySelector(String clusterRegistryPrimarySelector) {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+    }
+
+    public Integer getMaxAgentCreationPerMinute() { return maxAgentCreationPerMinute; }
+
+    public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
+        this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
     }
 }

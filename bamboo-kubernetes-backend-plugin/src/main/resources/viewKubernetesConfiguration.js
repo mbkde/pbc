@@ -40,6 +40,7 @@
         updateClusterRegistry();
         AJS.$("#clusterRegistryAvailableSelector").val(response.clusterRegistryAvailableSelector);
         AJS.$("#clusterRegistryPrimarySelector").val(response.clusterRegistryPrimarySelector);
+        AJS.$("#maxAgentCreationPerMinute").val(response.maxAgentCreationPerMinute);
     }
 
     function setRemoteConfig() {
@@ -55,6 +56,7 @@
         config.useClusterRegistry = checked;
         config.clusterRegistryAvailableSelector = AJS.$("#clusterRegistryAvailableSelector").val().trim();
         config.clusterRegistryPrimarySelector = AJS.$("#clusterRegistryPrimarySelector").val().trim();
+        config.maxAgentCreationPerMinute = parseInt(AJS.$("#maxAgentCreationPerMinute").val().trim());
         
 
         updateStatus("Saving...");

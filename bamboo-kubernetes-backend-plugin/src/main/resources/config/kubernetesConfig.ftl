@@ -110,6 +110,14 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             </div>
         </div>
 
+        <div class="field-group">
+            <label for="maxAgentCreationPerMinute">PBC Agent Creation Throttling</label>
+            <textarea type="text" class="text text-field" id="maxAgentCreationPerMinute"></textarea>
+            <div class="description" id="desc-maxAgentCreationPerMinute">
+                Specify the maximum number of PBC agents you want to be able to start up per minute.
+            </div>
+        </div>
+
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>
