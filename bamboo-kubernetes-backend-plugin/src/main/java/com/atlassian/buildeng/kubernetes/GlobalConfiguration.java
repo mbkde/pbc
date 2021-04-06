@@ -54,8 +54,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
     static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
     static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
-    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.kubernetes.maxAgentsStartup";
-    
+
     private static final String MAIN_PREFIX = "main-";
     private static final String EXTRA_PREFIX = "extra-";
 
@@ -178,15 +177,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 BANDANA_POD_LOGS_URL);
     }
 
-    public Integer getMaxAgentCreationPerMinute() {
-        Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
-        if (maxAgents == null) {
-            return 100;
-        }
-        return maxAgents;
-    }
-
     /**
      * Saves changes to the configuration.
      */
@@ -201,7 +191,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         boolean useClusterRegistry = config.isUseClusterRegistry();
         String availableSelector = config.getClusterRegistryAvailableSelector();
         String primarySelector = config.getClusterRegistryPrimarySelector();
-        Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
 
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
@@ -273,12 +262,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
                         BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
             }
-        }
-        if (!(maxAgentCreationPerMinute.equals(getMaxAgentCreationPerMinute()))) {
-            auditLogEntry("PBC Maximum Number of Agent Creation Per Minute",
-                    Integer.toString(getMaxAgentCreationPerMinute()), Integer.toString(maxAgentCreationPerMinute));
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
         }
         if (currentContext != null) {
             persistCurrentContext(currentContext);

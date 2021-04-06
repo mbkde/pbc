@@ -48,6 +48,7 @@ public class SettingsRest {
     public Response getConfig() {
         Config c = new Config();
         c.setDefaultImage(configuration.getDefaultImage());
+        c.setMaxAgentCreationPerMinute(configuration.getMaxAgentCreationPerMinute());
         return Response.ok(c).build();
     }
 
@@ -60,7 +61,7 @@ public class SettingsRest {
     @Path("/config")
     public Response setConfig(Config config) {
         try {
-            configuration.persist(config.getDefaultImage());
+            configuration.persist(config);
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }

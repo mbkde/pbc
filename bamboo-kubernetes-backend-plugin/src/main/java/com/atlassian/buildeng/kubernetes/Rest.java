@@ -81,7 +81,6 @@ public class Rest {
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
         c.setClusterRegistryAvailableSelector(configuration.getClusterRegistryAvailableClusterSelector());
         c.setClusterRegistryPrimarySelector(configuration.getClusterRegistryPrimaryClusterSelector());
-        c.setMaxAgentCreationPerMinute(configuration.getMaxAgentCreationPerMinute());
         return Response.ok(c).build();
     }
 

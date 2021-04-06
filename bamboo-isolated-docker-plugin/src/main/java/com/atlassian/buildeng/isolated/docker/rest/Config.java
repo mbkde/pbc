@@ -21,6 +21,7 @@ package com.atlassian.buildeng.isolated.docker.rest;
  */
 public class Config {
     public String defaultImage;
+    public Integer maxAgentCreationPerMinute;
 
     public Config() {
     }
@@ -31,6 +32,12 @@ public class Config {
 
     public void setDefaultImage(String defaultImage) {
         this.defaultImage = defaultImage;
+    }
+
+    public Integer getMaxAgentCreationPerMinute() { return maxAgentCreationPerMinute; }
+
+    public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
+        this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
     }
 
 }

@@ -6,7 +6,7 @@
 
 <body>
     <h1>Per-build Container</h1>
-<br>
+<br/>
 Global Configuration for generic PBC settings
 </br>
 
@@ -22,9 +22,17 @@ Global Configuration for generic PBC settings
         <div class="field-group">
             <label for="defaultImage">Default image:</label>
             <input type="text" class="text long-field" id="defaultImage"
-                    placeholder=""></input>
+                   placeholder=""/>
             <div class="description" id="desc-defaultImage">
                 Default agent container image used
+            </div>
+        </div>
+
+        <div class="field-group">
+            <label for="maxAgentCreationPerMinute">PBC Agent Creation Throttling</label>
+            <textarea type="text" class="text text-field" id="maxAgentCreationPerMinute"></textarea>
+            <div class="description" id="desc-maxAgentCreationPerMinute">
+                Specify the maximum number of PBC agents you want to be able to start up per minute.
             </div>
         </div>
 

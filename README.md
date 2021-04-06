@@ -147,3 +147,17 @@ License
 
 Copyright (c) 2016 - 2018 Atlassian and others.
 Apache 2.0 licensed, see [LICENSE.txt](LICENSE.txt) file.
+
+Local Development
+=================
+# TOOD
+download atlassian sdk https://developer.atlassian.com/server/framework/atlassian-sdk/downloads/
+```bash
+brew tap atlassian/tap
+brew install atlassian/tap/atlassian-plugin-sdk
+```
+
+```bash
+atlas-debug
+```
+export ATLAS_MVN=$(which mvn)
