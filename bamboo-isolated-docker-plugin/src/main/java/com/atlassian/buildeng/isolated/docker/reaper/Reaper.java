@@ -24,7 +24,6 @@ import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.time.Duration;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;

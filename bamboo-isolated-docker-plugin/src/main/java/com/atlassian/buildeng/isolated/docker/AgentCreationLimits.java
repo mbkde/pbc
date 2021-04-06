@@ -38,7 +38,9 @@ public class AgentCreationLimits {
      * Retrieve the number of agents which can be created per minute based on the global configuration.
      * @return maximum amount of agents which can be created per minute
      */
-    private Integer getMaxAgentCreationPerMinute() { return globalConfiguration.getMaxAgentCreationPerMinute(); }
+    private Integer getMaxAgentCreationPerMinute() {
+        return globalConfiguration.getMaxAgentCreationPerMinute();
+    }
 
     /**
      * Checks whether the number of agents created is at the limit.
