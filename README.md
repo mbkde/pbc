@@ -150,14 +150,23 @@ Apache 2.0 licensed, see [LICENSE.txt](LICENSE.txt) file.
 
 Local Development
 =================
-# TOOD
-download atlassian sdk https://developer.atlassian.com/server/framework/atlassian-sdk/downloads/
+Use the [Atlassian plugin SDK](https://developer.atlassian.com/server/framework/atlassian-sdk/) to develop this plugin.
+To download this:
 ```bash
 brew tap atlassian/tap
 brew install atlassian/tap/atlassian-plugin-sdk
 ```
-
+**(Terminal 1)** Then, `cd` into the directory of the plugin you are testing, e.g. `cd bamboo-isolated-docker-plugin`
+and run:
 ```bash
 atlas-debug
 ```
-export ATLAS_MVN=$(which mvn)
+**(Terminal 2)** If you make any changes to the code simply run 
+```bash
+mvn package
+``` 
+from the root of the directory.
+
+Note: you will need to specify which mvn to use: `export ATLAS_MVN=$(which mvn)`. 
+It may be handy to add this to your bash profile: `echo export ATLAS_MVN=$(which mvn) >> ~/.zshrc` 
+so that you do not need to repeat this step each time. 
