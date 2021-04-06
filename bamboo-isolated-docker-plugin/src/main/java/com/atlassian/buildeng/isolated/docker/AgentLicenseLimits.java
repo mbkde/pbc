@@ -39,7 +39,7 @@ public class AgentLicenseLimits {
     }
 
     /**
-     * check if license limit on agents was reached and reschedules the build if it was
+     * check if license limit on agents was reached and reschedules the build if it was.
      * @param event parameter
      * @return true when limit was reached.
      */

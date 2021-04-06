@@ -20,6 +20,7 @@ import java.util.Date;
 
 public class DateTime {
     /**
+     * Get the time one minute ago.
      * @return the time one minute ago in milliseconds
      */
     public long oneMinuteAgo() {
@@ -27,6 +28,7 @@ public class DateTime {
     }
 
     /**
+     * Get the current time.
      * @return the number of milliseconds since January 1, 1970, 00:00:00 GMT
      */
     private long getCurrentTime() {
