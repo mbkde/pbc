@@ -181,16 +181,16 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
      * Saves changes to the configuration.
      */
     public void persist(Config config) throws IOException {
-        String sidekick = config.getSidekickImage();
-        String currentContext = config.getCurrentContext();
-        String podTemplate = config.getPodTemplate();
-        String iamRequestTemplate = config.getIamRequestTemplate();
-        String iamSubjectIdPrefix = config.getIamSubjectIdPrefix();
-        String podLogUrl = config.getPodLogsUrl();
-        String containerSizes = config.getContainerSizes();
-        boolean useClusterRegistry = config.isUseClusterRegistry();
-        String availableSelector = config.getClusterRegistryAvailableSelector();
-        String primarySelector = config.getClusterRegistryPrimarySelector();
+        final String sidekick = config.getSidekickImage();
+        final String currentContext = config.getCurrentContext();
+        final String podTemplate = config.getPodTemplate();
+        final String iamRequestTemplate = config.getIamRequestTemplate();
+        final String iamSubjectIdPrefix = config.getIamSubjectIdPrefix();
+        final String podLogUrl = config.getPodLogsUrl();
+        final String containerSizes = config.getContainerSizes();
+        final boolean useClusterRegistry = config.isUseClusterRegistry();
+        final String availableSelector = config.getClusterRegistryAvailableSelector();
+        final String primarySelector = config.getClusterRegistryPrimarySelector();
 
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
