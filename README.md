@@ -171,3 +171,11 @@ hard refresh in the browser for the changes to be reflected.
 Note: you will need to specify which mvn to use: `export ATLAS_MVN=$(which mvn)`. 
 It may be handy to add this to your bash profile: `echo export ATLAS_MVN=$(which mvn) >> ~/.zshrc` 
 so that you do not need to repeat this step each time. 
+
+## CheckStyle
+As part of the pipeline associated with this repo a checkstyle test is run.
+In order to be able to run this locally simply:
+1. Open [IntelliJ IDEA → Preferences → Plugins tab → Marketplace → search CheckStyle-IDEA]
+2. Install the one that matches the name completely
+3. Restart IntelliJ IDEA
+Then, simply scan the file you would like tested using the `Build Engineering Checks` rule.
