@@ -166,7 +166,8 @@ atlas-debug
 mvn package
 ``` 
 from the root of the directory. In cases where you are updating a JavaScript file you may need to perform a 
-hard refresh in the browser for the changes to be reflected. 
+hard refresh in the browser for the changes to be reflected. You could also disable the cache for
+the page in DevTools.
 
 Note: you will need to specify which mvn to use: `export ATLAS_MVN=$(which mvn)`. 
 It may be handy to add this to your bash profile: `echo export ATLAS_MVN=$(which mvn) >> ~/.zshrc` 
