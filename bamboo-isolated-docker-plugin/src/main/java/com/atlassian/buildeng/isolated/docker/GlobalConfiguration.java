@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 public class GlobalConfiguration {
 
     static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
-    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.agents";
+    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation";
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
