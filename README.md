@@ -171,7 +171,8 @@ the page in DevTools.
 
 Note: you will need to specify which mvn to use: `export ATLAS_MVN=$(which mvn)`. 
 It may be handy to add this to your bash profile: `echo export ATLAS_MVN=$(which mvn) >> ~/.zshrc` 
-so that you do not need to repeat this step each time. 
+so that you do not need to repeat this step each time.
+This is only a workaround until [ATLASSDK-197](https://ecosystem.atlassian.net/browse/ATLASSDK-197) is implemented
 
 ## CheckStyle
 As part of the pipeline associated with this repo a checkstyle test is run.
