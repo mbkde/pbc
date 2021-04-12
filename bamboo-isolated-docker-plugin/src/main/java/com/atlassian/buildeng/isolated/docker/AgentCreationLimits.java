@@ -69,16 +69,14 @@ public class AgentCreationLimits {
     }
 
     /**
-     * Thread safe implementation to clear the queue then determine whether it is still full.
+     * Clear the queue then determine whether it is still full.
      * @return true if agent creation limit over the past minute has been reached
      */
     public boolean creationLimitReached() {
-        synchronized (this) {
-            // clear queue of all agents started over one minute ago
-            clearQueue();
-            // if the queue is still full then the limit has been reached
-            return isAgentCreationQueueFull();
-        }
+        // clear queue of all agents started over one minute ago
+        clearQueue();
+        // if the queue is still full then the limit has been reached
+        return isAgentCreationQueueFull();
     }
 
     /**
@@ -94,8 +92,8 @@ public class AgentCreationLimits {
      * @param event to remove from the agent creation queue
      */
     public void removeEventFromQueue(RetryAgentStartupEvent event) {
-        Iterator<AbstractMap.SimpleEntry<UUID, Date>> it = agentCreationQueue.iterator();
         synchronized (this) {
+            Iterator<AbstractMap.SimpleEntry<UUID, Date>> it = agentCreationQueue.iterator();
             while (it.hasNext()) {
                 AbstractMap.SimpleEntry<UUID, Date> agent = it.next();
                 if (agent.getKey() == event.getUniqueIdentifier()) {

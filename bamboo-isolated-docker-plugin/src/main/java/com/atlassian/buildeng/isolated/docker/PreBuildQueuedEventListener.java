@@ -151,13 +151,15 @@ public class PreBuildQueuedEventListener {
             setBuildkeyCustomData(event.getContext());
         }
 
-        if (agentCreationLimits.creationLimitReached()) {
-            logger.info("Agent creation limit reached. Rescheduling {}", event.getContext().getResultKey());
-            // retry infinitely
-            rescheduler.reschedule(event);
-            return;
+        synchronized (this) {
+            if (agentCreationLimits.creationLimitReached()) {
+                logger.info("Agent creation limit reached. Rescheduling {}", event.getContext().getResultKey());
+                // retry infinitely
+                rescheduler.reschedule(event);
+                return;
+            }
+            agentCreationLimits.addToCreationQueue(event);
         }
-        agentCreationLimits.addToCreationQueue(event);
 
         boolean isPlan;
         if (event.getContext() instanceof DeploymentContext) {
