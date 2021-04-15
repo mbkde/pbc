@@ -200,6 +200,9 @@ public class PreBuildQueuedEventListener {
                         if (result.hasErrors()) {
                             String error = Joiner.on("\n").join(result.getErrors()); 
                             terminateBuild(error, event.getContext());
+                            synchronized (this) {
+                                agentCreationLimits.removeEventFromQueue(event);
+                            }
                             errorUpdateHandler.recordError(event.getContext().getEntityKey(),
                                     "Build was not queued due to error:" + error);
                         } else {
@@ -212,7 +215,9 @@ public class PreBuildQueuedEventListener {
                     @Override
                     public void handle(IsolatedDockerAgentException exception) {
                         terminateBuild(exception.getLocalizedMessage(), event.getContext());
-                        agentCreationLimits.removeEventFromQueue(event);
+                        synchronized (this) {
+                            agentCreationLimits.removeEventFromQueue(event);
+                        }
                         errorUpdateHandler.recordError(event.getContext().getEntityKey(), 
                                 "Build was not queued due to error", exception);
                     }

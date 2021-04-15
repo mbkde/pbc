@@ -91,7 +91,7 @@ public class AgentCreationLimits {
      * Thread safe implementation to remove given event from the queue.
      * @param event to remove from the agent creation queue
      */
-    public synchronized void removeEventFromQueue(RetryAgentStartupEvent event) {
+    public void removeEventFromQueue(RetryAgentStartupEvent event) {
         Iterator<AbstractMap.SimpleEntry<UUID, Date>> it = agentCreationQueue.iterator();
         while (it.hasNext()) {
             AbstractMap.SimpleEntry<UUID, Date> agent = it.next();
