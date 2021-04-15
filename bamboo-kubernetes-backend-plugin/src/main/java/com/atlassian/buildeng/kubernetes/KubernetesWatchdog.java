@@ -364,7 +364,8 @@ public class KubernetesWatchdog extends WatchdogJob {
     private void retryPodCreation(CommonContext context, Pod pod, 
             String errorMessage, String podName, int retryCount, EventPublisher eventPublisher, 
             AgentCreationRescheduler rescheduler, GlobalConfiguration configuration) {
-        logger.info("retrying pod creation for {} because: {}", context.getResultKey(), errorMessage);
+        logger.info("retrying pod creation for {} time for {} because: {}",
+                retryCount, context.getResultKey(), errorMessage);
         Configuration config = AccessConfiguration.forContext(context);
         //when pod is not around, just generate new UUID :(
         String uuid = pod != null ? pod.getMetadata().getAnnotations().getOrDefault(PodCreator.ANN_UUID,
