@@ -127,6 +127,7 @@ public class PreBuildQueuedEventListener {
 
     @EventListener
     public void retry(RetryAgentStartupEvent event) {
+        logger.info("Trying to schedule an agent for {}", event.getContext().getResultKey().getKey());
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             logger.info("Retrying but {} was already cancelled, aborting. (state:{})",
