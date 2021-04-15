@@ -147,3 +147,37 @@ License
 
 Copyright (c) 2016 - 2018 Atlassian and others.
 Apache 2.0 licensed, see [LICENSE.txt](LICENSE.txt) file.
+
+Local Development
+=================
+Use the [Atlassian plugin SDK](https://developer.atlassian.com/server/framework/atlassian-sdk/) to develop this plugin.
+To download this:
+```bash
+brew tap atlassian/tap
+brew install atlassian/tap/atlassian-plugin-sdk
+```
+**(Terminal 1)** Then, `cd` into the directory of the plugin you are testing, e.g. `cd bamboo-isolated-docker-plugin`
+and run:
+```bash
+atlas-debug
+```
+**(Terminal 2)** If you make any changes to the code simply run 
+```bash
+mvn package
+``` 
+from the root of the directory. In cases where you are updating a JavaScript file you may need to perform a 
+hard refresh in the browser for the changes to be reflected. You could also disable the cache for
+the page in DevTools.
+
+Note: you will need to specify which mvn to use: `export ATLAS_MVN=$(which mvn)`. 
+It may be handy to add this to your bash profile: `echo export ATLAS_MVN=$(which mvn) >> ~/.zshrc` 
+so that you do not need to repeat this step each time.
+This is only a workaround until [ATLASSDK-197](https://ecosystem.atlassian.net/browse/ATLASSDK-197) is implemented
+
+## CheckStyle
+As part of the pipeline associated with this repo a checkstyle test is run.
+In order to be able to run this locally simply:
+1. Open [IntelliJ IDEA → Preferences → Plugins tab → Marketplace → search CheckStyle-IDEA]
+2. Install the one which matches the name completely
+3. Restart IntelliJ IDEA
+Then, simply scan the file you would like tested using the `Build Engineering Checks` rule.

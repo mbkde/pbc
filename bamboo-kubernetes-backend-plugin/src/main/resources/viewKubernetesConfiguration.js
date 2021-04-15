@@ -55,7 +55,7 @@
         config.useClusterRegistry = checked;
         config.clusterRegistryAvailableSelector = AJS.$("#clusterRegistryAvailableSelector").val().trim();
         config.clusterRegistryPrimarySelector = AJS.$("#clusterRegistryPrimarySelector").val().trim();
-        
+
 
         updateStatus("Saving...");
 

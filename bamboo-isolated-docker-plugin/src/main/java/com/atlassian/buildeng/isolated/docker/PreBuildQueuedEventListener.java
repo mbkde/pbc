@@ -70,6 +70,7 @@ public class PreBuildQueuedEventListener {
     private final EventPublisher eventPublisher;
     private final DockerSoxService dockerSoxService;
     private final ContainerSizeDescriptor sizeDescriptor;
+    private final AgentCreationLimits agentCreationLimits;
 
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
@@ -84,7 +85,8 @@ public class PreBuildQueuedEventListener {
                                         AgentRemovals agentRemovals,
                                         AgentLicenseLimits agentLicenseLimits,
                                         DockerSoxService dockerSoxService,
-                                        ContainerSizeDescriptor sizeDescriptor) {
+                                        ContainerSizeDescriptor sizeDescriptor,
+                                        AgentCreationLimits agentCreationLimits) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -97,6 +99,7 @@ public class PreBuildQueuedEventListener {
         this.deploymentExecutionService = deploymentExecutionService;
         this.agentLicenseLimits = agentLicenseLimits;
         this.sizeDescriptor = sizeDescriptor;
+        this.agentCreationLimits = agentCreationLimits;
     }
 
     @EventListener
@@ -147,6 +150,17 @@ public class PreBuildQueuedEventListener {
             }
             setBuildkeyCustomData(event.getContext());
         }
+
+        synchronized (this) {
+            if (agentCreationLimits.creationLimitReached()) {
+                logger.info("Agent creation limit reached. Rescheduling {}", event.getContext().getResultKey());
+                // retry infinitely
+                rescheduler.reschedule(event);
+                return;
+            }
+            agentCreationLimits.addToCreationQueue(event);
+        }
+
         boolean isPlan;
         if (event.getContext() instanceof DeploymentContext) {
             // The event is from a deployment
@@ -186,6 +200,9 @@ public class PreBuildQueuedEventListener {
                         if (result.hasErrors()) {
                             String error = Joiner.on("\n").join(result.getErrors()); 
                             terminateBuild(error, event.getContext());
+                            synchronized (this) {
+                                agentCreationLimits.removeEventFromQueue(event);
+                            }
                             errorUpdateHandler.recordError(event.getContext().getEntityKey(),
                                     "Build was not queued due to error:" + error);
                         } else {
@@ -198,10 +215,12 @@ public class PreBuildQueuedEventListener {
                     @Override
                     public void handle(IsolatedDockerAgentException exception) {
                         terminateBuild(exception.getLocalizedMessage(), event.getContext());
+                        synchronized (this) {
+                            agentCreationLimits.removeEventFromQueue(event);
+                        }
                         errorUpdateHandler.recordError(event.getContext().getEntityKey(), 
                                 "Build was not queued due to error", exception);
                     }
-
                 });
 
     }

@@ -76,7 +76,9 @@ public class PreBuildQueuedEventListenerTest {
     private AgentLicenseLimits agentLicenseLimits;
     @Mock
     private ContainerSizeDescriptor sizeDescriptor;
-            
+    @Mock
+    private AgentCreationLimits agentCreationLimits;
+
     @InjectMocks
     private PreBuildQueuedEventListener listener;
     

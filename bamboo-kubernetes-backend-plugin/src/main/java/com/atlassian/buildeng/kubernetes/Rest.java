@@ -93,11 +93,7 @@ public class Rest {
     @Path("/config")
     public Response setConfig(Config config) {
         try {
-            configuration.persist(config.getSidekickImage(), config.getCurrentContext(), config.getPodTemplate(),
-                config.getIamRequestTemplate(), config.getIamSubjectIdPrefix(),
-                    config.getPodLogsUrl(), config.getContainerSizes(),
-                    config.isUseClusterRegistry(), config.getClusterRegistryAvailableSelector(),
-                    config.getClusterRegistryPrimarySelector());
+            configuration.persist(config);
         } catch (IllegalArgumentException | IOException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }

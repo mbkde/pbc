@@ -22,9 +22,8 @@ import com.atlassian.bamboo.persister.AuditLogMessage;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
-import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
+import com.atlassian.buildeng.isolated.docker.rest.Config;
 import java.util.Date;
-import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -35,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 public class GlobalConfiguration {
 
     static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
+    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
@@ -52,13 +52,28 @@ public class GlobalConfiguration {
         return image != null ? image : "";
     }
 
+    public Integer getMaxAgentCreationPerMinute() {
+        Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
+        return maxAgents != null ? maxAgents : 100;
+    }
+
     /**
      * Saves changes to the configuration.
      */
-    public void persist(String defaultImage) {
+    public void persist(Config config) {
+        String defaultImage = config.getDefaultImage();
+        Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
+
         if (!StringUtils.equals(defaultImage, getDefaultImage())) {
             auditLogEntry("PBC Default Image", getDefaultImage(), defaultImage);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DEFAULT_IMAGE, defaultImage);
+        }
+        if (!(maxAgentCreationPerMinute.equals(getMaxAgentCreationPerMinute()))) {
+            auditLogEntry("PBC Maximum Number of Agent Creation Per Minute",
+                    Integer.toString(getMaxAgentCreationPerMinute()), Integer.toString(maxAgentCreationPerMinute));
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
         }
     }
 

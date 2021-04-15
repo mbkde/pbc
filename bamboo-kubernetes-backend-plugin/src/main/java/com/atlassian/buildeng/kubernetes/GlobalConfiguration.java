@@ -23,6 +23,7 @@ import com.atlassian.bamboo.persister.AuditLogMessage;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
@@ -53,7 +54,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
     static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
     static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
-    
+
     private static final String MAIN_PREFIX = "main-";
     private static final String EXTRA_PREFIX = "extra-";
 
@@ -179,14 +180,23 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     /**
      * Saves changes to the configuration.
      */
-    public void persist(String sidekick, String currentContext, String podTemplate, String iamRequestTemplate,
-                        String iamSubjectIdPrefix, String podLogUrl, String containerSizes,
-                        boolean useClusterRegistry, String availableSelector, String primarySelector)
-            throws IOException {
+    public void persist(Config config) throws IOException {
+        final String sidekick = config.getSidekickImage();
+        final String currentContext = config.getCurrentContext();
+        final String podTemplate = config.getPodTemplate();
+        final String iamRequestTemplate = config.getIamRequestTemplate();
+        final String iamSubjectIdPrefix = config.getIamSubjectIdPrefix();
+        final String podLogUrl = config.getPodLogsUrl();
+        final String containerSizes = config.getContainerSizes();
+        final boolean useClusterRegistry = config.isUseClusterRegistry();
+        final String availableSelector = config.getClusterRegistryAvailableSelector();
+        final String primarySelector = config.getClusterRegistryPrimarySelector();
+
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(containerSizes), "Container sizes are mandatory");
         validateContainerSizes(containerSizes);
+
         if (useClusterRegistry) {
             Preconditions.checkArgument(StringUtils.isNotBlank(availableSelector), "Clu");
             Preconditions.checkArgument(StringUtils.isNotBlank(primarySelector), "Clu");
