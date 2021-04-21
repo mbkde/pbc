@@ -34,12 +34,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>7.3.0-m038</bamboo.version>
+        <bamboo.version>7.3.0-m164</bamboo.version>
         <amps.version>8.0.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.0.19</platform.version>
         <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
-        <aws-java.version>1.11.944</aws-java.version>
+        <aws-java.version>1.11.1001</aws-java.version>
         <checkstyle.version>8.29</checkstyle.version>
         <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
