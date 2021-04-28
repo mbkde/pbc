@@ -34,7 +34,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>7.3.0-m164</bamboo.version>
+        <bamboo.version>7.3.0-m166</bamboo.version>
         <amps.version>8.0.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.0.19</platform.version>
@@ -104,6 +104,11 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${aws-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.9.10.8</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
