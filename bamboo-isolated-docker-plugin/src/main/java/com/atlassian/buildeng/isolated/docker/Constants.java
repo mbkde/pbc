@@ -33,4 +33,9 @@ public interface Constants {
      */
     String RESULT_PREFIX = "result.isolated.docker."; //copied in ecs-plugin
 
+    /**
+     * The number of seconds to wait before an event is retried
+     * if an error occurred creating an agent for a build.
+     */
+    int RETRY_DELAY_SECONDS = 20;
 }

@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker.jmx;
 
+import com.atlassian.buildeng.isolated.docker.AgentsThrottled;
 import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -63,6 +64,16 @@ public class JMXAgentsService implements DisposableBean, InitializingBean {
     
     public void incrementActive() {
         agentsCount.active.incrementAndGet();
+    }
+
+    public void recalculateThrottle(AgentsThrottled agentsThrottled) {
+        agentsCount.throttledTotal.set(agentsThrottled.getTotalAgentsThrottled());
+        agentsCount.throttled5Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(5));
+        agentsCount.throttled10Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(10));
+        agentsCount.throttled15Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(15));
+        agentsCount.throttled20Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(20));
+        agentsCount.throttled25Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(25));
+        agentsCount.throttled30Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(30));
     }
     
 }

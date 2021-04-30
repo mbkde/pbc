@@ -100,6 +100,9 @@ limitations under the License.
     <component key="agentCreationLimits" class="com.atlassian.buildeng.isolated.docker.AgentCreationLimits">
     </component>
 
+    <component key="agentsThrottled" class="com.atlassian.buildeng.isolated.docker.AgentsThrottled">
+    </component>
+
     <component key="dateTime" class="com.atlassian.buildeng.isolated.docker.DateTime">
     </component>
 

@@ -26,6 +26,13 @@ public class AgentCounts implements AgentCountsMBean {
     final AtomicLong cancelled = new AtomicLong(0);
     final AtomicLong timedOut = new AtomicLong(0);
     final AtomicLong failed = new AtomicLong(0);
+    final AtomicLong throttledTotal = new AtomicLong(0);
+    final AtomicLong throttled5Minutes = new AtomicLong(0);
+    final AtomicLong throttled10Minutes = new AtomicLong(0);
+    final AtomicLong throttled15Minutes = new AtomicLong(0);
+    final AtomicLong throttled20Minutes = new AtomicLong(0);
+    final AtomicLong throttled25Minutes = new AtomicLong(0);
+    final AtomicLong throttled30Minutes = new AtomicLong(0);
 
     @Override
     public long getQueuedAgentsCount() {
@@ -56,5 +63,39 @@ public class AgentCounts implements AgentCountsMBean {
     public long getFailedAgentsCount() {
         return failed.get();
     }
-    
+
+    @Override
+    public long getAgentsThrottledTotalGauge() {
+        return throttledTotal.get();
+    }
+
+    @Override
+    public long getThrottledFor5MinutesGauge() {
+        return throttled5Minutes.get();
+    }
+
+    @Override
+    public long getThrottledFor10MinutesGauge() {
+        return throttled10Minutes.get();
+    }
+
+    @Override
+    public long getThrottledFor15MinutesGauge() {
+        return throttled15Minutes.get();
+    }
+
+    @Override
+    public long getThrottledFor20MinutesGauge() {
+        return throttled20Minutes.get();
+    }
+
+    @Override
+    public long getThrottledFor25MinutesGauge() {
+        return throttled25Minutes.get();
+    }
+
+    @Override
+    public long getThrottledFor30MinutesGauge() {
+        return throttled30Minutes.get();
+    }
 }
