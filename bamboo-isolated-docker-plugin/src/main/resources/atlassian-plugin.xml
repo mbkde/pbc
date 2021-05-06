@@ -64,7 +64,8 @@ limitations under the License.
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
     
-    <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService">
+    <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService" public="true" >
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
 
     <component key="dockerSoxService" 
