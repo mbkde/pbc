@@ -22,8 +22,8 @@ public class AgentsThrottled {
 
     // build key maps to number of times that event has been throttled
     private final HashMap<String, Integer> agentsThrottled;
-    private static final int RETRY_DELAY_SECONDS = Constants.RETRY_DELAY_SECONDS;
-    private static final int RETRIES_EACH_MINUTE = 60 / RETRY_DELAY_SECONDS;
+    private static final double RETRY_DELAY_SECONDS = Constants.RETRY_DELAY.getSeconds();
+    private static final double RETRIES_EACH_MINUTE = 60 / RETRY_DELAY_SECONDS;
 
     public AgentsThrottled() {
         agentsThrottled = new HashMap<>();

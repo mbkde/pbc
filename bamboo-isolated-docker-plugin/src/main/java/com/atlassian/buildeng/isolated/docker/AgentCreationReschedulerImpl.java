@@ -45,7 +45,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
     private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, 
             "Docker Agent Retry Pool");
     private static final int MAX_RETRY_COUNT = 90;
-    private static final int RETRY_DELAY_SECONDS = Constants.RETRY_DELAY_SECONDS; //20 seconds times 90 = 30 minutes
+    private static final long RETRY_DELAY = Constants.RETRY_DELAY.getSeconds(); //20 seconds times 90 = 30 minutes
     private static final String KEY = "custom.isolated.docker.waiting";
 
     private AgentCreationReschedulerImpl(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
@@ -63,7 +63,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
             logger.info("Publishing {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
             eventPublisher.publish(event);
             event.getContext().getCurrentResult().getCustomBuildData().remove(KEY);
-        }, RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+        }, RETRY_DELAY, TimeUnit.SECONDS);
         return true;
     }
 

@@ -23,7 +23,8 @@ import static org.junit.Assert.assertEquals;
 public class AgentsThrottledTest {
 
     private AgentsThrottled agentsThrottled;
-    private static final int RETRIES_EACH_MINUTE = 60 / Constants.RETRY_DELAY_SECONDS;
+    private static final double RETRY_DELAY_SECONDS = Constants.RETRY_DELAY.getSeconds();
+    private static final double RETRIES_EACH_MINUTE = 60 / RETRY_DELAY_SECONDS;
 
     @Before
     public void setUp() {
@@ -71,7 +72,7 @@ public class AgentsThrottledTest {
     @Test
     public void testCorrectNumberOfAgentsMarkedAsThrottledGivenSpecificNumberOfMinutes() {
         int minutes = 5;
-        int retriesFor5Minutes = RETRIES_EACH_MINUTE * minutes;
+        double retriesFor5Minutes = RETRIES_EACH_MINUTE * minutes;
         for (int i = 0; i < retriesFor5Minutes; i++) {
             agentsThrottled.add("key1");
             agentsThrottled.add("key2");
@@ -83,7 +84,7 @@ public class AgentsThrottledTest {
     @Test
     public void testAgentsNotMarkedAsThrottledForLongerThanItHas() {
         int minutes = 5;
-        int retriesFor5Minutes = RETRIES_EACH_MINUTE * minutes;
+        double retriesFor5Minutes = RETRIES_EACH_MINUTE * minutes;
         for (int i = 0; i < retriesFor5Minutes - 1; i++) {
             agentsThrottled.add("key1");
         }
