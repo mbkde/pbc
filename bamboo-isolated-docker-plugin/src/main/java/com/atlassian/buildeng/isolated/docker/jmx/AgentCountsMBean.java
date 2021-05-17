@@ -29,4 +29,18 @@ public interface AgentCountsMBean {
     long getTimedOutAgentsCount();
     
     long getFailedAgentsCount();
+
+    long getAgentsThrottledTotalGauge();
+
+    long getThrottledFor5MinutesGauge();
+
+    long getThrottledFor10MinutesGauge();
+
+    long getThrottledFor15MinutesGauge();
+
+    long getThrottledFor20MinutesGauge();
+
+    long getThrottledFor25MinutesGauge();
+
+    long getThrottledFor30MinutesGauge();
 }

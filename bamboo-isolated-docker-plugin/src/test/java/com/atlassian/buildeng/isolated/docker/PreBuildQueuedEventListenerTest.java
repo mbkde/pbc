@@ -78,6 +78,8 @@ public class PreBuildQueuedEventListenerTest {
     private ContainerSizeDescriptor sizeDescriptor;
     @Mock
     private AgentCreationLimits agentCreationLimits;
+    @Mock
+    private AgentsThrottled agentsThrottled;
 
     @InjectMocks
     private PreBuildQueuedEventListener listener;
@@ -225,7 +227,19 @@ public class PreBuildQueuedEventListenerTest {
         //well, actually called but inside agentLicenseLimits component.
         verify(scheduler, never()).reschedule(anyObject());
         verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
-    }    
+    }
+
+    @Test
+    public void testAgentCreationLimitReached() {
+        BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        when(agentCreationLimits.creationLimitReached()).thenReturn(Boolean.TRUE);
+        listener.call(event);
+        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
+        verify(scheduler).reschedule(anyObject());
+        verify(agentsThrottled).add(event.getContext().getResultKey().getKey());
+        verify(jmx).recalculateThrottle(agentsThrottled);
+    }
 
     private BuildContext mockBuildContext(boolean dockerEnabled, String image, LifeCycleState state) {
         BuildContext buildContext = mock(BuildContext.class, Mockito.withSettings().lenient());

@@ -71,6 +71,7 @@ public class PreBuildQueuedEventListener {
     private final DockerSoxService dockerSoxService;
     private final ContainerSizeDescriptor sizeDescriptor;
     private final AgentCreationLimits agentCreationLimits;
+    private final AgentsThrottled agentsThrottled;
 
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
@@ -86,7 +87,8 @@ public class PreBuildQueuedEventListener {
                                         AgentLicenseLimits agentLicenseLimits,
                                         DockerSoxService dockerSoxService,
                                         ContainerSizeDescriptor sizeDescriptor,
-                                        AgentCreationLimits agentCreationLimits) {
+                                        AgentCreationLimits agentCreationLimits,
+                                        AgentsThrottled agentsThrottled) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -100,6 +102,7 @@ public class PreBuildQueuedEventListener {
         this.agentLicenseLimits = agentLicenseLimits;
         this.sizeDescriptor = sizeDescriptor;
         this.agentCreationLimits = agentCreationLimits;
+        this.agentsThrottled = agentsThrottled;
     }
 
     @EventListener
@@ -158,8 +161,12 @@ public class PreBuildQueuedEventListener {
                 logger.info("Agent creation limit reached. Rescheduling {}", event.getContext().getResultKey());
                 // retry infinitely
                 rescheduler.reschedule(event);
+                agentsThrottled.add(event.getContext().getResultKey().getKey());
+                jmx.recalculateThrottle(agentsThrottled);
                 return;
             }
+            agentsThrottled.remove(event.getContext().getResultKey().getKey());
+            jmx.recalculateThrottle(agentsThrottled);
             agentCreationLimits.addToCreationQueue(event);
         }
 

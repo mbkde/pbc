@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
+import java.time.Duration;
 
 public interface Constants {
     String RESULT_ERROR = "custom.isolated.docker.error"; //copied in ecs-plugin
@@ -33,4 +34,9 @@ public interface Constants {
      */
     String RESULT_PREFIX = "result.isolated.docker."; //copied in ecs-plugin
 
+    /**
+     * The number of seconds to wait before an event is retried
+     * if an error occurred creating an agent for a build.
+     */
+    Duration RETRY_DELAY = Duration.ofSeconds(20);
 }
