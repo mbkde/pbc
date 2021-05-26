@@ -88,7 +88,7 @@ public class PodCreator {
     // The working directory for builds
     static final String BUILD_DIR = WORK_DIR + "/bamboo-agent-home/xml-data/build-dir";
     // The log spool folder which the Bamboo agent stores the build logs in
-    static final String LOG_SPOOL = "/buildeng/bamboo-agent-home/temp/log_spool/";
+    static final String LOG_SPOOL_DIR = WORK_DIR + "/bamboo-agent-home/temp/log_spool";
 
     /**
      * The directory that all containers write an empty file to during postStart hook
@@ -434,7 +434,7 @@ public class PodCreator {
         return ImmutableList.of(
             ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
             ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false),
-            ImmutableMap.of("name", "logspool", "mountPath", LOG_SPOOL, "readOnly", false)
+            ImmutableMap.of("name", "logspool", "mountPath", LOG_SPOOL_DIR, "readOnly", false)
         );
     }
 
