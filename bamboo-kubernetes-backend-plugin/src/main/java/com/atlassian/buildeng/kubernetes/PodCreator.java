@@ -339,6 +339,7 @@ public class PodCreator {
         }
         bldr.add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
             .add(ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()))
+            .add(ImmutableMap.of("name", "logspool", "emptyDir", new HashMap<>()))
             .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
         if (r.getConfiguration().isAwsRoleDefined()) {
             bldr.add(
@@ -430,7 +431,8 @@ public class PodCreator {
     private static List<Map<String, Object>> commonVolumeMounts() {
         return ImmutableList.of(
             ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
-            ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)
+            ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false),
+            ImmutableMap.of("name", "logspool", "mountPath", "/buildeng/bamboo-agent-home/temp/log_spool/", "readOnly", false)
         );
     }
 
