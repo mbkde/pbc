@@ -6,7 +6,7 @@
       "kind": "Pod",
       "metadata": {
         "annotations": {
-          "atlassian.com/business_unit": "PaaS/Build and Deploy",
+          "atlassian.com/business_unit": "Development Tooling",
           "cni.projectcalico.org/podIP": "10.36.3.4/32",
           "cni.projectcalico.org/podIPs": "10.36.3.4/32",
           "kubernetes.io/psp": "restricted",
