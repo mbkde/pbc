@@ -32,6 +32,8 @@ import com.atlassian.buildeng.kubernetes.shell.ShellException;
 import com.atlassian.buildeng.kubernetes.shell.ShellExecutor;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.launchdarkly.sdk.*;
+import com.launchdarkly.sdk.server.*;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesList;
@@ -63,6 +65,8 @@ public class KubernetesClient {
     private final StringResponseMapper defaultResponseMapper = new StringResponseMapper();
     private final JsonResponseMapper jsonResponseMapper = new JsonResponseMapper();
     private final KubernetesExceptionParser kubernetesExceptionParser = new KubernetesExceptionParser();
+    // using staging SDK key
+    private final LDClient ldClient = new LDClient("sdk-c3003555-5f75-4bb8-a162-5ca10bd74326");
 
     KubernetesClient(GlobalConfiguration globalConfiguration, ShellExecutor shellExecutor) {
         this.globalConfiguration = globalConfiguration;
@@ -197,10 +201,18 @@ public class KubernetesClient {
 
     void deletePod(Pod pod)
             throws KubectlException {
+        LDUser user = new LDUser.Builder("buildeng-ci").build();
+        boolean showFeature = ldClient.boolVariation("delete-pod", user, false);
+        long startTime = System.nanoTime();
         executeKubectl(new PodContextSupplier(pod),
                 "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
         if (pod.getMetadata().getAnnotations().containsKey(PodCreator.ANN_IAM_REQUEST_NAME)) {
             deleteIamRequest(pod);
+        }
+        long endTime = System.nanoTime();
+        if (showFeature) {
+            long duration = endTime - startTime;
+            logger.info(String.format("pod deletion took %f ms", duration/1000000));
         }
     }
 
