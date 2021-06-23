@@ -30,7 +30,6 @@ import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.atlassian.buildeng.kubernetes.serialization.StringResponseMapper;
 import com.atlassian.buildeng.kubernetes.shell.ShellException;
 import com.atlassian.buildeng.kubernetes.shell.ShellExecutor;
-import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import io.fabric8.kubernetes.api.KubernetesHelper;
