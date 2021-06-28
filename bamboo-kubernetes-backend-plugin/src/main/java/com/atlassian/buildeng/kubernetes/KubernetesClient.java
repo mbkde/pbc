@@ -64,6 +64,8 @@ public class KubernetesClient {
     private final JsonResponseMapper jsonResponseMapper = new JsonResponseMapper();
     private final KubernetesExceptionParser kubernetesExceptionParser = new KubernetesExceptionParser();
 
+    private final DeletePodLogger deletePodLogger = new DeletePodLogger();
+
     KubernetesClient(GlobalConfiguration globalConfiguration, ShellExecutor shellExecutor) {
         this.globalConfiguration = globalConfiguration;
         this.shellExecutor = shellExecutor;
@@ -197,11 +199,15 @@ public class KubernetesClient {
 
     void deletePod(Pod pod)
             throws KubectlException {
+        long startTime = System.nanoTime();
         executeKubectl(new PodContextSupplier(pod),
                 "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
         if (pod.getMetadata().getAnnotations().containsKey(PodCreator.ANN_IAM_REQUEST_NAME)) {
             deleteIamRequest(pod);
         }
+        long endTime = System.nanoTime();
+        double duration = (double) (endTime - startTime) / 1000000;
+        deletePodLogger.log(String.format("pod deletion took %f ms", duration));
     }
 
 
