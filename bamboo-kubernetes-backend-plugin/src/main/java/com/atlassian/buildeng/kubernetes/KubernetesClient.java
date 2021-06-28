@@ -206,7 +206,7 @@ public class KubernetesClient {
             deleteIamRequest(pod);
         }
         long endTime = System.nanoTime();
-        double duration = (double) (endTime - startTime)/1000000;
+        double duration = (double) (endTime - startTime) / 1000000;
         deletePodLogger.log(String.format("pod deletion took %f ms", duration));
     }
 
