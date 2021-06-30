@@ -83,7 +83,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 600;
     private static final int MAX_RETRY_COUNT = 30;
-    private static final int MAX_WAIT_FOR_TERMINATION_IN_MINUTES = 5;
+    private static final int MAX_WAIT_FOR_TERMINATION_IN_SECONDS = 30;
     
     
     private final ExecutorService executorService;
@@ -196,7 +196,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
         for (Future<Optional<TerminationReason>> future : killedFutures) {
             try {
-                Optional<TerminationReason> result = future.get(MAX_WAIT_FOR_TERMINATION_IN_MINUTES, TimeUnit.MINUTES);
+                Optional<TerminationReason> result = future.get(MAX_WAIT_FOR_TERMINATION_IN_SECONDS, TimeUnit.SECONDS);
                 if (result.isPresent()) {
                     TerminationReason reason = result.get();
                     alivePods.remove(reason.getPod());
