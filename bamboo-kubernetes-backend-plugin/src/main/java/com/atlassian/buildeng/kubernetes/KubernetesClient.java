@@ -201,7 +201,8 @@ public class KubernetesClient {
             throws KubectlException {
         long startTime = System.currentTimeMillis();
         executeKubectl(new PodContextSupplier(pod),
-                "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
+                "delete", "pod", "--grace-period=0 --force", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT,
+                        KubernetesHelper.getName(pod));
         long podDeletionEnd = System.currentTimeMillis();
         deletePodLogger.log(String.format("pod deletion took %f ms", podDeletionEnd - startTime));
         if (pod.getMetadata().getAnnotations().containsKey(PodCreator.ANN_IAM_REQUEST_NAME)) {
