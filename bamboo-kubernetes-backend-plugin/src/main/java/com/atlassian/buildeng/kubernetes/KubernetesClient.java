@@ -204,13 +204,13 @@ public class KubernetesClient {
                 "delete", "pod", "--grace-period=0", "--force", "--wait=false",
                 "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
         long podDeletionEnd = System.currentTimeMillis();
-        deletePodLogger.log(String.format("pod deletion took %f ms", podDeletionEnd - startTime));
+        deletePodLogger.log(String.format("pod deletion took %d ms", podDeletionEnd - startTime));
         if (pod.getMetadata().getAnnotations().containsKey(PodCreator.ANN_IAM_REQUEST_NAME)) {
             deleteIamRequest(pod);
         }
         long endTime = System.currentTimeMillis();
-        deletePodLogger.log(String.format("iam deletion took %f ms", endTime - podDeletionEnd));
-        deletePodLogger.log(String.format("total deletion time %f ms", endTime - startTime));
+        deletePodLogger.log(String.format("iam deletion took %d ms", endTime - podDeletionEnd));
+        deletePodLogger.log(String.format("total deletion time %d ms", endTime - startTime));
     }
 
 
