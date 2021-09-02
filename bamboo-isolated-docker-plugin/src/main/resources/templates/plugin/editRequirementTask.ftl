@@ -1,4 +1,9 @@
 [@ww.textfield cssClass='long-field docker-container-autocomplete' labelKey='docker.task.key' name='dockerImage' descriptionKey='docker.task.description'/]
+
+[@ww.select labelKey='isolated.docker.architecture' name='custom.isolated.docker.architecture' descriptionKey="isolated.docker.architecture.description"
+list=architectureList listKey='first' listValue='second' cssClass="long-field" ]
+[/@ww.select]
+
 [@ww.select labelKey='isolated.docker.size' name='dockerImageSize'
     list=imageSizes listKey='first' listValue='second' cssClass="long-field"]
 [/@ww.select]

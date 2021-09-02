@@ -116,7 +116,32 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         try {
             Map<String, Object> template = loadTemplatePod();
             Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
-            Map<String, Object> finalPod = mergeMap(template, podDefinition);
+            Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
+
+            Map<String, Object> archConfig = loadArchitectureConfig();
+
+            Map<String, Object> finalPod;
+
+            if (archConfig.isEmpty()) {
+                finalPod = podWithoutArchOverrides;
+            } else {
+                if (request.getConfiguration().isArchitectureDefined()) {
+                    String architecture = request.getConfiguration().getArchitecture();
+                    logger.info(architecture);
+                    logger.info(String.valueOf(archConfig));
+
+                    if (archConfig.containsKey(architecture)) {
+                        finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(architecture));
+                        logger.info(new Yaml().dump(finalPod));
+                    }
+                    else {
+                        throw new IllegalArgumentException("Architecture specified in build config was not found in Kubernetes architecture config!");
+                    }
+                } else {
+                    finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(archConfig.get("default")));
+                }
+            }
+
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
 
@@ -198,6 +223,18 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private Map<String, Object> loadTemplatePod() {
         Yaml yaml = new Yaml(new SafeConstructor());
         return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
+    }
+
+    private Map<String, Object> loadArchitectureConfig() {
+        String archConfig = globalConfiguration.getBandanaArchitecturePodConfig();
+
+        if (StringUtils.isBlank(archConfig)) {
+            return Collections.emptyMap();
+        }
+        else {
+            Yaml yaml = new Yaml(new SafeConstructor());
+            return (Map<String, Object>) yaml.load(archConfig);
+        }
     }
 
     @SuppressWarnings("unchecked")

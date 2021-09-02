@@ -43,9 +43,11 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
+    private final DockerHandlerImpl dockerHandler;
 
-    private RequirementTaskConfigurator(TextProvider textProvider) {
+    private RequirementTaskConfigurator(TextProvider textProvider, DockerHandlerImpl dockerHandler) {
         this.textProvider = textProvider;
+        this.dockerHandler = dockerHandler;
     }
 
     @NotNull
@@ -54,6 +56,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
             @Nullable TaskDefinition previousTaskDefinition) {
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
         configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
+        configMap.put(Configuration.TASK_DOCKER_ARCHITECTURE, params.getString(Configuration.TASK_DOCKER_ARCHITECTURE));
         configMap.put(Configuration.TASK_DOCKER_IMAGE_SIZE, params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE));
         configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
@@ -69,6 +72,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
+        context.put("architectureList", dockerHandler.getArchitectures());
+        context.put(Configuration.DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
@@ -77,6 +82,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
+        context.put("architectureList", dockerHandler.getArchitectures());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 

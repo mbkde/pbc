@@ -30,6 +30,7 @@ public final class ConfigurationBuilder {
     private Configuration.ContainerSize size = Configuration.ContainerSize.REGULAR;
     private boolean enabled = true;
     private final List<Configuration.ExtraContainer> extras = new ArrayList<>();
+    private String architecture;
 
     private ConfigurationBuilder(String dockerImage) {
         this.dockerImage = dockerImage;
@@ -64,9 +65,14 @@ public final class ConfigurationBuilder {
         this.awsRole = awsRole;
         return this;
     }
+
+    public ConfigurationBuilder withArchitecture(String architecture) {
+        this.architecture = architecture;
+        return this;
+    }
     
     public Configuration build() {
-        return new Configuration(enabled, dockerImage, awsRole, size, extras);
+        return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras);
     }
 
 }

@@ -36,6 +36,14 @@ Global Configuration for generic PBC settings
             </div>
         </div>
 
+        <div class="field-group">
+            <label for="architectureList">Architecture List</label>
+            <textarea type="text" class="text text-field" id="architectureList"></textarea>
+            <div class="description" id="desc-architectureList">
+                Comma separated list of architectures available. The first one in the list will be the default in the selection dropdown.
+            </div>
+        </div>
+
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>

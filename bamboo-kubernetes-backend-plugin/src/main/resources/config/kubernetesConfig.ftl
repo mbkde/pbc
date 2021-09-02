@@ -76,6 +76,34 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
         </div>
 
         <div class="field-group">
+            <label for="architecturePodConfig">Architecture Dependent Pod Config</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="architecturePodConfig"></textarea>
+            <div class="description" id="desc-architecturePodConfig">
+                Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
+                be name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br><br>
+
+                If you require no extra config, use an empty map {}. The architectures specified here <strong>must</strong> match those
+                specified in the PBC General settings.<br><br>
+
+                Add a "default" key at the top level specify which architecture is default, if no architecture is specified
+                (this ensures backwards compatibility; newly created plans will require an architecture).<br><br>
+
+                Example:
+                <pre><code>
+default: amd64
+amd64:
+  config: {}
+arm64:
+  config:
+    spec:
+      nodeSelector:
+        nodeGroup: myNode
+                </code></pre>
+
+            </div>
+        </div>
+
+        <div class="field-group">
             <label for="iamRequestTemplate">IAM Request Template</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="iamRequestTemplate"></textarea>
             <div class="description" id="desc-iamRequestTemplate">

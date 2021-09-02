@@ -327,8 +327,34 @@ public class PodCreator {
         initContainersList.add(createSidekick(globalConfiguration.getCurrentSidekick()));
         map.put("initContainers", initContainersList);
         map.put("hostAliases", createLocalhostAliases(r.getConfiguration()));
+
+//        if (r.getConfiguration().getDockerImage().contains("-arm64")) {
+//            map.put("tolerations", ImmutableList.of(
+//                    ImmutableMap.of("key", "nodegroup", "operator", "Equal", "value", "buildeng-arm64"),
+//                    ImmutableMap.of("key", "kubernetes.io/arch",  "value", "arm64", "effect", "NoSchedule")));
+//            map.put("nodeSelector", ImmutableMap.of("nodegroup", "buildeng-arm64"));
+//        }
+//
+//        default: amd64
+//        amd64: {}
+//        arm64:
+//        spec:
+//        tolerations:
+//        - key: nodegroup
+//        operator: Equal
+//        value: "buildeng-arm64"
+//                - key: "kubernetes.io/arch"
+//        operator: "Equal"
+//        value: "arm64"
+//        effect: "NoSchedule"
+//        nodeSelector:
+//        nodegroup: "buildeng-arm64"
+
         return map;
     }
+
+    // 1. Determine whether the architecture of the pod image can determine which node it's scheduled on
+    // 2. Preferential assigning to nodes
 
     private static List<Map<String, Object>> createVolumes(IsolatedDockerAgentRequest r) {
         ImmutableList.Builder<Map<String, Object>> bldr = ImmutableList.builder();
@@ -409,7 +435,12 @@ public class PodCreator {
         map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
         map.put("imagePullPolicy", "Always");
         map.put("workingDir", WORK_DIR);
-        map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
+        if (r.getResultKey().startsWith("DOCKER-KUBECONFIG")) {
+            map.put("command", ImmutableList.of("sh", "-c", "sleep 3600"));
+        }
+        else {
+            map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
+        }
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
         ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
             .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))

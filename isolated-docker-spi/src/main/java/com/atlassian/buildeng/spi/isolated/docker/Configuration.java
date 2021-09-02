@@ -37,10 +37,12 @@ public final class Configuration {
     public static final String DOCKER_IMAGE_SIZE = PROPERTY_PREFIX + ".imageSize"; 
     public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers";
     public static final String DOCKER_AWS_ROLE = PROPERTY_PREFIX + ".awsRole";
+    public static final String DOCKER_ARCHITECTURE = PROPERTY_PREFIX + ".architecture";
 
     //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
+    public static final String TASK_DOCKER_ARCHITECTURE = "dockerArchitecture";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
     public static final String TASK_DOCKER_AWS_ROLE = "awsRole";
     public static final String TASK_DOCKER_EXTRA_CONTAINERS = "extraContainers";
@@ -60,14 +62,16 @@ public final class Configuration {
     private final transient boolean enabled;
     private String dockerImage;
     private String awsRole;
+    private String architecture;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
 
     Configuration(boolean enabled, String dockerImage, String awsRole,
-                  ContainerSize size, List<ExtraContainer> extraContainers) {
+                  String architecture, ContainerSize size, List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
         this.awsRole = awsRole;
+        this.architecture = architecture;
         this.size = size;
         this.extraContainers = extraContainers;
     }
@@ -94,6 +98,14 @@ public final class Configuration {
 
     public Boolean isAwsRoleDefined() {
         return !StringUtils.isEmpty(awsRole);
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public Boolean isArchitectureDefined() {
+        return !StringUtils.isBlank(architecture);
     }
 
     /**
@@ -154,6 +166,9 @@ public final class Configuration {
         storageMap.put(Configuration.ENABLED_FOR_JOB, "" + isEnabled());
         storageMap.put(Configuration.DOCKER_IMAGE, getDockerImage());
         storageMap.put(Configuration.DOCKER_IMAGE_SIZE, getSize().name());
+        if (getArchitecture() != null) {
+            storageMap.put(Configuration.DOCKER_ARCHITECTURE, getArchitecture());
+        }
         if (getAwsRole() != null) {
             storageMap.put(Configuration.DOCKER_AWS_ROLE, getAwsRole());
         }
@@ -183,6 +198,7 @@ public final class Configuration {
         Map<String, String> storageMap = result.getCustomBuildData();
         storageMap.remove(Configuration.ENABLED_FOR_JOB);
         storageMap.remove(Configuration.DOCKER_IMAGE);
+        storageMap.remove(Configuration.DOCKER_ARCHITECTURE);
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
         storageMap.remove(Configuration.DOCKER_AWS_ROLE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);

@@ -60,6 +60,7 @@ public class AccessConfiguration {
                             ConfigurationPersistence.fromJsonString(
                                 cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                     .withAwsRole(role)
+                    .withArchitecture(cc.getOrDefault(Configuration.DOCKER_ARCHITECTURE, null))
                     .build();
     }
 
@@ -106,6 +107,7 @@ public class AccessConfiguration {
                         ConfigurationPersistence.fromJsonString(
                                 config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                 .withAwsRole(config.getString(Configuration.DOCKER_AWS_ROLE))
+                .withArchitecture(config.getString(Configuration.DOCKER_ARCHITECTURE))
                 .build();
     }
 
@@ -145,6 +147,7 @@ public class AccessConfiguration {
                         ConfigurationPersistence.fromJsonString(cc.getOrDefault(
                                 Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
                 .withAwsRole(cc.getOrDefault(Configuration.TASK_DOCKER_AWS_ROLE, null))
+                .withArchitecture(cc.getOrDefault(Configuration.TASK_DOCKER_ARCHITECTURE, null))
                 .build();
     }
 

@@ -73,7 +73,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
-                environmentCustomConfigService, environmentRequirementService, create, c);
+                environmentCustomConfigService, environmentRequirementService, create, c, globalConfiguration);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService,
-                create, c);
+                create, c, globalConfiguration);
     }
     
     @Override
@@ -95,7 +95,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
         Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
                 environmentCustomConfigService, environmentRequirementService,
-                create, c);
+                create, c, globalConfiguration);
     }
 
     @Override

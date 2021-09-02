@@ -37,10 +37,13 @@ import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
@@ -48,6 +51,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_POD_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.podtemplate";
     static String BANDANA_IAM_REQUEST_TEMPLATE = "com.atlassian.buildeng.pbc.kubernetes.iamRequesttemplate";
     static String BANDANA_IAM_SUBJECT_ID_PREFIX = "com.atlassian.buildeng.pbc.kubernetes.iamSubjectIdPrefix";
+    static String BANDANA_ARCHITECTURE_CONFIG = "com.atlassian.buildeng.pbc.kubernetes.architecturePodConfig";
     static String BANDANA_CONTAINER_SIZES = "com.atlassian.buildeng.pbc.kubernetes.containerSizes";
     static String BANDANA_POD_LOGS_URL = "com.atlassian.buildeng.pbc.kubernetes.podlogurl";
     static String BANDANA_CURRENT_CONTEXT = "com.atlassian.buildeng.pbc.kubernetes.context";
@@ -158,6 +162,19 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     }
 
     /**
+     * Loads architecture dependent pod YAML template either from configuration or defaults to empty string "".
+     * @return Architecture dependent pod YAML template as string
+     */
+    public String getBandanaArchitecturePodConfig() {
+        String config = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_ARCHITECTURE_CONFIG);
+        if (StringUtils.isBlank(config)) {
+            return "";
+        }
+        return config;
+    }
+
+    /**
      * Returns the IAM Subject ID prefix specified. If none specified, returns an empty string.
      * @return String of prefix
      */
@@ -184,6 +201,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         final String sidekick = config.getSidekickImage();
         final String currentContext = config.getCurrentContext();
         final String podTemplate = config.getPodTemplate();
+        final String architecturePodConfig = config.getArchitecturePodConfig();
         final String iamRequestTemplate = config.getIamRequestTemplate();
         final String iamSubjectIdPrefix = config.getIamSubjectIdPrefix();
         final String podLogUrl = config.getPodLogsUrl();
@@ -197,6 +215,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         Preconditions.checkArgument(StringUtils.isNotBlank(containerSizes), "Container sizes are mandatory");
         validateContainerSizes(containerSizes);
 
+        validateArchitectureConfig(architecturePodConfig);
+
         if (useClusterRegistry) {
             Preconditions.checkArgument(StringUtils.isNotBlank(availableSelector), "Clu");
             Preconditions.checkArgument(StringUtils.isNotBlank(primarySelector), "Clu");
@@ -209,6 +229,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         if (!StringUtils.equals(podTemplate, getPodTemplateAsString())) {
             auditLogEntry("PBC Kubernetes Pod Template", getPodTemplateAsString(), podTemplate);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
+        }
+        if (!StringUtils.equals(architecturePodConfig, getBandanaArchitecturePodConfig())) {
+            auditLogEntry("PBC Kubernetes Architecture Dependent Config",
+                    getBandanaArchitecturePodConfig(), architecturePodConfig);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_ARCHITECTURE_CONFIG, architecturePodConfig);
         }
         if (!StringUtils.equals(iamRequestTemplate, getBandanaIamRequestTemplateAsString())) {
             auditLogEntry("PBC Kuberenetes IAM Request Template",
@@ -379,6 +405,19 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 && t.getAsJsonObject().has("memoryLimit")
                 && t.getAsJsonObject().has("label"),
                 "name, memory, memoryLimit and label are required fields");
+    }
+
+    private void validateArchitectureConfig(String architectureConfig) throws IllegalArgumentException {
+        if (StringUtils.isBlank(architectureConfig)) {
+            return;
+        }
+        else {
+            Yaml rawYaml = new Yaml(new SafeConstructor());
+            Map<String, Object> yaml = (Map<String, Object>) rawYaml.load(architectureConfig);
+
+            Preconditions.checkArgument(yaml.containsKey("default"), "Must contain a default architecture!");
+            Preconditions.checkArgument(yaml.containsKey(Objects.requireNonNull(yaml.get("default"))), "Specified default architecture does not exist in configuration!");
+        }
     }
 
     private synchronized void reloadContainerSizes() {

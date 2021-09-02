@@ -23,8 +23,12 @@ import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.isolated.docker.rest.Config;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -35,6 +39,7 @@ public class GlobalConfiguration {
 
     static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
     static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
+    static String BANDANA_ARCHITECTURE_LIST = "com.atlassian.buildeng.pbc.architecture.list";
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
@@ -58,12 +63,23 @@ public class GlobalConfiguration {
         return maxAgents != null ? maxAgents : 100;
     }
 
+    public String getArchitectureListAsString() {
+        List<String> architectureList = (List<String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_LIST);
+        return architectureList != null ? String.join(",", architectureList) : "";
+    }
+
+    public List<String> getArchitectureList() {
+        List<String> architectureList = (List<String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_LIST);
+        return architectureList != null ? architectureList : Collections.emptyList();
+    }
+
     /**
      * Saves changes to the configuration.
      */
     public void persist(Config config) {
         String defaultImage = config.getDefaultImage();
         Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
+        String architectureList = config.getArchitectureList();
 
         if (!StringUtils.equals(defaultImage, getDefaultImage())) {
             auditLogEntry("PBC Default Image", getDefaultImage(), defaultImage);
@@ -75,6 +91,12 @@ public class GlobalConfiguration {
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
         }
+        if (!(architectureList.equals(getArchitectureListAsString()))) {
+            auditLogEntry("PBC Architectures supported",
+                    getArchitectureListAsString(), architectureList);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_ARCHITECTURE_LIST, new ArrayList<>(Arrays.asList(architectureList.split(","))));
+        }
     }
 
 
@@ -83,5 +105,6 @@ public class GlobalConfiguration {
                 new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
     }
+    
 }
 

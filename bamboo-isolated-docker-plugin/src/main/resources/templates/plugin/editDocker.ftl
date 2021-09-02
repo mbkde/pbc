@@ -3,8 +3,13 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
 
 [@ui.bambooSection title=" " descriptionKey='isolated.docker.misc.header.description']
     [@ww.textfield cssClass='long-field docker-container-autocomplete' required=true 
-        labelKey='isolated.docker.image' name='custom.isolated.docker.image' descriptionKey="isolated.docker.image.description" 
+        labelKey='isolated.docker.image' name='custom.isolated.docker.image' descriptionKey="isolated.docker.image.description"
         /]
+
+    [@ww.select labelKey='isolated.docker.architecture' name='custom.isolated.docker.architecture' descriptionKey="isolated.docker.architecture.description"
+    list=architectureList listKey='first' listValue='second' cssClass="long-field" ]
+    [/@ww.select]
+
     [@ww.select labelKey='isolated.docker.size' name='custom.isolated.docker.imageSize'
         list=imageSizes listKey='first' listValue='second' cssClass="long-field" ]
     [/@ww.select]

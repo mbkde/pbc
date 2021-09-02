@@ -49,6 +49,7 @@ public class SettingsRest {
         Config c = new Config();
         c.setDefaultImage(configuration.getDefaultImage());
         c.setMaxAgentCreationPerMinute(configuration.getMaxAgentCreationPerMinute());
+        c.setArchitectureList(configuration.getArchitectureListAsString());
         return Response.ok(c).build();
     }
 
