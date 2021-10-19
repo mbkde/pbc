@@ -183,4 +183,9 @@ public class KubernetesIsolatedDockerImplTest {
         kubernetesIsolatedDocker.getSubjectId(request);
         verify(subjectIdService).getSubjectId(111L);
     }
+
+    @Test
+    public void testPodSpecIsUnmodifiedIfArchitectureListIsEmpty() {
+
+    }
 }

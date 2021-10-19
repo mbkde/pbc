@@ -136,7 +136,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Configuration.DOCKER_IMAGE,
                 Configuration.DOCKER_IMAGE_SIZE,
                 Configuration.DOCKER_AWS_ROLE,
-                Configuration.DOCKER_EXTRA_CONTAINERS));
+                Configuration.DOCKER_EXTRA_CONTAINERS,
+                Configuration.DOCKER_ARCHITECTURE));
     }
 
     @NotNull
@@ -161,11 +162,16 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         if (role != null) {
             cc.put(Configuration.DOCKER_AWS_ROLE, role);
         }
+        String architecture = buildConfiguration.getString(Configuration.DOCKER_ARCHITECTURE);
+        if (architecture != null) {
+            cc.put(Configuration.DOCKER_ARCHITECTURE, architecture);
+        }
         Configuration c = AccessConfiguration.forMap(cc);
         return new PerBuildContainerForJob().enabled(c.isEnabled())
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
                 .awsRole(c.getAwsRole())
+                .architecture(c.getArchitecture())
                 .extraContainers(c.getExtraContainers().stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
@@ -195,7 +201,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             specsProperties.validate();
             ErrorCollection errorCollection = new SimpleErrorCollection();
             Validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
-                    toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
+                    specsProperties.getArchitecture(), toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
             if (errorCollection.hasAnyErrors()) {
                 throw new PropertiesValidationException(
                         errorCollection.getAllErrorMessages().stream()
@@ -207,6 +213,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
         buildConfiguration.setProperty(Configuration.DOCKER_AWS_ROLE, specsProperties.getAwsRole());
+        buildConfiguration.setProperty(Configuration.DOCKER_ARCHITECTURE, specsProperties.getArchitecture());
         buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 toJsonString(specsProperties.getExtraContainers()));
     }
@@ -224,6 +231,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
+                    .architecture(config.getArchitecture())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
@@ -259,6 +267,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
         if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
             builder.withAwsRole(specsProperties.getAwsRole());
+        }
+        if (StringUtils.isNotBlank(specsProperties.getArchitecture())) {
+            builder.withArchitecture(specsProperties.getArchitecture());
         }
         if (specsProperties.getExtraContainers() != null) {
             specsProperties.getExtraContainers().forEach(container -> {

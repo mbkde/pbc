@@ -33,7 +33,7 @@ public class Validator {
      * Validate configuration.
      * Errors are collected in ErrorCollection parameter passed in.
      */
-    public static void validate(String image, String size, String role, String extraCont,
+    public static void validate(String image, String size, String role, String architecture, String extraCont,
             ErrorCollection errorCollection, boolean task) {
         if (role != null) {
             if (!StringUtils.deleteWhitespace(role).equals(role)) {

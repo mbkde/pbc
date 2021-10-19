@@ -119,9 +119,12 @@ public class DockerHandlerImpl implements DockerHandler {
         if (StringUtils.isBlank(role)) {
             role = null;
         }
+        if (StringUtils.isBlank(architecture)) {
+            architecture = null;
+        }
         String enabled = (String) webFragmentsContextMap.get(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
-        Validator.validate(image, size, role, extraCont, errs, false);
+        Validator.validate(image, size, role, architecture, extraCont, errs, false);
         return errs;
     }
 
@@ -261,6 +264,9 @@ public class DockerHandlerImpl implements DockerHandler {
         String architecture = (String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_ARCHITECTURE, null);
         if (StringUtils.isBlank(role)) {
             role = null;
+        }
+        if (StringUtils.isBlank(architecture)) {
+            architecture = null;
         }
         Configuration config = ConfigurationBuilder
                 .create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE, ""))

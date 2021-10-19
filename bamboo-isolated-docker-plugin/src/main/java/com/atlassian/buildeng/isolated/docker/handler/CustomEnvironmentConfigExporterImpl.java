@@ -65,6 +65,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 .image(config.getDockerImage())
                 .size(config.getSize().name())
                 .awsRole(config.getAwsRole())
+                .architecture(config.getArchitecture())
                 .extraContainers(config.getExtraContainers().stream()
                         .map((Configuration.ExtraContainer t) ->
                                 new ExtraContainer()
@@ -94,6 +95,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             toRet.put(Configuration.DOCKER_IMAGE, custom.getImage());
             toRet.put(Configuration.DOCKER_IMAGE_SIZE, custom.getSize());
             toRet.put(Configuration.DOCKER_AWS_ROLE, custom.getAwsRole());
+            toRet.put(Configuration.DOCKER_ARCHITECTURE, custom.getArchitecture());
             toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     BuildProcessorServerImpl.toJsonString(custom.getExtraContainers()));
             return toRet;
@@ -112,12 +114,16 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
             String awsRole = any.getConfiguration().get(Configuration.DOCKER_AWS_ROLE);
+            String architecture = any.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE);
             if (StringUtils.isBlank(awsRole)) {
                 awsRole = null;
             }
+            if (StringUtils.isBlank(architecture)) {
+                architecture = null;
+            }
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
-                Validator.validate(image, size, awsRole, extraCont, coll, false);
+                Validator.validate(image, size, awsRole, architecture, extraCont, coll, false);
                 return coll.getAllErrorMessages().stream()
                         .map(ValidationProblem::new)
                         .collect(Collectors.toList());
@@ -128,7 +134,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
             Validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
-                    BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
+                    pbc.getArchitecture(), BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
             return coll.getAllErrorMessages().stream()
                     .map(ValidationProblem::new)
                     .collect(Collectors.toList());
@@ -148,6 +154,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
+                    .architecture(config.getArchitecture())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
@@ -166,6 +173,9 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
         if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
             builder.withAwsRole(specsProperties.getAwsRole());
+        }
+        if (StringUtils.isNotBlank(specsProperties.getArchitecture())) {
+            builder.withArchitecture(specsProperties.getArchitecture());
         }
         if (specsProperties.getExtraContainers() != null) {
             specsProperties.getExtraContainers().forEach(container -> {

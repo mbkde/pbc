@@ -95,7 +95,7 @@ public class GlobalConfiguration {
             auditLogEntry("PBC Architectures supported",
                     getArchitectureListAsString(), architectureList);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_LIST, new ArrayList<>(Arrays.asList(architectureList.split(","))));
+                    BANDANA_ARCHITECTURE_LIST, StringUtils.isNotBlank(architectureList) ? new ArrayList<>(Arrays.asList(architectureList.split(","))) : null);
         }
     }
 

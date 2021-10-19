@@ -105,7 +105,7 @@ public final class Configuration {
     }
 
     public Boolean isArchitectureDefined() {
-        return !StringUtils.isBlank(architecture);
+        return StringUtils.isNotBlank(architecture);
     }
 
     /**

@@ -32,6 +32,7 @@ import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.StringUtils;
 
 public class AccessConfiguration {
     
@@ -52,6 +53,10 @@ public class AccessConfiguration {
         if (role != null && "".equals(role)) {
             role = null;
         }
+        String architecture = cc.getOrDefault(Configuration.DOCKER_ARCHITECTURE, null);
+        if (StringUtils.isBlank(architecture)) {
+            architecture = null;
+        }
         return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                     .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
                     .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
@@ -60,7 +65,7 @@ public class AccessConfiguration {
                             ConfigurationPersistence.fromJsonString(
                                 cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                     .withAwsRole(role)
-                    .withArchitecture(cc.getOrDefault(Configuration.DOCKER_ARCHITECTURE, null))
+                    .withArchitecture(architecture)
                     .build();
     }
 

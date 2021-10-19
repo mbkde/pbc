@@ -127,15 +127,14 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             } else {
                 if (request.getConfiguration().isArchitectureDefined()) {
                     String architecture = request.getConfiguration().getArchitecture();
-                    logger.info(architecture);
-                    logger.info(String.valueOf(archConfig));
-
-                    if (archConfig.containsKey(architecture)) {
+                    if (architecture.equals("default")) {
+                        finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(archConfig.get("default")));
+                    }
+                    else if (archConfig.containsKey(architecture)) {
                         finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(architecture));
-                        logger.info(new Yaml().dump(finalPod));
                     }
                     else {
-                        throw new IllegalArgumentException("Architecture specified in build config was not found in Kubernetes architecture config!");
+                        throw new IllegalArgumentException("Architecture specified in build config was not found in server's allowed architectures!");
                     }
                 } else {
                     finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(archConfig.get("default")));
