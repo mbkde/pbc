@@ -22,43 +22,43 @@ AJS.$(document).ready(function () {
     if (isJobTaskEdit) {
         var indexedData = {};
         var update = function (cache) {
-            if ($('.task-config').length) {
+            if (AJS.$('.task-config').length) {
                 var data = {};
-                if (cache.enabled) { //0 is newly added task.. if docker is enabled, put it here to modify that ui as well.
+                if (cache.enabled) { //0 is newly added task. if docker is enabled, put it here to modify that ui as well.
                     data[0] = {};
                     data[0].label = "";
                     data[0].buildJdk = "";
                 }
-                $.each(cache.tasks, function (index, item) {
+                AJS.$.each(cache.tasks, function (index, item) {
                     data[item.id] = item;
                 });
                 indexedData = data;
             }
         };
         var findTaskIndex = function () {
-            var index = $("form#updateTask input#updateTask_taskId").attr("value");
+            var index = AJS.$("form#updateTask input#updateTask_taskId").attr("value");
             if (!index) {
-                index = $("form#createTask input#createTask_taskId").attr("value");
+                index = AJS.$("form#createTask input#createTask_taskId").attr("value");
             }
             return index;
         };
         insertionQ('select.builderSelectWidget').every(function (element) {
-            var jq = $(element);
+            var jq = AJS.$(element);
             var index = findTaskIndex();
             if (indexedData[index]) {
                 jq.after("<div class='description' id='dockerBuilderDesc'><b>With Per-build Container enabled, this field is freeform. Please enter the value that the Docker based agent provides</b></div>");
                 jq.replaceWith("<input type='text' name='" + element.name + "' id='" + element.id + "' class='text long-field' value='" + indexedData[index].label + "'>");
-                $("form a.addSharedBuilderCapability").remove();
+                AJS.$("form a.addSharedBuilderCapability").remove();
             }
             return jq;
         });
         insertionQ('select.jdkSelectWidget').every(function (element) {
-            var jq = $(element);
+            var jq = AJS.$(element);
             var index = findTaskIndex();
             if (indexedData[index]) {
                 jq.after("<div class='description' id='dockerJdkDesc'><b>With Per-build Container enabled, this field is freeform. Please enter the value that the Docker based agent provides</b></div>");
                 jq.replaceWith("<input type='text' name='" + element.name + "' id='" + element.id + "' class='text long-field' value='" + indexedData[index].buildJdk + "'>");
-                $("form a.addSharedJdkCapability").remove();
+                AJS.$("form a.addSharedJdkCapability").remove();
             }
             return jq;
         });

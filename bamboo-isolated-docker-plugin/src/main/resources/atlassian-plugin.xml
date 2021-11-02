@@ -159,8 +159,7 @@ limitations under the License.
         <dependency>com.atlassian.auiplugin:dialog2</dependency>
         <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
         <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
-
-        <!--resource type="download" name="jobConfiguration.js" location="/templates/plugin/jobConfiguration.js"/-->
+        <resource type="download" name="images/" location="images/" />
         <context>atl.general</context>
     </web-resource>
 
