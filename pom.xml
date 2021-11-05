@@ -34,13 +34,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>7.3.0-m166</bamboo.version>
+        <bamboo.version>8.0.4</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
-        <amps.version>8.0.2</amps.version>
+        <amps.version>8.2.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
-        <platform.version>5.0.19</platform.version>
+        <platform.version>5.2.7</platform.version>
         <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
         <aws-java.version>1.11.1006</aws-java.version>
+        <commons.httpclient4.version>4.5.13</commons.httpclient4.version>
+        <fasterxml.jackson.version>2.12.5</fasterxml.jackson.version>
         <checkstyle.version>8.29</checkstyle.version>
         <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
@@ -75,6 +77,17 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
                 <version>${aws-java.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${commons.httpclient4.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -109,7 +122,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.9.10.8</version>
+                <version>${fasterxml.jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -122,6 +140,37 @@
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.bamboo</groupId>
+                <artifactId>atlassian-bamboo-api</artifactId>
+                <version>${bamboo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.bamboo</groupId>
+                <artifactId>atlassian-bamboo-core</artifactId>
+                <version>${bamboo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.bamboo</groupId>
+                <artifactId>atlassian-bamboo-agent-core</artifactId>
+                <version>${bamboo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.bamboo</groupId>
+                <artifactId>atlassian-bamboo-deployments-api</artifactId>
+                <version>${bamboo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.bamboo</groupId>
+                <artifactId>atlassian-bamboo-web</artifactId>
+                <version>${bamboo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.29</version>
+                <type>jar</type>
             </dependency>
         </dependencies>
     </dependencyManagement>
