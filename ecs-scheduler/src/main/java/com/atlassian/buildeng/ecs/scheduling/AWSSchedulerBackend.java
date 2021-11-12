@@ -55,7 +55,6 @@ import com.amazonaws.services.ecs.model.UpdateContainerInstancesStateRequest;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Lists;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,8 +74,8 @@ import org.slf4j.LoggerFactory;
  * class encapsulating all AWS interaction for the CyclingECSScheduler.
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
-    
-    private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
     private final Map<String, Instance> cachedInstances = new HashMap<>();
 
     //there seems to be a limit of 100 to the tasks that can be described in a batch
@@ -85,7 +84,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Inject
     public AWSSchedulerBackend() {
     }
-    
+
     @Override
     public List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException {
         try {
@@ -174,13 +173,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName, 
-            boolean decrementSize, String clusterName) throws ECSException {
+    public void terminateAndDetachInstances(List<DockerHost> hosts, String asgName,
+                                            boolean decrementSize, String clusterName) throws ECSException {
         try {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
             //explicit deregister first BUILDENG-12397 for details
             hosts.stream().forEach((DockerHost t) -> {
-                try { 
+                try {
                     // BUILDENG-12585 - when an instance with disconnected agent is attempted to be deregistered,
                     // the deregister will fail because the ecs infra remembers the state of last
                     // ecs agent report and thinks there are things running on the instance.
@@ -195,12 +194,12 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .filter(DockerHost::isPresentInASG).map(DockerHost::getInstanceId).collect(Collectors.toList());
             if (!asgInstances.isEmpty()) {
                 AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-                DetachInstancesResult result = 
-                      asClient.detachInstances(new DetachInstancesRequest()
-                            .withAutoScalingGroupName(asgName)
-                              //only detach instances that are actually in the ASG group
-                            .withInstanceIds(asgInstances)
-                            .withShouldDecrementDesiredCapacity(decrementSize));
+                DetachInstancesResult result =
+                        asClient.detachInstances(new DetachInstancesRequest()
+                                .withAutoScalingGroupName(asgName)
+                                //only detach instances that are actually in the ASG group
+                                .withInstanceIds(asgInstances)
+                                .withShouldDecrementDesiredCapacity(decrementSize));
                 logger.info("Result of detachment: {}", result);
                 terminateInstances(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList()));
             }
@@ -283,17 +282,17 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
     @Override
     public SchedulingResult schedule(DockerHost dockerHost, String cluster,
-            SchedulingRequest request, String taskDefinition) throws ECSException {
+                                     SchedulingRequest request, String taskDefinition) throws ECSException {
         try {
             AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
             TaskOverride overrides = new TaskOverride();
             ContainerOverride buildResultOverride = new ContainerOverride()
-                .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
-                .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(dockerHost.getContainerInstanceArn()))
-                .withEnvironment(new KeyValuePair().withName("QUEUE_TIMESTAMP").withValue("" + request.getQueueTimeStamp()))
-                .withEnvironment(new KeyValuePair().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()))
-                .withEnvironment(new KeyValuePair().withName("RESULT_UUID").withValue(request.getIdentifier().toString()))
-                .withName(Constants.AGENT_CONTAINER_NAME);
+                    .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_RESULT_ID).withValue(request.getResultId()))
+                    .withEnvironment(new KeyValuePair().withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY).withValue(dockerHost.getContainerInstanceArn()))
+                    .withEnvironment(new KeyValuePair().withName("QUEUE_TIMESTAMP").withValue("" + request.getQueueTimeStamp()))
+                    .withEnvironment(new KeyValuePair().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()))
+                    .withEnvironment(new KeyValuePair().withName("RESULT_UUID").withValue(request.getIdentifier().toString()))
+                    .withName(Constants.AGENT_CONTAINER_NAME);
             overrides.withContainerOverrides(buildResultOverride);
             request.getConfiguration().getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
                 List<String> adjustedCommands = adjustCommands(t, dockerHost);
@@ -314,7 +313,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withTaskDefinition(taskDefinition + ":" + request.getRevision())
                     .withOverrides(overrides)
             );
-            return new SchedulingResult(startTaskResult, 
+            return new SchedulingResult(startTaskResult,
                     dockerHost.getContainerInstanceArn(), dockerHost.getInstanceId());
         } catch (Exception e) {
             throw new ECSException(e);
@@ -322,10 +321,9 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     /**
-     * 
+     * describeAutoScalingGroup.
      * @param autoScalingGroup name
      * @return described autoscaling group
-     * @throws ECSException 
      */
     @Override
     public AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException {
@@ -349,7 +347,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             }
         }
     }
-    
+
 
     @Override
     public Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException {
@@ -386,15 +384,14 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
                 .forEach((c) -> {
                     sb.append(c.getName()).append("[").append(c.getReason()).append("],");
-        });
+                });
         return sb.toString();
     }
 
     /**
      * adjust the list of commands if required, eg. in case of storage-driver switch for
      * docker in docker images.
-     * @param t
-     * @return
+     *
      */
     static List<String> adjustCommands(Configuration.ExtraContainer t, DockerHost host) {
         if (TaskDefinitionRegistrations.isDockerInDockerImage(t.getImage())) {

@@ -24,7 +24,6 @@ import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.isolated.docker.rest.Config;
 import java.util.Date;
-
 import org.apache.commons.lang3.StringUtils;
 
 

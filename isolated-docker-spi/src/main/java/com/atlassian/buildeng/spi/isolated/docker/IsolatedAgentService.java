@@ -41,7 +41,7 @@ public interface IsolatedAgentService {
 
     /**
      * provide links to container logs for the configuration and specific run data.
-     * @param configuration
+     * @param configuration config
      * @param customData implementation specific custom data as returned by IsolatedDockerAgentResult
      * @return never null, always a map with container name: link key-value pairs
      */
@@ -52,10 +52,6 @@ public interface IsolatedAgentService {
 
     /**
      * optional way to announce future requirements.
-     * @param buildKey
-     * @param jobResultKeys
-     * @param excessMemoryCapacity
-     * @param excessCpuCapacity
      */
     default void reserveCapacity(Key buildKey, List<String> jobResultKeys,
             long excessMemoryCapacity, long excessCpuCapacity) {

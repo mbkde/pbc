@@ -52,15 +52,15 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private final BlockingQueue<Pair<SchedulingRequest, SchedulingCallback>> requests = new LinkedBlockingQueue<>();
     @VisibleForTesting
     final ConcurrentMap<String, ReserveRequest> futureReservations = new ConcurrentHashMap<>();
-    
+
     private final SchedulerBackend schedulerBackend;
     private final ECSConfiguration globalConfiguration;
     final ModelLoader modelLoader;
     final ModelUpdater modelUpdater;
 
     @Inject
-    public CyclingECSScheduler(SchedulerBackend schedulerBackend, ECSConfiguration globalConfiguration, 
-            ModelLoader modelLoader, ModelUpdater modelUpdater) {
+    public CyclingECSScheduler(SchedulerBackend schedulerBackend, ECSConfiguration globalConfiguration,
+                               ModelLoader modelLoader, ModelUpdater modelUpdater) {
         this.schedulerBackend = schedulerBackend;
         this.globalConfiguration = globalConfiguration;
         this.modelLoader = modelLoader;
@@ -70,8 +70,8 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
 
     // Select the best host to run a task with the given required resources out of a list of candidates
     // Is Nothing if there are no feasible hosts
-    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates, 
-            int requiredMemory, int requiredCpu, boolean demandOverflowing) {
+    static Optional<DockerHost> selectHost(Collection<DockerHost> candidates,
+                                           int requiredMemory, int requiredCpu, boolean demandOverflowing) {
         Comparator<DockerHost> comparator = DockerHost.compareByResourcesAndAge();
         if (demandOverflowing) {
             // when we know that there is demand overflow, we want to spread out the
@@ -92,7 +92,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     private void processRequests(Pair<SchedulingRequest, SchedulingCallback> pair) {
-        if (pair == null) return;
+        if (pair == null) {
+            return;
+        }
         SchedulingRequest request = pair.getLeft();
         String cluster = globalConfiguration.getCurrentCluster();
         String asgName = globalConfiguration.getCurrentASG();
@@ -128,13 +130,13 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                     // Clear everything out, we're probably fine
                     if (lackingCPU < globalConfiguration.getSizeDescriptor().getCpu(Configuration.ContainerSize.SMALL)
                             || lackingMemory < globalConfiguration.getSizeDescriptor()
-                                    .getMemory(Configuration.ContainerSize.SMALL)) {
+                            .getMemory(Configuration.ContainerSize.SMALL)) {
                         consideredRequestIdentifiers.clear();
                         lackingCPU = 0;
                         lackingMemory = 0;
                     }
                 } else {
-                    if (! fitsOnAny(hosts.fresh(), request.getMemory())) {
+                    if (!fitsOnAny(hosts.fresh(), request.getMemory())) {
                         //anything that wants to prevert rescheduling here needs changes in DefaultSchedulingCallback as well
                         pair.getRight().handle(new ECSException(new InstancesSmallerThanAgentException()));
                     } else {
@@ -161,7 +163,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         Pair<Long, Long> sum = sumOfFutureReservations();
         modelUpdater.updateModel(hosts, new ModelUpdater.State(lackingCPU, lackingMemory, someDiscarded, sum.getLeft(), sum.getRight()));
     }
-    
+
 
     private void checkScaleDown() {
         try {
@@ -174,7 +176,7 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
             logger.error("Failed to scale down", ex);
         }
     }
-    
+
 
     void shutdownExecutor() {
         executor.shutdown();
@@ -194,11 +196,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
         ReserveRequest oldone = futureReservations.get(newone.getBuildKey());
         if (newone.getCpuReservation() > 0 && newone.getMemoryReservation() > 0) {
             if (oldone == null
-                //custom equals on ReserveRequest
-                || !oldone.equals(newone)
-                //use old instance unless the new one is actually older
-                || oldone.getCreationTimestamp() > newone.getCreationTimestamp())
-            {
+                    //custom equals on ReserveRequest
+                    || !oldone.equals(newone)
+                    //use old instance unless the new one is actually older
+                    || oldone.getCreationTimestamp() > newone.getCreationTimestamp()) {
                 // only use new instance if reservations are bigger than 0, otherwise just remove.
                 logger.info("FutureReservation: Adding for " + newone.getBuildKey() + " size: " + newone.getMemoryReservation() + " " + newone.getResultKeys());
                 futureReservations.put(newone.getBuildKey(), newone);
@@ -206,13 +207,15 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 //keep the existing one.
             }
         } else if (oldone != null) {
-            logger.info("FutureReservation: Resetting for " + newone.getBuildKey() + " " +newone.getResultKeys());
+            logger.info("FutureReservation: Resetting for " + newone.getBuildKey() + " " + newone.getResultKeys());
             futureReservations.remove(newone.getBuildKey());
         }
     }
 
     public void unreserveFutureCapacity(SchedulingRequest req) {
-        if (req.getBuildKey() == null) return; //TODO remove, test path only
+        if (req.getBuildKey() == null) {
+            return; //TODO remove, test path only
+        }
         futureReservations.computeIfPresent(req.getBuildKey(), (String key, ReserveRequest old) -> {
             final boolean present = old.getResultKeys().contains(req.getResultId());
             if (present) {
@@ -229,11 +232,10 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     private static final int MINUTES_TO_KEEP_FUTURE_RES_ALIVE = 40;
 
     /**
-     *
      * @return pair of memory, cpu reservation sums
      */
     @VisibleForTesting
-    Pair<Long,Long> sumOfFutureReservations() {
+    Pair<Long, Long> sumOfFutureReservations() {
         long currentTime = System.currentTimeMillis();
         futureReservations.entrySet().removeIf((Map.Entry<String, ReserveRequest> t) -> {
             boolean remove = Duration.ofMillis(currentTime - t.getValue().getCreationTimestamp()).toMinutes() > MINUTES_TO_KEEP_FUTURE_RES_ALIVE;

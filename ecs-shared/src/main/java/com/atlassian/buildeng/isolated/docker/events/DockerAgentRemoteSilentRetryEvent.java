@@ -16,8 +16,8 @@
 
 package com.atlassian.buildeng.isolated.docker.events;
 
-import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 import com.atlassian.bamboo.Key;
+import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.
@@ -52,5 +52,5 @@ public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
                 + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn
                 + "}";
     }
-    
+
 }

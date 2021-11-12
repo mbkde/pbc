@@ -23,77 +23,56 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- *
  * @author mkleint
  */
 public interface SchedulerBackend {
 
     /**
-     * Get all owned container instances on a cluster
-     * 
-     * @param cluster
-     * @return 
-     * @throws ECSException
+     * Get all owned container instances on a cluster.
      */
     List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException;
-    
+
     /**
-     * get EC2 Instances for the passed ids
-     * @param instanceIds
-     * @return 
-     * @throws ECSException
+     * get EC2 Instances for the passed ids.
      */
     List<Instance> getInstances(Collection<String> instanceIds) throws ECSException;
-    
+
     /**
-     * scale the ASG to desired capacity
-     * @param desiredCapacity
-     * @param autoScalingGroup
-     * @throws ECSException 
+     * scale the ASG to desired capacity.
      */
     void scaleTo(int desiredCapacity, String autoScalingGroup) throws ECSException;
-    
+
     /**
-     * terminate the listed EC2 instances and reduce the size of ASG by the given amount
-     * @param dockerHosts 
-     * @param autoScalingGroup 
-     * @param decrementSize should we decrease size of ASG or not? if not, new instance is started eventually.
+     * terminate the listed EC2 instances and reduce the size of ASG by the given amount.
+     *
+     * @param dockerHosts
+     * @param autoScalingGroup
+     * @param decrementSize    should we decrease size of ASG or not? if not, new instance is started eventually.
      * @param ecsClusterName
      * @throws ECSException
      */
     void terminateAndDetachInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize, String ecsClusterName) throws ECSException;
 
     /**
-     * terminate listed EC2 instances
-     * @param instanceIds
-     * @throws ECSException
+     * terminate listed EC2 instances.
      */
     void terminateInstances(List<String> instanceIds) throws ECSException;
 
     /**
-     * set the listed EC2 instances to "draining" state
-     * @param hosts
-     * @param clusterName
+     * set the listed EC2 instances to "draining" state.
      */
     void drainInstances(List<DockerHost> hosts, String clusterName);
 
     SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
-    
+
     /**
-     * describe autoscaling group of given name
-     * @param autoScalingGroup
-     * @return get AutoscalingGroup
-     * @throws ECSException 
+     * describe autoscaling group of given name.
      */
     AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException;
 
     /**
-     * for given taskArn strings return an ArnStoppedState object for every taskArn
+     * for given taskArn strings return an ArnStoppedState object for every taskArn.
      * that is stopped or missing in the cluster.
-     * @param cluster
-     * @param taskArns
-     * @return
-     * @throws ECSException
      */
     Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException;
 

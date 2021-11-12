@@ -45,7 +45,7 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
     private final Logger logger = LoggerFactory.getLogger(CustomPreBuildActionImpl.class);
     private BuildContext buildContext;
     private BuildLoggerManager buildLoggerManager;
-    
+
 
     public CustomPreBuildActionImpl() {
     }
@@ -81,9 +81,9 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
                             if (nameObj != null && !nameObj.getAsString().equals(METADATA_CONTAINER_NAME)
                                     && !nameObj.getAsString().equals(AMAZON_MAGIC_VOLUME_NAME)) {
                                 String hash = curr.get("hash").getAsString();
-                                String tag  = curr.get("tag").getAsString();
+                                String tag = curr.get("tag").getAsString();
                                 buildLogger.addBuildLogEntry(
-                                        String.format("Docker image '%s' had hash: %s", tag, hash ));
+                                        String.format("Docker image '%s' had hash: %s", tag, hash));
                             }
                         });
                     }

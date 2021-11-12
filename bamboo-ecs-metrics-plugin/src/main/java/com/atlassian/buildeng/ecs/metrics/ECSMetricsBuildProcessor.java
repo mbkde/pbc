@@ -39,22 +39,18 @@ import org.rrd4j.core.RrdDb;
 import org.rrd4j.core.RrdSafeFileBackendFactory;
 import org.rrd4j.graph.RrdGraph;
 import org.rrd4j.graph.RrdGraphDef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * After the build extracts the rrd files from a source directory and generates the
  * images and uploads them as artifacts.
  */
 public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(ECSMetricsBuildProcessor.class);
-
     private static final String TASK_ARN = "TaskARN";
-    Color COLOR_GREEN = Color.decode("0x29C30B");
-    Color COLOR_RED = Color.decode("0xF71C31");
-    Color COLOR_YELLOW = Color.decode("0xDBDE00");
-    Color COLOR_ORANGE = Color.decode("0xF7B71C");
-    Color COLOR_BLUE = Color.decode("0x0B80C3");
+    static final Color COLOR_GREEN = Color.decode("0x29C30B");
+    static Color COLOR_RED = Color.decode("0xF71C31");
+    static final Color COLOR_YELLOW = Color.decode("0xDBDE00");
+    static final Color COLOR_ORANGE = Color.decode("0xF7B71C");
+    static final Color COLOR_BLUE = Color.decode("0x0B80C3");
 
     private ECSMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
@@ -78,7 +74,7 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                 final Map<String, String> artifactHandlerConfiguration = BuildContextHelper.getArtifactHandlerConfiguration(buildContext);
                 File buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext)buildContext);
                 final SecureToken secureToken = SecureToken.createFromString(token);
-                
+
                 List<String> names = new ArrayList<>();
                 for (File containerFolder : taskFolder.listFiles((File pathname) -> pathname.isDirectory() && !"~internal~ecs-emptyvolume-source".equals(pathname.getName()) &&  !"bamboo-agent-sidekick".equals(pathname.getName()))) {
                     long startTime;

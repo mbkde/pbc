@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +62,8 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
     public final void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Throwable t) { 
-            //this is throwable because of NoClassDefFoundError and alike. 
+        } catch (Throwable t) {
+            //this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
             // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
@@ -81,7 +80,7 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
         ErrorUpdateHandler errorUpdateHandler = getService(ErrorUpdateHandler.class, "errorUpdateHandler");
         EventPublisher eventPublisher = getService(EventPublisher.class, "eventPublisher");
         IsolatedAgentService isolatedAgentService = getService(IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
-        
+
         List<String> arns = getQueuedARNs(buildQueueManager);
         Map<String, Date> missingTaskArns = getMissingTasksArn(jobDataMap);
         if (arns.isEmpty()) {
@@ -117,7 +116,7 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
                             }
                         }
 
-                        if (error.contains("CannotStartContainerError") 
+                        if (error.contains("CannotStartContainerError")
                                 || error.contains("CannotCreateContainerError")
                                 || error.contains("HostConfigError")) {
                             logger.info("Retrying job {} because of ecs task {} failure: {}", t.getResultKey(), tsk, error);
@@ -125,7 +124,7 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
                             eventPublisher.publish(new RetryAgentStartupEvent(config, t));
                             //monitoring only
                             eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(error, t.getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
-                        } else {       
+                        } else {
                             logger.info("Stopping job {} because of ecs task {} failure: {}", t.getResultKey(), tsk, error);
                             errorUpdateHandler.recordError(t.getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(RESULT_ERROR, error);

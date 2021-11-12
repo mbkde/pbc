@@ -77,6 +77,7 @@ public class Scheduler {
         }
         throw new IllegalArgumentException("Wrong format!");
     }
+
     private final String uuid;
     private final String resultId;
     private final String bambooServer;
@@ -87,8 +88,8 @@ public class Scheduler {
     private final List<HostFolderMapping> hostFolderMappings;
     private String buildKey = "none";
 
-    public Scheduler(String uuid, String resultId, String server, String sidekick, 
-            Configuration configuration, List<HostFolderMapping> mappings) {
+    public Scheduler(String uuid, String resultId, String server, String sidekick,
+                     Configuration configuration, List<HostFolderMapping> mappings) {
         this.uuid = uuid;
         this.resultId = resultId;
         this.configuration = configuration;

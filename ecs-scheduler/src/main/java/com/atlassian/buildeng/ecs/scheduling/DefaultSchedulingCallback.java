@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultSchedulingCallback implements SchedulingCallback {
-    private final static Logger logger = LoggerFactory.getLogger(DefaultSchedulingCallback.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultSchedulingCallback.class);
 
     private final IsolatedDockerRequestCallback callback;
     private final String resultId;

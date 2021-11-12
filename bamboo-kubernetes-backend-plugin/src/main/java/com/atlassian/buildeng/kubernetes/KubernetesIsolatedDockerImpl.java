@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
@@ -310,6 +311,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
+    @NotNull
     public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String url = globalConfiguration.getPodLogsUrl();
         String podName = customData.get(RESULT_PREFIX + NAME);
