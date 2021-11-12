@@ -16,11 +16,11 @@
 
 package com.atlassian.buildeng.kubernetes.helper;
 
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import java.util.Map;
-
-import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
 public class KubernetesHelper {
 
