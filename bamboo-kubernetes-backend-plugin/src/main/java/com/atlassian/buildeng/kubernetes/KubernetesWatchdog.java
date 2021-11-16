@@ -392,8 +392,9 @@ public class KubernetesWatchdog extends WatchdogJob {
                                          EventPublisher eventPublisher, GlobalConfiguration configuration) {
         Configuration config = AccessConfiguration.forContext(context);
         Map<String, String> customData = new HashMap<>(context.getCurrentResult().getCustomBuildData());
-        customData.entrySet().removeIf(
-                (Map.Entry<String, String> tt) -> !tt.getKey().startsWith(KubernetesIsolatedDockerImpl.RESULT_PREFIX));
+        customData.entrySet()
+                .removeIf((Map.Entry<String, String> tt)
+                    -> !tt.getKey().startsWith(KubernetesIsolatedDockerImpl.RESULT_PREFIX));
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(config, customData);
 
         eventPublisher.publish(new DockerAgentKubeFailEvent(
