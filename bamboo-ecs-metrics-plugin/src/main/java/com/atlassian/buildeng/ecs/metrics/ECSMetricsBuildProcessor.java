@@ -47,7 +47,7 @@ import org.rrd4j.graph.RrdGraphDef;
 public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String TASK_ARN = "TaskARN";
     static final Color COLOR_GREEN = Color.decode("0x29C30B");
-    static Color COLOR_RED = Color.decode("0xF71C31");
+    static final Color COLOR_RED = Color.decode("0xF71C31");
     static final Color COLOR_YELLOW = Color.decode("0xDBDE00");
     static final Color COLOR_ORANGE = Color.decode("0xF7B71C");
     static final Color COLOR_BLUE = Color.decode("0x0B80C3");
