@@ -22,7 +22,6 @@ import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
 import com.google.common.base.Splitter;
-
 import java.util.ArrayList;
 import java.util.List;
 

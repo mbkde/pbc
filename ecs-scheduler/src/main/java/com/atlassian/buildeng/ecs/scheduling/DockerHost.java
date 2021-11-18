@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
@@ -21,7 +22,6 @@ import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,12 +29,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.TestOnly;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DockerHost {
-    private final static Logger logger = LoggerFactory.getLogger(DockerHost.class);
-
     private int remainingMemory;
     private int remainingCpu;
     private final int registeredMemory;
@@ -72,10 +68,10 @@ public class DockerHost {
     }
 
     public DockerHost(ContainerInstance containerInstance, Instance instance, boolean inASG) throws ECSException {
-        remainingMemory  = getIntegralResource(containerInstance, true,  "MEMORY");
-        remainingCpu     = getIntegralResource(containerInstance, true,  "CPU");
+        remainingMemory = getIntegralResource(containerInstance, true, "MEMORY");
+        remainingCpu = getIntegralResource(containerInstance, true, "CPU");
         registeredMemory = getIntegralResource(containerInstance, false, "MEMORY");
-        registeredCpu    = getIntegralResource(containerInstance, false, "CPU");
+        registeredCpu = getIntegralResource(containerInstance, false, "CPU");
         containerInstanceArn = containerInstance.getContainerInstanceArn();
         instanceId = containerInstance.getEc2InstanceId();
         status = containerInstance.getStatus();
@@ -139,18 +135,17 @@ public class DockerHost {
     public int getRemainingCpu() {
         return remainingCpu;
     }
-    
+
     public void reduceAvailableCpuBy(int cpu) {
         remainingCpu = remainingCpu - cpu;
     }
-    
-    public void reduceAvailableMemoryBy( int memory ) {
+
+    public void reduceAvailableMemoryBy(int memory) {
         remainingMemory = remainingMemory - memory;
     }
 
     /**
-     * the total amount of cpu available for docker containers on the instance
-     * @return
+     * the total amount of cpu available for docker containers on the instance.
      */
     public int getRegisteredCpu() {
         return registeredCpu;
@@ -158,7 +153,6 @@ public class DockerHost {
 
     /**
      * the amount of memory available for docker containers on the instance
-     * @return
      */
     public int getRegisteredMemory() {
         return registeredMemory;
@@ -171,7 +165,7 @@ public class DockerHost {
     public boolean isPresentInASG() {
         return presentInASG;
     }
-    
+
     public boolean getAgentConnected() {
         return agentConnected;
     }
@@ -186,8 +180,12 @@ public class DockerHost {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DockerHost that = (DockerHost) o;
 
@@ -211,7 +209,7 @@ public class DockerHost {
     public String getContainerAttribute(String name) {
         return attributes.stream()
                 .filter((Attribute t) -> name.equals(t.getName()))
-                .map((Attribute t) ->  t.getValue())
+                .map((Attribute t) -> t.getValue())
                 .findFirst().orElse(null);
     }
 

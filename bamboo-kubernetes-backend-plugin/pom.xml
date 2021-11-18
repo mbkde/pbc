@@ -78,7 +78,6 @@ limitations under the License.
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -87,7 +86,6 @@ limitations under the License.
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>
-            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -113,13 +111,22 @@ limitations under the License.
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-api</artifactId>
-            <version>3.0.12</version>
+            <artifactId>kubernetes-client</artifactId>
+            <version>4.7.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.16</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -129,7 +136,6 @@ limitations under the License.
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

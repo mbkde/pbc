@@ -44,7 +44,6 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -108,7 +106,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails
-        // and our StopDockerAgentBuildProcessor is not executed. absence of the marker property 
+        // and our StopDockerAgentBuildProcessor is not executed. absence of the marker property
         // tells us that we didn't run on agent
         if (conf.isEnabled() && null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF)) {
             CurrentlyBuilding building = buildExecutionManager.getCurrentlyBuildingByBuildResult(buildContext);

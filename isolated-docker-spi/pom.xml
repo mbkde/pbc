@@ -78,7 +78,6 @@ limitations under the License.
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>
-            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
 
 import org.apache.commons.lang3.SystemUtils;
@@ -22,7 +23,7 @@ import org.apache.commons.lang3.SystemUtils;
  * @author mkleint
  */
 public class ExecutablePathUtils {
-    
+
     public static String getDockerBinaryPath() {
         if (SystemUtils.IS_OS_LINUX) {
             return "/usr/bin/docker";
@@ -32,7 +33,7 @@ public class ExecutablePathUtils {
             throw new IllegalStateException("Unsupported platform");
         }
     }
-    
+
     public static String getDockerComposeBinaryPath() {
         if (SystemUtils.IS_OS_LINUX) {
             return "/usr/local/bin/docker-compose";

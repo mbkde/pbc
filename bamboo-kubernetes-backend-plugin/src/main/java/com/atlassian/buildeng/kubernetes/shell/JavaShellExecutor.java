@@ -1,15 +1,18 @@
 package com.atlassian.buildeng.kubernetes.shell;
 
+import static io.fabric8.kubernetes.client.utils.Utils.closeQuietly;
+
 import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
-import io.fabric8.utils.Files;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class JavaShellExecutor implements ShellExecutor {
     private static final Logger logger = LoggerFactory.getLogger(JavaShellExecutor.class);
@@ -24,7 +27,7 @@ public class JavaShellExecutor implements ShellExecutor {
             Process process = pb.start();
 
             logger.debug("starting process");
-            byte[] data = Files.readBytes(process.getInputStream());
+            byte[] data = readBytes(process.getInputStream());
 
             int ret = process.waitFor();
             logger.debug("process finished");
@@ -49,6 +52,31 @@ public class JavaShellExecutor implements ShellExecutor {
         } catch (Exception e) {
             logger.error("Exception while executing shell", e);
             throw e;
+        }
+    }
+
+    /**
+     * Read bytes from input stream.
+     */
+    public static byte[] readBytes(InputStream in) throws IOException {
+        ByteArrayOutputStream bos = null;
+        if (in == null) {
+            throw new FileNotFoundException("No InputStream specified");
+        } else {
+            try {
+                bos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[8192];
+
+                int remaining;
+                while ((remaining = in.read(buffer)) > 0) {
+                    bos.write(buffer, 0, remaining);
+                }
+
+                return bos.toByteArray();
+            } finally {
+                closeQuietly(in);
+                closeQuietly(bos);
+            }
         }
     }
 }

@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 public class AwsLogs {
 
-    static final private Logger logger = LoggerFactory.getLogger(AwsLogs.class);
+    private static final Logger logger = LoggerFactory.getLogger(AwsLogs.class);
 
     private static String constructLogStream(String prefix, String containerName, String taskArn) {
         String task = taskArn.substring(taskArn.indexOf("task/") + "task/".length());
@@ -85,9 +85,6 @@ public class AwsLogs {
     /**
      * returns an object of Driver with configuration for awslogs logging driver if configured,
      * if not, returns null.
-     *
-     * @param config
-     * @return
      */
     public static Driver getAwsLogsDriver(ECSConfiguration config) {
         String driver = config.getLoggingDriver();

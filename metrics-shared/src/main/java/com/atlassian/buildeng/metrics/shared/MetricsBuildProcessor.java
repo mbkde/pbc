@@ -28,10 +28,8 @@ import com.atlassian.bamboo.security.SecureToken;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-
 import java.io.File;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -93,7 +91,7 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
                         .map(ArtifactHandlerPublishingResult::getArtifactHandlerKey).orElse(Artifact.SYSTEM_LINK_TYPE));
     }
 
-    protected abstract void generateMetricsGraphs(BuildLogger buildLogger, 
+    protected abstract void generateMetricsGraphs(BuildLogger buildLogger,
             Configuration config, BuildContext buildContext);
 
 }

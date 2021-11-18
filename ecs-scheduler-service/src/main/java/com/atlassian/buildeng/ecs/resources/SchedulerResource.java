@@ -50,7 +50,6 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ManagedAsync;
 
 
-
 @Path("/rest/scheduler")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -101,7 +100,7 @@ public class SchedulerResource {
                 revision = taskDefRegistrations.registerDockerImage(s.getConfiguration(), env);
             } catch (ECSException ex) {
                 //Have to catch some of the exceptions here instead of the callback to use retries.
-                if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     response.resume(toRet);

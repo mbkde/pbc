@@ -32,7 +32,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DatadogEventPublisher implements EventPublisher{
+public class DatadogEventPublisher implements EventPublisher {
     static final String DATADOG_API = "DATADOG_API_KEY";
     private static final Logger logger = LoggerFactory.getLogger(DatadogEventPublisher.class);
     CloseableHttpClient httpclient = HttpClients.createDefault();

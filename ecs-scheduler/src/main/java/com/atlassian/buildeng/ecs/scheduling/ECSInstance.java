@@ -37,7 +37,9 @@ public enum ECSInstance {
 
     static ECSInstance fromName(String name) {
         for (ECSInstance x: ECSInstance.values()) {
-            if (x.name.equals(name)) return x;
+            if (x.name.equals(name)) {
+                return x;
+            }
         }
         return DEFAULT_INSTANCE;
     }

@@ -27,13 +27,11 @@ import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.sal.api.scheduling.PluginJob;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +43,7 @@ public class ReaperJob implements PluginJob {
         try {
             executeImpl(jobDataMap);
         } catch (Throwable t) {
-            //this is throwable because of NoClassDefFoundError and alike. 
+            //this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
             // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
