@@ -1,7 +1,7 @@
 package com.atlassian.buildeng.kubernetes.serialization;
 
-import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
 import io.fabric8.kubernetes.api.model.BaseKubernetesList;
+import io.fabric8.utils.Files;
 import java.io.IOException;
 import org.junit.Test;
 
@@ -11,7 +11,7 @@ public class JsonResponseMapperTest {
 
     @Test
     public void testSuccess() throws IOException {
-        byte[] bytes = JavaShellExecutor.readBytes(getClass().getResourceAsStream("/fixture/kubectl/get-pods-1.json"));
+        byte[] bytes = Files.readBytes(getClass().getResourceAsStream("/fixture/kubectl/get-pods-1.json"));
         Object map = mapper.map(bytes);
         assert map instanceof BaseKubernetesList;
     }

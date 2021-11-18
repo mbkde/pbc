@@ -38,7 +38,7 @@ public interface Constants {
     String PROPERTY_DIND_OVERRIDE_IMAGES = "pbc.dind.override.versions";
 
     /**
-     * This is the version of Docker in Docker that will override the versions specified above.
+     * This is the version of Docker in Docker that will override the versions specified above
      */
     String PROPERTY_DIND_IMAGE = "pbc.dind.version";
 
@@ -83,7 +83,7 @@ public interface Constants {
      * The environment variable to override on the agent per server.
      */
     String ENV_VAR_SERVER = "BAMBOO_SERVER";
-
+    
     /**
      * The environment variable to set the result spawning up the agent.
      */
@@ -117,7 +117,7 @@ public interface Constants {
      * a space separated list of container names that the extra container should link to.
      *  makes no effort to sanitize the values in terms of circular dependencies between
      * the extra containers. Can never point to the main container (that one links to extra containers already)
-     *
+     * 
      */
     String ENV_VAR_PBC_EXTRA_LINKS = "PBC_EXTRA_LINKS";
 

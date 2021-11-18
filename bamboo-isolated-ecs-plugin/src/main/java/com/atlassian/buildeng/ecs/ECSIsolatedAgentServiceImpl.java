@@ -47,13 +47,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
 
+public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
+    
     private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
 
     private final GlobalConfiguration globalConfiguration;
@@ -67,9 +67,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     // and some spring related metadata is created for them.
     private final EventPublisher eventPublisher;
 
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler,
-                                       PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
-                                       EventPublisher eventPublisher) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
+            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
+            EventPublisher eventPublisher) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
         this.pluginScheduler = pluginScheduler;
@@ -89,7 +89,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             } catch (ECSException ex) {
                 logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
                 //Have to catch some of the exceptions here instead of the callback to use retries.
-                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     callback.handle(toRet);
@@ -99,7 +99,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 return;
             }
         }
-        logger.info("Spinning up new docker agent from task definition {}:{} {}",
+        logger.info("Spinning up new docker agent from task definition {}:{} {}", 
                 globalConfiguration.getTaskDefinitionName(), revision, resultId);
         ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
         SchedulingRequest schedulingRequest = new SchedulingRequest(
@@ -113,11 +113,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 req.getBuildKey());
         ecsScheduler.schedule(schedulingRequest, new DefaultSchedulingCallback(callback, resultId));
     }
-
+    
     @Override
     public List<String> getKnownDockerImages() {
         List<String> toRet = globalConfiguration.getAllRegistrations().keySet().stream()
-                .flatMap((Configuration t) -> getAllImages(t))
+                .flatMap((Configuration t) -> getAllImages(t)) 
                 .distinct()
                 .collect(Collectors.toList());
         // sort for sake of UI/consistency?
@@ -126,7 +126,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    @NotNull
     public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String taskArn = customData.get(Constants.RESULT_PREFIX + Constants.RESULT_PART_TASKARN);
         if (taskArn == null || AwsLogs.getAwsLogsDriver(globalConfiguration) == null) {
@@ -134,7 +133,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         }
         Stream<String> s = Stream.concat(
                 Stream.of(Constants.AGENT_CONTAINER_NAME),
-                configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
+                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
         return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
                 URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/docker/latest/logs")
@@ -147,10 +146,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         }));
     }
 
-
+    
     Stream<String> getAllImages(Configuration c) {
         return Stream.concat(
-                Stream.of(c.getDockerImage()),
+                Stream.of(c.getDockerImage()), 
                 c.getExtraContainers().stream().map(ec -> ec.getImage()));
     }
 

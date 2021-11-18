@@ -20,7 +20,6 @@ import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
-import com.atlassian.buildeng.kubernetes.helper.KubernetesHelper;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
 import com.atlassian.buildeng.kubernetes.shell.JavaShellExecutor;
@@ -33,6 +32,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.annotations.VisibleForTesting;
+import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +54,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
@@ -311,7 +310,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
-    @NotNull
     public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String url = globalConfiguration.getPodLogsUrl();
         String podName = customData.get(RESULT_PREFIX + NAME);

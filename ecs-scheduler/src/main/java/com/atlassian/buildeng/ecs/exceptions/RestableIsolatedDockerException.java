@@ -24,7 +24,6 @@ import javax.ws.rs.core.Response.Status;
 public abstract class RestableIsolatedDockerException extends IsolatedDockerAgentException {
 
     private final Status status;
-
     RestableIsolatedDockerException(Status status, Exception exc) {
         super(exc);
         this.status = status;
@@ -36,9 +35,9 @@ public abstract class RestableIsolatedDockerException extends IsolatedDockerAgen
     }
 
     Response toResponse() {
-        return Response.status(status)
-                .entity(getMessage())
-                .type("text/plain")
-                .build();
+        return Response.status(status).
+            entity(getMessage()).
+            type("text/plain").
+            build();
     }
 }

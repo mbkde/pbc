@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
+
 import java.time.Duration;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,11 +59,11 @@ public final class DockerHosts {
     public int getUsableSize() {
         return usable.size();
     }
-
+    
     public Collection<DockerHost> agentDisconnected() {
         return Collections.unmodifiableCollection(agentDisconnected);
     }
-
+    
     /**
      * all instances that actually have agent connected and have associated ec2 instance.
      */

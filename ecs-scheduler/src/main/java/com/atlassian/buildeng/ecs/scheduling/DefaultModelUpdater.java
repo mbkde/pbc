@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultModelUpdater implements ModelUpdater {
-    private static final Logger logger = LoggerFactory.getLogger(DefaultModelUpdater.class);
+    private final static Logger logger = LoggerFactory.getLogger(DefaultModelUpdater.class);
 
     private final SchedulerBackend schedulerBackend;
     private final EventPublisher eventPublisher;
@@ -94,7 +94,7 @@ public class DefaultModelUpdater implements ModelUpdater {
             long cpuRequirements = 1 + (req.getFutureReservationCPU() - freeCpu) / computeInstanceCPULimits(hosts.allUsable());
             logger.info("Scaling w.r.t. this much future CPU/memory {} {}", req.getFutureReservationCPU(), req.getFutureReservationMemory());
             desiredScaleSize += Math.max(cpuRequirements, memoryRequirements);
-            logger.info("desired size: " + desiredScaleSize + " cpuReq:" + cpuRequirements + " memReq:" + memoryRequirements);
+            logger.info("desired size: " + desiredScaleSize  + " cpuReq:" + cpuRequirements + " memReq:" + memoryRequirements);
         }
 
         int terminatedCount = terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
@@ -126,9 +126,9 @@ public class DefaultModelUpdater implements ModelUpdater {
             //debugging block
             logger.warn("Hosts with disconnected agent:" + cache.size() + " " + cache.toString());
             //too chatty and datadog cannot filter it out properly
-/*          if (oldSize != cache.size()) {
-              eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
-            } */
+//            if (oldSize != cache.size()) {
+//                eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
+//            }
         }
         final List<DockerHost> selectedToKill = selectDisconnectedToKill(hosts, cache);
 
@@ -182,14 +182,14 @@ public class DefaultModelUpdater implements ModelUpdater {
         long freeCpu = computeFreeCapacityCPU(notTerminating) - req.getFutureReservationCPU();
         long capCpu = computeMaxCapacityCPU(notTerminating);
         logger.info("FREECPU:" + freeCpu + " FREEMEM:" + freeMem);
-        double freeRatio = Math.min((double) freeMem / capMem, (double) freeCpu / capCpu);
+        double freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
             DockerHost host = toTerminate.remove(0);
             freeMem = freeMem + host.getRegisteredMemory();
             capMem = capMem + host.getRegisteredMemory();
             freeCpu = freeCpu + host.getRegisteredCpu();
             capCpu = capCpu + host.getRegisteredCpu();
-            freeRatio = Math.min((double) freeMem / capMem, (double) freeCpu / capCpu);
+            freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
         }
         return toTerminate;
     }
@@ -216,8 +216,8 @@ public class DefaultModelUpdater implements ModelUpdater {
         return toTerminate.size();
     }
 
-    /**
-     * compute current value for available instance CPU of currently running instances.
+        /**
+     * compute current value for available instance CPU of currently running instances
      *
      * @param hosts known current hosts
      * @return number of CPU power available
@@ -234,7 +234,7 @@ public class DefaultModelUpdater implements ModelUpdater {
 
 
     /**
-     * compute current value for available instance memory of currently running instances.
+     * compute current value for available instance memory of currently running instances
      *
      * @param hosts known current hosts
      * @return number of memory available
@@ -250,23 +250,23 @@ public class DefaultModelUpdater implements ModelUpdater {
     }
 
     private long computeMaxCapacityMemory(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRegisteredMemory()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredMemory()).sum();
     }
 
     private long computeFreeCapacityMemory(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRemainingMemory()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingMemory()).sum();
     }
 
     private long computeFreeCapacityCPU(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRemainingCpu()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingCpu()).sum();
     }
 
     private long computeMaxCapacityCPU(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRegisteredCpu()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredCpu()).sum();
     }
-
+    
     /**
-     * update the cache with times of first report for disconnected agent. Remove those that recovered
+     *   update the cache with times of first report for disconnected agent. Remove those that recovered
      * , add new incidents.
      */
     private Map<DockerHost, Date> updateDisconnectedCache(Map<DockerHost, Date> cache, DockerHosts hosts) {

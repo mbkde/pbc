@@ -34,9 +34,7 @@ public class Config {
         this.defaultImage = defaultImage;
     }
 
-    public Integer getMaxAgentCreationPerMinute() {
-        return maxAgentCreationPerMinute;
-    }
+    public Integer getMaxAgentCreationPerMinute() { return maxAgentCreationPerMinute; }
 
     public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
         this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;

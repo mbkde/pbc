@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.ecs.rest;
 
 import java.util.List;
@@ -23,11 +22,12 @@ import org.jetbrains.annotations.NotNull;
 public final class JobsUsingImageResponse {
     public final List<JobInfo> jobs;
 
-    public JobsUsingImageResponse(@NotNull List<JobInfo> jobs) {
+    public JobsUsingImageResponse( @NotNull List<JobInfo> jobs) {
         this.jobs = jobs;
     }
+    
 
-    public static final class JobInfo {
+    public final static class JobInfo {
         public final String name;
         public final String key;
 
@@ -35,5 +35,6 @@ public final class JobsUsingImageResponse {
             this.name = name;
             this.key = key;
         }
+        
     }
 }

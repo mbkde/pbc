@@ -22,11 +22,8 @@ import org.jetbrains.annotations.Nullable;
 
 public interface BambooServerEnvironment {
     String getCurrentSidekick();
-
     String getBambooBaseUrl();
-
     @Nullable
     String getECSTaskRoleARN();
-
     List<HostFolderMapping> getHostFolderMappings();
 }
