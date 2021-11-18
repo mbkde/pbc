@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.ecs;
 
 public interface Constants extends com.atlassian.buildeng.ecs.scheduling.Constants {
@@ -26,7 +25,7 @@ public interface Constants extends com.atlassian.buildeng.ecs.scheduling.Constan
 
     long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
     String PLUGIN_JOB_KEY = "ecs-watchdog";
-
+    
     //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";

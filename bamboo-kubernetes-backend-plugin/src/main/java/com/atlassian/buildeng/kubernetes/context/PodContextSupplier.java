@@ -1,7 +1,9 @@
 package com.atlassian.buildeng.kubernetes.context;
 
 import com.atlassian.buildeng.kubernetes.Const;
+import com.atlassian.buildeng.kubernetes.KubernetesClient;
 import io.fabric8.kubernetes.api.model.Pod;
+
 import javax.annotation.Nonnull;
 
 public class PodContextSupplier implements ContextSupplier {

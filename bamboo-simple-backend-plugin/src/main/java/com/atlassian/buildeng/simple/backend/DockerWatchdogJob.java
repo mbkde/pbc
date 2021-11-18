@@ -34,8 +34,8 @@ public class DockerWatchdogJob implements PluginJob {
     public void execute(Map<String, Object> jobDataMap) {
         try {
             executeImpl(jobDataMap);
-        } catch (Throwable t) {
-            //this is throwable because of NoClassDefFoundError and alike.
+        } catch (Throwable t) { 
+            //this is throwable because of NoClassDefFoundError and alike. 
             // These are not Exception subclasses and actually
             // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
@@ -47,9 +47,9 @@ public class DockerWatchdogJob implements PluginJob {
         if (globalConfiguration == null) {
             throw new IllegalStateException();
         }
-
+        
         try {
-            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(), "ps", "-a", "--format", "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
+            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(), "ps", "-a", "--format",  "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
             globalConfiguration.decorateCommands(pb);
             Process p = pb.start();
             p.waitFor();
@@ -66,26 +66,26 @@ public class DockerWatchdogJob implements PluginJob {
                         .filter((PsItem t) -> t.isExited() && t.name.equals("bamboo-agent"))
                         .map((PsItem t) -> t.uuid)
                         .forEach((String t) -> {
-                            try {
-                                ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
-                                //yes. docker-compose up can pass -p and -f parameters but all other commands
-                                // rely on env variables to do the same (facepalm)
-                                globalConfiguration.decorateCommands(pb);
-                                rm.environment().put("COMPOSE_PROJECT_NAME", t);
-                                rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
-                                Process p2 = rm.inheritIO().start();
-                            } catch (IOException ex) {
-                                logger.error("Failed to run docker-compose down", ex);
-                            }
-                        });
-            }
+                    try {
+                        ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
+                        //yes. docker-compose up can pass -p and -f parameters but all other commands
+                        // rely on env variables to do the same (facepalm)
+                        globalConfiguration.decorateCommands(pb);
+                        rm.environment().put("COMPOSE_PROJECT_NAME", t);
+                        rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
+                        Process p2 = rm.inheritIO().start();
+                    } catch (IOException ex) {
+                        logger.error("Failed to run docker-compose down", ex);
+                    }
+                });
+            }        
         } catch (IOException ex) {
             logger.error("Failed to run docker commands", ex);
         } catch (InterruptedException ex) {
             logger.error("interrupted", ex);
         }
     }
-
+    
     private class PsItem {
         final String id;
         final String name;
@@ -98,7 +98,7 @@ public class DockerWatchdogJob implements PluginJob {
             this.status = status;
             this.uuid = uuid;
         }
-
+        
         boolean isExited() {
             return status.contains("Exited");
         }

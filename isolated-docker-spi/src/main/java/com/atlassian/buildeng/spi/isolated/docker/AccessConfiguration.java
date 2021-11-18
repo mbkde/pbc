@@ -28,12 +28,13 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
+
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
 public class AccessConfiguration {
-
+    
     //XXX interplugin dependency
     // these things can never ever change value, because they end up as part of export
     private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
@@ -42,7 +43,7 @@ public class AccessConfiguration {
 
 
     /**
-     * Constructs Configuration object for given key value pair.
+     * Constructs Configuration object for given key value pair. 
      * Assumes the keys relating to jobs/environments, not tasks.
      */
     @Nonnull
@@ -79,8 +80,8 @@ public class AccessConfiguration {
     private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
             Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE);
-            if (!map.isEmpty()) {
-                //not sure this condition is 100% reliable, when enabling and disabling
+            if (!map.isEmpty()) { 
+                //not sure this condition is 100% reliable, when enabling and disabling 
                 //the docker tab data will retain some config.
                 return forMap(map);
             }
@@ -165,7 +166,7 @@ public class AccessConfiguration {
     /**
      * Constructs Configuration object for given Environment.
      */
-    public static Configuration forEnvironment(Environment environment,
+    public static Configuration forEnvironment(Environment environment, 
             EnvironmentCustomConfigService environmentCustomConfigService) {
         return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
                 environment.getId()).getOrDefault(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE,

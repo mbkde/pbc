@@ -93,8 +93,8 @@ public class SummaryPanel implements WebPanel {
                             }
                     );
             ret.append("</dl>");
-            //TODO more information
-            //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
+//TODO more information
+//ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
         }
         return ret.toString();
     }

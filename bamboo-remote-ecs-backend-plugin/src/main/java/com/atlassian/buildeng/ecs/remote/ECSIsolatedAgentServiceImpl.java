@@ -53,15 +53,14 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.utils.URIBuilder;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
-    private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     static String PLUGIN_JOB_KEY = "ecs-remote-watchdog";
     static long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; //Reap once every 60 seconds
-
+    
     //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     static final String RESULT_PREFIX = "result.isolated.docker.";
     static final String RESULT_PART_TASKARN = "TaskARN";
@@ -72,12 +71,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final PluginScheduler pluginScheduler;
     private final PluginAccessor pluginAccessor;
 
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration,
-                                       PluginScheduler pluginScheduler, PluginAccessor pluginAccessor) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, 
+            PluginScheduler pluginScheduler, PluginAccessor pluginAccessor) {
         this.globalConfiguration = globalConfiguration;
         this.pluginScheduler = pluginScheduler;
         this.pluginAccessor = pluginAccessor;
     }
+
 
 
     @Override
@@ -90,12 +90,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         try {
             IsolatedDockerAgentResult result =
                     resource
-                            .accept(MediaType.APPLICATION_JSON_TYPE)
-                            .type(MediaType.APPLICATION_JSON_TYPE)
-                            .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
+                        .accept(MediaType.APPLICATION_JSON_TYPE)
+                        .type(MediaType.APPLICATION_JSON_TYPE)
+                        .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
             logger.info("result:" + result.isRetryRecoverable() + " " + result.getErrors() + " " + result.getCustomResultData());
             callback.handle(result);
-        } catch (UniformInterfaceException e) {
+        }
+        catch (UniformInterfaceException e) {
             int code = e.getResponse().getClientResponseStatus().getStatusCode();
             String s = "";
             if (e.getResponse().hasEntity()) {
@@ -129,7 +130,6 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    @NotNull
     public Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String taskArn = customData.get(RESULT_PREFIX + RESULT_PART_TASKARN);
         if (taskArn == null) {
@@ -137,7 +137,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         }
         Stream<String> s = Stream.concat(
                 Stream.of(AGENT_CONTAINER_NAME),
-                configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
+                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
         return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
                 URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
@@ -162,9 +162,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
             try {
                 resource
-                        .type(MediaType.APPLICATION_JSON_TYPE)
-                        .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
-            } catch (UniformInterfaceException e) {
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
+            }
+            catch (UniformInterfaceException e) {
                 int code = e.getResponse().getClientResponseStatus().getStatusCode();
                 String s = "";
                 if (e.getResponse().hasEntity()) {

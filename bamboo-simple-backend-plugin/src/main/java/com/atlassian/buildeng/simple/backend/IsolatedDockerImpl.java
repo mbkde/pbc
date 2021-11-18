@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.simple.backend;
 
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
@@ -61,12 +60,12 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     static String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
-     * The environment variable to override on the agent per server.
+     * The environment variable to override on the agent per server
      */
     static String ENV_VAR_SERVER = "BAMBOO_SERVER";
-
+    
     /**
-     * The environment variable to set the result spawning up the agent.
+     * The environment variable to set the result spawning up the agent
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
 
@@ -79,9 +78,9 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     private final GlobalConfiguration globalConfiguration;
     private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
+    
 
-
-    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor,
+    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, 
             PluginScheduler pluginScheduler, GlobalConfiguration globalConfiguration,
             PluginAccessor pluginAccessor) {
         this.admConfAccessor = admConfAccessor;
@@ -89,7 +88,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         this.globalConfiguration = globalConfiguration;
         this.pluginAccessor = pluginAccessor;
     }
-
+    
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
         Configuration config = request.getConfiguration();
@@ -131,7 +130,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         root.put("volumes", volumes);
         root.put("services", services);
         root.put("version", "2");
-
+        
         Map<String, Object> buildDirVolume = new HashMap<>();
         buildDirVolume.put("driver", "local");
         volumes.put(BUILD_DIR_VOLUME_NAME, buildDirVolume);
@@ -155,7 +154,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         agent.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
         agent.put("volumes", agentVolumes);
         services.put("bamboo-agent", agent);
-
+        
         Config gc = globalConfiguration.getDockerConfig();
         if (gc.isSidekickImage()) {
             Map<String, Object> sidekick = new HashMap<>();
@@ -169,9 +168,9 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
                 agentVolumes.add(path + ":/buildeng");
             }
         }
-
+        
         final List<String> links = new ArrayList<>();
-
+        
         config.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             Map<String, Object> toRet = new HashMap<>();
             toRet.put("image", t.getImage());
@@ -197,7 +196,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         if (!links.isEmpty()) {
             agent.put("links", links);
         }
-
+        
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setIndent(4);
@@ -217,11 +216,11 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     public void onStop() {
         pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
     }
-
+    
     private boolean isDockerInDockerImage(String image) {
         return image.contains("docker:") && image.endsWith("dind");
     }
-
+    
     public List<HostFolderMapping> getHostFolderMappings() {
         return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
                 .map((HostFolderMappingModuleDescriptor t) -> t.getModule())

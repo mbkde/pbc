@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.ecs.resources;
 
 import com.atlassian.buildeng.ecs.api.Heartbeat;
+
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

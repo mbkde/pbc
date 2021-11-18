@@ -59,9 +59,7 @@ public class TaskDefinitionRegistrations {
     //TODO this should be refactored to no expose the internal structure at all.
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
-
         Map<String, Integer> getAllECSTaskRegistrations();
-
         void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings);
     }
 
@@ -102,8 +100,8 @@ public class TaskDefinitionRegistrations {
     }
 
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration,
-                                                                      ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
+    public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, 
+            ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
         ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
         ContainerDefinition main = withLogDriver(withGlobalEnvVars(
                 new ContainerDefinition()
@@ -166,10 +164,10 @@ public class TaskDefinitionRegistrations {
 
     private static String createRegisterTaskDefinitionString(Configuration configuration, ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
         RegisterTaskDefinitionRequestProtocolMarshaller rtdm = new RegisterTaskDefinitionRequestProtocolMarshaller(new com.amazonaws.protocol.json.SdkJsonProtocolFactory(
-                new JsonClientMetadata()
-                        .withProtocolVersion("1.1")
-                        .withSupportsCbor(false)
-                        .withSupportsIon(false)));
+            new JsonClientMetadata()
+                    .withProtocolVersion("1.1")
+                    .withSupportsCbor(false)
+                    .withSupportsIon(false)));
         Request<RegisterTaskDefinitionRequest> rr = rtdm.marshall(taskDefinitionRequest(configuration, globalConfiguration, env));
         try {
             return Streams.asString(rr.getContent(), "UTF-8");
@@ -178,15 +176,13 @@ public class TaskDefinitionRegistrations {
             return null;
         }
     }
-
-    /**
+  /**
      * Synchronously register a docker image to be used with isolated docker builds
      *
      * @param configuration The configuration to register
      * @return The internal identifier for the registered image.
      */
     private static final Object registerLock = new Object();
-
     public int registerDockerImage(Configuration configuration, BambooServerEnvironment env) throws ECSException {
         synchronized (registerLock) {
             Map<String, Integer> registrationMappings = backend.getAllECSTaskRegistrations();
@@ -203,7 +199,7 @@ public class TaskDefinitionRegistrations {
             return revision;
         }
     }
-
+    
     private Integer registerDockerImageECS(Configuration configuration, BambooServerEnvironment env) throws ECSException {
         try {
             RegisterTaskDefinitionRequest req = TaskDefinitionRegistrations.taskDefinitionRequest(configuration, ecsConfiguration, env);
@@ -213,10 +209,8 @@ public class TaskDefinitionRegistrations {
             throw new ECSException(e);
         }
     }
-
-    /**
-     * find task definition registration for given configuration.
-     *
+ /**
+     * find task definition registration for given configuration
      * @param configuration conf to use
      * @return either the revision or -1 when not found
      */

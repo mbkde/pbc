@@ -22,11 +22,13 @@ public final class StoppedState {
     private final String reason;
     private final String arn;
 
-    public StoppedState(String arn, String containerArn, String reason) {
+    public StoppedState(String arn, String containerArn, String reason ) {
         this.containerArn = containerArn;
         this.reason = reason;
         this.arn = arn;
     }
+
+
 
     public String getArn() {
         return arn;
@@ -39,4 +41,5 @@ public final class StoppedState {
     public String getContainerArn() {
         return containerArn;
     }
+
 }

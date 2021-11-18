@@ -56,16 +56,19 @@ limitations under the License.
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-api</artifactId>
+            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>
+            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-agent-core</artifactId>
+            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -98,11 +101,13 @@ limitations under the License.
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+            <version>1.16</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-web</artifactId>
+            <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

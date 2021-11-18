@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.atlassian.buildeng.simple.backend;
 
 import com.atlassian.buildeng.simple.backend.rest.Config;
@@ -33,13 +32,13 @@ import javax.ws.rs.core.Response;
 @WebSudoRequired
 @Path("/")
 public class Rest {
-
+ 
     private final GlobalConfiguration globalConfiguration;
 
     public Rest(GlobalConfiguration globalConfiguration) {
         this.globalConfiguration = globalConfiguration;
     }
-
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/config")
