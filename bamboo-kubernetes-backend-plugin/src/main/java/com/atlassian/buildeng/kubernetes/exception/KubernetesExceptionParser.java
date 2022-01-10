@@ -11,9 +11,11 @@ public class KubernetesExceptionParser {
      */
     public KubectlException map(String errorMessage, ShellException exception) {
         String stdout = exception.getStdout();
+        String stderr = exception.getStderr();
+        String args = exception.getArgumentsAsString();
 
-        if (stdout == null) {
-            return new KubectlException(errorMessage, exception);
+        if (stdout == null && stderr == null) {
+            return new KubectlException(errorMessage + " \n ARGS: " + args, exception);
         }
 
         if (stdout.contains("Operation cannot be fulfilled on resourcequotas \"pod-limit\": the object has been modified")) {
@@ -27,6 +29,6 @@ public class KubernetesExceptionParser {
             return new PodAlreadyExistsException("pod already exists");
         }
 
-        return new KubectlException(errorMessage, exception);
+        return new KubectlException(errorMessage + " \nARGS: " + args + " \nSTDOUT: " + stdout + " \nSTDERR: " + stderr, exception);
     }
 }
