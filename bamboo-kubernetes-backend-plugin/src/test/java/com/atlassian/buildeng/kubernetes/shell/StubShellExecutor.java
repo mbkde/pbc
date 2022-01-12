@@ -42,14 +42,15 @@ public class StubShellExecutor implements ShellExecutor {
             throw new ShellException("Non-zero exit code",
                     stdout,
                     stderr,
-                    response.getReturnCode());
+                    response.getReturnCode(),
+                    args);
         }
 
         try {
             byte[] bytes = Files.readBytes(getClass().getResourceAsStream(response.getStdout()));
             return responseMapper.map(bytes);
         } catch (DeserializationException | IOException e) {
-            throw new ShellException("Unable to parse kubectl response", e.getMessage(), "", 0);
+            throw new ShellException("Unable to parse kubectl response", e.getMessage(), "", 0, args);
         }
     }
 
