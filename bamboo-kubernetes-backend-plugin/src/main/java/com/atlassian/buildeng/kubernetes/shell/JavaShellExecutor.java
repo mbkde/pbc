@@ -34,8 +34,8 @@ public class JavaShellExecutor implements ShellExecutor {
                         "Non-zero exit code",
                         IOUtils.toString(data, "UTF-8"),
                         IOUtils.toString(process.getErrorStream(), Charsets.UTF_8),
-                        ret
-                );
+                        ret,
+                        args);
             }
 
             logger.debug("mapping response for exit code {}", ret);
@@ -43,11 +43,14 @@ public class JavaShellExecutor implements ShellExecutor {
             logger.debug("mapping response finished");
             return output;
         } catch (DeserializationException x) {
-            throw new ShellException("Unable to parse kubectl response", x.getMessage(), "", 0);
+            throw new ShellException("Unable to parse kubectl response", x.getMessage(), "", 0, args);
         } catch (IOException | InterruptedException x) {
-            throw new ShellException("" + x.getMessage(), x);
+            throw new ShellException("" + x.getMessage(), x, args);
         } catch (Exception e) {
-            logger.error("Exception while executing shell", e);
+            // Ensure we don't double log the ShellException we just manually threw
+            if (!(e instanceof ShellException)) {
+                logger.error("Unknown exception while executing shell", e);
+            }
             throw e;
         }
     }

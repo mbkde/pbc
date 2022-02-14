@@ -1,6 +1,7 @@
 package com.atlassian.buildeng.kubernetes.exception;
 
 import com.atlassian.buildeng.kubernetes.shell.ShellException;
+import java.util.Collections;
 import org.junit.Test;
 
 public class KubernetesExceptionParserTest {
@@ -26,6 +27,6 @@ public class KubernetesExceptionParserTest {
     }
 
     private ShellException withErrorInStdout(String message) {
-        return new ShellException("some error", message, "", 1);
+        return new ShellException("some error", message, "", 1, Collections.emptyList());
     }
 }
