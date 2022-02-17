@@ -45,6 +45,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
+
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
@@ -66,16 +68,16 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
-    
     private final Map<String, Integer> cpuSizes = new HashMap<>();
     private final Map<String, Integer> memorySizes = new HashMap<>();
     private final Map<String, Integer> memoryLimitSizes = new HashMap<>();
     private final Map<String, String> labelSizes = new HashMap<>();
     private final ContainerSizeDescriptor defaults = new DefaultContainerSizeDescriptor();
-    
+//    private final com.atlassian.buildeng.isolated.docker.GlobalConfiguration isolatedDockerGlobalConfig;
+
 
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
-                               AdministrationConfigurationAccessor admConfAccessor, 
+                               AdministrationConfigurationAccessor admConfAccessor,
                                BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
@@ -86,11 +88,11 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     public String getBambooBaseUrl() {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
     }
-    
+
     public ContainerSizeDescriptor getSizeDescriptor() {
         return this;
     }
-    
+
     /**
      * Strips characters from bamboo baseurl to conform to kubernetes label values.
      * @return value conforming to kube label value constraints.
@@ -98,7 +100,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     public String getBambooBaseUrlAskKubeLabel() {
         return stripLabelValue(getBambooBaseUrl());
     }
-    
+
     static String stripLabelValue(String value) {
         return value.replaceAll("[^-A-Za-z0-9_.]", "");
     }
@@ -113,7 +115,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     public String getCurrentContext() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT);
     }
-    
+
     /**
      * use cluster registry to dynamically discover current clusters.
      */
@@ -122,14 +124,14 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 BANDANA_USE_CLUSTER_REGISTRY);
         return val != null ? val : false;
     }
-    
+
     public String getClusterRegistryAvailableClusterSelector() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
     }
-    
+
     public String getClusterRegistryPrimaryClusterSelector() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
     }
 
@@ -221,7 +223,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             Preconditions.checkArgument(StringUtils.isNotBlank(availableSelector), "Clu");
             Preconditions.checkArgument(StringUtils.isNotBlank(primarySelector), "Clu");
         }
-        
+
         if (!StringUtils.equals(sidekick, getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), sidekick);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, sidekick);
@@ -261,31 +263,31 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             }
         }
         if (isUseClusterRegistry() != useClusterRegistry) {
-            auditLogEntry("PBC Kubernetes Cluster Registry", 
+            auditLogEntry("PBC Kubernetes Cluster Registry",
                     Boolean.toString(isUseClusterRegistry()), Boolean.toString(useClusterRegistry));
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                     BANDANA_USE_CLUSTER_REGISTRY, useClusterRegistry);
-            
+
         }
         if (!StringUtils.equals(availableSelector, getClusterRegistryAvailableClusterSelector())) {
-            auditLogEntry("PBC Kubernetes Cluster Registry Available Cluster Label Selector", 
+            auditLogEntry("PBC Kubernetes Cluster Registry Available Cluster Label Selector",
                     getClusterRegistryAvailableClusterSelector(), availableSelector);
             if (StringUtils.isBlank(availableSelector)) {
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR, availableSelector);
             }
         }
         if (!StringUtils.equals(primarySelector, getClusterRegistryPrimaryClusterSelector())) {
-            auditLogEntry("PBC Kubernetes Cluster Registry primary Cluster Label Selector", 
+            auditLogEntry("PBC Kubernetes Cluster Registry primary Cluster Label Selector",
                     getClusterRegistryPrimaryClusterSelector(), primarySelector);
             if (StringUtils.isBlank(primarySelector)) {
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
             }
         }
@@ -299,8 +301,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     /**
      * There is a REST endpoint to specifically update current context as this needs to be done automatically across
      * multiple Bamboo servers.
-     * 
-     * @param currentContext non null value of the new context, empty/blank value means reset 
+     *
+     * @param currentContext non null value of the new context, empty/blank value means reset
      *                       to whatever is the default context
      */
     public void persistCurrentContext(String currentContext) {
@@ -308,7 +310,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         if (!StringUtils.equals(currentContext, getCurrentContext())) {
             auditLogEntry("PBC Kubernetes Current Context", getCurrentContext(), currentContext);
             if (StringUtils.isNotBlank(currentContext))  {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CURRENT_CONTEXT, currentContext.trim());
             } else {
                 //rely on default context in .kube/config.
@@ -318,7 +320,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, 
+        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null,
                 AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
     }
@@ -331,7 +333,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 StringWriter writer = new StringWriter();
                 IOUtils.copy(is, writer, "UTF-8");
                 return writer.toString();
-            } 
+            }
         }
         return template;
     }
@@ -379,7 +381,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     private void validateContainerSizes(String containerSizes) throws IllegalArgumentException {
         JsonParser parser = new JsonParser();
         JsonElement root = parser.parse(containerSizes);
-        Preconditions.checkArgument(root.isJsonObject() 
+        Preconditions.checkArgument(root.isJsonObject()
                 && root.getAsJsonObject().has("main")
                 && root.getAsJsonObject().has("extra"), "Required root json object with 'main' and 'extra' fields");
         JsonElement main = root.getAsJsonObject().get("main");
@@ -395,7 +397,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             Preconditions.checkArgument(t.isJsonObject(), "Field 'extra' to contain objects");
             validateObject(t);
             Configuration.ExtraContainerSize.valueOf(t.getAsJsonObject().getAsJsonPrimitive("name").getAsString());
-        });        
+        });
     }
 
     private void validateObject(JsonElement t) {
@@ -415,8 +417,26 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             Yaml rawYaml = new Yaml(new SafeConstructor());
             Map<String, Object> yaml = (Map<String, Object>) rawYaml.load(architectureConfig);
 
-            Preconditions.checkArgument(yaml.containsKey("default"), "Must contain a default architecture!");
-            Preconditions.checkArgument(yaml.containsKey(Objects.requireNonNull(yaml.get("default"))), "Specified default architecture does not exist in configuration!");
+            Preconditions.checkArgument(yaml.containsKey(DEFAULT_ARCHITECTURE),
+                    "Must specify a default architecture!");
+            Preconditions.checkArgument(yaml.containsKey(Objects.requireNonNull(yaml.get(DEFAULT_ARCHITECTURE))),
+                    "Specified default architecture does not exist in configuration!");
+
+
+            // TODO: Ideally we would also check that the configuration here matches the Architecture List configured in
+            //  bamboo-isolated-docker-plugin, but the wiring for this proves to be messy with the old plugin framework
+
+            // Ensure each architecture has a "config" sub-key
+            for (Map.Entry<String, Object> arch : yaml.entrySet()) {
+                if (!arch.getKey().equals(DEFAULT_ARCHITECTURE)) {
+                    Preconditions.checkArgument(arch.getValue() instanceof Map,
+                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!." +
+                                    " Please fix the entry: " + arch.getKey());
+                    Preconditions.checkArgument(((Map<String, Object>) arch.getValue()).containsKey("config"),
+                            "Each architecture must contain a sub-key 'config'! Please fix the entry: "
+                                    + arch.getKey());
+                }
+            }
         }
     }
 
@@ -437,7 +457,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         } catch (IOException ex) {
             Logger.getLogger(GlobalConfiguration.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
     }
 
     private void processEntry(JsonElement t, String prefix) {
@@ -449,6 +469,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         memoryLimitSizes.put(key, obj.getAsJsonPrimitive("memoryLimit").getAsInt());
         labelSizes.put(key, obj.getAsJsonPrimitive("label").getAsString());
     }
-    
-    
+
+
 }

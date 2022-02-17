@@ -13,9 +13,6 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
 
 <h2>Kubernetes configuration</h2>
 
-<div id="errorMessage">
-</div>
-
 <form id="setRemoteConfig" class="aui">
     <fieldset>
 
@@ -80,13 +77,13 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             <textarea type="text" style="height: 200px" class="textarea long-field" id="architecturePodConfig"></textarea>
             <div class="description" id="desc-architecturePodConfig">
                 Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
-                be name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br><br>
+                be name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
 
                 If you require no extra config, use an empty map {}. The architectures specified here <strong>must</strong> match those
-                specified in the PBC General settings.<br><br>
+                specified in the PBC General settings.<br>
 
-                Add a "default" key at the top level specify which architecture is default, if no architecture is specified
-                (this ensures backwards compatibility; newly created plans will require an architecture).<br><br>
+                You must specify a "default" key at the top level which specifies which architecture is default in the case
+                no architecture is specified. This ensures backwards compatibility; newly created plans will require an architecture.<br><br>
 
                 Example:
                 <pre><code>
@@ -136,6 +133,9 @@ arm64:
                 URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants 
                 in the URL will be replaced with actual values.
             </div>
+        </div>
+
+        <div id="errorMessage">
         </div>
 
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>

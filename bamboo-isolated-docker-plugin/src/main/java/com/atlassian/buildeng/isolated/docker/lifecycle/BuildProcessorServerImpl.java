@@ -75,9 +75,11 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     private BuildContext buildContext;
     private AgentRemovals agentRemovals;
     private BuildExecutionManager buildExecutionManager;
+    private Validator validator;
 
     //setters here for components, otherwise the parent fields don't get injected.
-    public BuildProcessorServerImpl() {
+    public BuildProcessorServerImpl(Validator validator) {
+        this.validator = validator;
     }
 
     public AgentRemovals getAgentRemovals() {
@@ -200,7 +202,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             // and the infra is not calling it either. Doing it here for the lack of a better place.
             specsProperties.validate();
             ErrorCollection errorCollection = new SimpleErrorCollection();
-            Validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
+            validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
                     specsProperties.getArchitecture(), toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
             if (errorCollection.hasAnyErrors()) {
                 throw new PropertiesValidationException(

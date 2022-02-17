@@ -54,7 +54,7 @@ public final class Configuration {
      * The available suffixes are .[container_name].memory and .[container_name].memoryLimit
      * The main container's name is 'bamboo-agent', for extra containers the name equals the one configured by user.
      */
-    public static final String DOCKER_IMAGE_DETAIL = PROPERTY_PREFIX + ".imageDetail"; 
+    public static final String DOCKER_IMAGE_DETAIL = PROPERTY_PREFIX + ".imageDetail";
 
     public static int DOCKER_MINIMUM_MEMORY = 4;
 
@@ -100,6 +100,11 @@ public final class Configuration {
         return !StringUtils.isEmpty(awsRole);
     }
 
+    /**
+     * Getter for the architecture of a build/deployment. It shouldn't be possible to receive an empty or blank string
+     * here, since the only constructor of the Configuration class guards against this, but always use
+     * {@link #isArchitectureDefined()} to check whether it is defined before trying to fetch the architecture
+     */
     public String getArchitecture() {
         return architecture;
     }

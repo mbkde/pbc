@@ -113,6 +113,9 @@ limitations under the License.
     <component key="globalConfiguration" class="com.atlassian.buildeng.isolated.docker.GlobalConfiguration">
     </component>
 
+    <component key="validator" class="com.atlassian.buildeng.isolated.docker.Validator">
+    </component>
+
     <web-resource key="config-js">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>

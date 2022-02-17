@@ -18,6 +18,7 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
+import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
 import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
@@ -122,24 +123,41 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
             Map<String, Object> finalPod;
 
+/*
+default: arm64
+amd64:
+  config: {}
+arm64:
+  config:
+    spec:
+      nodeSelector:
+        customer: buildeng-arm64
+      tolerations:
+        - key: customer
+          value: buildeng-arm64
+ */
+
+
             if (archConfig.isEmpty()) {
                 finalPod = podWithoutArchOverrides;
             } else {
                 if (request.getConfiguration().isArchitectureDefined()) {
                     String architecture = request.getConfiguration().getArchitecture();
-                    if (architecture.equals("default")) {
-                        finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(archConfig.get("default")));
-                    }
-                    else if (archConfig.containsKey(architecture)) {
-                        finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(architecture));
-                    }
-                    else {
+                    if (architecture.equals(DEFAULT_ARCHITECTURE)) { // If the architecture requested is the DEFAULT key
+                        finalPod = mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
+                                getDefaultArchitectureName(archConfig)));
+                    } else if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
+                        finalPod = mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
+                    } else {
                         throw new IllegalArgumentException("Architecture specified in build config was not found in server's allowed architectures!");
                     }
-                } else {
-                    finalPod = mergeMap(podWithoutArchOverrides, (Map<String, Object>) archConfig.get(archConfig.get("default")));
+                } else { // Architecture is not specified at all
+                    finalPod = mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
+                            getDefaultArchitectureName(archConfig)));
                 }
             }
+
+            logger.info(finalPod.toString());
 
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
@@ -229,8 +247,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
         if (StringUtils.isBlank(archConfig)) {
             return Collections.emptyMap();
-        }
-        else {
+        } else {
             Yaml yaml = new Yaml(new SafeConstructor());
             return (Map<String, Object>) yaml.load(archConfig);
         }
@@ -353,17 +370,24 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-            try {
-                URIBuilder bb = new URIBuilder(resolvedUrl);
-                return Pair.make(t, bb.build().toURL());
-            } catch (URISyntaxException | MalformedURLException ex) {
-                logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL) null);
-            }
-        }).filter((Pair t) -> t.getSecond() != null)
+                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+                    try {
+                        URIBuilder bb = new URIBuilder(resolvedUrl);
+                        return Pair.make(t, bb.build().toURL());
+                    } catch (URISyntaxException | MalformedURLException ex) {
+                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        return Pair.make(t, (URL) null);
+                    }
+                }).filter((Pair t) -> t.getSecond() != null)
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
+    private Map<String, Object> getSpecificArchConfig(Map<String, Object> archConfig, String s) {
+        return (Map<String, Object>) ((Map<String, Object>) archConfig.get(s)).get("config");
+    }
+
+    private String getDefaultArchitectureName(Map<String, Object> archConfig) {
+        return (String) archConfig.get(DEFAULT_ARCHITECTURE);
+    }
 
 }

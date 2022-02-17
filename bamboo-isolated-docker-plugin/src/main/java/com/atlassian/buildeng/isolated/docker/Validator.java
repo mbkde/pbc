@@ -28,12 +28,17 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 
 public class Validator {
+    private final GlobalConfiguration globalConfiguration;
+
+    public Validator(GlobalConfiguration globalConfiguration) {
+        this.globalConfiguration = globalConfiguration;
+    }
 
     /**
      * Validate configuration.
      * Errors are collected in ErrorCollection parameter passed in.
      */
-    public static void validate(String image, String size, String role, String architecture, String extraCont,
+    public void validate(String image, String size, String role, String architecture, String extraCont,
             ErrorCollection errorCollection, boolean task) {
         if (role != null) {
             if (!StringUtils.deleteWhitespace(role).equals(role)) {
@@ -43,6 +48,13 @@ public class Validator {
                 errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                     "AWS IAM Role doesn't match ARN pattern.");
             }
+        }
+
+        if (StringUtils.isNotBlank(architecture) && !(globalConfiguration.getArchitectureList().contains(architecture))) {
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_ARCHITECTURE :
+                            Configuration.DOCKER_ARCHITECTURE,
+                    "Specified architecture is not supported on this server. Supported architectures: "
+                            + globalConfiguration.getArchitectureList().toString());
         }
 
         validateExtraContainers(extraCont, errorCollection);

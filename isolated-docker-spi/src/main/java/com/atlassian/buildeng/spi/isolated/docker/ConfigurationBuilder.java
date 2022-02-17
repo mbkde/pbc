@@ -18,6 +18,7 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 public final class ConfigurationBuilder {
     
@@ -67,7 +68,9 @@ public final class ConfigurationBuilder {
     }
 
     public ConfigurationBuilder withArchitecture(String architecture) {
-        this.architecture = architecture;
+        if (StringUtils.isNotBlank(architecture)) {
+            this.architecture = architecture;
+        }
         return this;
     }
     

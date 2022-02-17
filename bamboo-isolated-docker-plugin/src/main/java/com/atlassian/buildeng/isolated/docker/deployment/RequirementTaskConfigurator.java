@@ -44,10 +44,12 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
     private final DockerHandlerImpl dockerHandler;
+    private final Validator validator;
 
-    private RequirementTaskConfigurator(TextProvider textProvider, DockerHandlerImpl dockerHandler) {
+    private RequirementTaskConfigurator(TextProvider textProvider, DockerHandlerImpl dockerHandler, Validator validator) {
         this.textProvider = textProvider;
         this.dockerHandler = dockerHandler;
+        this.validator = validator;
     }
 
     @NotNull
@@ -95,7 +97,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
         String role = params.getString(Configuration.TASK_DOCKER_AWS_ROLE);
         String architecture = params.getString(Configuration.TASK_DOCKER_ARCHITECTURE);
-        Validator.validate(image, size, role, architecture, extraCont, errorCollection, true);
+        validator.validate(image, size, role, architecture, extraCont, errorCollection, true);
     }
     
 

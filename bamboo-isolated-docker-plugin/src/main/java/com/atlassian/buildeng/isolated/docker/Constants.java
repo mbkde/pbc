@@ -39,4 +39,11 @@ public interface Constants {
      * if an error occurred creating an agent for a build.
      */
     Duration RETRY_DELAY = Duration.ofSeconds(20);
+
+    /**
+     * Key of the default architecture in the architecture list {@link com.atlassian.buildeng.isolated.docker.rest.Config#architectureList}
+     * This is used in determining the architecture a build should be used when unspecified.
+     */
+    public static final String DEFAULT_ARCHITECTURE = "default";
+
 }

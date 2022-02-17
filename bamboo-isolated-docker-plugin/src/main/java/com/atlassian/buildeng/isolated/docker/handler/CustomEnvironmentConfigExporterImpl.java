@@ -52,9 +52,15 @@ import org.jetbrains.annotations.Nullable;
 
 public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentConfigPluginExporter {
 
+    private final Validator validator;
+
     // these things can never ever change value, because they end up as part of export
     static final String ENV_CONFIG_MODULE_KEY =
             "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
+
+    public CustomEnvironmentConfigExporterImpl(Validator validator) {
+        this.validator = validator;
+    }
 
     @NotNull
     @Override
@@ -123,7 +129,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             }
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
-                Validator.validate(image, size, awsRole, architecture, extraCont, coll, false);
+                validator.validate(image, size, awsRole, architecture, extraCont, coll, false);
                 return coll.getAllErrorMessages().stream()
                         .map(ValidationProblem::new)
                         .collect(Collectors.toList());
@@ -133,7 +139,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
-            Validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
+            validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
                     pbc.getArchitecture(), BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
             return coll.getAllErrorMessages().stream()
                     .map(ValidationProblem::new)

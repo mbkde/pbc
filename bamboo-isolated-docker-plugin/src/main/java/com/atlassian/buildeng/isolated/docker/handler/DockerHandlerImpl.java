@@ -44,10 +44,12 @@ import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.elements.ResourceLocation;
 import com.atlassian.plugin.webresource.WebResourceManager;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.configuration.HierarchicalConfiguration;
@@ -67,6 +69,7 @@ public class DockerHandlerImpl implements DockerHandler {
     private final WebResourceManager webResourceManager;
     private final EnvironmentRequirementService environmentRequirementService;
     private final GlobalConfiguration globalConfiguration;
+    private final Validator validator;
 
     /**
      * Creates new stateful instance.
@@ -76,7 +79,7 @@ public class DockerHandlerImpl implements DockerHandler {
                              TemplateRenderer templateRenderer,
                              EnvironmentCustomConfigService environmentCustomConfigService,
                              EnvironmentRequirementService environmentRequirementService,
-                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration) {
+                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration, Validator validator) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
@@ -85,6 +88,7 @@ public class DockerHandlerImpl implements DockerHandler {
         this.configuration = configuration;
         this.webResourceManager = webResourceManager;
         this.globalConfiguration = globalConfiguration;
+        this.validator = validator;
     }
 
     
@@ -124,7 +128,7 @@ public class DockerHandlerImpl implements DockerHandler {
         }
         String enabled = (String) webFragmentsContextMap.get(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
-        Validator.validate(image, size, role, architecture, extraCont, errs, false);
+        validator.validate(image, size, role, architecture, extraCont, errs, false);
         return errs;
     }
 
@@ -328,8 +332,25 @@ public class DockerHandlerImpl implements DockerHandler {
 
     @NotNull
     public Collection<Pair<String, String>> getArchitectures() {
-        return this.globalConfiguration.getArchitectureList().stream()
+        List<String> archList = globalConfiguration.getArchitectureList();
+
+        List<Pair<String, String>> displayedArchList = archList.stream()
                 .map(arch -> Pair.make(arch, arch))
                 .collect(Collectors.toList());
+
+        // If an architecture is not in the list of globally configured architectures, we should still show it
+        // (e.g. An arch was previously supported but now removed)
+        String architecture = configuration.getArchitecture();
+        if (StringUtils.isNotBlank(architecture) && !archList.contains(architecture)) {
+            if (displayedArchList.size() == 0) {
+                // If we reach in here, it means the server has no configured options for architecture, but the user has
+                // a job that has an architecture defined. Add an extra option for them to remove their current
+                // architecture specification.
+                displayedArchList.add(Pair.make(null, "<select this option to remove any architecture>"));
+            }
+            displayedArchList.add(Pair.make(architecture, architecture + " <not supported on this server>"));
+        }
+
+        return displayedArchList;
     }
 }

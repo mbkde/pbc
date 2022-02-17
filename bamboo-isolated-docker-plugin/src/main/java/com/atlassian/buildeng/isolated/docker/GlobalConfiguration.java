@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -69,8 +69,13 @@ public class GlobalConfiguration {
     }
 
     public List<String> getArchitectureList() {
+        /*
+        Return an unmodifiable view of the arch list, since the reference that Bandana will provide is the actual list
+        where the data is stored and can be modified! Any changes to the original list will be reflected globally
+        (including in the UI!)
+         */
         List<String> architectureList = (List<String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_LIST);
-        return architectureList != null ? architectureList : Collections.emptyList();
+        return architectureList != null ? Collections.unmodifiableList(architectureList) : Collections.emptyList();
     }
 
     /**
@@ -95,7 +100,11 @@ public class GlobalConfiguration {
             auditLogEntry("PBC Architectures supported",
                     getArchitectureListAsString(), architectureList);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_LIST, StringUtils.isNotBlank(architectureList) ? new ArrayList<>(Arrays.asList(architectureList.split(","))) : null);
+                    BANDANA_ARCHITECTURE_LIST, StringUtils.isNotBlank(architectureList) ?
+                            Arrays.stream(architectureList.split(","))
+                                    .map(String::trim)
+                                    .collect(Collectors.toCollection(ArrayList::new)) :
+                            null);
         }
     }
 
