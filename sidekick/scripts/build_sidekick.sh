@@ -123,6 +123,7 @@ fi
 ############################
 # Capability management
 cp 'files/bamboo-update-capability' "${volume_path}"
+cp 'files/bamboo-update-capability' "${volume_path}/bamboo-update-capability.sh"
 # Agent startup
 cp 'files/run-agent.sh' "${volume_path}"
 
