@@ -26,7 +26,7 @@ import java.util.List;
 public class Config {
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
-    public String architectureList;
+    public String architectureConfig;
 
     public Config() {
     }
@@ -45,12 +45,12 @@ public class Config {
         this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
     }
 
-    public String getArchitectureList() {
-        return architectureList;
+    public String getArchitectureConfig() {
+        return architectureConfig;
     }
 
-    public void setArchitectureList(String architectureList) {
-        this.architectureList = architectureList;
+    public void setArchitectureConfig(String architectureConfig) {
+        this.architectureConfig = architectureConfig;
     }
 
 }

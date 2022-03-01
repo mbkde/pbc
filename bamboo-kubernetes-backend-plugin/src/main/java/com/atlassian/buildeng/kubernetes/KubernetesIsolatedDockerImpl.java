@@ -18,6 +18,7 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
+import com.atlassian.bandana.BandanaManager;
 import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
 import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
@@ -86,14 +87,17 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
+    private final BandanaManager bandanaManager;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
                                         PluginScheduler pluginScheduler,
                                         KubeJmxService kubeJmxService,
-                                        SubjectIdService subjectIdService) {
+                                        SubjectIdService subjectIdService,
+                                        BandanaManager bandanaManager) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
+        this.bandanaManager = bandanaManager;
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(5, 5,
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
@@ -119,45 +123,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
             Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
 
-            Map<String, Object> archConfig = loadArchitectureConfig();
-
-            Map<String, Object> finalPod;
-
-/*
-default: arm64
-amd64:
-  config: {}
-arm64:
-  config:
-    spec:
-      nodeSelector:
-        customer: buildeng-arm64
-      tolerations:
-        - key: customer
-          value: buildeng-arm64
- */
-
-
-            if (archConfig.isEmpty()) {
-                finalPod = podWithoutArchOverrides;
-            } else {
-                if (request.getConfiguration().isArchitectureDefined()) {
-                    String architecture = request.getConfiguration().getArchitecture();
-                    if (architecture.equals(DEFAULT_ARCHITECTURE)) { // If the architecture requested is the DEFAULT key
-                        finalPod = mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
-                                getDefaultArchitectureName(archConfig)));
-                    } else if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
-                        finalPod = mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
-                    } else {
-                        throw new IllegalArgumentException("Architecture specified in build config was not found in server's allowed architectures!");
-                    }
-                } else { // Architecture is not specified at all
-                    finalPod = mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
-                            getDefaultArchitectureName(archConfig)));
-                }
-            }
-
-            logger.info(finalPod.toString());
+            Map<String, Object> finalPod = addArchitectureOverrides(request, podWithoutArchOverrides);
 
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
@@ -204,6 +170,34 @@ arm64:
             } else {
                 logger.error("unknown error", e);
                 callback.handle(new IsolatedDockerAgentException(e));
+            }
+        }
+    }
+
+    @VisibleForTesting
+    Map<String, Object> addArchitectureOverrides(IsolatedDockerAgentRequest request, Map<String, Object> podWithoutArchOverrides) {
+        Map<String, Object> archConfig = loadArchitectureConfig();
+
+        if (archConfig.isEmpty()) {
+            return podWithoutArchOverrides;
+        } else {
+            if (request.getConfiguration().isArchitectureDefined()) {
+                String architecture = request.getConfiguration().getArchitecture();
+                if (architecture.equals(DEFAULT_ARCHITECTURE)) { // If the architecture requested is the DEFAULT key
+                    return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
+                            getDefaultArchitectureName(archConfig)));
+                } else if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
+                    return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
+                } else {
+                    String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
+                            .getArchitectureConfigWithBandana(bandanaManager).keySet().toString();
+                    throw new IllegalArgumentException("Architecture specified in build configuration was not " +
+                            "found in server's allowed architectures list! Supported architectures are: " +
+                            supportedArchs);
+                }
+            } else { // Architecture is not specified at all
+                return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
+                        getDefaultArchitectureName(archConfig)));
             }
         }
     }
@@ -382,11 +376,13 @@ arm64:
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
-    private Map<String, Object> getSpecificArchConfig(Map<String, Object> archConfig, String s) {
+    @VisibleForTesting
+    Map<String, Object> getSpecificArchConfig(Map<String, Object> archConfig, String s) {
         return (Map<String, Object>) ((Map<String, Object>) archConfig.get(s)).get("config");
     }
 
-    private String getDefaultArchitectureName(Map<String, Object> archConfig) {
+    @VisibleForTesting
+    String getDefaultArchitectureName(Map<String, Object> archConfig) {
         return (String) archConfig.get(DEFAULT_ARCHITECTURE);
     }
 

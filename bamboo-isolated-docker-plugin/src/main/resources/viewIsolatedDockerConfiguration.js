@@ -31,14 +31,14 @@
         updateStatus("");
         AJS.$("#defaultImage").val(response.defaultImage);
         AJS.$("#maxAgentCreationPerMinute").val(response.maxAgentCreationPerMinute);
-        AJS.$("#architectureList").val(response.architectureList);
+        AJS.$("#architectureConfig").val(response.architectureConfig);
     }
 
     function setRemoteConfig() {
         var config = {};
         config.defaultImage = AJS.$("#defaultImage").val().trim();
         config.maxAgentCreationPerMinute = AJS.$("#maxAgentCreationPerMinute").val().trim();
-        config.architectureList = AJS.$("#architectureList").val().trim();
+        config.architectureConfig = AJS.$("#architectureConfig").val().trim();
 
         updateStatus("Saving...");
 

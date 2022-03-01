@@ -48,6 +48,7 @@ import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.google.common.base.Joiner;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +76,7 @@ public class PreBuildQueuedEventListener {
 
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
+    @Inject
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
                                         ErrorUpdateHandler errorUpdateHandler,
                                         BuildQueueManager buildQueueManager,

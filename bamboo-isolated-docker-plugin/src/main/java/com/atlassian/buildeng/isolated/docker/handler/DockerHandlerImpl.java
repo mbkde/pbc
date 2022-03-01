@@ -44,7 +44,6 @@ import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
 import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.elements.ResourceLocation;
 import com.atlassian.plugin.webresource.WebResourceManager;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -241,7 +240,7 @@ public class DockerHandlerImpl implements DockerHandler {
             context.put(Configuration.DOCKER_AWS_ROLE, configuration.getAwsRole());
             context.put(Configuration.DOCKER_ARCHITECTURE, configuration.getArchitecture());
             context.put("imageSizes", getImageSizes());
-            context.put("architectureList", getArchitectures());
+            context.put("architectureConfig", getArchitectures());
             context.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             OgnlStackUtils.putAll(context);
@@ -332,20 +331,21 @@ public class DockerHandlerImpl implements DockerHandler {
 
     @NotNull
     public Collection<Pair<String, String>> getArchitectures() {
-        List<String> archList = globalConfiguration.getArchitectureList();
+        Map<String, String> archConfig = globalConfiguration.getArchitectureConfig();
 
-        List<Pair<String, String>> displayedArchList = archList.stream()
-                .map(arch -> Pair.make(arch, arch))
+        List<Pair<String, String>> displayedArchList = archConfig.entrySet().stream()
+                .map(arch -> Pair.make(arch.getKey(), arch.getValue()))
                 .collect(Collectors.toList());
 
         // If an architecture is not in the list of globally configured architectures, we should still show it
         // (e.g. An arch was previously supported but now removed)
         String architecture = configuration.getArchitecture();
-        if (StringUtils.isNotBlank(architecture) && !archList.contains(architecture)) {
+        if (StringUtils.isNotBlank(architecture) && !archConfig.containsKey(architecture)) {
             if (displayedArchList.size() == 0) {
                 // If we reach in here, it means the server has no configured options for architecture, but the user has
                 // a job that has an architecture defined. Add an extra option for them to remove their current
-                // architecture specification.
+                // architecture specification. Use `null` as this is the same as omitting `.withArchitecture()` in
+                // com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder
                 displayedArchList.add(Pair.make(null, "<select this option to remove any architecture>"));
             }
             displayedArchList.add(Pair.make(architecture, architecture + " <not supported on this server>"));

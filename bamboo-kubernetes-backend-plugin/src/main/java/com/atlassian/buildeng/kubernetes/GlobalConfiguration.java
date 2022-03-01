@@ -27,7 +27,9 @@ import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
+import com.atlassian.spring.container.ContainerManager;
 import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -37,7 +39,6 @@ import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
@@ -46,6 +47,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
+import org.yaml.snakeyaml.error.YAMLException;
 
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
@@ -73,7 +75,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     private final Map<String, Integer> memoryLimitSizes = new HashMap<>();
     private final Map<String, String> labelSizes = new HashMap<>();
     private final ContainerSizeDescriptor defaults = new DefaultContainerSizeDescriptor();
-//    private final com.atlassian.buildeng.isolated.docker.GlobalConfiguration isolatedDockerGlobalConfig;
 
 
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
@@ -410,31 +411,54 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     }
 
     private void validateArchitectureConfig(String architectureConfig) throws IllegalArgumentException {
-        if (StringUtils.isBlank(architectureConfig)) {
-            return;
-        }
-        else {
+        if (StringUtils.isNotBlank(architectureConfig)) {
             Yaml rawYaml = new Yaml(new SafeConstructor());
-            Map<String, Object> yaml = (Map<String, Object>) rawYaml.load(architectureConfig);
+
+            Map<String, Object> yaml;
+            try {
+                yaml = (Map<String, Object>) rawYaml.load(architectureConfig);
+            }
+            catch (YAMLException e) {
+                throw new IllegalArgumentException("Architecture config was not valid YAML! Error: " + e.getMessage());
+            }
 
             Preconditions.checkArgument(yaml.containsKey(DEFAULT_ARCHITECTURE),
                     "Must specify a default architecture!");
-            Preconditions.checkArgument(yaml.containsKey(Objects.requireNonNull(yaml.get(DEFAULT_ARCHITECTURE))),
-                    "Specified default architecture does not exist in configuration!");
 
+            Object defaultArchName = yaml.get(DEFAULT_ARCHITECTURE);
+            if (defaultArchName instanceof String) {
+                Preconditions.checkArgument(!defaultArchName.equals(DEFAULT_ARCHITECTURE),
+                        "Default architecture cannot be 'default', as this is the internal default key!");
+                Preconditions.checkArgument(yaml.containsKey(defaultArchName),
+                        "Specified default architecture does not exist in configuration!");
+            }
+            else {
+                throw new IllegalArgumentException("Value under 'default' key must be a string!");
+            }
 
-            // TODO: Ideally we would also check that the configuration here matches the Architecture List configured in
-            //  bamboo-isolated-docker-plugin, but the wiring for this proves to be messy with the old plugin framework
+            System.out.println(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getArchitectureConfigWithBandana(bandanaManager));
 
-            // Ensure each architecture has a "config" sub-key
+            // Ensure each architecture has a "config" sub-key and that it is valid
             for (Map.Entry<String, Object> arch : yaml.entrySet()) {
                 if (!arch.getKey().equals(DEFAULT_ARCHITECTURE)) {
                     Preconditions.checkArgument(arch.getValue() instanceof Map,
-                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!." +
+                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!" +
                                     " Please fix the entry: " + arch.getKey());
                     Preconditions.checkArgument(((Map<String, Object>) arch.getValue()).containsKey("config"),
                             "Each architecture must contain a sub-key 'config'! Please fix the entry: "
                                     + arch.getKey());
+
+                    Object config = ((Map<String, Object>) arch.getValue()).get("config");
+                    if (config == null) {
+                        throw new IllegalArgumentException("The 'config' key for each architecture should contain a" +
+                                " map. If you do not require any additional config, use an empty map with {} instead of" +
+                                " leaving the value blank (i.e. null). Please fix the entry: " + arch.getKey());
+                    }
+                    else {
+                        Preconditions.checkArgument(config instanceof Map,
+                                "The 'config' key for each architecture should contain a map. Please fix the entry: " +
+                                        arch.getKey());
+                    }
                 }
             }
         }
@@ -470,5 +494,11 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         labelSizes.put(key, obj.getAsJsonPrimitive("label").getAsString());
     }
 
+    protected final <T> T getService(Class<T> type, String serviceKey) {
+        final Object obj = checkNotNull(
+                ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing."
+        );
+        return type.cast(obj);
+    }
 
 }

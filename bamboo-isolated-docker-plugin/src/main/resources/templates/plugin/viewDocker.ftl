@@ -7,9 +7,9 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
         /]
 
     [#--  Only show the CPU architecture section if the server has a non-empty config or a job has the property already configured  --]
-    [#if architectureList?size gt 0]
+    [#if architectureConfig?size gt 0]
     [@ww.select labelKey='isolated.docker.architecture' name='custom.isolated.docker.architecture' descriptionKey="isolated.docker.architecture.description"
-    list=architectureList listKey='first' listValue='second' cssClass="long-field" ]
+    list=architectureConfig listKey='first' listValue='second' cssClass="long-field" ]
     [/@ww.select]
     [/#if]
 

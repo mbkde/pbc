@@ -16,8 +16,10 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Date;
 
+@BambooComponent
 public class DateTime {
     /**
      * Get the time one minute ago.

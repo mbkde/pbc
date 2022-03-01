@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -324,7 +325,9 @@ public class PodCreator {
         map.put("volumes", createVolumes(r));
         map.put("containers", createContainers(globalConfiguration, r));
         List<Map<String, Object>> initContainersList = new ArrayList<>();
-        initContainersList.add(createSidekick(globalConfiguration.getCurrentSidekick()));
+        String currentSidekick = Objects.requireNonNull(globalConfiguration.getCurrentSidekick(),
+                "Sidekick has not yet been configured! Please set it in the PBC Kubernetes Backend settings.");
+        initContainersList.add(createSidekick(currentSidekick));
         map.put("initContainers", initContainersList);
         map.put("hostAliases", createLocalhostAliases(r.getConfiguration()));
 
@@ -410,12 +413,7 @@ public class PodCreator {
         map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
         map.put("imagePullPolicy", "Always");
         map.put("workingDir", WORK_DIR);
-        if (r.getResultKey().startsWith("DOCKER-KUBECONFIG")) {
-            map.put("command", ImmutableList.of("sh", "-c", "sleep 3600"));
-        }
-        else {
-            map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
-        }
+        map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
         ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
             .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))

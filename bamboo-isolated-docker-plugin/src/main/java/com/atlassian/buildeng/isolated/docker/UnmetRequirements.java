@@ -46,12 +46,14 @@ import com.atlassian.buildeng.isolated.docker.events.DockerAgentDedicatedJobEven
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentNonMatchedRequirementEvent;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.google.common.collect.Iterables;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@BambooComponent
 public class UnmetRequirements {
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;

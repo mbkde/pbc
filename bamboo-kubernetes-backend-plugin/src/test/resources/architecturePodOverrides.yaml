@@ -1,0 +1,6 @@
+default: arm64
+amd64:
+  config: {}
+arm64:
+  config:
+    foo: bar

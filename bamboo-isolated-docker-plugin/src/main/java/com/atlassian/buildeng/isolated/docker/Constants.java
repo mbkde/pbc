@@ -41,7 +41,7 @@ public interface Constants {
     Duration RETRY_DELAY = Duration.ofSeconds(20);
 
     /**
-     * Key of the default architecture in the architecture list {@link com.atlassian.buildeng.isolated.docker.rest.Config#architectureList}
+     * Key of the default architecture in the architecture list {@link com.atlassian.buildeng.isolated.docker.rest.Config#architectureConfig}
      * This is used in determining the architecture a build should be used when unspecified.
      */
     public static final String DEFAULT_ARCHITECTURE = "default";

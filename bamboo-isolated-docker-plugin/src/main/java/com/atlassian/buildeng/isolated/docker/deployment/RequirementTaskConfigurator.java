@@ -32,6 +32,7 @@ import com.atlassian.struts.TextProvider;
 import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     private final DockerHandlerImpl dockerHandler;
     private final Validator validator;
 
+    @Inject
     private RequirementTaskConfigurator(TextProvider textProvider, DockerHandlerImpl dockerHandler, Validator validator) {
         this.textProvider = textProvider;
         this.dockerHandler = dockerHandler;
@@ -74,7 +76,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        context.put("architectureList", dockerHandler.getArchitectures());
+        context.put("architectureConfig", dockerHandler.getArchitectures());
         context.put(Configuration.DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
@@ -84,7 +86,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
-        context.put("architectureList", dockerHandler.getArchitectures());
+        context.put("architectureConfig", dockerHandler.getArchitectures());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 

@@ -17,6 +17,8 @@
 package com.atlassian.buildeng.isolated.docker.jmx;
 
 import com.atlassian.buildeng.isolated.docker.AgentsThrottled;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.lang.management.ManagementFactory;
 import javax.management.InstanceAlreadyExistsException;
@@ -29,6 +31,8 @@ import javax.management.ObjectName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
+@ExportAsService({JMXAgentsService.class, LifecycleAware.class})
 public class JMXAgentsService implements LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(JMXAgentsService.class);
 

@@ -16,8 +16,10 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.HashMap;
 
+@BambooComponent
 public class AgentsThrottled {
 
     // build key maps to number of times that event has been throttled

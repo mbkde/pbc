@@ -3,7 +3,7 @@
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>6.1.2</version>
+        <version>6.2.2</version>
         <relativePath />
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -34,16 +34,17 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>8.0.1</bamboo.version>
+        <bamboo.version>8.1.3</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.0.2</amps.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.0.19</platform.version>
-        <atlassian.spring.scanner.version>1.2.12</atlassian.spring.scanner.version>
+        <spring.scanner.version>2.2.3</spring.scanner.version>
         <aws-java.version>1.11.1006</aws-java.version>
         <checkstyle.version>8.29</checkstyle.version>
         <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
+        <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -122,6 +123,12 @@
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

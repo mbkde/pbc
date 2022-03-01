@@ -19,6 +19,7 @@ package com.atlassian.buildeng.isolated.docker;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 
+@BambooComponent
 public class Validator {
     private final GlobalConfiguration globalConfiguration;
 
@@ -50,11 +52,11 @@ public class Validator {
             }
         }
 
-        if (StringUtils.isNotBlank(architecture) && !(globalConfiguration.getArchitectureList().contains(architecture))) {
+        if (StringUtils.isNotBlank(architecture) && !(globalConfiguration.getArchitectureConfig().containsKey(architecture))) {
             errorCollection.addError(task ? Configuration.TASK_DOCKER_ARCHITECTURE :
                             Configuration.DOCKER_ARCHITECTURE,
                     "Specified architecture is not supported on this server. Supported architectures: "
-                            + globalConfiguration.getArchitectureList().toString());
+                            + globalConfiguration.getArchitectureConfig().toString());
         }
 
         validateExtraContainers(extraCont, errorCollection);
