@@ -79,7 +79,7 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                 Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
                 be name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
 
-                If you require no extra config, use an empty map {}. The architectures specified here <strong>must</strong> match those
+                If you require no extra config, use an empty map {}. The architectures specified here <strong>must</strong> exactly match those
                 specified in the PBC General settings.<br>
 
                 You must specify a "default" key at the top level which specifies which architecture is default in the case

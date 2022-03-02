@@ -38,7 +38,9 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
@@ -436,11 +438,19 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 throw new IllegalArgumentException("Value under 'default' key must be a string!");
             }
 
-            System.out.println(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getArchitectureConfigWithBandana(bandanaManager));
+            Map<String, String> availableArchitectures = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
+                    .getArchitectureConfigWithBandana(bandanaManager);
+            Set<String> architecturesLeftover = new HashSet<>(availableArchitectures.keySet());
+            architecturesLeftover.remove(DEFAULT_ARCHITECTURE);
 
-            // Ensure each architecture has a "config" sub-key and that it is valid
+            // Ensure each architecture has a "config" sub-key, that it is valid and is one of the available architectures
             for (Map.Entry<String, Object> arch : yaml.entrySet()) {
                 if (!arch.getKey().equals(DEFAULT_ARCHITECTURE)) {
+                    Preconditions.checkArgument(availableArchitectures.containsKey(arch.getKey()),
+                            "Each architecture entry must be defined in the PBC General Settings first before " +
+                                    "it can be configured in the PBC Kubernetes Backend settings. '" + arch.getKey() +
+                                    "' is currently missing from the list of available architectures: " +
+                                    availableArchitectures.keySet());
                     Preconditions.checkArgument(arch.getValue() instanceof Map,
                             "Each architecture entry must contain a map as its entry, with at least a 'config' key!" +
                                     " Please fix the entry: " + arch.getKey());
@@ -459,7 +469,14 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                                 "The 'config' key for each architecture should contain a map. Please fix the entry: " +
                                         arch.getKey());
                     }
+                    architecturesLeftover.remove(arch.getKey());
                 }
+            }
+
+            if (architecturesLeftover.size() > 0) {
+                throw new IllegalArgumentException("Not all architectures in the PBC General settings were defined in" +
+                        " the architecture dependent configuration! Please add configuration for the following" +
+                        " architectures: " + architecturesLeftover);
             }
         }
     }
