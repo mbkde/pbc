@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -60,17 +61,20 @@ public class GlobalConfiguration {
         this.authenticationContext = authenticationContext;
     }
 
+    @NotNull
     public String getDefaultImage() {
         String image = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DEFAULT_IMAGE);
         return image != null ? image : "";
     }
 
+    @NotNull
     public Integer getMaxAgentCreationPerMinute() {
         Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
         return maxAgents != null ? maxAgents : 100;
     }
 
+    @NotNull
     public String getArchitectureConfigAsString() {
         YamlStorage<String> architectureConfig = getArchitectureConfigStorage(bandanaManager);
         return architectureConfig != null ? architectureConfig.getRawString() : "";
@@ -78,15 +82,24 @@ public class GlobalConfiguration {
 
     /**
      * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     * map where the data is stored and can be modified! Any changes to the original list will be reflected globally.
+     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
      * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
+    @NotNull
     public Map<String, String> getArchitectureConfig() {
         return getArchitectureConfigWithBandana(this.bandanaManager);
     }
 
-    // These two methods are separated so that this can easily be called from other plugins without need an instance of
-    // this plugin's GlobalConfiguration
+    /**
+     * Static version of getArchitectureConfig(), which requires an instance of {@link BandanaManager} to be passed in.
+     * This static version exists to aid in fetching the architecture config from other plugins without needing an
+     * instance of this GlobalConfiguration class.
+     *
+     * @param bandanaManager An instance of {@link BandanaManager} that should be wired from Bamboo
+     * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
+     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
+     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     */
     public static Map<String, String> getArchitectureConfigWithBandana(BandanaManager bandanaManager) {
         YamlStorage<String> architectureConfig = getArchitectureConfigStorage(bandanaManager);
         return architectureConfig != null ?

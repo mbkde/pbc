@@ -510,12 +510,4 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         memoryLimitSizes.put(key, obj.getAsJsonPrimitive("memoryLimit").getAsInt());
         labelSizes.put(key, obj.getAsJsonPrimitive("label").getAsString());
     }
-
-    protected final <T> T getService(Class<T> type, String serviceKey) {
-        final Object obj = checkNotNull(
-                ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing."
-        );
-        return type.cast(obj);
-    }
-
 }
