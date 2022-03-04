@@ -22,8 +22,8 @@
                     callback(text);
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    showError(textStatus + "\n" + errorThrown + "\n" + XMLHttpRequest.responseText);
-                }
+                    showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
+                        errorThrown + "\n" + XMLHttpRequest.responseText);                }
             });
     }
 

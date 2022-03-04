@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import static java.util.stream.Collectors.toList;
 import org.apache.commons.io.FileUtils;
 import static org.junit.Assert.assertEquals;
@@ -279,7 +280,7 @@ public class KubernetesIsolatedDockerImplTest {
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
         when(bandanaManager.getValue(any(), ArgumentMatchers.matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
-                .thenReturn("doesn't matter", Collections.singletonMap("myArch", ""));
+                .thenReturn(new LinkedHashMap<>(Collections.singletonMap("myArch", "")));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>()));

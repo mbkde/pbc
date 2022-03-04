@@ -27,9 +27,7 @@ import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
-import com.atlassian.spring.container.ContainerManager;
 import com.google.common.base.Preconditions;
-import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -418,7 +416,13 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
 
             Map<String, Object> yaml;
             try {
-                yaml = (Map<String, Object>) rawYaml.load(architectureConfig);
+                Object uncastYaml = rawYaml.load(architectureConfig);
+                if (uncastYaml instanceof Map) {
+                    yaml = (Map<String, Object>) uncastYaml;
+                }
+                else {
+                    throw new IllegalArgumentException("Architecture config was not a map!");
+                }
             }
             catch (YAMLException e) {
                 throw new IllegalArgumentException("Architecture config was not valid YAML! Error: " + e.getMessage());
