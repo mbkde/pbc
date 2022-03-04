@@ -71,7 +71,8 @@
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 updateStatus("");
-                showError(textStatus + " " + errorThrown + " " + jqXHR.responseText);
+                showError("An error occurred while attempting to save:\n" + textStatus + "\n" +
+                    errorThrown + "\n" + XMLHttpRequest.responseText);
             }
         });
     }

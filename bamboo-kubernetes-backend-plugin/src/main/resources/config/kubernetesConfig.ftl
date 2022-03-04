@@ -135,7 +135,7 @@ arm64:
             </div>
         </div>
 
-        <div id="errorMessage">
+        <div id="errorMessage" style="white-space: pre-line">
         </div>
 
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>

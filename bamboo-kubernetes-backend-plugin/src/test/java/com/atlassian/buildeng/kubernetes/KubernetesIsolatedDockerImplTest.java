@@ -17,7 +17,6 @@
 package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bandana.BandanaManager;
-import com.atlassian.buildeng.isolated.docker.yaml.YamlStorage;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.io.File;
@@ -279,8 +278,8 @@ public class KubernetesIsolatedDockerImplTest {
                 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
-        when(bandanaManager.getValue(any(), ArgumentMatchers.matches("com.atlassian.buildeng.pbc.architecture.config")))
-                .thenReturn(new YamlStorage<>("doesn't matter", Collections.singletonMap("myArch", "")));
+        when(bandanaManager.getValue(any(), ArgumentMatchers.matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
+                .thenReturn("doesn't matter", Collections.singletonMap("myArch", ""));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>()));

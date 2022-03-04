@@ -23,7 +23,6 @@ import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.isolated.docker.rest.Config;
-import com.atlassian.buildeng.isolated.docker.yaml.YamlStorage;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Collections;
 import java.util.Date;
@@ -41,6 +40,10 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * Spring component that provides access to settings set in the administration panel.
+ *
+ * WARNING: Do not try and be smart and use custom container classes to store config. A different class loader will be
+ * used each time a plugin is reloaded. If you store a custom class in Bandana, you will get a ClassCastException when
+ * attempting to cast it back to the intended class. Stick to Java built-ins.
  */
 @BambooComponent
 public class GlobalConfiguration {
@@ -48,7 +51,10 @@ public class GlobalConfiguration {
 
     static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
     static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
-    static String BANDANA_ARCHITECTURE_CONFIG = "com.atlassian.buildeng.pbc.architecture.config";
+    // See Javadoc
+    static String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
+    static String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
+
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
@@ -76,8 +82,9 @@ public class GlobalConfiguration {
 
     @NotNull
     public String getArchitectureConfigAsString() {
-        YamlStorage<String> architectureConfig = getArchitectureConfigStorage(bandanaManager);
-        return architectureConfig != null ? architectureConfig.getRawString() : "";
+        String architectureConfig = (String) bandanaManager
+                .getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_RAW);
+        return architectureConfig != null ? architectureConfig : "";
     }
 
     /**
@@ -101,9 +108,10 @@ public class GlobalConfiguration {
      * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     public static Map<String, String> getArchitectureConfigWithBandana(BandanaManager bandanaManager) {
-        YamlStorage<String> architectureConfig = getArchitectureConfigStorage(bandanaManager);
+        LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>) bandanaManager
+                .getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED);
         return architectureConfig != null ?
-                Collections.unmodifiableMap(architectureConfig.getParsedYaml()) : new LinkedHashMap<>();
+                Collections.unmodifiableMap(architectureConfig) : new LinkedHashMap<>();
     }
 
     /**
@@ -137,7 +145,21 @@ public class GlobalConfiguration {
                 Yaml yamlParser = new Yaml(new SafeConstructor());
                 try {
                     // Will be loaded as a LinkedHashMap, and we want to keep that to preserver ordering (i.e. default on top)
-                    yaml = (LinkedHashMap<String, String>) yamlParser.load(archRawString);
+                    Object uncastYaml = yamlParser.load(archRawString);
+                    if (uncastYaml instanceof LinkedHashMap) {
+                        yaml = (LinkedHashMap) uncastYaml;
+                        for (Map.Entry entry: yaml.entrySet()) {
+                            if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
+                                throw new IllegalArgumentException("Architecture configuration must be a map from String to" +
+                                        " String, but " + entry + " was not!");
+                            }
+                        }
+                        yaml = (LinkedHashMap<String, String>) uncastYaml;
+                    }
+                    else {
+                        throw new IllegalArgumentException("Received invalid YAML for architecture list");
+                    }
+
                 }
                 catch (YAMLException e) {
                     throw new IllegalArgumentException("Received invalid YAML for architecture list");
@@ -145,7 +167,9 @@ public class GlobalConfiguration {
             }
 
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_CONFIG, new YamlStorage<>(archRawString, yaml));
+                    BANDANA_ARCHITECTURE_CONFIG_RAW, archRawString);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                    BANDANA_ARCHITECTURE_CONFIG_PARSED, yaml);
         }
     }
 
@@ -154,11 +178,6 @@ public class GlobalConfiguration {
         AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
                 new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
-    }
-
-    private static YamlStorage<String> getArchitectureConfigStorage(BandanaManager bandanaManager) {
-        return (YamlStorage<String>) bandanaManager
-                .getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG);
     }
 }
 
