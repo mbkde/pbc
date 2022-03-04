@@ -140,7 +140,7 @@ public class GlobalConfiguration {
             auditLogEntry("PBC Architectures supported",
                     getArchitectureConfigAsString(), archRawString);
 
-            Map<String, String> yaml = null;
+            LinkedHashMap<String, String> yaml = null;
             if (StringUtils.isNotBlank(archRawString)) {
                 Yaml yamlParser = new Yaml(new SafeConstructor());
                 try {
