@@ -56,7 +56,7 @@ public class Validator {
             errorCollection.addError(task ? Configuration.TASK_DOCKER_ARCHITECTURE :
                             Configuration.DOCKER_ARCHITECTURE,
                     "Specified architecture is not supported on this server. Supported architectures: "
-                            + globalConfiguration.getArchitectureConfig().toString());
+                            + globalConfiguration.getArchitectureConfig().keySet());
         }
 
         validateExtraContainers(extraCont, errorCollection);
