@@ -51,7 +51,7 @@ public class GlobalConfiguration {
 
     static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
     static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
-    // See Javadoc
+    // See class Javadoc about why these are stored separately
     static String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
     static String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
 
