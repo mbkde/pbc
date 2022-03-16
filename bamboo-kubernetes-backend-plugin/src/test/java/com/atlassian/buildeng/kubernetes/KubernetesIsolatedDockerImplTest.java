@@ -235,21 +235,6 @@ public class KubernetesIsolatedDockerImplTest {
     }
 
     @Test
-    public void testPodSpecHasOverrideAddedIfArchitectureIsDefault() throws IOException {
-        Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("default").build();
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0, "bk", 0, true);
-
-        when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
-
-        Map<String, Object> returnedMap = kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>());
-
-        assertEquals(Collections.singletonMap("foo", "bar"), returnedMap);
-    }
-
-    @Test
     public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndExists() throws IOException {
         Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("arm64").build();
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
