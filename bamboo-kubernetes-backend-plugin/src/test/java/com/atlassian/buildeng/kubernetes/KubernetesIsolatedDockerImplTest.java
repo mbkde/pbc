@@ -214,12 +214,6 @@ public class KubernetesIsolatedDockerImplTest {
     }
 
     @Test
-    public void testDefaultArchitectureNameIsFetchedCorrectly() throws IOException {
-        String archName = kubernetesIsolatedDocker.getDefaultArchitectureName(getArchitecturePodOverridesAsYaml());
-        assertEquals("arm64", archName);
-    }
-
-    @Test
     public void testArchitectureOverrideIsFetchedCorrectly() throws IOException {
         Map<String, Object> config = kubernetesIsolatedDocker.getSpecificArchConfig(getArchitecturePodOverridesAsYaml(), "arm64");
         assertEquals(Collections.singletonMap("foo", "bar"), config);

@@ -193,10 +193,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         } else {
             if (request.getConfiguration().isArchitectureDefined()) {
                 String architecture = request.getConfiguration().getArchitecture();
-                if (architecture.equals(DEFAULT_ARCHITECTURE)) { // If the architecture requested is the DEFAULT key
-                    return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
-                            getDefaultArchitectureName(archConfig)));
-                } else if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
+            if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
                     return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
                 } else {
                     String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration

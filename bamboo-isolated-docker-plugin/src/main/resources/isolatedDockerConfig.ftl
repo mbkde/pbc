@@ -39,12 +39,10 @@ Global Configuration for generic PBC settings
             <div class="description" id="desc-architectureConfig">
                 YAML document of architectures available, with the key being the primary name and the value being the display name.<br>
                 The first entry will be the default in the selection dropdown, with the items being shown in the same order as the YAML.<br>
-                It is recommended that if you do not want to force users to choose, add "default" as the first key, otherwise this may be omitted.<br>
                 Architecture names will have leading and trailing whitespace trimmed.
                 <br><br>
                 Example:
                 <pre><code>
-default: "Default (amd64)"
 amd64: "amd64 (x86_64)"
 arm64: "arm64 (ARMv8 aarch64)"
                 </code></pre>
