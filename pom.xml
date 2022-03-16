@@ -40,7 +40,7 @@
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.0.19</platform.version>
         <spring.scanner.version>2.2.3</spring.scanner.version>
-        <aws-java.version>1.11.1006</aws-java.version>
+        <aws-java.version>1.12.177</aws-java.version>
         <checkstyle.version>8.29</checkstyle.version>
         <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
