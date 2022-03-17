@@ -31,6 +31,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.annotations.VisibleForTesting;
@@ -88,16 +89,19 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
     private final BandanaManager bandanaManager;
+    private final DarkFeatureManager darkFeatureManager;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
                                         PluginScheduler pluginScheduler,
                                         KubeJmxService kubeJmxService,
                                         SubjectIdService subjectIdService,
-                                        BandanaManager bandanaManager) {
+                                        BandanaManager bandanaManager,
+                                        DarkFeatureManager darkFeatureManager) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
         this.bandanaManager = bandanaManager;
+        this.darkFeatureManager = darkFeatureManager;
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(5, 5,
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
@@ -123,7 +127,13 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
             Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
 
-            Map<String, Object> finalPod = addArchitectureOverrides(request, podWithoutArchOverrides);
+            Map<String, Object> finalPod;
+            if (darkFeatureManager.isEnabledForAllUsers("pbc.architecture.support").orElse(false)) {
+                finalPod = addArchitectureOverrides(request, podWithoutArchOverrides);
+            }
+            else {
+                finalPod = podWithoutArchOverrides;
+            }
 
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
@@ -183,10 +193,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         } else {
             if (request.getConfiguration().isArchitectureDefined()) {
                 String architecture = request.getConfiguration().getArchitecture();
-                if (architecture.equals(DEFAULT_ARCHITECTURE)) { // If the architecture requested is the DEFAULT key
-                    return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
-                            getDefaultArchitectureName(archConfig)));
-                } else if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
+            if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
                     return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
                 } else {
                     String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration

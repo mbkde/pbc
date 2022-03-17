@@ -214,12 +214,6 @@ public class KubernetesIsolatedDockerImplTest {
     }
 
     @Test
-    public void testDefaultArchitectureNameIsFetchedCorrectly() throws IOException {
-        String archName = kubernetesIsolatedDocker.getDefaultArchitectureName(getArchitecturePodOverridesAsYaml());
-        assertEquals("arm64", archName);
-    }
-
-    @Test
     public void testArchitectureOverrideIsFetchedCorrectly() throws IOException {
         Map<String, Object> config = kubernetesIsolatedDocker.getSpecificArchConfig(getArchitecturePodOverridesAsYaml(), "arm64");
         assertEquals(Collections.singletonMap("foo", "bar"), config);
@@ -228,21 +222,6 @@ public class KubernetesIsolatedDockerImplTest {
     @Test
     public void testPodSpecHasOverrideIfArchitectureOmittedButServerHasDefaultDefined() throws IOException {
         Configuration c = ConfigurationBuilder.create("docker-image").build();
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0, "bk", 0, true);
-
-        when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
-
-        Map<String, Object> returnedMap = kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>());
-
-        assertEquals(Collections.singletonMap("foo", "bar"), returnedMap);
-    }
-
-    @Test
-    public void testPodSpecHasOverrideAddedIfArchitectureIsDefault() throws IOException {
-        Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("default").build();
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
                 "TEST-PLAN-JOB1",
                 UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
