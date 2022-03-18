@@ -21,6 +21,8 @@ import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.time.Duration;
@@ -29,6 +31,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+@BambooComponent
+@ExportAsService({Reaper.class, LifecycleAware.class})
 public class Reaper implements LifecycleAware {
     private final PluginScheduler pluginScheduler;
     private final ExecutableAgentsHelper executableAgentsHelper;

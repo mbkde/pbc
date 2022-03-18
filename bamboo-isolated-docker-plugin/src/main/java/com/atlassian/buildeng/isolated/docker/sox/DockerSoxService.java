@@ -24,6 +24,7 @@ import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -38,6 +39,7 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
 public class DockerSoxService {
     private static final Logger logger = LoggerFactory.getLogger(DockerSoxService.class);
 

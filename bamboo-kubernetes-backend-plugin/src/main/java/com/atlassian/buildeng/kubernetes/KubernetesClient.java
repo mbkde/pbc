@@ -197,6 +197,10 @@ public class KubernetesClient {
         return executeKubectl(new PodContextSupplier(pod), "describe", "pod", KubernetesHelper.getName(pod));
     }
 
+    String lastLogLinePod(Pod pod) throws KubectlException {
+        return executeKubectl(new PodContextSupplier(pod), "logs", "-c", "bamboo-agent", "--tail", "1", KubernetesHelper.getName(pod));
+    }
+
     void deletePod(Pod pod)
             throws KubectlException {
         long startTime = System.currentTimeMillis();

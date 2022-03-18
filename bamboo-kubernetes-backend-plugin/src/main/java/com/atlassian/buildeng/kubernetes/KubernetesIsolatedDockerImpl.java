@@ -18,6 +18,8 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
+import com.atlassian.bandana.BandanaManager;
+import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
 import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.jmx.JmxJob;
@@ -29,6 +31,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.annotations.VisibleForTesting;
@@ -85,14 +88,20 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final PluginScheduler pluginScheduler;
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
+    private final BandanaManager bandanaManager;
+    private final DarkFeatureManager darkFeatureManager;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
                                         PluginScheduler pluginScheduler,
                                         KubeJmxService kubeJmxService,
-                                        SubjectIdService subjectIdService) {
+                                        SubjectIdService subjectIdService,
+                                        BandanaManager bandanaManager,
+                                        DarkFeatureManager darkFeatureManager) {
         this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
+        this.bandanaManager = bandanaManager;
+        this.darkFeatureManager = darkFeatureManager;
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(5, 5,
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
@@ -116,7 +125,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         try {
             Map<String, Object> template = loadTemplatePod();
             Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
-            Map<String, Object> finalPod = mergeMap(template, podDefinition);
+            Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
+
+            Map<String, Object> finalPod;
+            if (darkFeatureManager.isEnabledForAllUsers("pbc.architecture.support").orElse(false)) {
+                finalPod = addArchitectureOverrides(request, podWithoutArchOverrides);
+            }
+            else {
+                finalPod = podWithoutArchOverrides;
+            }
+
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
 
@@ -167,6 +185,31 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @VisibleForTesting
+    Map<String, Object> addArchitectureOverrides(IsolatedDockerAgentRequest request, Map<String, Object> podWithoutArchOverrides) {
+        Map<String, Object> archConfig = loadArchitectureConfig();
+
+        if (archConfig.isEmpty()) {
+            return podWithoutArchOverrides;
+        } else {
+            if (request.getConfiguration().isArchitectureDefined()) {
+                String architecture = request.getConfiguration().getArchitecture();
+            if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
+                    return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
+                } else {
+                    String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
+                            .getArchitectureConfigWithBandana(bandanaManager).keySet().toString();
+                    throw new IllegalArgumentException("Architecture specified in build configuration was not " +
+                            "found in server's allowed architectures list! Supported architectures are: " +
+                            supportedArchs);
+                }
+            } else { // Architecture is not specified at all
+                return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
+                        getDefaultArchitectureName(archConfig)));
+            }
+        }
+    }
+
+    @VisibleForTesting
     String getSubjectId(IsolatedDockerAgentRequest request) {
         String subjectId;
         if (request.isPlan()) {
@@ -198,6 +241,17 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private Map<String, Object> loadTemplatePod() {
         Yaml yaml = new Yaml(new SafeConstructor());
         return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
+    }
+
+    private Map<String, Object> loadArchitectureConfig() {
+        String archConfig = globalConfiguration.getBandanaArchitecturePodConfig();
+
+        if (StringUtils.isBlank(archConfig)) {
+            return Collections.emptyMap();
+        } else {
+            Yaml yaml = new Yaml(new SafeConstructor());
+            return (Map<String, Object>) yaml.load(archConfig);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -317,17 +371,26 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-            try {
-                URIBuilder bb = new URIBuilder(resolvedUrl);
-                return Pair.make(t, bb.build().toURL());
-            } catch (URISyntaxException | MalformedURLException ex) {
-                logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL) null);
-            }
-        }).filter((Pair t) -> t.getSecond() != null)
+                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+                    try {
+                        URIBuilder bb = new URIBuilder(resolvedUrl);
+                        return Pair.make(t, bb.build().toURL());
+                    } catch (URISyntaxException | MalformedURLException ex) {
+                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        return Pair.make(t, (URL) null);
+                    }
+                }).filter((Pair t) -> t.getSecond() != null)
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
+    @VisibleForTesting
+    Map<String, Object> getSpecificArchConfig(Map<String, Object> archConfig, String s) {
+        return (Map<String, Object>) ((Map<String, Object>) archConfig.get(s)).get("config");
+    }
+
+    @VisibleForTesting
+    String getDefaultArchitectureName(Map<String, Object> archConfig) {
+        return (String) archConfig.get(DEFAULT_ARCHITECTURE);
+    }
 
 }

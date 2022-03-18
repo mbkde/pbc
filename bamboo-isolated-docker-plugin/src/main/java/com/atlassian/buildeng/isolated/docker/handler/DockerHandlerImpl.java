@@ -35,6 +35,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -47,7 +48,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -64,16 +67,18 @@ public class DockerHandlerImpl implements DockerHandler {
     private final Configuration configuration;
     private final WebResourceManager webResourceManager;
     private final EnvironmentRequirementService environmentRequirementService;
+    private final GlobalConfiguration globalConfiguration;
+    private final Validator validator;
 
     /**
      * Creates new stateful instance.
      */
 
-    public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager, 
-            TemplateRenderer templateRenderer, 
-            EnvironmentCustomConfigService environmentCustomConfigService,
-            EnvironmentRequirementService environmentRequirementService,
-            boolean create, Configuration configuration) {
+    public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager,
+                             TemplateRenderer templateRenderer,
+                             EnvironmentCustomConfigService environmentCustomConfigService,
+                             EnvironmentRequirementService environmentRequirementService,
+                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration, Validator validator) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
@@ -81,6 +86,8 @@ public class DockerHandlerImpl implements DockerHandler {
         this.create = create;
         this.configuration = configuration;
         this.webResourceManager = webResourceManager;
+        this.globalConfiguration = globalConfiguration;
+        this.validator = validator;
     }
 
     
@@ -107,6 +114,7 @@ public class DockerHandlerImpl implements DockerHandler {
 
     @Override
     public ErrorCollection validateConfig(Map<String, Object> webFragmentsContextMap) {
+        String architecture = (String) webFragmentsContextMap.get(Configuration.DOCKER_ARCHITECTURE);
         String extraCont = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
         String size = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE_SIZE);
         String image = (String) webFragmentsContextMap.get(Configuration.DOCKER_IMAGE);
@@ -114,9 +122,12 @@ public class DockerHandlerImpl implements DockerHandler {
         if (StringUtils.isBlank(role)) {
             role = null;
         }
+        if (StringUtils.isBlank(architecture)) {
+            architecture = null;
+        }
         String enabled = (String) webFragmentsContextMap.get(Configuration.ENABLED_FOR_JOB);
         SimpleErrorCollection errs = new SimpleErrorCollection();
-        Validator.validate(image, size, role, extraCont, errs, false);
+        validator.validate(image, size, role, architecture, extraCont, errs, false);
         return errs;
     }
 
@@ -127,6 +138,7 @@ public class DockerHandlerImpl implements DockerHandler {
 
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
+        cc.put(Configuration.DOCKER_ARCHITECTURE, config.getArchitecture());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_AWS_ROLE, config.getAwsRole());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS,
@@ -149,6 +161,7 @@ public class DockerHandlerImpl implements DockerHandler {
 
         cc.put(Configuration.ENABLED_FOR_JOB, "true");
         cc.put(Configuration.DOCKER_IMAGE, config.getDockerImage());
+        cc.put(Configuration.DOCKER_ARCHITECTURE, config.getArchitecture());
         cc.put(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         cc.put(Configuration.DOCKER_AWS_ROLE, config.getAwsRole());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS,
@@ -207,6 +220,7 @@ public class DockerHandlerImpl implements DockerHandler {
         hc.setDelimiterParsingDisabled(true);
         hc.setProperty(Configuration.ENABLED_FOR_JOB, enabled);
         hc.setProperty(Configuration.DOCKER_IMAGE, config.getDockerImage());
+        hc.setProperty(Configuration.DOCKER_ARCHITECTURE, config.getArchitecture());
         hc.setProperty(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         hc.setProperty(Configuration.DOCKER_AWS_ROLE, config.getAwsRole());
         hc.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS, 
@@ -224,8 +238,10 @@ public class DockerHandlerImpl implements DockerHandler {
             context.put(Configuration.DOCKER_IMAGE, configuration.getDockerImage());
             context.put(Configuration.DOCKER_IMAGE_SIZE, configuration.getSize().name());
             context.put(Configuration.DOCKER_AWS_ROLE, configuration.getAwsRole());
+            context.put(Configuration.DOCKER_ARCHITECTURE, configuration.getArchitecture());
             context.put("imageSizes", getImageSizes());
-            context.put(Configuration.DOCKER_EXTRA_CONTAINERS, 
+            context.put("architectureConfig", getArchitectures());
+            context.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             OgnlStackUtils.putAll(context);
             
@@ -234,6 +250,7 @@ public class DockerHandlerImpl implements DockerHandler {
             cc.put("image", configuration.getDockerImage());
             cc.put("imageSize", configuration.getSize().name());
             cc.put("awsRole", configuration.getAwsRole());
+            cc.put("architecture", configuration.getArchitecture());
             cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
 
@@ -247,8 +264,12 @@ public class DockerHandlerImpl implements DockerHandler {
     static Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
         String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
         String role = (String) webFragmentsContextMap.get(Configuration.DOCKER_AWS_ROLE);
+        String architecture = (String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_ARCHITECTURE, null);
         if (StringUtils.isBlank(role)) {
             role = null;
+        }
+        if (StringUtils.isBlank(architecture)) {
+            architecture = null;
         }
         Configuration config = ConfigurationBuilder
                 .create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE, ""))
@@ -259,6 +280,7 @@ public class DockerHandlerImpl implements DockerHandler {
                 .withExtraContainers(ConfigurationPersistence.fromJsonString(
                         (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                 .withAwsRole(role)
+                .withArchitecture(architecture)
                 .build();
         return config;
     }
@@ -306,6 +328,29 @@ public class DockerHandlerImpl implements DockerHandler {
             Pair.make(Configuration.ContainerSize.LARGE_4X.name(), "4xLarge (~40G memory, 10 vCPU)"),
             Pair.make(Configuration.ContainerSize.LARGE_8X.name(), "8xLarge (~80G memory, 20 vCPU)"));
     }
-    
-    
+
+    @NotNull
+    public Collection<Pair<String, String>> getArchitectures() {
+        Map<String, String> archConfig = globalConfiguration.getArchitectureConfig();
+
+        List<Pair<String, String>> displayedArchList = archConfig.entrySet().stream()
+                .map(arch -> Pair.make(arch.getKey(), arch.getValue()))
+                .collect(Collectors.toList());
+
+        // If an architecture is not in the list of globally configured architectures, we should still show it
+        // (e.g. An arch was previously supported but now removed)
+        String architecture = configuration.getArchitecture();
+        if (StringUtils.isNotBlank(architecture) && !archConfig.containsKey(architecture)) {
+            if (displayedArchList.size() == 0) {
+                // If we reach in here, it means the server has no configured options for architecture, but the user has
+                // a job that has an architecture defined. Add an extra option for them to remove their current
+                // architecture specification. Use `null` as this is the same as omitting `.withArchitecture()` in
+                // com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder
+                displayedArchList.add(Pair.make(null, "<select this option to remove any architecture>"));
+            }
+            displayedArchList.add(Pair.make(architecture, architecture + " <not supported on this server>"));
+        }
+
+        return displayedArchList;
+    }
 }

@@ -13,9 +13,6 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
 
 <h2>Kubernetes configuration</h2>
 
-<div id="errorMessage">
-</div>
-
 <form id="setRemoteConfig" class="aui">
     <fieldset>
 
@@ -76,6 +73,34 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
         </div>
 
         <div class="field-group">
+            <label for="architecturePodConfig">Architecture Dependent Pod Config</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="architecturePodConfig"></textarea>
+            <div class="description" id="desc-architecturePodConfig">
+                Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
+                be name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
+
+                If you require no extra config, use an empty map {}. The architectures specified here <strong>must</strong> exactly match those
+                specified in the PBC General settings.<br>
+
+                You must specify a "default" key at the top level which specifies which architecture is default in the case
+                no architecture is specified. This ensures backwards compatibility; newly created plans will require an architecture.<br><br>
+
+                Example:
+                <pre><code>
+default: amd64
+amd64:
+  config: {}
+arm64:
+  config:
+    spec:
+      nodeSelector:
+        nodeGroup: myNode
+                </code></pre>
+
+            </div>
+        </div>
+
+        <div class="field-group">
             <label for="iamRequestTemplate">IAM Request Template</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="iamRequestTemplate"></textarea>
             <div class="description" id="desc-iamRequestTemplate">
@@ -108,6 +133,9 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
                 URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants 
                 in the URL will be replaced with actual values.
             </div>
+        </div>
+
+        <div id="errorMessage" style="white-space: pre-line">
         </div>
 
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>

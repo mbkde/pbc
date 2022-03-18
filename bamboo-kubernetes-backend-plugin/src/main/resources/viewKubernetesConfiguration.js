@@ -22,8 +22,8 @@
                     callback(text);
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    showError(textStatus + " " + errorThrown + " " + jqXHR.responseText);
-                }
+                    showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
+                        errorThrown + "\n" + jqXHR.responseText);                }
             });
     }
 
@@ -32,6 +32,7 @@
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#currentContext").val(response.currentContext);
         AJS.$("#podTemplate").val(response.podTemplate);
+        AJS.$("#architecturePodConfig").val(response.architecturePodConfig);
         AJS.$("#iamRequestTemplate").val(response.iamRequestTemplate);
         AJS.$("#iamSubjectIdPrefix").val(response.iamSubjectIdPrefix);
         AJS.$("#containerSizes").val(response.containerSizes);
@@ -47,6 +48,7 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.currentContext = AJS.$("#currentContext").val().trim();
         config.podTemplate = AJS.$("#podTemplate").val().trim();
+        config.architecturePodConfig = AJS.$("#architecturePodConfig").val().trim();
         config.iamRequestTemplate = AJS.$("#iamRequestTemplate").val().trim();
         config.iamSubjectIdPrefix = AJS.$("#iamSubjectIdPrefix").val().trim();
         config.containerSizes = AJS.$("#containerSizes").val().trim();
@@ -69,7 +71,8 @@
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 updateStatus("");
-                showError(textStatus + " " + errorThrown + " " + jqXHR.responseText);
+                showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
+                    errorThrown + "\n" + jqXHR.responseText);
             }
         });
     }

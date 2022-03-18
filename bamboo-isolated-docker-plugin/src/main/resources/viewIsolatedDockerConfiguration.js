@@ -22,8 +22,8 @@
                     callback(text);
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    showError(textStatus + " " + errorThrown);
-                }
+                    showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
+                        errorThrown + "\n" + XMLHttpRequest.responseText);                }
             });
     }
 
@@ -31,12 +31,14 @@
         updateStatus("");
         AJS.$("#defaultImage").val(response.defaultImage);
         AJS.$("#maxAgentCreationPerMinute").val(response.maxAgentCreationPerMinute);
+        AJS.$("#architectureConfig").val(response.architectureConfig);
     }
 
     function setRemoteConfig() {
         var config = {};
         config.defaultImage = AJS.$("#defaultImage").val().trim();
         config.maxAgentCreationPerMinute = AJS.$("#maxAgentCreationPerMinute").val().trim();
+        config.architectureConfig = AJS.$("#architectureConfig").val().trim();
 
         updateStatus("Saving...");
 
@@ -50,7 +52,9 @@
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
                 updateStatus("");
-                showError(textStatus + " " + errorThrown);
+                showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
+                    errorThrown + "\n" + XMLHttpRequest.responseText);
+
             }
         });
     }

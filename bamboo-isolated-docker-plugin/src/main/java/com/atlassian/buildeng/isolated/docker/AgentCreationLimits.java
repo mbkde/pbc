@@ -17,12 +17,14 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.AbstractMap;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.UUID;
 
+@BambooComponent
 public class AgentCreationLimits {
     private final GlobalConfiguration globalConfiguration;
     private final DateTime dateTime;

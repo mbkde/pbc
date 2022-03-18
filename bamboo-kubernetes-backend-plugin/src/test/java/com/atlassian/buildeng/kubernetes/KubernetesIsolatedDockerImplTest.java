@@ -16,11 +16,22 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import static java.util.stream.Collectors.toList;
+import org.apache.commons.io.FileUtils;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.assertThrows;
+import org.mockito.ArgumentMatchers;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,7 +56,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -63,6 +74,9 @@ public class KubernetesIsolatedDockerImplTest {
     SubjectIdService subjectIdService;
     @Mock
     KubernetesClient kubernetesClient;
+    @Mock
+    BandanaManager bandanaManager;
+
 
     @InjectMocks
     KubernetesIsolatedDockerImpl kubernetesIsolatedDocker;
@@ -182,5 +196,86 @@ public class KubernetesIsolatedDockerImplTest {
         when(subjectIdService.getSubjectId(any(Long.class))).thenReturn("mock-subject-id");
         kubernetesIsolatedDocker.getSubjectId(request);
         verify(subjectIdService).getSubjectId(111L);
+    }
+
+    @Test
+    public void testPodSpecIsUnmodifiedIfArchitectureConfigIsEmpty() {
+        Configuration c = ConfigurationBuilder.create("docker-image").build();
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
+                "TEST-PLAN-JOB1",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0, "bk", 0, true);
+
+        when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn("");
+
+        Map<String, Object> returnedMap = kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>());
+
+        assertEquals(new HashMap<>(), returnedMap);
+    }
+
+    @Test
+    public void testArchitectureOverrideIsFetchedCorrectly() throws IOException {
+        Map<String, Object> config = kubernetesIsolatedDocker.getSpecificArchConfig(getArchitecturePodOverridesAsYaml(), "arm64");
+        assertEquals(Collections.singletonMap("foo", "bar"), config);
+    }
+
+    @Test
+    public void testPodSpecHasOverrideIfArchitectureOmittedButServerHasDefaultDefined() throws IOException {
+        Configuration c = ConfigurationBuilder.create("docker-image").build();
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
+                "TEST-PLAN-JOB1",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0, "bk", 0, true);
+
+        when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
+
+        Map<String, Object> returnedMap = kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>());
+
+        assertEquals(Collections.singletonMap("foo", "bar"), returnedMap);
+    }
+
+    @Test
+    public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndExists() throws IOException {
+        Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("arm64").build();
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
+                "TEST-PLAN-JOB1",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0, "bk", 0, true);
+
+        when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
+
+        Map<String, Object> returnedMap = kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>());
+
+        assertEquals(Collections.singletonMap("foo", "bar"), returnedMap);
+    }
+
+    @Test
+    public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndDoesNotExist() throws IOException {
+        Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("fakeArch").build();
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
+                "TEST-PLAN-JOB1",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0, "bk", 0, true);
+
+        when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
+        when(bandanaManager.getValue(any(), ArgumentMatchers.matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
+                .thenReturn(new LinkedHashMap<>(Collections.singletonMap("myArch", "")));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>()));
+        assertEquals("Architecture specified in build configuration was not found in server's allowed architectures list! Supported architectures are: [myArch]",
+                exception.getMessage());
+    }
+
+    // Helper functions
+
+    private String getArchitecturePodOverridesAsString() throws IOException {
+        return FileUtils.readFileToString(new File(this.getClass().getResource("/architecturePodOverrides.yaml").getFile()), "UTF-8");
+    }
+
+    private Map<String, Object> getArchitecturePodOverridesAsYaml() throws IOException {
+        Yaml yamlReader = new Yaml(new SafeConstructor());
+        Map<String, Object> yaml = (Map<String, Object>) yamlReader.load(getArchitecturePodOverridesAsString());
+        return yaml;
     }
 }

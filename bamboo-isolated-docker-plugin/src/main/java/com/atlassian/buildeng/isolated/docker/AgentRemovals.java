@@ -20,10 +20,12 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.v2.build.agent.AgentCommandSender;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.messages.StopAgentNicelyMessage;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
 public class AgentRemovals {
     private static final Logger logger = LoggerFactory.getLogger(AgentRemovals.class);
 

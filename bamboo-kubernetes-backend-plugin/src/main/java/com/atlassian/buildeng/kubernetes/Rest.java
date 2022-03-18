@@ -74,6 +74,7 @@ public class Rest {
         c.setSidekickImage(configuration.getCurrentSidekick());
         c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
+        c.setArchitecturePodConfig(configuration.getBandanaArchitecturePodConfig());
         c.setIamRequestTemplate(configuration.getBandanaIamRequestTemplateAsString());
         c.setIamSubjectIdPrefix(configuration.getIamSubjectIdPrefix());
         c.setContainerSizes(configuration.getContainerSizesAsString());

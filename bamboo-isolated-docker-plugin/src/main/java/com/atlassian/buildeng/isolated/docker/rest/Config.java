@@ -16,12 +16,17 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Simply used for REST JSON serialization/deserialization.
  */
 public class Config {
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
+    public String architectureConfig;
 
     public Config() {
     }
@@ -38,6 +43,14 @@ public class Config {
 
     public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
         this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
+    }
+
+    public String getArchitectureConfig() {
+        return architectureConfig;
+    }
+
+    public void setArchitectureConfig(String architectureConfig) {
+        this.architectureConfig = architectureConfig;
     }
 
 }

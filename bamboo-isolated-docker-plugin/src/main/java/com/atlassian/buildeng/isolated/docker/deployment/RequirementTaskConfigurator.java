@@ -32,6 +32,7 @@ import com.atlassian.struts.TextProvider;
 import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -43,9 +44,14 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
+    private final DockerHandlerImpl dockerHandler;
+    private final Validator validator;
 
-    private RequirementTaskConfigurator(TextProvider textProvider) {
+    @Inject
+    private RequirementTaskConfigurator(TextProvider textProvider, DockerHandlerImpl dockerHandler, Validator validator) {
         this.textProvider = textProvider;
+        this.dockerHandler = dockerHandler;
+        this.validator = validator;
     }
 
     @NotNull
@@ -54,6 +60,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
             @Nullable TaskDefinition previousTaskDefinition) {
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
         configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
+        configMap.put(Configuration.TASK_DOCKER_ARCHITECTURE, params.getString(Configuration.TASK_DOCKER_ARCHITECTURE));
         configMap.put(Configuration.TASK_DOCKER_IMAGE_SIZE, params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE));
         configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
@@ -69,6 +76,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
+        context.put("architectureConfig", dockerHandler.getArchitectures());
+        context.put(Configuration.DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
@@ -77,6 +86,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
+        context.put("architectureConfig", dockerHandler.getArchitectures());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 
@@ -88,7 +98,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         String extraCont = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
         String role = params.getString(Configuration.TASK_DOCKER_AWS_ROLE);
-        Validator.validate(image, size, role, extraCont, errorCollection, true);
+        String architecture = params.getString(Configuration.TASK_DOCKER_ARCHITECTURE);
+        validator.validate(image, size, role, architecture, extraCont, errorCollection, true);
     }
     
 

@@ -31,6 +31,8 @@ import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
+@ExportAsService({AgentCreationReschedulerImpl.class, LifecycleAware.class, AgentCreationRescheduler.class})
 public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreationRescheduler  {
     private final Logger logger = LoggerFactory.getLogger(AgentCreationReschedulerImpl.class);
     private final EventPublisher eventPublisher;

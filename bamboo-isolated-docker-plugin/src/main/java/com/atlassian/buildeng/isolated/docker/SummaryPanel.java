@@ -62,6 +62,10 @@ public class SummaryPanel implements WebPanel {
             });
             ret.append("</dd>");
 
+            if (configuration.getArchitecture() != null) {
+                ret.append("<dt>CPU Architecture:</dt><dd>").append(configuration.getArchitecture()).append("</dd>");
+            }
+
             if (configuration.getAwsRole() != null) {
                 ret.append("<dt>AWS IAM Role:</dt><dd>").append(configuration.getAwsRole()).append("</dd>");
             }

@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -324,9 +325,12 @@ public class PodCreator {
         map.put("volumes", createVolumes(r));
         map.put("containers", createContainers(globalConfiguration, r));
         List<Map<String, Object>> initContainersList = new ArrayList<>();
-        initContainersList.add(createSidekick(globalConfiguration.getCurrentSidekick()));
+        String currentSidekick = Objects.requireNonNull(globalConfiguration.getCurrentSidekick(),
+                "Sidekick has not yet been configured! Please set it in the PBC Kubernetes Backend settings.");
+        initContainersList.add(createSidekick(currentSidekick));
         map.put("initContainers", initContainersList);
         map.put("hostAliases", createLocalhostAliases(r.getConfiguration()));
+
         return map;
     }
 
