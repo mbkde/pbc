@@ -329,8 +329,14 @@ public class DockerHandlerImpl implements DockerHandler {
             Pair.make(Configuration.ContainerSize.LARGE_8X.name(), "8xLarge (~80G memory, 20 vCPU)"));
     }
 
+    /**
+     * We need a static method to grab the list of architectures since
+     * {@link com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator} does not actually get passed
+     * a DockerHandlerImpl instance, but instead a raw config map. Allow manually passing a GlobalConfiguration and the
+     * obtained architecture string.
+     */
     @NotNull
-    public Collection<Pair<String, String>> getArchitectures() {
+    public static Collection<Pair<String, String>> getArchitecturesWithConfiguration(GlobalConfiguration globalConfiguration, String architecture) {
         Map<String, String> archConfig = globalConfiguration.getArchitectureConfig();
 
         List<Pair<String, String>> displayedArchList = archConfig.entrySet().stream()
@@ -339,7 +345,6 @@ public class DockerHandlerImpl implements DockerHandler {
 
         // If an architecture is not in the list of globally configured architectures, we should still show it
         // (e.g. An arch was previously supported but now removed)
-        String architecture = configuration.getArchitecture();
         if (StringUtils.isNotBlank(architecture) && !archConfig.containsKey(architecture)) {
             if (displayedArchList.size() == 0) {
                 // If we reach in here, it means the server has no configured options for architecture, but the user has
@@ -352,5 +357,9 @@ public class DockerHandlerImpl implements DockerHandler {
         }
 
         return displayedArchList;
+    }
+
+    public Collection<Pair<String, String>> getArchitectures() {
+       return getArchitecturesWithConfiguration(globalConfiguration, configuration.getArchitecture());
     }
 }
