@@ -78,8 +78,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
         context.put("architectureConfig", DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration,
-                taskDefinition.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE)));
-        context.put(Configuration.DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE));
+                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE)));
+        context.put(Configuration.TASK_DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
