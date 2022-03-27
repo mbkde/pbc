@@ -24,6 +24,7 @@ import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.v2.build.agent.capability.RequirementImpl;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.isolated.docker.handler.DockerHandlerImpl;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
@@ -44,13 +45,13 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(RequirementTaskConfigurator.class);
     private final TextProvider textProvider;
-    private final DockerHandlerImpl dockerHandler;
+    private final GlobalConfiguration globalConfiguration;
     private final Validator validator;
 
     @Inject
-    private RequirementTaskConfigurator(TextProvider textProvider, DockerHandlerImpl dockerHandler, Validator validator) {
+    private RequirementTaskConfigurator(TextProvider textProvider, GlobalConfiguration globalConfiguration, Validator validator) {
         this.textProvider = textProvider;
-        this.dockerHandler = dockerHandler;
+        this.globalConfiguration = globalConfiguration;
         this.validator = validator;
     }
 
@@ -76,8 +77,9 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        context.put("architectureConfig", dockerHandler.getArchitectures());
-        context.put(Configuration.DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE));
+        context.put("architectureConfig", DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration,
+                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE)));
+        context.put(Configuration.TASK_DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE));
         context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
@@ -86,7 +88,8 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
-        context.put("architectureConfig", dockerHandler.getArchitectures());
+        context.put("architectureConfig", DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration,
+                null));
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 
