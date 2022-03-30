@@ -18,6 +18,7 @@ package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import com.atlassian.bamboo.build.BuildExecutionManager;
 import com.atlassian.bamboo.build.CustomBuildProcessorServer;
+import com.atlassian.bamboo.specs.api.builders.pbc.Architecture;
 import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
 import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
 import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForJob;
@@ -122,9 +123,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 agentRemovals.stopAgentRemotely(agentId);
                 agentRemovals.removeAgent(agentId);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.",
-                        buildContext.getBuildResultKey(), agentId);
+                        buildContext.getPlanResultKey().getKey(), agentId);
             } else {
-                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getBuildResultKey());
+                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getPlanResultKey().getKey());
             }
 
         }
@@ -173,7 +174,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
                 .awsRole(c.getAwsRole())
-                .architecture(c.getArchitecture())
+                .architecture(Architecture.fromString(c.getArchitecture()))
                 .extraContainers(c.getExtraContainers().stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
@@ -233,7 +234,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
-                    .architecture(config.getArchitecture())
+                    .architecture(Architecture.fromString(config.getArchitecture()))
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
