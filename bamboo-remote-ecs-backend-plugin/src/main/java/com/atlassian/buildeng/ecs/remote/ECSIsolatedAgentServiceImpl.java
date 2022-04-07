@@ -97,7 +97,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             callback.handle(result);
         }
         catch (UniformInterfaceException e) {
-            int code = e.getResponse().getClientResponseStatus().getStatusCode();
+            int code = e.getResponse().getStatusInfo().getStatusCode();
             String s = "";
             if (e.getResponse().hasEntity()) {
                 s = e.getResponse().getEntity(String.class);
@@ -166,7 +166,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                     .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
             }
             catch (UniformInterfaceException e) {
-                int code = e.getResponse().getClientResponseStatus().getStatusCode();
+                int code = e.getResponse().getStatusInfo().getStatusCode();
                 String s = "";
                 if (e.getResponse().hasEntity()) {
                     s = e.getResponse().getEntity(String.class);

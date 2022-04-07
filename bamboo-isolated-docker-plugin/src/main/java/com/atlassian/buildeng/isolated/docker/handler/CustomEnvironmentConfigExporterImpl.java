@@ -18,6 +18,7 @@ package com.atlassian.buildeng.isolated.docker.handler;
 
 import com.atlassian.bamboo.deployments.configuration.CustomEnvironmentConfigPluginExporter;
 import com.atlassian.bamboo.specs.api.builders.deployment.configuration.EnvironmentPluginConfiguration;
+import com.atlassian.bamboo.specs.api.builders.pbc.Architecture;
 import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
 import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
 import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment;
@@ -160,7 +161,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
-                    .architecture(config.getArchitecture())
+                    .architecture(Architecture.fromString(config.getArchitecture()))
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));

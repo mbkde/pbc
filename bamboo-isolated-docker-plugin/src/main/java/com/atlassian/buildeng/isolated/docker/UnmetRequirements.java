@@ -39,9 +39,9 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcher;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcherImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
+import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirementSet;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentDedicatedJobEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentNonMatchedRequirementEvent;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
@@ -102,7 +102,7 @@ public class UnmetRequirements {
                         ImmutableBuildable.class);
                 if (build != null) {
                     //only builds
-                    RequirementSet req = build.getEffectiveRequirementSet();
+                    ImmutableRequirementSet req = build.getEffectiveRequirementSet();
                     if (!capabilityRequirementsMatcher.matches(capabilitySet, req)) {
                         current.getCustomBuildData().put(Constants.RESULT_ERROR,
                                 "Capabilities of <a href=\"/admin/agent/viewAgent.action?agentId="
@@ -159,10 +159,10 @@ public class UnmetRequirements {
         return false;
     }
 
-    private List<String> findMissingRequirements(CapabilitySet capabilitySet, RequirementSet req) {
+    private List<String> findMissingRequirements(CapabilitySet capabilitySet, ImmutableRequirementSet req) {
         return req.getRequirements().stream()
-                .filter((Requirement t) -> !capabilityRequirementsMatcher.matches(capabilitySet, t))
-                .map((Requirement t) -> t.getKey())
+                .filter((ImmutableRequirement t) -> !capabilityRequirementsMatcher.matches(capabilitySet, t))
+                .map((ImmutableRequirement t) -> t.getKey())
                 .collect(Collectors.toList());
     }
 }
