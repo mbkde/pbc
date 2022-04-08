@@ -18,7 +18,6 @@ package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import com.atlassian.bamboo.build.BuildExecutionManager;
 import com.atlassian.bamboo.build.CustomBuildProcessorServer;
-import com.atlassian.bamboo.specs.api.builders.pbc.Architecture;
 import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
 import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
 import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForJob;
@@ -45,7 +44,6 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -143,6 +140,13 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Configuration.DOCKER_ARCHITECTURE));
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @NotNull
     @Override
     public PerBuildContainerForJob toSpecsEntity(HierarchicalConfiguration buildConfiguration) {
@@ -174,7 +178,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
                 .awsRole(c.getAwsRole())
-                .architecture(Architecture.fromString(c.getArchitecture()))
+                .architecture(c.getArchitecture())
                 .extraContainers(c.getExtraContainers().stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
@@ -221,6 +225,13 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 toJsonString(specsProperties.getExtraContainers()));
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @Nullable
     @Override
     public PerBuildContainerForJob fromYaml(@NotNull Node node) {
@@ -234,7 +245,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
-                    .architecture(Architecture.fromString(config.getArchitecture()))
+                    .architecture(config.getArchitecture())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));

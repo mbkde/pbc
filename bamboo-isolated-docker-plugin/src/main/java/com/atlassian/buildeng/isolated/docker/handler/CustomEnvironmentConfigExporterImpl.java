@@ -18,7 +18,6 @@ package com.atlassian.buildeng.isolated.docker.handler;
 
 import com.atlassian.bamboo.deployments.configuration.CustomEnvironmentConfigPluginExporter;
 import com.atlassian.bamboo.specs.api.builders.deployment.configuration.EnvironmentPluginConfiguration;
-import com.atlassian.bamboo.specs.api.builders.pbc.Architecture;
 import com.atlassian.bamboo.specs.api.builders.pbc.EnvVar;
 import com.atlassian.bamboo.specs.api.builders.pbc.ExtraContainer;
 import com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment;
@@ -39,15 +38,12 @@ import com.atlassian.buildeng.isolated.docker.yaml.YamlConfigParser;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.StringUtils;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -149,6 +145,13 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         return Collections.emptyList();
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @Override
     public PerBuildContainerForEnvironment fromYaml(@NotNull Node node) throws PropertiesValidationException {
         YamlConfigParser parser = new YamlConfigParser();
@@ -161,7 +164,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
-                    .architecture(Architecture.fromString(config.getArchitecture()))
+                    .architecture(config.getArchitecture())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
