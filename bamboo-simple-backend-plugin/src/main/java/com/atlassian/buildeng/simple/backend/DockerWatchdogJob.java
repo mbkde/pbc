@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.simple.backend;
 
-import com.atlassian.sal.api.scheduling.PluginJob;
 import com.google.common.base.Splitter;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,16 +23,19 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DockerWatchdogJob implements PluginJob {
+public class DockerWatchdogJob implements Job {
     private static final Logger logger = LoggerFactory.getLogger(DockerWatchdogJob.class);
 
     @Override
-    public void execute(Map<String, Object> jobDataMap) {
+    public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            executeImpl(jobDataMap);
+            executeImpl(context.getJobDetail().getJobDataMap());
         } catch (Throwable t) { 
             //this is throwable because of NoClassDefFoundError and alike. 
             // These are not Exception subclasses and actually

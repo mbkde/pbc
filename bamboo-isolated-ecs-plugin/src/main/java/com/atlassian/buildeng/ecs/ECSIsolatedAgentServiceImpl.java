@@ -34,19 +34,25 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
+import static org.quartz.JobBuilder.newJob;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import org.quartz.Trigger;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +64,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     private final GlobalConfiguration globalConfiguration;
     private final ECSScheduler ecsScheduler;
-    private final PluginScheduler pluginScheduler;
+    private final Scheduler scheduler;
     private final SchedulerBackend schedulerBackend;
     private final TaskDefinitionRegistrations taskDefRegistrations;
     //not used in the class but in the bundled library and apparently in that case for
@@ -68,11 +74,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final EventPublisher eventPublisher;
 
     public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
-            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
+            Scheduler scheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
             EventPublisher eventPublisher) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
-        this.pluginScheduler = pluginScheduler;
+        this.scheduler = scheduler;
         this.schedulerBackend = schedulerBackend;
         this.taskDefRegistrations = taskDefRegistrations;
         this.eventPublisher = eventPublisher;
@@ -165,16 +171,34 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public void onStart() {
-        Map<String, Object> config = new HashMap<>();
+        JobDataMap config = new JobDataMap();
         config.put("globalConfiguration", globalConfiguration);
         config.put("schedulerBackend", schedulerBackend);
         config.put("isolatedAgentService", this);
-        pluginScheduler.scheduleJob(Constants.PLUGIN_JOB_KEY, ECSWatchdogJob.class, config, new Date(), Constants.PLUGIN_JOB_INTERVAL_MILLIS);
+        Trigger jobTrigger = newTrigger()
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(Constants.PLUGIN_JOB_INTERVAL_MILLIS)
+                        .repeatForever()
+                )
+                .build();
+        JobDetail pluginJob = newJob(ECSWatchdogJob.class)
+                .withIdentity(Constants.PLUGIN_JOB_KEY)
+                .usingJobData(config)
+                .build();
+        try {
+            scheduler.scheduleJob(pluginJob, jobTrigger);
+        } catch (SchedulerException e) {
+            logger.error("Unable to schedule RemoteWatchdogJob", e);
+        }
     }
 
     @Override
     public void onStop() {
-        pluginScheduler.unscheduleJob(Constants.PLUGIN_JOB_KEY);
+        try {
+            scheduler.unscheduleJob(triggerKey(Constants.PLUGIN_JOB_KEY));
+        } catch (SchedulerException e) {
+            logger.error("Remote ECS Backend Plugin is being stopped but is unable to unschedule RemoteWatchdogJob", e);
+        }
     }
-
 }

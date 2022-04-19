@@ -16,8 +16,6 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
@@ -29,13 +27,14 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
-import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
+import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Map;
+import org.quartz.Job;
 import org.slf4j.Logger;
 
 
-public abstract class WatchdogJob implements PluginJob {
+public abstract class WatchdogJob implements Job {
     protected final void killBuild(
             DeploymentExecutionService deploymentExecutionService,
             DeploymentResultService deploymentResultService,
