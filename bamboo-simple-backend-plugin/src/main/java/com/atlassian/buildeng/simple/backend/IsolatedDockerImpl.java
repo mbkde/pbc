@@ -31,7 +31,7 @@ import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,7 +102,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         File f;
         try {
             f = fileForUUID(request.getUniqueIdentifier().toString());
-            Files.write(yaml, f, Charset.forName("UTF-8"));
+            Files.asCharSink(f, StandardCharsets.UTF_8).write(yaml);
             ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),  "up");
             globalConfiguration.decorateCommands(pb);
             pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
