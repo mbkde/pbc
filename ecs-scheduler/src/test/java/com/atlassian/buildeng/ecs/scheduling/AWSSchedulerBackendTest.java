@@ -20,9 +20,9 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration.ExtraContainer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.when;
 

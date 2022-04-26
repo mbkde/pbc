@@ -16,10 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.atlassian.bamboo.agent.AgentType;
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
@@ -38,9 +34,15 @@ import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-
+@ExtendWith(MockitoExtension.class)
 public class TheMightyAgentFilterTest {
     
     PlanResultKey resultKey1 = PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1);
@@ -113,7 +115,7 @@ public class TheMightyAgentFilterTest {
     
     private BuildAgent mockAgent(AgentType type) {
         BuildAgent toRet = mock(BuildAgent.class);
-        when(toRet.getType()).thenReturn(type);
+        Mockito.lenient().when(toRet.getType()).thenReturn(type);
         return toRet;
     }
     
@@ -129,7 +131,7 @@ public class TheMightyAgentFilterTest {
         BuildAgent agent = mockAgent(AgentType.REMOTE);
         RemoteAgentDefinition d2 = new RemoteAgentDefinitionImpl();
         d2.setCapabilitySet(set);
-        when(agent.getDefinition()).thenReturn(d2);
+        Mockito.lenient().when(agent.getDefinition()).thenReturn(d2);
         return agent;
     }
 

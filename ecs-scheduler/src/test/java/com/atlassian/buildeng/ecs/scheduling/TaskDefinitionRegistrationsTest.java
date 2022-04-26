@@ -16,34 +16,32 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import static com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations.sanitizeImageName;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionResult;
 import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
+import static com.atlassian.buildeng.ecs.scheduling.TaskDefinitionRegistrations.sanitizeImageName;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 
 /**
  *
  * @author mkleint
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TaskDefinitionRegistrationsTest {
     @Mock
     private TaskDefinitionRegistrations.Backend backend;
@@ -70,25 +68,25 @@ public class TaskDefinitionRegistrationsTest {
         when(backend.getAllRegistrations()).thenReturn(dock);
         BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 
-        when(regs.ecsClient.registerTaskDefinition(anyObject())).thenReturn(new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        when(regs.ecsClient.registerTaskDefinition(any())).thenReturn(new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         Configuration c = ConfigurationBuilder.create("aaa")
                 .withImageSize(Configuration.ContainerSize.SMALL)
                 .withExtraContainer("extra", "extra", Configuration.ExtraContainerSize.SMALL)
                 .build();
         try {
             int val = regs.registerDockerImage(c, env);
-            Assert.assertEquals(4, val);
-            Assert.assertEquals(4, regs.findTaskRegistrationVersion(c, env));
+            Assertions.assertEquals(4, val);
+            Assertions.assertEquals(4, regs.findTaskRegistrationVersion(c, env));
         } catch (ECSException ex) {
-            Assert.fail(ex.getMessage());
+            Assertions.fail(ex.getMessage());
         }
         
         //next time round we should not add anything.
         try {
             int val = regs.registerDockerImage(c, env);
-            Assert.assertEquals(4, val);
+            Assertions.assertEquals(4, val);
         } catch (ECSException ex) {
-            Assert.fail(ex.getMessage());
+            Assertions.fail(ex.getMessage());
         }
     }
 
@@ -100,23 +98,23 @@ public class TaskDefinitionRegistrationsTest {
         when(backend.getAllRegistrations()).thenReturn(dock);
         when(ecsConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         
-        when(regs.ecsClient.registerTaskDefinition(anyObject())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        when(regs.ecsClient.registerTaskDefinition(any())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
         BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 
         Configuration c = ConfigurationBuilder.create("image").build();
         Integer number = regs.registerDockerImage(c, env);
         Integer number2 = regs.findTaskRegistrationVersion(c, env);
-        assertEquals(number, number2);
+        Assertions.assertEquals(number, number2);
         Configuration c2 = ConfigurationBuilder.create("image").withImageSize(Configuration.ContainerSize.SMALL).build();
 
         int notExisting = regs.findTaskRegistrationVersion(c2, env);
-        assertEquals(-1, notExisting);
+        Assertions.assertEquals(-1, notExisting);
 
     }
 
     @Test
     public void sanitizeTest() throws Exception {
-        assertEquals("image:tag", sanitizeImageName("\t\n\f\r image:tag\t\n\f\r "));
+        Assertions.assertEquals("image:tag", sanitizeImageName("\t\n\f\r image:tag\t\n\f\r "));
     }
 
     public static class TaskDefinitionRegistrationsSubclass extends TaskDefinitionRegistrations {

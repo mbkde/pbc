@@ -16,31 +16,29 @@
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
-import com.pholser.junit.quickcheck.From;
-import com.pholser.junit.quickcheck.Property;
-import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
-import org.junit.runner.RunWith;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.atlassian.event.api.EventPublisher;
+import com.pholser.junit.quickcheck.From;
+import com.pholser.junit.quickcheck.Property;
+import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import java.time.Duration;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
+import static org.hamcrest.junit.MatcherAssume.assumeThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.runner.RunWith;
 
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerQuickTest {

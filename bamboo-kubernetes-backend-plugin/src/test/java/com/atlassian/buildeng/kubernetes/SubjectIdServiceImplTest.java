@@ -1,10 +1,5 @@
 package com.atlassian.buildeng.kubernetes;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.core.BambooEntityOid;
@@ -18,15 +13,19 @@ import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableChain;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith({MockitoExtension.class})
 public class SubjectIdServiceImplTest {
     @Mock
     AdministrationConfigurationAccessor admConfAccessor;
@@ -61,21 +60,21 @@ public class SubjectIdServiceImplTest {
 
     private static final Integer IAM_REQUEST_LIMIT = 63;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(admConfAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("test-bamboo");
+        Mockito.lenient().when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("test-bamboo");
 
-        when(cachedPlanManager.getPlanByKey(TEST_PLAN_KEY)).thenReturn(TEST_PLAN);
-        when(cachedPlanManager.getPlanByKey(TEST_PLAN_NOT_FOUND_KEY)).thenReturn(null);
-        when(cachedPlanManager.getPlanByKey(TEST_JOB_KEY)).thenReturn(TEST_JOB);
-        when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
+        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_PLAN_KEY)).thenReturn(TEST_PLAN);
+        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_PLAN_NOT_FOUND_KEY)).thenReturn(null);
+        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_JOB_KEY)).thenReturn(TEST_JOB);
+        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
 
 
-        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
-        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_NOT_FOUND)).thenReturn(null);
-        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY)).thenReturn(TEST_DEPLOYMENT_LONG_PLAN_KEY);
+        Mockito.lenient().when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
+        Mockito.lenient().when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_NOT_FOUND)).thenReturn(null);
+        Mockito.lenient().when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY)).thenReturn(TEST_DEPLOYMENT_LONG_PLAN_KEY);
 
         when(TEST_PLAN_BRANCH.getMaster()).thenReturn(TEST_PLAN);
         when(TEST_PLAN_BRANCH.hasMaster()).thenReturn(true);
@@ -103,14 +102,18 @@ public class SubjectIdServiceImplTest {
         assertEquals("test-bamboo/TEST-PLAN/D/12345", subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID));
     }
 
-    @Test(expected = NotFoundException.class)
-    public void testPlanNotFound() {
-        subjectIdService.getSubjectId(TEST_PLAN_NOT_FOUND_KEY);
+    @Test
+    public void testPlanNotFound()  {
+        assertThrows(NotFoundException.class, () -> {
+            subjectIdService.getSubjectId(TEST_PLAN_NOT_FOUND_KEY);
+        });
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void testDeploymentNotFound() {
-        subjectIdService.getSubjectId(TEST_DEPLOYMENT_NOT_FOUND);
+        assertThrows(NotFoundException.class, () -> {
+            subjectIdService.getSubjectId(TEST_DEPLOYMENT_NOT_FOUND);
+        });
     }
 
     @Test

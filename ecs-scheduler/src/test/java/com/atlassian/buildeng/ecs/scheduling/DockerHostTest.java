@@ -20,8 +20,8 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class DockerHostTest {
 
@@ -45,7 +45,7 @@ public class DockerHostTest {
 
         ArrayList<DockerHost> lst = Lists.newArrayList(h1, h2, h3, h4);
         Optional<DockerHost> first = lst.stream().sorted(DockerHost.compareByResourcesAndAge()).findFirst();
-        assertEquals(first.get(), h3);
+        Assertions.assertEquals(first.get(), h3);
     }
 
 }

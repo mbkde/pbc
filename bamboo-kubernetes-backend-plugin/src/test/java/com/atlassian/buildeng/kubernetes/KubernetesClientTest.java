@@ -6,15 +6,15 @@ import com.atlassian.buildeng.kubernetes.exception.PodLimitQuotaExceededExceptio
 import com.atlassian.buildeng.kubernetes.shell.ResponseStub;
 import com.atlassian.buildeng.kubernetes.shell.StubShellExecutor;
 import io.fabric8.kubernetes.api.model.Pod;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import java.io.File;
 import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class KubernetesClientTest {
 
     @Mock
@@ -31,31 +31,37 @@ public class KubernetesClientTest {
         assert list.get(0).getMetadata().getName().equals("tiller-deploy-8596f464bc-x5fh9");
     }
 
-    @Test(expected = PodLimitQuotaExceededException.class)
+    @Test
     public void testCreatePodExceedsQuota() {
-        StubShellExecutor shellExecutor = new StubShellExecutor();
-        ResponseStub stub =  new ResponseStub("/fixture/kubectl/pod-quota-limit.txt", "/fixture/kubectl/empty.txt", 1);
-        shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
-        KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
-        client.createPod(new File("/tmp/file.yaml"));
+        assertThrows(PodLimitQuotaExceededException.class, () -> {
+            StubShellExecutor shellExecutor = new StubShellExecutor();
+            ResponseStub stub =  new ResponseStub("/fixture/kubectl/pod-quota-limit.txt", "/fixture/kubectl/empty.txt", 1);
+            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
+            KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
+            client.createPod(new File("/tmp/file.yaml"));
+        });
     }
 
-    @Test(expected = ConcurrentResourceQuotaModificationException.class)
+    @Test
     public void testConcurrentResourceQuotaModificationException() {
-        StubShellExecutor shellExecutor = new StubShellExecutor();
-        ResponseStub stub =  new ResponseStub("/fixture/kubectl/resource-quota-concurrent.txt", "/fixture/kubectl/empty.txt", 1);
-        shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
-        KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
-        client.createPod(new File("/tmp/file.yaml"));
+        assertThrows(ConcurrentResourceQuotaModificationException.class, () -> {
+            StubShellExecutor shellExecutor = new StubShellExecutor();
+            ResponseStub stub =  new ResponseStub("/fixture/kubectl/resource-quota-concurrent.txt", "/fixture/kubectl/empty.txt", 1);
+            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
+            KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
+            client.createPod(new File("/tmp/file.yaml"));
+        });
     }
 
-    @Test(expected = ConnectionTimeoutException.class)
+    @Test
     public void testConnectionTimeoutException() {
-        StubShellExecutor shellExecutor = new StubShellExecutor();
-        ResponseStub stub =  new ResponseStub("/fixture/kubectl/tls-connection-timeout.txt", "/fixture/kubectl/empty.txt", 1);
-        shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
-        KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
-        client.createPod(new File("/tmp/file.yaml"));
+        assertThrows(ConnectionTimeoutException.class, () -> {
+            StubShellExecutor shellExecutor = new StubShellExecutor();
+            ResponseStub stub =  new ResponseStub("/fixture/kubectl/tls-connection-timeout.txt", "/fixture/kubectl/empty.txt", 1);
+            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
+            KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
+            client.createPod(new File("/tmp/file.yaml"));
+        });
     }
 
 

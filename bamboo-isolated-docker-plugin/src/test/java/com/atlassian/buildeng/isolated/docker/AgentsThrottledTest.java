@@ -16,9 +16,9 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AgentsThrottledTest {
 
@@ -26,7 +26,7 @@ public class AgentsThrottledTest {
     private static final double RETRY_DELAY_SECONDS = Constants.RETRY_DELAY.getSeconds();
     private static final double RETRIES_EACH_MINUTE = 60 / RETRY_DELAY_SECONDS;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         agentsThrottled = new AgentsThrottled();
     }
@@ -34,7 +34,7 @@ public class AgentsThrottledTest {
     @Test
     public void addSingleKey() {
         agentsThrottled.add("key");
-        assertEquals(1, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(1, agentsThrottled.getTotalAgentsThrottled());
     }
 
     @Test
@@ -42,7 +42,7 @@ public class AgentsThrottledTest {
         agentsThrottled.add("key");
         agentsThrottled.add("key");
         agentsThrottled.add("key");
-        assertEquals(1, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(1, agentsThrottled.getTotalAgentsThrottled());
     }
 
     @Test
@@ -50,23 +50,23 @@ public class AgentsThrottledTest {
         agentsThrottled.add("key1");
         agentsThrottled.add("key2");
         agentsThrottled.add("key3");
-        assertEquals(3, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(3, agentsThrottled.getTotalAgentsThrottled());
     }
 
     @Test
     public void removeExistingKey() {
         String key = "key";
         agentsThrottled.add(key);
-        assertEquals(1, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(1, agentsThrottled.getTotalAgentsThrottled());
         agentsThrottled.remove(key);
-        assertEquals(0, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(0, agentsThrottled.getTotalAgentsThrottled());
     }
 
     @Test
     public void removeNonexistentKey() {
-        assertEquals(0, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(0, agentsThrottled.getTotalAgentsThrottled());
         agentsThrottled.remove("key");
-        assertEquals(0, agentsThrottled.getTotalAgentsThrottled());
+        Assertions.assertEquals(0, agentsThrottled.getTotalAgentsThrottled());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class AgentsThrottledTest {
             agentsThrottled.add("key2");
             agentsThrottled.add("key3");
         }
-        assertEquals(3, agentsThrottled.numAgentsThrottledLongerThanMinutes(minutes));
+        Assertions.assertEquals(3, agentsThrottled.numAgentsThrottledLongerThanMinutes(minutes));
     }
 
     @Test
@@ -88,6 +88,6 @@ public class AgentsThrottledTest {
         for (int i = 0; i < retriesFor5Minutes - 1; i++) {
             agentsThrottled.add("key1");
         }
-        assertEquals(0, agentsThrottled.numAgentsThrottledLongerThanMinutes(minutes));
+        Assertions.assertEquals(0, agentsThrottled.numAgentsThrottledLongerThanMinutes(minutes));
     }
 }
