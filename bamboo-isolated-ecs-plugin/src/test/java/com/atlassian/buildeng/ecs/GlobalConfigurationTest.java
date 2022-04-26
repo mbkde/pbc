@@ -15,14 +15,6 @@
  */
 package com.atlassian.buildeng.ecs;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
@@ -35,12 +27,19 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.base.Objects;
 import java.util.Arrays;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  *
@@ -133,7 +132,7 @@ public class GlobalConfigurationTest {
     }
 
     AuditLogEntry matches(final String oldValue, final String newValue) {
-        return Matchers.argThat(item -> {
+        return ArgumentMatchers.argThat(item -> {
             System.out.println("m:" + item.getClass());
             AuditLogEntry m =  item;
             return Objects.equal(oldValue, m.getOldValue()) && Objects.equal(newValue, m.getNewValue());
