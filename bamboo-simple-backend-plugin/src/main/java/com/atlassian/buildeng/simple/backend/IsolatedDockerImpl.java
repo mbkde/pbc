@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
+
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
 
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.buildeng.simple.backend.rest.Config;
@@ -42,15 +48,11 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import static org.quartz.JobBuilder.newJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -60,17 +62,17 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     /**
-     * The environment variable to override on the agent per image
+     * The environment variable to override on the agent per image.
      */
     static String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
-     * The environment variable to override on the agent per server
+     * The environment variable to override on the agent per server.
      */
     static String ENV_VAR_SERVER = "BAMBOO_SERVER";
     
     /**
-     * The environment variable to set the result spawning up the agent
+     * The environment variable to set the result spawning up the agent.
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
 

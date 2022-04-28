@@ -42,7 +42,7 @@
         <spring.scanner.version>2.2.3</spring.scanner.version>
         <aws-java.version>1.12.188</aws-java.version>
         <jackson-core.version>2.13.2</jackson-core.version>
-        <checkstyle.version>8.29</checkstyle.version>
+        <checkstyle.version>10.1</checkstyle.version>
         <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>

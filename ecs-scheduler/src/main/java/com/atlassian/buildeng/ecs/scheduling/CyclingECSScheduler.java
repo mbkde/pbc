@@ -92,7 +92,9 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
     }
 
     private void processRequests(Pair<SchedulingRequest, SchedulingCallback> pair) {
-        if (pair == null) return;
+        if (pair == null) {
+            return;
+        }
         SchedulingRequest request = pair.getLeft();
         String cluster = globalConfiguration.getCurrentCluster();
         String asgName = globalConfiguration.getCurrentASG();
@@ -206,13 +208,15 @@ public class CyclingECSScheduler implements ECSScheduler, DisposableBean {
                 //keep the existing one.
             }
         } else if (oldone != null) {
-            logger.info("FutureReservation: Resetting for " + newone.getBuildKey() + " " +newone.getResultKeys());
+            logger.info("FutureReservation: Resetting for " + newone.getBuildKey() + " " + newone.getResultKeys());
             futureReservations.remove(newone.getBuildKey());
         }
     }
 
     public void unreserveFutureCapacity(SchedulingRequest req) {
-        if (req.getBuildKey() == null) return; //TODO remove, test path only
+        if (req.getBuildKey() == null) {
+            return; //TODO remove, test path only
+        }
         futureReservations.computeIfPresent(req.getBuildKey(), (String key, ReserveRequest old) -> {
             final boolean present = old.getResultKeys().contains(req.getResultId());
             if (present) {

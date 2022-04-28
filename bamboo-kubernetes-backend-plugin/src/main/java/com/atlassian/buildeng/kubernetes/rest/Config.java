@@ -74,9 +74,13 @@ public class Config {
         this.podTemplate = podTemplate;
     }
 
-    public String getArchitecturePodConfig() { return architecturePodConfig; }
+    public String getArchitecturePodConfig() {
+        return architecturePodConfig;
+    }
 
-    public void setArchitecturePodConfig(String architecturePodConfig) { this.architecturePodConfig = architecturePodConfig; }
+    public void setArchitecturePodConfig(String architecturePodConfig) {
+        this.architecturePodConfig = architecturePodConfig;
+    }
 
     public void setIamRequestTemplate(String iamRequestTemplate) {
         this.iamRequestTemplate = iamRequestTemplate;

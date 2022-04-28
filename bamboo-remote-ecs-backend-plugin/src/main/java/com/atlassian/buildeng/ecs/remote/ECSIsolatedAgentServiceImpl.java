@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
+
 import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
@@ -50,20 +55,17 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.utils.URIBuilder;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
-import static org.quartz.JobBuilder.newJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
-    private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     static String PLUGIN_JOB_KEY = "ecs-remote-watchdog";
     static long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; //Reap once every 60 seconds
     
@@ -91,7 +93,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         Client client = createClient();
 
         final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler");
-//        resource.addFilter(new HTTPBasicAuthFilter(username, password));
+        // resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
         try {
             IsolatedDockerAgentResult result =
@@ -101,8 +103,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                         .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
             logger.info("result:" + result.isRetryRecoverable() + " " + result.getErrors() + " " + result.getCustomResultData());
             callback.handle(result);
-        }
-        catch (UniformInterfaceException e) {
+        } catch (UniformInterfaceException e) {
             int code = e.getResponse().getStatusInfo().getStatusCode();
             String s = "";
             if (e.getResponse().hasEntity()) {
@@ -170,8 +171,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 resource
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
-            }
-            catch (UniformInterfaceException e) {
+            } catch (UniformInterfaceException e) {
                 int code = e.getResponse().getStatusInfo().getStatusCode();
                 String s = "";
                 if (e.getResponse().hasEntity()) {

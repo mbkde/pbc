@@ -21,9 +21,8 @@ import javax.ws.rs.ext.Provider;
 
 @Provider
 public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<RestableIsolatedDockerException> {
-    
-  @Override
-  public Response toResponse(RestableIsolatedDockerException ex) {
-    return ex.toResponse();
-  }
+    @Override
+    public Response toResponse(RestableIsolatedDockerException ex) {
+        return ex.toResponse();
+    }
 }

@@ -18,7 +18,7 @@
  * The purpose of this package is to stop and remove docker agents from
  * Bamboo after the agent has been used or is deemed not necessary. 
  * Too many pathways and limited points where we can influence things, hence documenting here.
- * 
+ * <p>
  * 1. a successful/failed build will be stopped in StopDockerAgentBuildProcessor that is running
  * on the agent. That's deemed a bit more reliable than sending remote messages from server.
  * Then on the server PostJobActionImpl takes over and removes the agent from db.
@@ -33,5 +33,6 @@
  * 4. The ReaperJob is a scheduled job that looks for idle docker agents (those came online but their job is cancelled?) 
  * and removes them. 
  * 5. When AgentOfflineEvent is received for docker agents, we just remove it.
+ * </p>
  */
 package com.atlassian.buildeng.isolated.docker.lifecycle;

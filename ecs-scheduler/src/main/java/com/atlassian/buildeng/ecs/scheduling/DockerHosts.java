@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -103,9 +104,9 @@ public final class DockerHosts {
     private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
         return dockerHosts.stream().collect(Collectors.partitioningBy(
                 (DockerHost dockerHost) ->
-                        dockerHost.isPresentInASG() &&
-                        dockerHost.ageMillis() < stalePeriod.toMillis() &&
-                        !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())
+                        dockerHost.isPresentInASG()
+                        && dockerHost.ageMillis() < stalePeriod.toMillis()
+                        && !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())
                 )
         );
     }

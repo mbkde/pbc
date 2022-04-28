@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultModelUpdater implements ModelUpdater {
-    private final static Logger logger = LoggerFactory.getLogger(DefaultModelUpdater.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultModelUpdater.class);
 
     private final SchedulerBackend schedulerBackend;
     private final EventPublisher eventPublisher;
@@ -126,9 +125,9 @@ public class DefaultModelUpdater implements ModelUpdater {
             //debugging block
             logger.warn("Hosts with disconnected agent:" + cache.size() + " " + cache.toString());
             //too chatty and datadog cannot filter it out properly
-//            if (oldSize != cache.size()) {
-//                eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
-//            }
+            /*  if (oldSize != cache.size()) {
+                  eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
+              } */
         }
         final List<DockerHost> selectedToKill = selectDisconnectedToKill(hosts, cache);
 
@@ -152,9 +151,9 @@ public class DefaultModelUpdater implements ModelUpdater {
 
     private List<DockerHost> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {
         return hosts.agentDisconnected().stream()
-// container without agent still shows like it's running something but it's not true, all the things are doomed.
-// maybe reevaluate at some point when major ecs changes arrive.
-//                .filter(t -> t.runningNothing())
+                // container without agent still shows like it's running something but it's not true, all the things are doomed.
+                // maybe reevaluate at some point when major ecs changes arrive.
+                //.filter(t -> t.runningNothing())
                 .filter((DockerHost t) -> {
                     Date date = dates.get(t);
                     return date != null && (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() >= TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
@@ -216,8 +215,8 @@ public class DefaultModelUpdater implements ModelUpdater {
         return toTerminate.size();
     }
 
-        /**
-     * compute current value for available instance CPU of currently running instances
+    /**
+     * compute current value for available instance CPU of currently running instances.
      *
      * @param hosts known current hosts
      * @return number of CPU power available
@@ -234,7 +233,7 @@ public class DefaultModelUpdater implements ModelUpdater {
 
 
     /**
-     * compute current value for available instance memory of currently running instances
+     * compute current value for available instance memory of currently running instances.
      *
      * @param hosts known current hosts
      * @return number of memory available

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.api;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -76,6 +77,7 @@ public class Scheduler {
         }
         throw new IllegalArgumentException("Wrong format!");
     }
+
     private final String uuid;
     private final String resultId;
     private final String bambooServer;

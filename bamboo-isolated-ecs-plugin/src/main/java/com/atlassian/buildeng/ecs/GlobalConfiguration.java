@@ -147,7 +147,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     }
 
     /**
-     * Get custom logging driver to use with job tasks
+     * Get custom logging driver to use with job tasks.
      *
      * @return the custom logging driver or null of none defined.
      */

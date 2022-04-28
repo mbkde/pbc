@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.ecs;
 
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
+
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -44,15 +49,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
-import static org.quartz.JobBuilder.newJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +96,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             } catch (ECSException ex) {
                 logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
                 //Have to catch some of the exceptions here instead of the callback to use retries.
-                if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     callback.handle(toRet);

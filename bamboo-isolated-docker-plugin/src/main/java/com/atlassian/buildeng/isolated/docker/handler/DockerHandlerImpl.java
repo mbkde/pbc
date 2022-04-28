@@ -360,6 +360,6 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     public Collection<Pair<String, String>> getArchitectures() {
-       return getArchitecturesWithConfiguration(globalConfiguration, configuration.getArchitecture());
+        return getArchitecturesWithConfiguration(globalConfiguration, configuration.getArchitecture());
     }
 }

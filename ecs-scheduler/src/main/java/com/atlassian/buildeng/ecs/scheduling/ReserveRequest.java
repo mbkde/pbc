@@ -30,6 +30,7 @@ public class ReserveRequest {
     public ReserveRequest(String groupIdentifier, List<String> resultKeys, long cpuReservation, long memoryReservation) {
         this(groupIdentifier, resultKeys, cpuReservation, memoryReservation, System.currentTimeMillis());
     }
+
     @VisibleForTesting
     ReserveRequest(String groupIdentifier, List<String> resultKeys, long cpuReservation, long memoryReservation, long timeMillis) {
         this.buildKey = groupIdentifier;

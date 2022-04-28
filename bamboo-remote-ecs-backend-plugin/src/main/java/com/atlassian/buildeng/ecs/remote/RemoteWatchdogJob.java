@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.ecs.remote;
 
 import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
+
 import com.atlassian.buildeng.ecs.remote.rest.ArnStoppedState;
 import com.atlassian.buildeng.ecs.shared.AbstractWatchdogJob;
 import com.atlassian.buildeng.ecs.shared.StoppedState;

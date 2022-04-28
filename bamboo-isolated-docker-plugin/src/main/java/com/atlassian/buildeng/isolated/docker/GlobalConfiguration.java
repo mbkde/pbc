@@ -40,7 +40,6 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * Spring component that provides access to settings set in the administration panel.
- *
  * WARNING: Do not try and be smart and use custom container classes to store config. A different class loader will be
  * used each time a plugin is reloaded. If you store a custom class in Bandana, you will get a ClassCastException when
  * attempting to cast it back to the intended class. Stick to Java built-ins.
@@ -89,8 +88,8 @@ public class GlobalConfiguration {
 
     /**
      * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
-     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     *     map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
+     *     Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     @NotNull
     public Map<String, String> getArchitectureConfig() {
@@ -104,14 +103,13 @@ public class GlobalConfiguration {
      *
      * @param bandanaManager An instance of {@link BandanaManager} that should be wired from Bamboo
      * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
-     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     *     map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
+     *     Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     public static Map<String, String> getArchitectureConfigWithBandana(BandanaManager bandanaManager) {
         LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>) bandanaManager
                 .getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED);
-        return architectureConfig != null ?
-                Collections.unmodifiableMap(architectureConfig) : new LinkedHashMap<>();
+        return architectureConfig != null ? Collections.unmodifiableMap(architectureConfig) : new LinkedHashMap<>();
     }
 
     /**
@@ -150,18 +148,16 @@ public class GlobalConfiguration {
                         yaml = (LinkedHashMap) uncastYaml;
                         for (Map.Entry entry: yaml.entrySet()) {
                             if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
-                                throw new IllegalArgumentException("Architecture configuration must be a map from String to" +
-                                        " String, but " + entry + " was not!");
+                                throw new IllegalArgumentException("Architecture configuration must be a map from String to"
+                                        + " String, but " + entry + " was not!");
                             }
                         }
                         yaml = (LinkedHashMap<String, String>) uncastYaml;
-                    }
-                    else {
+                    } else {
                         throw new IllegalArgumentException("Received invalid YAML for architecture list");
                     }
 
-                }
-                catch (YAMLException e) {
+                } catch (YAMLException e) {
                     throw new IllegalArgumentException("Received invalid YAML for architecture list");
                 }
             }

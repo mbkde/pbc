@@ -95,10 +95,10 @@ public class SummaryPanel implements WebPanel {
                                 ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
                                 ret.append("<dd>").append(entry.getValue()).append("</dd>");
                             }
-                    );
+            );
             ret.append("</dl>");
-//TODO more information
-//ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
+            //TODO more information
+            //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
         }
         return ret.toString();
     }
