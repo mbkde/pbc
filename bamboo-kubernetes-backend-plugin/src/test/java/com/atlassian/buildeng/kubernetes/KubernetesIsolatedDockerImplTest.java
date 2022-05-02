@@ -28,7 +28,6 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -64,8 +63,6 @@ public class KubernetesIsolatedDockerImplTest {
     GlobalConfiguration globalConfiguration;
     @Mock
     KubeJmxService kubeJmxService;
-    @Mock
-    PluginScheduler pluginScheduler;
     @Mock
     ExecutorService executor;
     @Mock
