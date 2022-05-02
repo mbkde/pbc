@@ -487,8 +487,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             memoryLimitSizes.clear();
             memorySizes.clear();
             labelSizes.clear();
-            JsonParser parser = new JsonParser();
-            JsonElement root = parser.parse(getContainerSizesAsString());
+            JsonElement root = JsonParser.parseString(getContainerSizesAsString());
             root.getAsJsonObject().getAsJsonArray("main").forEach((JsonElement t) -> {
                 processEntry(t, MAIN_PREFIX);
             });
