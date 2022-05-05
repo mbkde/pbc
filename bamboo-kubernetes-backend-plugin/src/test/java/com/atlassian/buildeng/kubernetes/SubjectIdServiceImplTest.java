@@ -49,9 +49,12 @@ public class SubjectIdServiceImplTest {
 
 
     private final PlanKey TEST_PLAN_NOT_FOUND_KEY = PlanKeys.getPlanKey("TEST-NOTFOUND");
-    private final PlanKey TEST_JOB_KEY = PlanKeys.getPlanKey("TEST-PARENT-JOB1");
+    private final PlanKey TEST_JOB_PARENT_KEY = PlanKeys.getPlanKey("TEST-PARENT-JOB1");
+    private final PlanKey TEST_JOB_MASTER_KEY = PlanKeys.getPlanKey("TEST-MASTER-JOB1");
     private final PlanKey TEST_PARENT_KEY = PlanKeys.getPlanKey("TEST-PARENT");
-    private final ImmutableJob TEST_JOB = mockJob(TEST_JOB_KEY, 1L);
+    private final PlanKey TEST_MASTER_PARENT_KEY = PlanKeys.getPlanKey("TEST-MASTER");
+    private final ImmutableJob TEST_JOB = mockJob(TEST_JOB_PARENT_KEY, 1L);
+    private final ImmutableJob TEST_BRANCH_JOB = mockBranchJob(TEST_JOB_MASTER_KEY, 1L);
 
     private final Long TEST_DEPLOYMENT_ID = 12345L;
     private final DeploymentProject TEST_DEPLOYMENT = mockDeployment(TEST_PLAN_KEY,TEST_DEPLOYMENT_ID);
@@ -69,7 +72,8 @@ public class SubjectIdServiceImplTest {
 
         when(cachedPlanManager.getPlanByKey(TEST_PLAN_KEY)).thenReturn(TEST_PLAN);
         when(cachedPlanManager.getPlanByKey(TEST_PLAN_NOT_FOUND_KEY)).thenReturn(null);
-        when(cachedPlanManager.getPlanByKey(TEST_JOB_KEY)).thenReturn(TEST_JOB);
+        when(cachedPlanManager.getPlanByKey(TEST_JOB_PARENT_KEY)).thenReturn(TEST_JOB);
+        when(cachedPlanManager.getPlanByKey(TEST_JOB_MASTER_KEY)).thenReturn(TEST_BRANCH_JOB);
         when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
 
 
@@ -114,8 +118,13 @@ public class SubjectIdServiceImplTest {
     }
 
     @Test
-    public void testJobKey() {
-        assertEquals("test-bamboo/TEST-PARENT/B/1", subjectIdService.getSubjectId(TEST_JOB_KEY));
+    public void testJobKeyReturnsParentId() {
+        assertEquals("test-bamboo/TEST-PARENT/B/1", subjectIdService.getSubjectId(TEST_JOB_PARENT_KEY));
+    }
+
+    @Test
+    public void testBranchJobKeyReturnsMasterPlanId() {
+        assertEquals("test-bamboo/TEST-MASTER/B/1", subjectIdService.getSubjectId(TEST_JOB_MASTER_KEY));
     }
 
     @Test
@@ -162,17 +171,34 @@ public class SubjectIdServiceImplTest {
     }
 
     private ImmutableJob mockJob(PlanKey planKey, long planId) {
-        ImmutableJob job = mock(ImmutableJob.class, Mockito.withSettings().lenient());
-        when(job.getPlanKey()).thenReturn(planKey);
+        ImmutableJob job = mock(ImmutableJob.class);
         when(job.getPlanType()).thenReturn(PlanType.JOB);
 
-        ImmutableChain parent = mock(ImmutableChain.class, Mockito.withSettings().lenient());
+        ImmutableChain parent = mock(ImmutableChain.class);
         when(parent.getPlanKey()).thenReturn(TEST_PARENT_KEY);
-        when(parent.getOid()).thenReturn(BambooEntityOid.create(1L));
-        when(parent.getPlanType()).thenReturn(PlanType.CHAIN);
         when(parent.getId()).thenReturn(planId);
 
         when(job.getParent()).thenReturn(parent);
+        return job;
+    }
+
+    private ImmutableJob mockBranchJob(PlanKey planKey, long planId) {
+        ImmutableJob job = mock(ImmutableJob.class);
+        when(job.getPlanType()).thenReturn(PlanType.JOB);
+
+        // Use lenient mock so that failure case is more obvious
+        ImmutableChain plan = mock(ImmutableChain.class, Mockito.withSettings().lenient());
+        when(job.getParent()).thenReturn(plan);
+        when(plan.hasMaster()).thenReturn(true);
+        // We expect the following mocks do not get called normally, only in a failure scenario
+        when(plan.getPlanKey()).thenReturn(TEST_PARENT_KEY);
+        when(plan.getId()).thenReturn(3L);
+
+        ImmutableChain master = mock(ImmutableChain.class);
+        when(plan.getMaster()).thenReturn(master);
+        when(master.getPlanKey()).thenReturn(TEST_MASTER_PARENT_KEY);
+        when(master.getId()).thenReturn(planId);
+
         return job;
     }
 
