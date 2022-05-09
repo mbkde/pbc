@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.atlassian.buildeng</groupId>
     <artifactId>bamboo-isolated-docker</artifactId>
-    <version>2.96-SNAPSHOT</version>
+    <version>2.98-SNAPSHOT</version>
     <name>Bamboo plugins for cluster based Docker agents</name>
     <description>more relevant text here</description>
     <packaging>pom</packaging>
@@ -38,7 +38,7 @@
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.4.1</amps.version>
         <xvfb.enable>true</xvfb.enable>
-        <platform.version>5.0.19</platform.version>
+        <platform.version>5.3.4</platform.version>
         <spring.scanner.version>2.2.3</spring.scanner.version>
         <aws-java.version>1.12.188</aws-java.version>
         <jackson-core.version>2.13.2</jackson-core.version>
