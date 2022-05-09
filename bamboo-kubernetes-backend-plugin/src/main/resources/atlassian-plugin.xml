@@ -65,11 +65,11 @@ limitations under the License.
 
     <component key="subjectIdService" class="com.atlassian.buildeng.kubernetes.SubjectIdServiceImpl"/>
 
-    <component-import key="pluginScheduler">
-        <description>SAL Scheduler</description>
-        <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
+    <component-import key="scheduler">
+        <description>Quartz Scheduler</description>
+        <interface>org.quartz.Scheduler</interface>
     </component-import>
-    
+
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
     <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
