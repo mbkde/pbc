@@ -135,15 +135,17 @@ public class PreBuildQueuedEventListener {
 
     @EventListener
     public void retry(RetryAgentStartupEvent event) {
+        String eventKey = event.getContext().getResultKey().getKey();
         logger.debug("Trying to schedule an agent for {} (event UUID: {}, retry count: {})",
-                event.getContext().getResultKey().getKey(), event.getUniqueIdentifier(), event.getRetryCount());
+                eventKey, event.getUniqueIdentifier(), event.getRetryCount());
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             logger.info("Retrying but {} was already cancelled, aborting. (state:{})",
-                    event.getContext().getResultKey().getKey(), 
+                    eventKey,
                     event.getContext().getCurrentResult().getLifeCycleState());
             //TODO cancel future reservations if any
             jmx.incrementCancelled();
+            agentsThrottled.remove(eventKey);
             return;
         }
         synchronized (this) {
@@ -163,11 +165,11 @@ public class PreBuildQueuedEventListener {
                 logger.info("Agent creation limit reached. Rescheduling {}", event.getContext().getResultKey());
                 // retry infinitely
                 rescheduler.reschedule(event);
-                agentsThrottled.add(event.getContext().getResultKey().getKey());
+                agentsThrottled.add(eventKey);
                 jmx.recalculateThrottle(agentsThrottled);
                 return;
             }
-            agentsThrottled.remove(event.getContext().getResultKey().getKey());
+            agentsThrottled.remove(eventKey);
             jmx.recalculateThrottle(agentsThrottled);
             agentCreationLimits.addToCreationQueue(event);
         }
@@ -185,7 +187,7 @@ public class PreBuildQueuedEventListener {
         }
 
         isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
+                new IsolatedDockerAgentRequest(event.getConfiguration(), eventKey,
                         event.getUniqueIdentifier(), 
                         getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
                         event.getRetryCount(), isPlan),
@@ -193,8 +195,8 @@ public class PreBuildQueuedEventListener {
                     @Override
                     public void handle(IsolatedDockerAgentResult result) {
                         if (result.isRetryRecoverable()) {
-                            logger.warn("Build {} was not queued but recoverable, retrying.. Error message: {}", 
-                                    event.getContext().getResultKey().getKey(), 
+                            logger.warn("Build {} was not queued but recoverable, retrying.. Error message: {}",
+                                    eventKey,
                                     Joiner.on("\n").join(result.getErrors()));
                             if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
                                 return;

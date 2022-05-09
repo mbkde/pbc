@@ -44,7 +44,6 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -122,9 +120,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 agentRemovals.stopAgentRemotely(agentId);
                 agentRemovals.removeAgent(agentId);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.",
-                        buildContext.getBuildResultKey(), agentId);
+                        buildContext.getPlanResultKey().getKey(), agentId);
             } else {
-                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getBuildResultKey());
+                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getPlanResultKey().getKey());
             }
 
         }
@@ -142,6 +140,13 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Configuration.DOCKER_ARCHITECTURE));
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @NotNull
     @Override
     public PerBuildContainerForJob toSpecsEntity(HierarchicalConfiguration buildConfiguration) {
@@ -220,6 +225,13 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 toJsonString(specsProperties.getExtraContainers()));
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @Nullable
     @Override
     public PerBuildContainerForJob fromYaml(@NotNull Node node) {
