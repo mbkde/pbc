@@ -176,7 +176,8 @@ public class GlobalConfiguration {
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
         AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
-                new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+                new Date(), null, null, null, null,
+                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
     }
 }
