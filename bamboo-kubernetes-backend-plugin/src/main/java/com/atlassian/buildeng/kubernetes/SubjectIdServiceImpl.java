@@ -9,6 +9,7 @@ import com.atlassian.bamboo.plan.PlanType;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
+import com.atlassian.bamboo.plan.cache.ImmutableTopLevelPlan;
 
 public class SubjectIdServiceImpl implements SubjectIdService {
 
@@ -26,11 +27,17 @@ public class SubjectIdServiceImpl implements SubjectIdService {
         this.deploymentProjectService = deploymentProjectService;
     }
 
+    /**
+     * An {@link ImmutablePlan} object could be a job or a branch plan, or both. We always want to return the same ID
+     * for any branch or job in a plan, so that the end user only needs one subject ID in their IAM policy. Therefore,
+     * we always delegate up to the main branch plan (i.e. generally an implementation of {@link ImmutableTopLevelPlan})
+     */
     @Override
     public String getSubjectId(ImmutablePlan plan) {
-        plan = plan.hasMaster() ? plan.getMaster() : plan;
-        // Check if plan is a "job" that has been casted to ImmutablePlan; get the containing plan if so.
+        // Check if ImmutablePlan is actually a job; get the containing plan if so.
         plan = plan.getPlanType().equals(PlanType.JOB) ? ((ImmutableJob) plan).getParent() : plan;
+        // Check if plan is a branch build or not. If so, grab the main branch.
+        plan = plan.hasMaster() ? plan.getMaster() : plan;
         String subjectId = getInstanceName() + "/" + plan.getPlanKey() + "/B/" + plan.getId();
         // IAM Request validator has a limit of 63 characters
         if (subjectId.length() > IAM_REQUEST_LIMIT) {
