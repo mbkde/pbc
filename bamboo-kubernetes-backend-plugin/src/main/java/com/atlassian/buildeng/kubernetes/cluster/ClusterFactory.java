@@ -70,7 +70,8 @@ public class ClusterFactory {
     private List<ClusterRegistryItem> loadClusters() throws KubectlException {
         String json = kubectl.executeKubectl(globalContextSupplier, "get", "clusters", "-o", "json");
         //TODO check in future if clusterregistry.k8s.io/v1alpha1 / Cluster is supported by the client lib parsing
-        JsonElement root = JsonParser.parseString(json);
+        JsonParser parser = new JsonParser();
+        JsonElement root = parser.parse(json);
         List<ClusterRegistryItem> items = new ArrayList<>();
         if (root != null && root.isJsonObject()) {
             JsonObject rootObj = root.getAsJsonObject();

@@ -33,7 +33,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
 public class KubeJmxService implements DisposableBean, InitializingBean {
-    private static final Logger logger = LoggerFactory.getLogger(KubeJmxService.class);
+    private static final Logger logger = LoggerFactory.getLogger(JmxJob.class);
 
     private KubeAgents agentsCount;
     private ObjectName name;

@@ -27,30 +27,25 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
+import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import static org.quartz.JobBuilder.newJob;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
+import org.apache.commons.lang.StringUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -78,17 +73,18 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     private static final String BUILD_DIR_VOLUME_NAME = "build-dir";
 
     private final AdministrationConfigurationAccessor admConfAccessor;
-    private final Scheduler scheduler;
+    private final PluginScheduler pluginScheduler;
     private final PluginAccessor pluginAccessor;
     private final GlobalConfiguration globalConfiguration;
     private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
+    
 
     public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, 
-            Scheduler scheduler, GlobalConfiguration globalConfiguration,
+            PluginScheduler pluginScheduler, GlobalConfiguration globalConfiguration,
             PluginAccessor pluginAccessor) {
         this.admConfAccessor = admConfAccessor;
-        this.scheduler = scheduler;
+        this.pluginScheduler = pluginScheduler;
         this.globalConfiguration = globalConfiguration;
         this.pluginAccessor = pluginAccessor;
     }
@@ -102,7 +98,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         File f;
         try {
             f = fileForUUID(request.getUniqueIdentifier().toString());
-            Files.asCharSink(f, StandardCharsets.UTF_8).write(yaml);
+            Files.write(yaml, f, Charset.forName("UTF-8"));
             ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),  "up");
             globalConfiguration.decorateCommands(pb);
             pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
@@ -211,33 +207,14 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
 
     @Override
     public void onStart() {
-        JobDataMap config = new JobDataMap();
+        Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
-        Trigger jobTrigger = newTrigger()
-                .startNow()
-                .withSchedule(simpleSchedule()
-                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
-                        .repeatForever()
-                )
-                .build();
-        JobDetail pluginJob = newJob(DockerWatchdogJob.class)
-                .withIdentity(PLUGIN_JOB_KEY)
-                .usingJobData(config)
-                .build();
-        try {
-            scheduler.scheduleJob(pluginJob, jobTrigger);
-        } catch (SchedulerException e) {
-            Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, e);
-        }
+        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, DockerWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
 
     @Override
     public void onStop() {
-        try {
-            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_KEY));
-        } catch (SchedulerException e) {
-            Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, e);
-        }
+        pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
     }
     
     private boolean isDockerInDockerImage(String image) {

@@ -30,7 +30,8 @@ public class Scheduler {
 
     //silly BUT we already (de)serialize Configuration this way
     public static Scheduler fromJson(String v) {
-        JsonElement obj = JsonParser.parseString(v);
+        JsonParser p = new JsonParser();
+        JsonElement obj = p.parse(v);
         if (obj.isJsonObject()) {
             JsonObject oo = obj.getAsJsonObject();
             JsonPrimitive uuid = oo.getAsJsonPrimitive("uuid");

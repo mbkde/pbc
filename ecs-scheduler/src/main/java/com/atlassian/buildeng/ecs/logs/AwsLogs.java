@@ -18,11 +18,11 @@ package com.atlassian.buildeng.ecs.logs;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.GetConsoleOutputRequest;
 import com.amazonaws.services.ec2.model.GetConsoleOutputResult;
-import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.AWSLogsClientBuilder;
+import com.amazonaws.services.logs.AWSLogsClient;
 import com.amazonaws.services.logs.model.CreateLogStreamRequest;
 import com.amazonaws.services.logs.model.GetLogEventsRequest;
 import com.amazonaws.services.logs.model.GetLogEventsResult;
@@ -50,7 +50,7 @@ public class AwsLogs {
 
 
     public static void writeTo(OutputStream os, String logGroupName, String region, String prefix, String containerName, String taskArn) {
-        AWSLogs logs = AWSLogsClientBuilder.standard().withRegion(Regions.fromName(region)).build();
+        AWSLogsClient logs = new AWSLogsClient().withRegion(Regions.fromName(region));
         PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)));
         try {
             String logStreamName = constructLogStream(prefix, containerName, taskArn);
@@ -105,7 +105,7 @@ public class AwsLogs {
             try {
                 AmazonEC2 client = AmazonEC2ClientBuilder.defaultClient();
                 GetConsoleOutputResult result = client.getConsoleOutput(new GetConsoleOutputRequest(t));
-                AWSLogs logs = AWSLogsClientBuilder.standard().withRegion(Regions.fromName(driver.getRegion())).build();
+                AWSLogsClient logs = new AWSLogsClient().withRegion(Regions.fromName(driver.getRegion()));
                 // t (ec2 instance id) should be unique within reason
                 final String logStreamName = "pbc-ec2-instance-stale/" + t;
                 logs.createLogStream(new CreateLogStreamRequest(driver.getLogGroupName(), logStreamName));

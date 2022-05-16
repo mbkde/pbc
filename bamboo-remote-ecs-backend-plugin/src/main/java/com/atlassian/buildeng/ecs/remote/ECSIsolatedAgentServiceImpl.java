@@ -28,6 +28,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
+import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -42,6 +43,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -50,15 +53,6 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.utils.URIBuilder;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
-import static org.quartz.JobBuilder.newJob;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,13 +68,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     static final String AGENT_CONTAINER_NAME = "bamboo-agent";
 
     private final GlobalConfiguration globalConfiguration;
-    private final Scheduler scheduler;
+    private final PluginScheduler pluginScheduler;
     private final PluginAccessor pluginAccessor;
 
     public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, 
-            Scheduler scheduler, PluginAccessor pluginAccessor) {
+            PluginScheduler pluginScheduler, PluginAccessor pluginAccessor) {
         this.globalConfiguration = globalConfiguration;
-        this.scheduler = scheduler;
+        this.pluginScheduler = pluginScheduler;
         this.pluginAccessor = pluginAccessor;
     }
 
@@ -188,34 +182,15 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public void onStart() {
-        JobDataMap config = new JobDataMap();
+        Map<String, Object> config = new HashMap<>();
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
-        Trigger jobTrigger = newTrigger()
-                .startNow()
-                .withSchedule(simpleSchedule()
-                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
-                        .repeatForever()
-                )
-                .build();
-        JobDetail pluginJob = newJob(RemoteWatchdogJob.class)
-                .withIdentity(PLUGIN_JOB_KEY)
-                .usingJobData(config)
-                .build();
-        try {
-            scheduler.scheduleJob(pluginJob, jobTrigger);
-        } catch (SchedulerException e) {
-            logger.error("Unable to schedule RemoteWatchdogJob", e);
-        }
+        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, RemoteWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
     }
 
     @Override
     public void onStop() {
-        try {
-            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_KEY));
-        } catch (SchedulerException e) {
-            logger.error("Remote ECS Backend Plugin is being stopped but is unable to unschedule RemoteWatchdogJob", e);
-        }
+        pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
     }
 
     private String createBody(IsolatedDockerAgentRequest request, GlobalConfiguration globalConfiguration) {
