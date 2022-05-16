@@ -86,14 +86,16 @@ public class DockerSoxService {
         SoxRestConfig old = getConfig();
         if (old.isEnabled() != config.isEnabled()) {
             AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(),
-                    new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Enabled",
+                    new Date(), null, null, null, null,
+                    AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Enabled",
                     Boolean.toString(old.isEnabled()), Boolean.toString(config.isEnabled()));
             auditLogService.log(ent);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_ENABLED, config.isEnabled());
         }
         if (!Arrays.equals(old.getWhitelistPatterns(), config.getWhitelistPatterns())) {
             AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(),
-                    new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Whitelist",
+                    new Date(), null, null, null, null,
+                    AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Whitelist",
                     Arrays.toString(old.getWhitelistPatterns()), Arrays.toString(config.getWhitelistPatterns()));
             auditLogService.log(ent);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_PATTERNS,
