@@ -33,12 +33,11 @@ limitations under the License.
     
     <component key="globalConfiguration" class="com.atlassian.buildeng.simple.backend.GlobalConfiguration">
     </component>
-
-    <component-import key="scheduler">
-        <description>Quartz Scheduler</description>
-        <interface>org.quartz.Scheduler</interface>
+    
+    <component-import key="pluginScheduler">
+        <description>SAL Scheduler</description>
+        <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
     </component-import>
-
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
     
     <!-- REST resources -->

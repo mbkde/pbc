@@ -45,8 +45,8 @@ import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.webresource.WebResourceManager;
+import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.atlassian.struts.TextProvider;
-import org.quartz.Scheduler;
 
 public class ComponentImports {
     @ComponentImport
@@ -62,7 +62,7 @@ public class ComponentImports {
     public ContainerSizeDescriptor containerSizeDescriptor;
 
     @BambooImport
-    public Scheduler scheduler;
+    public PluginScheduler pluginScheduler;
 
     @BambooImport
     public FeatureManager featureManager;

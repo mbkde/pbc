@@ -69,8 +69,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,10 +104,10 @@ public class KubernetesWatchdog extends WatchdogJob {
     
     
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public final void execute(Map<String, Object> jobDataMap) {
         long start = System.currentTimeMillis();
         try {
-            executeImpl(context.getJobDetail().getJobDataMap());
+            executeImpl(jobDataMap);
         } catch (Throwable t) { 
             // this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually

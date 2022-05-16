@@ -17,7 +17,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
+import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -222,7 +222,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     
     @VisibleForTesting
     AmazonECS createClient() {
-        return AmazonECSClientBuilder.defaultClient();
+        return new AmazonECSClient();
     }    
 
     private Map<Configuration, Integer> convertFromPersisted(Map<String, Integer> persisted) {

@@ -18,8 +18,7 @@ package com.atlassian.buildeng.kubernetes.jmx;
 
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,17 +26,18 @@ public class JmxJob extends WatchdogJob  {
     private static final Logger logger = LoggerFactory.getLogger(JmxJob.class);
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(Map<String, Object> jobDataMap) {
         try {
             BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
             KubeJmxService jmxService = getService(KubeJmxService.class,
-                    "kubeJmxService", context.getJobDetail().getJobDataMap());
+                "kubeJmxService", jobDataMap);
             jmxService.recalculate(buildQueueManager);
-        } catch (Throwable t) {
+        } catch (Throwable t) { 
             // this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
             // throwing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
     }
+    
 }

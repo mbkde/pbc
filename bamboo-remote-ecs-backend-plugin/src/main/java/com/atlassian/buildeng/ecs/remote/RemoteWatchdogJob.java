@@ -17,12 +17,14 @@
 package com.atlassian.buildeng.ecs.remote;
 
 import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
+
 import com.atlassian.buildeng.ecs.remote.rest.ArnStoppedState;
 import com.atlassian.buildeng.ecs.shared.AbstractWatchdogJob;
 import com.atlassian.buildeng.ecs.shared.StoppedState;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

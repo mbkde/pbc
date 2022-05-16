@@ -36,11 +36,6 @@ limitations under the License.
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>
             <version>${bamboo.version}</version>

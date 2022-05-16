@@ -41,8 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +60,9 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
     private static final Logger logger = LoggerFactory.getLogger(AbstractWatchdogJob.class);
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public final void execute(Map<String, Object> jobDataMap) {
         try {
-            executeImpl(context.getJobDetail().getJobDataMap());
+            executeImpl(jobDataMap);
         } catch (Throwable t) { 
             //this is throwable because of NoClassDefFoundError and alike. 
             // These are not Exception subclasses and actually
