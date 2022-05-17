@@ -81,5 +81,10 @@ limitations under the License.
             <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

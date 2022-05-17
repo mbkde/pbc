@@ -31,6 +31,8 @@ import com.atlassian.spring.container.ContainerManager;
 import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Map;
 import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 
 
@@ -74,4 +76,5 @@ public abstract class WatchdogJob implements Job {
         return type.cast(obj);
     }
 
+    public abstract void execute(JobExecutionContext context) throws JobExecutionException;
 }
