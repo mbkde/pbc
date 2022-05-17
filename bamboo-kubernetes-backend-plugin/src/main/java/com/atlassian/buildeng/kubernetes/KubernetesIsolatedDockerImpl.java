@@ -33,7 +33,6 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -46,7 +45,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +55,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
+import static org.quartz.JobBuilder.newJob;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import org.quartz.Trigger;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
@@ -85,19 +92,19 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     private final GlobalConfiguration globalConfiguration;
     private final KubeJmxService kubeJmxService;
-    private final PluginScheduler pluginScheduler;
+    private final Scheduler scheduler;
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
     private final BandanaManager bandanaManager;
     private final DarkFeatureManager darkFeatureManager;
 
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
-                                        PluginScheduler pluginScheduler,
+                                        Scheduler scheduler,
                                         KubeJmxService kubeJmxService,
                                         SubjectIdService subjectIdService,
                                         BandanaManager bandanaManager,
                                         DarkFeatureManager darkFeatureManager) {
-        this.pluginScheduler = pluginScheduler;
+        this.scheduler = scheduler;
         this.globalConfiguration = globalConfiguration;
         this.kubeJmxService = kubeJmxService;
         this.bandanaManager = bandanaManager;
@@ -267,20 +274,57 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     @Override
     public void onStart() {
-        Map<String, Object> config = new HashMap<>();
+        JobDataMap config = new JobDataMap();
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
         config.put("kubeJmxService", kubeJmxService);
-        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, KubernetesWatchdog.class,
-                config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
-        pluginScheduler.scheduleJob(PLUGIN_JOB_JMX_KEY, JmxJob.class,
-                config, new Date(), PLUGIN_JOB_JMX_INTERVAL_MILLIS);
+
+        Trigger watchdogJobTrigger = jobTrigger(PLUGIN_JOB_INTERVAL_MILLIS);
+        JobDetail watchdogJob = jobDetail(KubernetesWatchdog.class, PLUGIN_JOB_KEY, config);
+        Trigger pluginJmxJobTrigger = jobTrigger(PLUGIN_JOB_JMX_INTERVAL_MILLIS);
+        JobDetail pluginJmxJob = jobDetail(JmxJob.class, PLUGIN_JOB_JMX_KEY, config);
+
+        try {
+            scheduler.scheduleJob(watchdogJob, watchdogJobTrigger);
+        } catch (SchedulerException e) {
+            logger.error("Unable to schedule KubernetesWatchdog", e);
+        }
+        try {
+            scheduler.scheduleJob(pluginJmxJob, pluginJmxJobTrigger);
+        } catch (SchedulerException e) {
+            logger.error("Unable to schedule JmxJob", e);
+        }
+    }
+
+    private Trigger jobTrigger(long interval) {
+        return newTrigger()
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(interval)
+                        .repeatForever()
+                )
+                .build();
+    }
+
+    private JobDetail jobDetail(Class c, String jobKey, JobDataMap jobDataMap) {
+        return newJob(c)
+                .withIdentity(jobKey)
+                .usingJobData(jobDataMap)
+                .build();
     }
 
     @Override
     public void onStop() {
-        pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
-        pluginScheduler.unscheduleJob(PLUGIN_JOB_JMX_KEY);
+        try {
+            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_KEY));
+        } catch (SchedulerException e) {
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule KubernetesWatchdogJob", e);
+        }
+        try {
+            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_JMX_KEY));
+        } catch (SchedulerException e) {
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+        }
         executor.shutdown();
     }
 
