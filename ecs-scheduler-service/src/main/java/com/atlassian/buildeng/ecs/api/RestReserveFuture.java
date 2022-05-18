@@ -27,8 +27,7 @@ import java.util.List;
 public class RestReserveFuture {
 
     public static RestReserveFuture fromJson(String v) {
-        JsonParser p = new JsonParser();
-        JsonElement obj = p.parse(v);
+        JsonElement obj = JsonParser.parseString(v);
         if (obj.isJsonObject()) {
             JsonObject oo = obj.getAsJsonObject();
             JsonPrimitive buildKey = oo.getAsJsonPrimitive("buildKey");

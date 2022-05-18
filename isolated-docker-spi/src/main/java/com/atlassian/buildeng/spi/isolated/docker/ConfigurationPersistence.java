@@ -32,8 +32,7 @@ public class ConfigurationPersistence {
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationPersistence.class);
 
     public static Configuration toConfiguration(String source) {
-        JsonParser p = new JsonParser();
-        JsonElement obj = p.parse(source);
+        JsonElement obj = JsonParser.parseString(source);
         if (obj.isJsonObject()) {
             JsonObject jsonobj = obj.getAsJsonObject();
             ConfigurationBuilder bld = ConfigurationBuilder.create(jsonobj.getAsJsonPrimitive("image").getAsString());
@@ -100,7 +99,7 @@ public class ConfigurationPersistence {
     public static List<Configuration.ExtraContainer> fromJsonString(String source) {
         List<Configuration.ExtraContainer> toRet = new ArrayList<>();
         try {
-            JsonElement obj = new JsonParser().parse(source);
+            JsonElement obj = JsonParser.parseString(source);
             if (obj.isJsonArray()) {
                 JsonArray arr = obj.getAsJsonArray();
                 arr.forEach((JsonElement t) -> {

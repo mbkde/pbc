@@ -381,8 +381,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     }
 
     private void validateContainerSizes(String containerSizes) throws IllegalArgumentException {
-        JsonParser parser = new JsonParser();
-        JsonElement root = parser.parse(containerSizes);
+        JsonElement root = JsonParser.parseString(containerSizes);
         Preconditions.checkArgument(root.isJsonObject()
                 && root.getAsJsonObject().has("main")
                 && root.getAsJsonObject().has("extra"), "Required root json object with 'main' and 'extra' fields");
@@ -492,8 +491,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             memoryLimitSizes.clear();
             memorySizes.clear();
             labelSizes.clear();
-            JsonParser parser = new JsonParser();
-            JsonElement root = parser.parse(getContainerSizesAsString());
+            JsonElement root = JsonParser.parseString(getContainerSizesAsString());
             root.getAsJsonObject().getAsJsonArray("main").forEach((JsonElement t) -> {
                 processEntry(t, MAIN_PREFIX);
             });

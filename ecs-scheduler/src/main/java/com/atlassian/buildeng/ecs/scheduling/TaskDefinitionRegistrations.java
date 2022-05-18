@@ -19,7 +19,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.Request;
 import com.amazonaws.protocol.json.JsonClientMetadata;
 import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.HostVolumeProperties;
 import com.amazonaws.services.ecs.model.KeyValuePair;
@@ -223,7 +223,7 @@ public class TaskDefinitionRegistrations {
 
     @VisibleForTesting
     AmazonECS createClient() {
-        return new AmazonECSClient();
+        return AmazonECSClientBuilder.defaultClient();
     }
 
     private static Collection<String> generateExtraContainerLinks(Configuration.ExtraContainer t) {

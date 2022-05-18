@@ -89,7 +89,7 @@ public class Validator {
     private static void validateExtraContainers(String value, ErrorCollection errorCollection) {
         if (!StringUtils.isBlank(value)) {
             try {
-                JsonElement obj = new JsonParser().parse(value);
+                JsonElement obj = JsonParser.parseString(value);
                 if (!obj.isJsonArray()) {
                     errorCollection.addErrorMessage("Extra containers json needs to be an array.");
                 } else {
