@@ -27,25 +27,26 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.base.Objects;
 import java.util.Arrays;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  *
  * @author mkleint
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class GlobalConfigurationTest {
     
     @Mock
@@ -110,7 +111,7 @@ public class GlobalConfigurationTest {
     public void setSidekickAudited() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_CLUSTER_KEY))).thenReturn("cluster1");
-        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY))).thenReturn("sidekick1");
+        Mockito.lenient().when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY))).thenReturn("sidekick1");
         Config config = new Config("cluster1", "asg1", "newsidekick");
         configuration.setConfig(config);
         verify(auditLogService, times(1)).log(matches("sidekick1", "newsidekick"));

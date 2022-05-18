@@ -32,6 +32,8 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.spring.container.ContainerManager;
 import java.util.Map;
 import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 
 
@@ -75,4 +77,5 @@ public abstract class WatchdogJob implements Job {
         return type.cast(obj);
     }
 
+    public abstract void execute(JobExecutionContext context) throws JobExecutionException;
 }
