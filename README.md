@@ -181,3 +181,6 @@ In order to be able to run this locally simply:
 2. Install the one which matches the name completely
 3. Restart IntelliJ IDEA
 Then, simply scan the file you would like tested using the `Build Engineering Checks` rule.
+If you get an error like `The scan failed due to an error - please see the event log for more information` it is most
+likely do to an incompatibility between our checkstyle rules and the checkstyle version. See the checkstyle version
+set in the root pom.xml and then in IntelliJ go to `Preferences > Tools > Checkstyle` and set it to that version.
