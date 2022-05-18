@@ -281,7 +281,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
         Trigger watchdogJobTrigger = jobTrigger(PLUGIN_JOB_INTERVAL_MILLIS);
         JobDetail watchdogJob = jobDetail(KubernetesWatchdog.class, PLUGIN_JOB_KEY, config);
-        Trigger pluginJobJmxTrigger = jobTrigger(PLUGIN_JOB_JMX_INTERVAL_MILLIS);
+        Trigger pluginJmxJobTrigger = jobTrigger(PLUGIN_JOB_JMX_INTERVAL_MILLIS);
         JobDetail pluginJmxJob = jobDetail(JmxJob.class, PLUGIN_JOB_JMX_KEY, config);
 
         try {
@@ -290,7 +290,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             logger.error("Unable to schedule KubernetesWatchdog", e);
         }
         try {
-            scheduler.scheduleJob(pluginJmxJob, pluginJobJmxTrigger);
+            scheduler.scheduleJob(pluginJmxJob, pluginJmxJobTrigger);
         } catch (SchedulerException e) {
             logger.error("Unable to schedule JmxJob", e);
         }
@@ -318,12 +318,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         try {
             scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_KEY));
         } catch (SchedulerException e) {
-            logger.error("Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule KubernetesWatchdogJob", e);
         }
         try {
             scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_JMX_KEY));
         } catch (SchedulerException e) {
-            logger.error("Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
         }
         executor.shutdown();
     }

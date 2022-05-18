@@ -238,6 +238,14 @@ public class PreBuildQueuedEventListenerTest {
         verify(jmx).recalculateThrottle(agentsThrottled);
     }
 
+    @Test
+    public void testCancelledBuildIsRemovedFromAgentsThrottledQueue() {
+        BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.NOT_BUILT);
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+        verify(agentsThrottled).remove(event.getContext().getResultKey().getKey());
+    }
+
     private BuildContext mockBuildContext(boolean dockerEnabled, String image, LifeCycleState state) {
         BuildContext buildContext = mock(BuildContext.class, Mockito.withSettings().lenient());
         CurrentBuildResult result = mock(CurrentBuildResult.class);
