@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
+
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.persister.AuditLogEntry;
@@ -45,8 +47,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
-
-import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
 import org.yaml.snakeyaml.error.YAMLException;
 
 public class GlobalConfiguration implements ContainerSizeDescriptor {

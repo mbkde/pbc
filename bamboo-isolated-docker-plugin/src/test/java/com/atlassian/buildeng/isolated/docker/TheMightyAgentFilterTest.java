@@ -16,6 +16,10 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.bamboo.agent.AgentType;
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
@@ -34,12 +38,9 @@ import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,6 +61,7 @@ public class TheMightyAgentFilterTest {
         when(currResult.getCustomBuildData()).thenReturn(customConfig);
         ConfigurationBuilder.create("aaa").build().copyToResult(currResult, new DefaultContainerSizeDescriptor());
         Collection<BuildAgent> agents = mockAgents();
+        assertEquals(agents.size(), 5);
         
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
         Collection<BuildAgent> result = instance.filter(context, agents, mock(MinimalRequirementSet.class));
