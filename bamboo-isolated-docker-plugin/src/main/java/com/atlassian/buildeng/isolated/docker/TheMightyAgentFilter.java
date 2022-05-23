@@ -24,7 +24,6 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgentRequirementFilter;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.bamboo.v2.build.agent.capability.MinimalRequirementSet;
-
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import java.util.ArrayList;
 import java.util.Collection;

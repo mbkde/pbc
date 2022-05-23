@@ -16,6 +16,21 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.ContainerInstance;
@@ -40,23 +55,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 
@@ -87,22 +89,22 @@ public class CyclingECSSchedulerTest {
         Collection<DockerHost> candidates = new AwsPullModelLoader(schedulerBackend, mock(EventPublisher.class), mockGlobalConfig()).load("", "asg").allUsable();
         //5 cpu & 5 mem means all are viable candidates
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5), false);
-        Assertions.assertTrue(candidate.isPresent());
-        Assertions.assertEquals("id1", candidate.get().getInstanceId()); //most utilized
+        assertTrue(candidate.isPresent());
+        assertEquals("id1", candidate.get().getInstanceId()); //most utilized
         
         //65 cpu && 65 mem means only id3,4,5 are viable
         candidate = CyclingECSScheduler.selectHost(candidates, mem(65), cpu(65), false);
-        Assertions.assertTrue(candidate.isPresent());
-        Assertions.assertEquals("id3", candidate.get().getInstanceId()); //most utilized
+        assertTrue(candidate.isPresent());
+        assertEquals("id3", candidate.get().getInstanceId()); //most utilized
         
         //75 cpu && 75 mem means only id4,5 are viable
         candidate = CyclingECSScheduler.selectHost(candidates, mem(75), cpu(75), false);
-        Assertions.assertTrue(candidate.isPresent());
-        Assertions.assertEquals("id4", candidate.get().getInstanceId()); //most utilized
+        assertTrue(candidate.isPresent());
+        assertEquals("id4", candidate.get().getInstanceId()); //most utilized
         
         candidate = CyclingECSScheduler.selectHost(candidates, mem(85), cpu(85), false);
-        Assertions.assertTrue(candidate.isPresent());
-        Assertions.assertEquals("id5", candidate.get().getInstanceId());
+        assertTrue(candidate.isPresent());
+        assertEquals("id5", candidate.get().getInstanceId());
     }
     @Test
     public void testSelectHostWithDemandOverflow() throws ECSException {
@@ -125,20 +127,20 @@ public class CyclingECSSchedulerTest {
         Collection<DockerHost> candidates = new AwsPullModelLoader(schedulerBackend, mock(EventPublisher.class), mockGlobalConfig).load("", "asg").allUsable();
         //5 cpu & 5 mem means all are viable candidates, id5 is the less full one.
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5), true);
-        Assertions.assertTrue(candidate.isPresent());
-        Assertions.assertEquals("id5", candidate.get().getInstanceId()); //least utilized
+        assertTrue(candidate.isPresent());
+        assertEquals("id5", candidate.get().getInstanceId()); //least utilized
 
         //65 cpu && 65 mem means only id3,4,5 are viable
         candidate = CyclingECSScheduler.selectHost(candidates, mem(65), cpu(65), true);
-        Assertions.assertTrue(candidate.isPresent());
-        Assertions.assertEquals("id5", candidate.get().getInstanceId()); //least utilized
+        assertTrue(candidate.isPresent());
+        assertEquals("id5", candidate.get().getInstanceId()); //least utilized
 
         //75 cpu && 75 mem means only id4,id5 is viable
         candidate = CyclingECSScheduler.selectHost(candidates, mem(75), cpu(75), true);
-        Assertions.assertTrue(candidate.isPresent());
+        assertTrue(candidate.isPresent());
         //we don't update the utilization model, so id5 is always picked because it's the
         // least utilized in the beginning
-        Assertions.assertEquals("id5", candidate.get().getInstanceId()); //least utilized
+        assertEquals("id5", candidate.get().getInstanceId()); //least utilized
 
     }
 
@@ -175,7 +177,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Capacity overload");
+        assertTrue(thrown.get(), "Capacity overload");
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, times(1)).scaleTo(eq(6), anyString());
     }
@@ -215,7 +217,7 @@ public class CyclingECSSchedulerTest {
         
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn4", arn.get());
+        assertEquals("arn4", arn.get());
     }
     
     @Test
@@ -255,7 +257,7 @@ public class CyclingECSSchedulerTest {
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn2", arn.get());
+        assertEquals("arn2", arn.get());
     }
     
     @Test
@@ -295,7 +297,7 @@ public class CyclingECSSchedulerTest {
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn2", arn.get());
+        assertEquals("arn2", arn.get());
     }    
     
     @Test
@@ -337,7 +339,7 @@ public class CyclingECSSchedulerTest {
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn2", arn.get());
+        assertEquals("arn2", arn.get());
     }
 
     @Test
@@ -384,7 +386,7 @@ public class CyclingECSSchedulerTest {
 
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(argThat(new IsListOfTwoElements()), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn2", arn.get());
+        assertEquals("arn2", arn.get());
     }
 
 
@@ -427,7 +429,7 @@ public class CyclingECSSchedulerTest {
         //TODO how to verify that it contained id1?
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn1", arn.get());
+        assertEquals("arn1", arn.get());
     }
     
     
@@ -470,8 +472,8 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler); //wait to have the other thread start the processing
-        Assertions.assertEquals("arn1", arn.get());
-        Assertions.assertTrue(thrown.get(), "Exception Thrown correctly");
+        assertEquals("arn1", arn.get());
+        assertTrue(thrown.get(), "Exception Thrown correctly");
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, times(1)).scaleTo(anyInt(), anyString());
     }
@@ -496,7 +498,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Exception Thrown correctly");
+        assertTrue(thrown.get(), "Exception Thrown correctly");
     }
 
         
@@ -526,7 +528,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Exception Thrown correctly");
+        assertTrue(thrown.get(), "Exception Thrown correctly");
     }
     
     @Test
@@ -560,7 +562,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Exception Thrown correctly");
+        assertTrue(thrown.get(), "Exception Thrown correctly");
     }
 
     
@@ -598,7 +600,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Capacity overload");
+        assertTrue(thrown.get(), "Capacity overload");
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         //we don't scale up, because the broken, reprovisioned instances are enough.
@@ -637,7 +639,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Capacity overload");
+        assertTrue(thrown.get(), "Capacity overload");
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         //we do scale up, because we have all disconnected agents that we cannot terminate yet. (might be a flake)
@@ -686,7 +688,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertTrue(thrown.get(), "Capacity overload");
+        assertTrue(thrown.get(), "Capacity overload");
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
         verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         //we have to scale up as we failed to terminate the disconnected agents in some way
@@ -717,7 +719,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        Assertions.assertEquals("Agent's resource reservation is larger than any single instance size in ECS cluster.", thrown.get());
+        assertEquals("Agent's resource reservation is larger than any single instance size in ECS cluster.", thrown.get());
     }
 
     
@@ -760,7 +762,7 @@ public class CyclingECSSchedulerTest {
         //TODO how to verify that it contained id5?
         verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
-        Assertions.assertEquals("arn2", arn.get());
+        assertEquals("arn2", arn.get());
     }
 
     @Test
@@ -825,7 +827,7 @@ public class CyclingECSSchedulerTest {
         ReserveRequest reset = new ReserveRequest("111-222", Collections.singletonList("AAA-BBB-CCC-1"), 0, 0, System.currentTimeMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.reserveFutureCapacity(reset);
-        Assertions.assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
+        assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
     }
 
     @Test
@@ -839,7 +841,7 @@ public class CyclingECSSchedulerTest {
         scheduler.reserveFutureCapacity(r);
         scheduler.reserveFutureCapacity(reset);
         scheduler.reserveFutureCapacity(reset);
-        Assertions.assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
+        assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
     }
 
     @Test
@@ -851,7 +853,7 @@ public class CyclingECSSchedulerTest {
         ReserveRequest r = new ReserveRequest("111-222", Collections.singletonList("AAA-BBB-CCC-1"), 100, 100, System.currentTimeMillis() - Duration.ofHours(1).toMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.sumOfFutureReservations();
-        Assertions.assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was timedout and entry removed from map");
+        assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was timedout and entry removed from map");
     }
 
 

@@ -16,6 +16,16 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bandana.BandanaManager;
@@ -39,20 +49,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static java.util.stream.Collectors.toList;
 import org.apache.commons.io.FileUtils;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
-import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -253,7 +254,7 @@ public class KubernetesIsolatedDockerImplTest {
                 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
-        when(bandanaManager.getValue(any(), ArgumentMatchers.matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
+        when(bandanaManager.getValue(any(), matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
                 .thenReturn(new LinkedHashMap<>(Collections.singletonMap("myArch", "")));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,

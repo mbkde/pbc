@@ -16,6 +16,12 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
@@ -27,12 +33,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -69,7 +73,7 @@ public class PodCreatorTest {
                 new IsolatedDockerAgentRequest(null, 
                         "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455", 
                         UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
-        Assertions.assertEquals("shardspipeline-servicedeskembeddablesservicede-455-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+        assertEquals("shardspipeline-servicedeskembeddablesservicede-455-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
                 result);
         
     }
@@ -80,7 +84,7 @@ public class PodCreatorTest {
             new IsolatedDockerAgentRequest(null,
                 "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
                 UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
-        Assertions.assertEquals("iamtoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+        assertEquals("iamtoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
             result);
 
     }
@@ -91,7 +95,7 @@ public class PodCreatorTest {
             new IsolatedDockerAgentRequest(null,
                 "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
                 UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
-        Assertions.assertEquals("shardspipeline-servicedeskembeddabl-455-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+        assertEquals("shardspipeline-servicedeskembeddabl-455-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
             result);
 
     }
@@ -102,7 +106,7 @@ public class PodCreatorTest {
                 new IsolatedDockerAgentRequest(null, 
                         "shar-servicedeskembeddablesservicedeskemb-bd-45555", 
                         UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
-        Assertions.assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+        assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
                 result);
     }
     
@@ -112,7 +116,7 @@ public class PodCreatorTest {
                 new IsolatedDockerAgentRequest(null, 
                         "shar-servicedeskembeddablesservicedeskemb-bdx-45555", 
                         UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
-        Assertions.assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
+        assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
                 result);
     }
 
@@ -135,8 +139,8 @@ public class PodCreatorTest {
         Map<String, Object> metadata = (Map<String, Object>) podRequest.get("metadata");
         Map<String, String> annotations = (Map<String, String>) metadata.get("annotations");
 
-        Assertions.assertTrue(annotations.containsKey("pbc.iamRequestName"));
-        Assertions.assertEquals("test-plan-job-1-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9", annotations.get("pbc.iamRequestName"));
+        assertTrue(annotations.containsKey("pbc.iamRequestName"));
+        assertEquals("test-plan-job-1-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9", annotations.get("pbc.iamRequestName"));
 
         List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
 
@@ -144,20 +148,20 @@ public class PodCreatorTest {
         for (Map<String, Object> container : containers) {
             Map<String, String> envVariables = getEnvVariablesFromContainer(container);
 
-            Assertions.assertTrue(envVariables.containsKey("AWS_ROLE_ARN"));
-            Assertions.assertTrue(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
+            assertTrue(envVariables.containsKey("AWS_ROLE_ARN"));
+            assertTrue(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
 
-            Assertions.assertEquals("arn:aws:iam::123456789012:role/testrole", envVariables.get("AWS_ROLE_ARN"));
-            Assertions.assertEquals("/var/run/secrets/eks.amazonaws.com/serviceaccount/token", envVariables.get("AWS_WEB_IDENTITY_TOKEN_FILE"));
+            assertEquals("arn:aws:iam::123456789012:role/testrole", envVariables.get("AWS_ROLE_ARN"));
+            assertEquals("/var/run/secrets/eks.amazonaws.com/serviceaccount/token", envVariables.get("AWS_WEB_IDENTITY_TOKEN_FILE"));
         }
 
         for (Map<String, Object> container : containers) {
             //Test Volume mounts
             Map<String, Object> iamTokenVolumeMount = getVolumeMount(container, "aws-iam-token");
 
-            Assertions.assertEquals("aws-iam-token", iamTokenVolumeMount.get("name"));
-            Assertions.assertEquals("/var/run/secrets/eks.amazonaws.com/serviceaccount/", iamTokenVolumeMount.get("mountPath"));
-            Assertions.assertEquals(true, iamTokenVolumeMount.get("readOnly"));
+            assertEquals("aws-iam-token", iamTokenVolumeMount.get("name"));
+            assertEquals("/var/run/secrets/eks.amazonaws.com/serviceaccount/", iamTokenVolumeMount.get("mountPath"));
+            assertEquals(true, iamTokenVolumeMount.get("readOnly"));
         }
 
         //Test Volumes
@@ -166,7 +170,7 @@ public class PodCreatorTest {
         String irsaVolume = yaml.dump(iamTokenVolume);
         String expectedVolume = FileUtils.readFileToString(new File(this.getClass().getResource("/irsaVolume.yaml").getFile()), "UTF-8");
 
-        Assertions.assertEquals(expectedVolume, irsaVolume);
+        assertEquals(expectedVolume, irsaVolume);
     }
 
     @Test
@@ -187,16 +191,16 @@ public class PodCreatorTest {
 
         //Test env variables
         Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
-        Assertions.assertFalse(envVariables.containsKey("AWS_ROLE_ARN"));
-        Assertions.assertFalse(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
+        assertFalse(envVariables.containsKey("AWS_ROLE_ARN"));
+        assertFalse(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
 
         //Test volume mounts
         Map<String, Object> iamTokenVolumeMount = getVolumeMount(mainContainer, "aws-iam-token");
-        Assertions.assertNull(iamTokenVolumeMount);
+        assertNull(iamTokenVolumeMount);
 
         //Test Volumes
         Map<String, Object> iamTokenVolume = getVolume(spec, "aws-iam-token");
-        Assertions.assertNull(iamTokenVolume);
+        assertNull(iamTokenVolume);
 
     }
 
@@ -216,7 +220,7 @@ public class PodCreatorTest {
 
         String expectedIamRequest = FileUtils.readFileToString(new File(this.getClass().getResource("/iamRequest.yaml").getFile()), "UTF-8");
 
-        Assertions.assertEquals(expectedIamRequest, yaml.dump(iamRequest));
+        assertEquals(expectedIamRequest, yaml.dump(iamRequest));
 
     }
 

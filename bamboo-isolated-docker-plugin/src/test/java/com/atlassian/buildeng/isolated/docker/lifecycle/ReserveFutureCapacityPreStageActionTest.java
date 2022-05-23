@@ -15,6 +15,12 @@
  */
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.bamboo.builder.BuildState;
 import com.atlassian.bamboo.chains.BuildExecution;
 import com.atlassian.bamboo.chains.ChainExecution;
@@ -32,15 +38,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith({MockitoExtension.class})
@@ -58,9 +59,9 @@ public class ReserveFutureCapacityPreStageActionTest {
     @Test
     public void testNoResults() {
         StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22"});
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey())))).thenReturn(Collections.emptyList());
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey())))).thenReturn(Collections.emptyList());
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        Assertions.assertEquals(-1, ret);
+        assertEquals(-1, ret);
     }
 
     @Test
@@ -71,10 +72,10 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(500, BuildState.UNKNOWN),
             new Summ(500, BuildState.FAILED)
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
                 .thenReturn(summaries);
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        Assertions.assertEquals(-1, ret);
+        assertEquals(-1, ret);
     }
 
     @Test
@@ -89,10 +90,10 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(500, BuildState.FAILED),
             new Summ(500, BuildState.FAILED)
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
                 .thenReturn(summaries);
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        Assertions.assertEquals(-1, ret);
+        assertEquals(-1, ret);
     }
 
     @Test
@@ -107,10 +108,10 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(1000, BuildState.SUCCESS),
             new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
                 .thenReturn(summaries);
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        Assertions.assertEquals(1000, ret);
+        assertEquals(1000, ret);
     }
 
     @Test
@@ -125,7 +126,7 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(1000, BuildState.SUCCESS),
             new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
                 .thenReturn(summaries);
         final List<ResultsSummary> summaries2 = summaries(new Summ[] {
             new Summ(2000, BuildState.SUCCESS),
@@ -136,11 +137,11 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(2000, BuildState.SUCCESS),
             new Summ(2000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
                 .thenReturn(summaries2);
 
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        Assertions.assertEquals(2000, ret);
+        assertEquals(2000, ret);
     }
 
     @Test
@@ -155,7 +156,7 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(500, BuildState.FAILED),
             new Summ(500, BuildState.FAILED),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
                 .thenReturn(summaries);
         final List<ResultsSummary> summaries2 = summaries(new Summ[] {
             new Summ(2000, BuildState.SUCCESS),
@@ -166,11 +167,11 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(2000, BuildState.SUCCESS),
             new Summ(2000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
                 .thenReturn(summaries2);
 
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        Assertions.assertEquals(-1, ret);
+        assertEquals(-1, ret);
     }
 
     @Test
@@ -189,7 +190,7 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(500, BuildState.FAILED),
             new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
                 .thenReturn(summaries);
         final List<ResultsSummary> summaries2 = summaries(new Summ[] {
             new Summ(500, BuildState.FAILED),
@@ -204,14 +205,14 @@ public class ReserveFutureCapacityPreStageActionTest {
             new Summ(1000, BuildState.SUCCESS),
             new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(ArgumentMatchers.eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
                 .thenReturn(summaries2);
 
         long ret = action.stageSuccessfulCompletionAvg(stage);
         //TODO this should actually fail because we are having 1 job failing odd and 1 even results.
         //so the success ration is like 10%, rather than 50-60% as the current algo thinks.
 //        Assert.assertEquals(-1, ret);
-        Assertions.assertEquals(1000, ret);
+        assertEquals(1000, ret);
 
     }
 
@@ -235,7 +236,7 @@ public class ReserveFutureCapacityPreStageActionTest {
                     when(e.getPlanResultKey()).thenReturn(t);
                     ImmutablePlan plan = mock(ImmutablePlan.class);
                     when(plan.getPlanKey()).thenReturn(t.getPlanKey());
-                    when(cachedPlanManager.getPlanByKey(ArgumentMatchers.eq(t.getPlanKey()))).thenReturn(plan);
+                    when(cachedPlanManager.getPlanByKey(eq(t.getPlanKey()))).thenReturn(plan);
                     return e;
                 }).collect(Collectors.toList());
         when(stage.getBuilds()).thenReturn(collect);

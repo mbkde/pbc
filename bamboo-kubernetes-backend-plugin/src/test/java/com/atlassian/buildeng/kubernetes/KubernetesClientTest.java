@@ -1,5 +1,7 @@
 package com.atlassian.buildeng.kubernetes;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.atlassian.buildeng.kubernetes.exception.ConcurrentResourceQuotaModificationException;
 import com.atlassian.buildeng.kubernetes.exception.ConnectionTimeoutException;
 import com.atlassian.buildeng.kubernetes.exception.PodLimitQuotaExceededException;
@@ -8,7 +10,6 @@ import com.atlassian.buildeng.kubernetes.shell.StubShellExecutor;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

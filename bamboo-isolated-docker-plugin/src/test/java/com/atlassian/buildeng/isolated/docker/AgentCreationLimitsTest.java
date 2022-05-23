@@ -16,17 +16,19 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import java.util.Date;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,20 +55,20 @@ public class AgentCreationLimitsTest {
     @Test
     public void creationLimitReachedWhenMaxAgentCreationZero() {
         when(globalConfiguration.getMaxAgentCreationPerMinute()).thenReturn(0);
-        Assertions.assertTrue(agentCreationLimits.creationLimitReached());
+        assertTrue(agentCreationLimits.creationLimitReached());
     }
 
     @Test
     public void creationLimitNotReached() {
         when(globalConfiguration.getMaxAgentCreationPerMinute()).thenReturn(1);
-        Assertions.assertFalse(agentCreationLimits.creationLimitReached());
+        assertFalse(agentCreationLimits.creationLimitReached());
     }
 
     @Test
     public void creationLimitReachedQueueLimitReached() {
         when(globalConfiguration.getMaxAgentCreationPerMinute()).thenReturn(1);
         agentCreationLimits.addToCreationQueue(event);
-        Assertions.assertTrue(agentCreationLimits.creationLimitReached());
+        assertTrue(agentCreationLimits.creationLimitReached());
     }
 
     @Test
@@ -74,7 +76,7 @@ public class AgentCreationLimitsTest {
         when(globalConfiguration.getMaxAgentCreationPerMinute()).thenReturn(1);
         agentCreationLimits.addToCreationQueue(event);
         agentCreationLimits.addToCreationQueue(event);
-        Assertions.assertTrue(agentCreationLimits.creationLimitReached());
+        assertTrue(agentCreationLimits.creationLimitReached());
     }
 
     @Test
@@ -83,7 +85,7 @@ public class AgentCreationLimitsTest {
         agentCreationLimits.addToCreationQueue(event);
         agentCreationLimits.addToCreationQueue(event);
         agentCreationLimits.addToCreationQueue(event);
-        Assertions.assertTrue(agentCreationLimits.creationLimitReached());
+        assertTrue(agentCreationLimits.creationLimitReached());
     }
 
     @Test
@@ -93,7 +95,7 @@ public class AgentCreationLimitsTest {
         agentCreationLimits.addToCreationQueue(event);
         agentCreationLimits.addToCreationQueue(event);
         when(dateTime.oneMinuteAgo()).thenReturn(new Date().getTime() + 60 * 1000);
-        Assertions.assertFalse(agentCreationLimits.creationLimitReached());
+        assertFalse(agentCreationLimits.creationLimitReached());
     }
 
     @Test
@@ -101,6 +103,6 @@ public class AgentCreationLimitsTest {
         when(globalConfiguration.getMaxAgentCreationPerMinute()).thenReturn(1);
         agentCreationLimits.addToCreationQueue(event);
         agentCreationLimits.removeEventFromQueue(event);
-        Assertions.assertFalse(agentCreationLimits.creationLimitReached());
+        assertFalse(agentCreationLimits.creationLimitReached());
     }
 }
