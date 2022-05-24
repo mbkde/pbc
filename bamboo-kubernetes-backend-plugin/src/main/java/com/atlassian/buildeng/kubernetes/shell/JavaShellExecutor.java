@@ -24,7 +24,6 @@ public class JavaShellExecutor implements ShellExecutor {
             Process process = pb.start();
 
             logger.debug("starting process");
-//            byte[] data = Files.readBytes(process.getInputStream());
             byte[] data = IOUtils.toByteArray(process.getInputStream());
 
             int ret = process.waitFor();
