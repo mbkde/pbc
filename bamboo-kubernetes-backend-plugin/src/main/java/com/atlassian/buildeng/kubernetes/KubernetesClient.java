@@ -32,7 +32,6 @@ import com.atlassian.buildeng.kubernetes.shell.ShellException;
 import com.atlassian.buildeng.kubernetes.shell.ShellExecutor;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
-import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -48,6 +47,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

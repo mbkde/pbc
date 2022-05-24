@@ -3,7 +3,7 @@ package com.atlassian.buildeng.kubernetes.shell;
 import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
-import io.fabric8.utils.Files;
+//import io.fabric8.utils.Files;
 import java.io.IOException;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
@@ -24,7 +24,8 @@ public class JavaShellExecutor implements ShellExecutor {
             Process process = pb.start();
 
             logger.debug("starting process");
-            byte[] data = Files.readBytes(process.getInputStream());
+//            byte[] data = Files.readBytes(process.getInputStream());
+            byte[] data = IOUtils.toByteArray(process.getInputStream());
 
             int ret = process.waitFor();
             logger.debug("process finished");
