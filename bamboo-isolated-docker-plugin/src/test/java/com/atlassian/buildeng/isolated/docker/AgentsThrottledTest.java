@@ -18,17 +18,21 @@ package com.atlassian.buildeng.isolated.docker;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Date;
+
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AgentsThrottledTest {
 
     private AgentsThrottled agentsThrottled;
-    private static final double RETRY_DELAY_SECONDS = Constants.RETRY_DELAY.getSeconds();
-    private static final double RETRIES_EACH_MINUTE = 60 / RETRY_DELAY_SECONDS;
+    private final DateTime dateTime = mock(DateTime.class);
 
     @Before
     public void setUp() {
-        agentsThrottled = new AgentsThrottled();
+        agentsThrottled = new AgentsThrottled(dateTime);
     }
 
     @Test
@@ -72,22 +76,47 @@ public class AgentsThrottledTest {
     @Test
     public void testCorrectNumberOfAgentsMarkedAsThrottledGivenSpecificNumberOfMinutes() {
         int minutes = 5;
-        double retriesFor5Minutes = RETRIES_EACH_MINUTE * minutes;
-        for (int i = 0; i < retriesFor5Minutes; i++) {
-            agentsThrottled.add("key1");
-            agentsThrottled.add("key2");
-            agentsThrottled.add("key3");
-        }
+        long fiveMinutesAgo = minutesAgoInMilliseconds(minutes) + 1;
+        when(dateTime.getCurrentTime()).thenReturn(fiveMinutesAgo);
+        agentsThrottled.add("key1");
+        agentsThrottled.add("key2");
+        agentsThrottled.add("key3");
+        when(dateTime.getCurrentTime()).thenReturn(new Date().getTime());
         assertEquals(3, agentsThrottled.numAgentsThrottledLongerThanMinutes(minutes));
     }
 
     @Test
     public void testAgentsNotMarkedAsThrottledForLongerThanItHas() {
-        int minutes = 5;
-        double retriesFor5Minutes = RETRIES_EACH_MINUTE * minutes;
-        for (int i = 0; i < retriesFor5Minutes - 1; i++) {
-            agentsThrottled.add("key1");
-        }
-        assertEquals(0, agentsThrottled.numAgentsThrottledLongerThanMinutes(minutes));
+        long fiveMinutesAgo = minutesAgoInMilliseconds(5) + 1;
+        when(dateTime.getCurrentTime()).thenReturn(fiveMinutesAgo);
+        agentsThrottled.add("key1");
+        when(dateTime.getCurrentTime()).thenReturn(new Date().getTime());
+        assertEquals(0, agentsThrottled.numAgentsThrottledLongerThanMinutes(6));
+    }
+
+    @Test
+    public void addingAgentAgainShouldNotImpactStartThrottledTime() {
+        long fiveMinutesAgo = minutesAgoInMilliseconds(5) + 1;
+        when(dateTime.getCurrentTime()).thenReturn(fiveMinutesAgo);
+        agentsThrottled.add("key1");
+        when(dateTime.getCurrentTime()).thenReturn(new Date().getTime());
+        agentsThrottled.add("key1");
+        assertEquals(1, agentsThrottled.numAgentsThrottledLongerThanMinutes(5));
+    }
+
+    @Test
+    public void onlyAgentsThrottledLongEnoughShouldBeReturned() {
+        long fiveMinutesAgo = minutesAgoInMilliseconds(5) + 1;
+        long threeMinutesAgo = minutesAgoInMilliseconds(3) + 1;
+        when(dateTime.getCurrentTime()).thenReturn(fiveMinutesAgo);
+        agentsThrottled.add("key1");
+        when(dateTime.getCurrentTime()).thenReturn(threeMinutesAgo);
+        agentsThrottled.add("key2");
+        when(dateTime.getCurrentTime()).thenReturn(new Date().getTime());
+        assertEquals(1, agentsThrottled.numAgentsThrottledLongerThanMinutes(5));
+    }
+
+    private long minutesAgoInMilliseconds(int minutes) {
+        return new Date().getTime() - ((long) minutes * 60 * 1000);
     }
 }
