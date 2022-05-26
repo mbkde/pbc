@@ -85,7 +85,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
     // Mitigation for duplicate agents - see BUILDENG-20299
-    private static final int MISSING_POD_RETRY_AFTER_PERIOD_MINUTES = 1;
+    private static final int MISSING_POD_RETRY_AFTER_PERIOD_MINUTES = 12;
     private static final int MAX_BACKOFF_SECONDS = 600;
     private static final int MAX_RETRY_COUNT = 30;
     private static final int MAX_WAIT_FOR_TERMINATION_IN_SECONDS = 30;
