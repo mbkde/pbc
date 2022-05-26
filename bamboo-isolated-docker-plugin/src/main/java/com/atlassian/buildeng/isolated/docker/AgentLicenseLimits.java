@@ -55,7 +55,7 @@ public class AgentLicenseLimits {
         boolean limitReached = !agentManager.allowNewRemoteAgents((int) (1 + queued));
         if (limitReached) {
             //intentionally not creating new event object to avoid increasing the retry count.
-            logger.debug("Remote agent limit reached, delaying agent creation for {}",
+            logger.info("Remote agent limit reached, delaying agent creation for {}",
                     event.getContext().getResultKey());
             rescheduler.reschedule(event);
         }
