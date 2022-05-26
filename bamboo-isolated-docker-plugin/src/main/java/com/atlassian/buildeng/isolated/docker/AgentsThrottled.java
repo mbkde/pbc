@@ -37,6 +37,7 @@ public class AgentsThrottled {
      */
     public void add(String key) {
         if (!agentsThrottled.containsKey(key)) {
+            System.out.println(dateTime.getCurrentTime());
             agentsThrottled.put(key, dateTime.getCurrentTime());
         }
     }
