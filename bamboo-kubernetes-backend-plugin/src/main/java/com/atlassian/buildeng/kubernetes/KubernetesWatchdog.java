@@ -84,6 +84,8 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final Long MAX_QUEUE_TIME_MINUTES = 60L;
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
+    // Mitigation for duplicate agents - see BUILDENG-20299
+    private static final int MISSING_POD_RETRY_AFTER_PERIOD_MINUTES = 1;
     private static final int MAX_BACKOFF_SECONDS = 600;
     private static final int MAX_RETRY_COUNT = 30;
     private static final int MAX_WAIT_FOR_TERMINATION_IN_SECONDS = 30;
@@ -319,8 +321,10 @@ public class KubernetesWatchdog extends WatchdogJob {
                                         buildQueueManager, context, current);
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
-                                retryPodCreation(context, null, errorMessage,
-                                        podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
+                                if (grace.toMinutes() > MISSING_POD_RETRY_AFTER_PERIOD_MINUTES) {
+                                    retryPodCreation(context, null, errorMessage,
+                                            podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
+                                }
                             }
                         }
                     } else {
@@ -361,7 +365,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private void retryPodCreation(CommonContext context, Pod pod, 
             String errorMessage, String podName, int retryCount, EventPublisher eventPublisher, 
             AgentCreationRescheduler rescheduler, GlobalConfiguration configuration) {
-        logger.debug("retrying pod creation for {} for {} time because: {}",
+        logger.info("Retrying pod creation for {} for {} time because: {}",
                 context.getResultKey(), retryCount, errorMessage);
         Configuration config = AccessConfiguration.forContext(context);
         //when pod is not around, just generate new UUID :(
