@@ -218,7 +218,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 logger.warn("Was not able to delete ECS Remote Watchdog job. Was it already deleted?");
             }
         } catch (SchedulerException e) {
-            logger.error("Remote ECS Backend Plugin is being stopped but is unable to unschedule RemoteWatchdogJob", e);
+            logger.error("Remote ECS Backend Plugin is being stopped but is unable to delete RemoteWatchdogJob", e);
         }
     }
 

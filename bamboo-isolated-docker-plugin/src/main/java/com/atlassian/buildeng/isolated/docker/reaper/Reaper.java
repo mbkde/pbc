@@ -104,7 +104,7 @@ public class Reaper implements LifecycleAware {
                 logger.warn("Was not able to delete Repeaer job. Was it already deleted?");
             }
         } catch (SchedulerException e) {
-            logger.error("Reaper being stopped but unable to unschedule ReaperJob", e);
+            logger.error("Reaper being stopped but unable to delete ReaperJob", e);
         }
     }
 }

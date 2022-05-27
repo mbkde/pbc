@@ -324,7 +324,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.warn("Was not able to delete KubernetesWatchdog job. Was it already deleted?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule KubernetesWatchdogJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete KubernetesWatchdogJob", e);
         }
         try {
             boolean jmxJobDeletion = scheduler.deleteJob(JobKey.jobKey(PLUGIN_JOB_JMX_KEY));
@@ -332,7 +332,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.warn("Was not able to delete Kubernetes JMX job. Was it already deleted?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete JmxJob", e);
         }
         executor.shutdown();
     }
