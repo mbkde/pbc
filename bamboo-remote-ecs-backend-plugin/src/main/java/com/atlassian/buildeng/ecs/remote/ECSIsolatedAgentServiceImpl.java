@@ -53,6 +53,7 @@ import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import static org.quartz.JobBuilder.newJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -212,7 +213,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     @Override
     public void onStop() {
         try {
-            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_KEY));
+            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(PLUGIN_JOB_KEY));
+            if (!watchdogJobDeletion) {
+                logger.warn("Was not able to delete ECS Remote Watchdog job. Was it already deleted?");
+            }
         } catch (SchedulerException e) {
             logger.error("Remote ECS Backend Plugin is being stopped but is unable to unschedule RemoteWatchdogJob", e);
         }
