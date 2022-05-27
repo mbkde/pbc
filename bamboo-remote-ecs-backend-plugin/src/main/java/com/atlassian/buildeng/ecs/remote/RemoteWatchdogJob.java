@@ -28,9 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.MediaType;
+import org.quartz.DisallowConcurrentExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@DisallowConcurrentExecution
 public class RemoteWatchdogJob extends AbstractWatchdogJob {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteWatchdogJob.class);
