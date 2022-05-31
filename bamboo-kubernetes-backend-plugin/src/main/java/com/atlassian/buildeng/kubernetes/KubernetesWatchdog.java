@@ -69,6 +69,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
@@ -78,6 +79,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Background job checking the state of the cluster.
  */
+@DisallowConcurrentExecution
 public class KubernetesWatchdog extends WatchdogJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     public static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";

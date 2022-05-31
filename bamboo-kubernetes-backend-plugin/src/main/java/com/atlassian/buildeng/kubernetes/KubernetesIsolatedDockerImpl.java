@@ -62,6 +62,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
@@ -284,6 +285,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         Trigger pluginJmxJobTrigger = jobTrigger(PLUGIN_JOB_JMX_INTERVAL_MILLIS);
         JobDetail pluginJmxJob = jobDetail(JmxJob.class, PLUGIN_JOB_JMX_KEY, config);
 
+        logger.info("Kubernetes Backend plugin started. Scheduling jobs.");
         try {
             scheduler.scheduleJob(watchdogJob, watchdogJobTrigger);
         } catch (SchedulerException e) {
@@ -315,15 +317,22 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     @Override
     public void onStop() {
+        logger.info("Kubernetes Backend plugin unloaded. Deleting jobs.");
         try {
-            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_KEY));
+            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(PLUGIN_JOB_KEY));
+            if (!watchdogJobDeletion) {
+                logger.warn("Was not able to delete KubernetesWatchdog job. Was it already deleted?");
+            }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule KubernetesWatchdogJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete KubernetesWatchdogJob", e);
         }
         try {
-            scheduler.unscheduleJob(triggerKey(PLUGIN_JOB_JMX_KEY));
+            boolean jmxJobDeletion = scheduler.deleteJob(JobKey.jobKey(PLUGIN_JOB_JMX_KEY));
+            if (!jmxJobDeletion) {
+                logger.warn("Was not able to delete Kubernetes JMX job. Was it already deleted?");
+            }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete JmxJob", e);
         }
         executor.shutdown();
     }
