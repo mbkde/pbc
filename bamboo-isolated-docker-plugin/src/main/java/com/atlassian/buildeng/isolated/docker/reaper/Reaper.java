@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
@@ -98,9 +99,12 @@ public class Reaper implements LifecycleAware {
     @Override
     public void onStop() {
         try {
-            scheduler.unscheduleJob(triggerKey(REAPER_KEY));
+            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(REAPER_KEY));
+            if (!watchdogJobDeletion) {
+                logger.warn("Was not able to delete Repeaer job. Was it already deleted?");
+            }
         } catch (SchedulerException e) {
-            logger.error("Reaper being stopped but unable to unschedule ReaperJob", e);
+            logger.error("Reaper being stopped but unable to delete ReaperJob", e);
         }
     }
 }
