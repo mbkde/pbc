@@ -44,6 +44,7 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -76,24 +78,11 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     private Validator validator;
 
     //setters here for components, otherwise the parent fields don't get injected.
-    public BuildProcessorServerImpl(Validator validator) {
-        this.validator = validator;
-    }
-
-    public AgentRemovals getAgentRemovals() {
-        return agentRemovals;
-    }
-
-    public void setAgentRemovals(AgentRemovals agentRemovals) {
+    @Inject
+    public BuildProcessorServerImpl(AgentRemovals agentRemovals, BuildExecutionManager buildExecutionManager, Validator validator) {
         this.agentRemovals = agentRemovals;
-    }
-
-    public BuildExecutionManager getBuildExecutionManager() {
-        return buildExecutionManager;
-    }
-
-    public void setBuildExecutionManager(BuildExecutionManager buildExecutionManager) {
         this.buildExecutionManager = buildExecutionManager;
+        this.validator = validator;
     }
 
     @Override

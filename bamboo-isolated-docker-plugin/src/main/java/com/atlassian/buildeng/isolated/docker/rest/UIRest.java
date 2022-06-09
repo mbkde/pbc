@@ -29,6 +29,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -46,6 +47,7 @@ public class UIRest {
     private final CachedPlanManager cpm;
     private final IsolatedAgentService isolatedAgentService;
 
+    @Inject
     public UIRest(CachedPlanManager cpm, IsolatedAgentService isolatedAgentService) {
         this.cpm = cpm;
         this.isolatedAgentService = isolatedAgentService;

@@ -31,6 +31,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
@@ -38,6 +39,7 @@ public class SummaryPanel implements WebPanel {
     private final BuildQueueManager buildQueueManager;
     private final IsolatedAgentService detail;
 
+    @Inject
     public SummaryPanel(BuildQueueManager buildQueueManager, IsolatedAgentService detail) {
         this.buildQueueManager = buildQueueManager;
         this.detail = detail;

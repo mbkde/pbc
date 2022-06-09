@@ -26,6 +26,7 @@ import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
 import java.util.ArrayList;
+import javax.inject.Inject;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -61,6 +62,7 @@ public class Reaper implements LifecycleAware {
     static String REAPER_DEATH_LIST = "reaper-death-list";
     
 
+    @Inject
     public Reaper(Scheduler scheduler, ExecutableAgentsHelper executableAgentsHelper,
             AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
         this.scheduler = scheduler;

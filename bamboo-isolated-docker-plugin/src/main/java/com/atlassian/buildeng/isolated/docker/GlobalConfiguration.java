@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -60,6 +61,7 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
+    @Inject
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
                                BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;

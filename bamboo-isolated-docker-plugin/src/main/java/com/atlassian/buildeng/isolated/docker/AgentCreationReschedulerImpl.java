@@ -37,6 +37,7 @@ import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
     private static final long RETRY_DELAY = Constants.RETRY_DELAY.getSeconds(); //20 seconds times 90 = 30 minutes
     private static final String KEY = "custom.isolated.docker.waiting";
 
+    @Inject
     private AgentCreationReschedulerImpl(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
         this.eventPublisher = eventPublisher;
         this.buildQueueManager = buildQueueManager;

@@ -19,6 +19,7 @@ package com.atlassian.buildeng.isolated.docker.rest;
 import com.atlassian.buildeng.isolated.docker.sox.DockerSoxService;
 import com.atlassian.buildeng.isolated.docker.sox.SoxRestConfig;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -31,6 +32,7 @@ public class SoxRest {
 
     private final DockerSoxService dockerSoxService;
 
+    @Inject
     public SoxRest(DockerSoxService dockerSoxService) {
         this.dockerSoxService = dockerSoxService;
     }
