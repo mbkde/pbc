@@ -65,13 +65,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +84,7 @@ import org.slf4j.LoggerFactory;
  * Background job checking the state of the cluster.
  */
 @DisallowConcurrentExecution
+@PersistJobDataAfterExecution
 public class KubernetesWatchdog extends WatchdogJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     public static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
@@ -218,7 +223,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
 
         for (Pod pod : alivePods) {
-            //identify if pod is stuck in "imagePullBackOff' loop.
+            // identify if pod is stuck in "imagePullBackOff" loop.
             newBackedOff.addAll(
                     Stream.concat(
                             pod.getStatus().getContainerStatuses().stream(),
@@ -266,6 +271,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                 });
 
 
+        AtomicBoolean shouldPrintDebugInfo = new AtomicBoolean(false);
         Map<String, Pod> nameToPod = alivePods.stream().collect(Collectors.toMap(KubernetesHelper::getName, x -> x));
         // Kill queued jobs waiting on alivePods that no longer exist or which have been queued for too long
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
@@ -296,6 +302,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
+
                         if (reason != null && reason.isRestartPod() 
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             try {
@@ -324,8 +331,11 @@ public class KubernetesWatchdog extends WatchdogJob {
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
                                 if (grace.toMinutes() > MISSING_POD_RETRY_AFTER_PERIOD_MINUTES) {
-                                    retryPodCreation(context, null, errorMessage,
-                                            podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
+                                    // Uncomment this and remove debug after resolving BUILDENG-20299
+                                    logger.debug("Rescheduling pod {} for build {}", podName, context.getResultKey());
+                                    shouldPrintDebugInfo.set(true);
+//                                    retryPodCreation(context, null, errorMessage,
+//                                            podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
                                 }
                             }
                         }
@@ -356,6 +366,13 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
         });
+
+        if (shouldPrintDebugInfo.get()) {
+            logger.debug("All pods:" + bambooPods.size() + "\n"
+                    + new JSONArray(bambooPods.stream().map(Pod::getMetadata).collect(Collectors.toList())));
+            logger.debug("Alive pods:" + alivePods.size() + "\n"
+                    + new JSONObject(alivePods.stream().collect(Collectors.toMap(KubernetesHelper::getName, Pod::getMetadata))));
+        }
     }
     
     private int getRetryCount(Pod pod) {
