@@ -35,10 +35,12 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @DisallowConcurrentExecution
+@PersistJobDataAfterExecution
 public class ReaperJob implements Job {
     private static final Logger logger = LoggerFactory.getLogger(ReaperJob.class);
 
