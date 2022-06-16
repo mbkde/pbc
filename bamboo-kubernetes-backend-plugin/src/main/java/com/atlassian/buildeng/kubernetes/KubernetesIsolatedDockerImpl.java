@@ -290,7 +290,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         schedulerUtils.copyPreviousJobDataAndDeleteJob(config, previousJobKeys);
 
         // Overwrite old references to the necessary classes
-        config.put(DateTime.now().toString(), "abc");
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
         config.put("kubeJmxService", kubeJmxService);
