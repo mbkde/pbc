@@ -40,7 +40,8 @@ limitations under the License.
                         <Export-Package>
                             com.atlassian.buildeng.isolated.docker,
                             com.atlassian.buildeng.isolated.docker.reaper,
-                            com.atlassian.buildeng.isolated.docker.jmx
+                            com.atlassian.buildeng.isolated.docker.jmx,
+                            com.atlassian.buildeng.isolated.docker.scheduler
                         </Export-Package>
                         <Import-Package>
                             com.atlassian.buildeng.spi.isolated.docker,
