@@ -71,6 +71,8 @@ public class SchedulerUtils {
      * If references to classes are included in this map, the new map WILL include references to classes
      * from the previous plugin instance's class loader, which MUST be overwritten to avoid {@link ClassCastException}
      *
+     * Jobs which need their data maps copied over MUST be store durably and unscheduled (not deleted)!
+     *
      * @param config          The new {@link JobDataMap} which the old jobs data map should be merged into
      * @param previousJobKeys A list of {@link JobKey} which the job data maps should be extracted from
      **/
