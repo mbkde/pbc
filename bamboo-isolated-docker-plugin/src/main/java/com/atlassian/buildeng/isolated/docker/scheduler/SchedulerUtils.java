@@ -80,14 +80,16 @@ public class SchedulerUtils {
                 try {
                     return Optional.ofNullable(scheduler.getJobDetail(k));
                 } catch (SchedulerException e) {
-                    logger.warn("Unable to fetch previous job detail for job with key {}, will not merge its map.", k.getName());
+                    logger.warn("Unable to fetch previous job detail for job with key {}, will not merge its map.",
+                            k.getName());
                     return Optional.<JobDetail>empty();
                 }
             })
             .filter(Optional::isPresent)
             .map(Optional::get)
             .forEach(jobDetail -> {
-                logger.debug("Previous map: " + jobDetail.getKey() + "=" + MapUtils.toProperties(jobDetail.getJobDataMap()));
+                logger.debug("Previous map: " + jobDetail.getKey() + "=" +
+                        MapUtils.toProperties(jobDetail.getJobDataMap()));
                 config.putAll(jobDetail.getJobDataMap());
                 JobKey key = jobDetail.getKey();
                 try {
