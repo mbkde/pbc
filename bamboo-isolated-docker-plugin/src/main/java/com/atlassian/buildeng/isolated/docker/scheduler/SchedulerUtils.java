@@ -97,7 +97,7 @@ public class SchedulerUtils {
                         logger.warn("Was not able to find {} job. Was it already deleted?", key);
                     }
                 } catch (SchedulerException e) {
-                    logger.error("Was not able to delete {} job. Proceeding anyway.", key);
+                    logger.error("Was not able to delete {} job. Proceeding anyway. Exception thrown:\n{}", key, e);
                 }
             });
     }

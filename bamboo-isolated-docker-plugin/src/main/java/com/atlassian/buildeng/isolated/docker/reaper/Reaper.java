@@ -114,7 +114,7 @@ public class Reaper implements LifecycleAware {
         try {
             boolean watchdogJobDeletion = scheduler.unscheduleJob(reaperTrigger.getKey());
             if (!watchdogJobDeletion) {
-                logger.warn("Was not able to delete Repeaer job. Was it already deleted?");
+                logger.warn("Was not able to unschedule Reaper job. Was it already unscheduled?");
             }
         } catch (SchedulerException e) {
             logger.error("Reaper being stopped but unable to delete ReaperJob", e);
