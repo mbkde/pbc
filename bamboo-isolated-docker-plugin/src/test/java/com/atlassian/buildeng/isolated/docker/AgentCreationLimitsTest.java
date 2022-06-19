@@ -42,7 +42,7 @@ public class AgentCreationLimitsTest {
     }
 
     @After
-    public void tearDow() {
+    public void tearDown() {
         reset(globalConfiguration);
         reset(dateTime);
     }
