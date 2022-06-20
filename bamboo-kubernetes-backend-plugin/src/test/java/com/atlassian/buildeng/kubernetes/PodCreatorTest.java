@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
@@ -36,7 +37,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -53,11 +53,7 @@ public class PodCreatorTest {
     @BeforeEach
     public void setUp() {
 
-
         globalConfiguration = mock(GlobalConfiguration.class);
-        Mockito.lenient().when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
-        Mockito.lenient().when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
-        Mockito.lenient().when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -122,6 +118,9 @@ public class PodCreatorTest {
 
     @Test
     public void testRole() throws IOException {
+        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
+        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
 
         Configuration config = ConfigurationBuilder.create("testImage")
             .withAwsRole("arn:aws:iam::123456789012:role/testrole")
@@ -175,6 +174,10 @@ public class PodCreatorTest {
 
     @Test
     public void testNoRole() {
+        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
+        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
+
         Configuration config = ConfigurationBuilder.create("testImage")
             .withImageSize(Configuration.ContainerSize.REGULAR)
             .build();

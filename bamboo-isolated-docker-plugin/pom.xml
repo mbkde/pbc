@@ -19,7 +19,7 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.104-SNAPSHOT</version>
+        <version>2.107-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-isolated-docker-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -40,7 +40,8 @@ limitations under the License.
                         <Export-Package>
                             com.atlassian.buildeng.isolated.docker,
                             com.atlassian.buildeng.isolated.docker.reaper,
-                            com.atlassian.buildeng.isolated.docker.jmx
+                            com.atlassian.buildeng.isolated.docker.jmx,
+                            com.atlassian.buildeng.isolated.docker.scheduler
                         </Export-Package>
                         <Import-Package>
                             com.atlassian.buildeng.spi.isolated.docker,

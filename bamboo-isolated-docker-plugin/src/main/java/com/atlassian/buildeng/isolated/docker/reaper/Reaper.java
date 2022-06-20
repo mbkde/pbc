@@ -26,11 +26,14 @@ import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
+import com.atlassian.buildeng.isolated.docker.scheduler.SchedulerUtils;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -53,13 +56,14 @@ public class Reaper implements LifecycleAware {
     //BUILDENG-12799 Reap agents if they're older than 40 minutes, see the issue to learn why the number is so high.
     static long   REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(40).toMillis();
     static long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
-    static String REAPER_KEY = "isolated-docker-reaper";
+    static JobKey REAPER_KEY = JobKey.jobKey("isolated-docker-reaper");
     static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
     static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     static String REAPER_REMOVALS_KEY = "reaper-agent-removals";
     static String REAPER_UNMET_KEY = "reaper-unmet-requirements";
     static String REAPER_DEATH_LIST = "reaper-death-list";
-    
+    private Trigger reaperTrigger;
+
 
     public Reaper(Scheduler scheduler, ExecutableAgentsHelper executableAgentsHelper,
             AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
@@ -72,13 +76,21 @@ public class Reaper implements LifecycleAware {
 
     @Override
     public void onStart() {
+        SchedulerUtils schedulerUtils = new SchedulerUtils(scheduler, logger);
+        List<JobKey> previousJobKeys = Collections.singletonList(REAPER_KEY);
+        logger.info("PBC Isolated Docker plugin started. Checking that jobs from a prior instance of the plugin are not still running.");
+        schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
+
         JobDataMap data = new JobDataMap();
+        schedulerUtils.copyPreviousJobDataAndDeleteJob(data, previousJobKeys);
+
         data.put(REAPER_AGENT_MANAGER_KEY, agentManager);
         data.put(REAPER_AGENTS_HELPER_KEY, executableAgentsHelper);
         data.put(REAPER_REMOVALS_KEY, agentRemovals);
         data.put(REAPER_UNMET_KEY, unmetRequirements);
-        data.put(REAPER_DEATH_LIST, new ArrayList<BuildAgent>());
-        Trigger reaperTrigger = newTrigger()
+        data.computeIfAbsent(REAPER_DEATH_LIST, k -> new ArrayList<BuildAgent>());
+
+        reaperTrigger = newTrigger()
                 .startNow()
                     .withSchedule(simpleSchedule()
                             .withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS)
@@ -87,6 +99,7 @@ public class Reaper implements LifecycleAware {
                 .build();
         JobDetail reaperJob = newJob(ReaperJob.class)
                 .withIdentity(REAPER_KEY)
+                .storeDurably()
                 .usingJobData(data)
                 .build();
         try {
@@ -99,9 +112,9 @@ public class Reaper implements LifecycleAware {
     @Override
     public void onStop() {
         try {
-            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(REAPER_KEY));
+            boolean watchdogJobDeletion = scheduler.unscheduleJob(reaperTrigger.getKey());
             if (!watchdogJobDeletion) {
-                logger.warn("Was not able to delete Repeaer job. Was it already deleted?");
+                logger.warn("Was not able to unschedule Reaper job. Was it already unscheduled?");
             }
         } catch (SchedulerException e) {
             logger.error("Reaper being stopped but unable to delete ReaperJob", e);

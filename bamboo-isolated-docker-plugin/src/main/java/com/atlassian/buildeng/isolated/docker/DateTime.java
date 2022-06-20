@@ -33,7 +33,7 @@ public class DateTime {
      * Get the current time.
      * @return the number of milliseconds since January 1, 1970, 00:00:00 GMT
      */
-    private long getCurrentTime() {
+    public long getCurrentTime() {
         return new Date().getTime();
     }
 }
