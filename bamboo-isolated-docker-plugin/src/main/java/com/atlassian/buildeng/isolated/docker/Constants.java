@@ -35,12 +35,6 @@ public interface Constants {
     String RESULT_PREFIX = "result.isolated.docker."; //copied in ecs-plugin
 
     /**
-     * The number of seconds to wait before an event is retried
-     * if an error occurred creating an agent for a build.
-     */
-    Duration RETRY_DELAY = Duration.ofSeconds(20);
-
-    /**
      * Key of the default architecture in the architecture list {@link com.atlassian.buildeng.isolated.docker.rest.Config#architectureConfig}
      * This is used in determining the architecture a build should be used when unspecified.
      */
