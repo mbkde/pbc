@@ -61,8 +61,8 @@ public class SchedulerUtils {
                 }
             } while (waiting);
         } catch (SchedulerException | InterruptedException e) {
-            logger.warn("Was not able to determine if there is a currently running instance of scheduled jobs. " +
-                    "Proceeding as if there are none. Exception thrown:\n" + e);
+            logger.warn("Was not able to determine if there is a currently running instance of scheduled jobs. "
+                    + "Proceeding as if there are none. Exception thrown:\n" + e);
         }
     }
 
@@ -71,7 +71,7 @@ public class SchedulerUtils {
      * If references to classes are included in this map, the new map WILL include references to classes
      * from the previous plugin instance's class loader, which MUST be overwritten to avoid {@link ClassCastException}
      *
-     * Jobs which need their data maps copied over MUST be store durably and unscheduled (not deleted)!
+     * <p>Jobs which need their data maps copied over MUST be store durably and unscheduled (not deleted)!
      *
      * @param config          The new {@link JobDataMap} which the old jobs data map should be merged into
      * @param previousJobKeys A list of {@link JobKey} which the job data maps should be extracted from
@@ -90,8 +90,8 @@ public class SchedulerUtils {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .forEach(jobDetail -> {
-                logger.debug("Previous map: " + jobDetail.getKey() + "=" +
-                        MapUtils.toProperties(jobDetail.getJobDataMap()));
+                logger.debug("Previous map: " + jobDetail.getKey() + "="
+                        + MapUtils.toProperties(jobDetail.getJobDataMap()));
                 config.putAll(jobDetail.getJobDataMap());
                 JobKey key = jobDetail.getKey();
                 try {
