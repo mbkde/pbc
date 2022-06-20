@@ -67,17 +67,9 @@ public class SubjectIdServiceImplTest {
     public void setUp() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(admConfAccessor.getAdministrationConfiguration()).thenReturn(conf);
+
+        // used by every test except testDeploymentNotFound and testPlanNotFound
         Mockito.lenient().when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("test-bamboo");
-
-        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_PLAN_KEY)).thenReturn(TEST_PLAN);
-        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_PLAN_NOT_FOUND_KEY)).thenReturn(null);
-        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_JOB_PARENT_KEY)).thenReturn(TEST_JOB);
-        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_JOB_MASTER_KEY)).thenReturn(TEST_BRANCH_JOB);
-        Mockito.lenient().when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
-
-        Mockito.lenient().when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
-        Mockito.lenient().when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_NOT_FOUND)).thenReturn(null);
-        Mockito.lenient().when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY)).thenReturn(TEST_DEPLOYMENT_LONG_PLAN_KEY);
 
         when(TEST_PLAN_BRANCH.getMaster()).thenReturn(TEST_PLAN);
         when(TEST_PLAN_BRANCH.hasMaster()).thenReturn(true);
@@ -97,16 +89,22 @@ public class SubjectIdServiceImplTest {
 
     @Test
     public void testSubjectIdWithPlanKey() {
+        when(cachedPlanManager.getPlanByKey(TEST_PLAN_KEY)).thenReturn(TEST_PLAN);
+
         assertEquals("test-bamboo/TEST-PLAN/B/1", subjectIdService.getSubjectId(TEST_PLAN_KEY));
     }
 
     @Test
     public void testSubjectIdWithId() {
+        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
+
         assertEquals("test-bamboo/TEST-PLAN/D/12345", subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID));
     }
 
     @Test
     public void testPlanNotFound()  {
+        when(cachedPlanManager.getPlanByKey(TEST_PLAN_NOT_FOUND_KEY)).thenReturn(null);
+
         assertThrows(NotFoundException.class, () -> {
             subjectIdService.getSubjectId(TEST_PLAN_NOT_FOUND_KEY);
         });
@@ -114,6 +112,8 @@ public class SubjectIdServiceImplTest {
 
     @Test
     public void testDeploymentNotFound() {
+        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_NOT_FOUND)).thenReturn(null);
+
         assertThrows(NotFoundException.class, () -> {
             subjectIdService.getSubjectId(TEST_DEPLOYMENT_NOT_FOUND);
         });
@@ -121,11 +121,15 @@ public class SubjectIdServiceImplTest {
 
     @Test
     public void testJobKeyReturnsParentId() {
+        when(cachedPlanManager.getPlanByKey(TEST_JOB_PARENT_KEY)).thenReturn(TEST_JOB);
+
         assertEquals("test-bamboo/TEST-PARENT/B/1", subjectIdService.getSubjectId(TEST_JOB_PARENT_KEY));
     }
 
     @Test
     public void testBranchJobKeyReturnsMasterPlanId() {
+        when(cachedPlanManager.getPlanByKey(TEST_JOB_MASTER_KEY)).thenReturn(TEST_BRANCH_JOB);
+
         assertEquals("test-bamboo/TEST-MASTER/B/1", subjectIdService.getSubjectId(TEST_JOB_MASTER_KEY));
     }
 
@@ -148,6 +152,9 @@ public class SubjectIdServiceImplTest {
 
     @Test
     public void testVeryLongPlanKey() {
+        when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
+        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID_LONG_PLAN_KEY)).thenReturn(TEST_DEPLOYMENT_LONG_PLAN_KEY);
+
         assertEquals("test-bamboo/TESTTHISISSUSPICIOUSLYLONG-PLANTOOOOOL/B/1234566789", subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY));
         assert(subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY).length() <= IAM_REQUEST_LIMIT);
 
@@ -158,6 +165,9 @@ public class SubjectIdServiceImplTest {
     @Test
     public void testLongInstanceName() {
         when(admConfAccessor.getAdministrationConfiguration().getInstanceName()).thenReturn("this-is-a-very-long-instance-name-this-is-way-too-long-who-would-make-a-name-this-long");
+        when(cachedPlanManager.getPlanByKey(TEST_VERY_LONG_PLAN_KEY)).thenReturn(TEST_VERY_LONG_PLAN);
+        when(deploymentProjectService.getDeploymentProject(TEST_DEPLOYMENT_ID)).thenReturn(TEST_DEPLOYMENT);
+
         assertEquals("this-is-a-very-long-instance-name-this-is-way-too-long-/D/12345", subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID));
         assert(subjectIdService.getSubjectId(TEST_DEPLOYMENT_ID).length() <= IAM_REQUEST_LIMIT);
         assertEquals("this-is-a-very-long-instance-name-this-is-way-too-/B/1234566789", subjectIdService.getSubjectId(TEST_VERY_LONG_PLAN_KEY));
