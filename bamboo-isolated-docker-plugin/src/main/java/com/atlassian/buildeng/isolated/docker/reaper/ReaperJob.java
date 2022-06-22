@@ -51,8 +51,8 @@ public class ReaperJob implements Job {
         } catch (Throwable t) {
             //this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
-            // thowing something here will stop rescheduling the job forever (until next redeploy)
-            logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
+            // throwing something here will stop rescheduling the job forever (until next redeploy)
+            logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
     }
 
@@ -60,45 +60,58 @@ public class ReaperJob implements Job {
 
         AgentManager agentManager = (AgentManager) jobDataMap.get(Reaper.REAPER_AGENT_MANAGER_KEY);
         AgentRemovals agentRemovals = (AgentRemovals) jobDataMap.get(Reaper.REAPER_REMOVALS_KEY);
+        ExecutableAgentsHelper executableAgentsHelper =
+                (ExecutableAgentsHelper) jobDataMap.get(Reaper.REAPER_AGENTS_HELPER_KEY);
 
-        List<BuildAgent> deathList = (List<BuildAgent>) jobDataMap.get(Reaper.REAPER_DEATH_LIST);
+        RequirementSetImpl reqs = new RequirementSetImpl();
+        reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
+        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
+                ExecutorQuery.newQueryWithoutAssignments(reqs).withOfflineIncluded()
+        );
+
+        // we want to kill disabled docker agents
+        List<BuildAgent> deathList = getDisabledDockerAgents(agents);
 
         // Stop and remove disabled agents
         for (BuildAgent agent : deathList) {
             agent.accept(new DeleterGraveling(agentRemovals));
         }
 
-        deathList.clear();
-
-        RequirementSetImpl reqs = new RequirementSetImpl();
-        reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
-        ExecutableAgentsHelper executableAgentsHelper = (ExecutableAgentsHelper) jobDataMap.get(
-                Reaper.REAPER_AGENTS_HELPER_KEY
-        );
-        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
-                ExecutorQuery.newQueryWithoutAssignments(reqs).withOfflineIncluded()
-        );
-
         // Only care about agents which are remote, idle and 'old' or offline
-        deathList = agents.stream().filter(agent -> {
-            if (agent.isEnabled() && AgentQueries.isDockerAgent(agent)) {
-                PipelineDefinition definition = agent.getDefinition();
-                Date creationTime = definition.getCreationDate();
-                long currentTime = System.currentTimeMillis();
-                return (agent.getAgentStatus().isIdle()
-                        && creationTime != null
-                        && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS)
-                        // Ideally BuildCancelledEventListener#onOfflineAgent captures offline agents and removes them.
-                        // However, the removal can fail for other reasons, e.g. bamboo is in a bad state.
-                        // This condition check here works as the last defense to clean offline pbc agents
-                        || !agent.isActive();
-            }
-            return false;
-        }).map(agent -> {
-            agent.accept(new SleeperGraveling(agentManager));
-            return agent;
-        }).collect(Collectors.toList());
+        List<BuildAgent> disableList = getIdleDockerAgentsToDisable(agents);
 
-        jobDataMap.put(Reaper.REAPER_DEATH_LIST, deathList);
+        // disable idle agents
+        for (BuildAgent agent : disableList) {
+            agent.accept(new SleeperGraveling(agentManager));
+        }
+    }
+
+    // get all disabled docker agents from agents list
+    private List<BuildAgent> getDisabledDockerAgents(Collection<BuildAgent> agents) {
+        return agents.stream()
+                .filter(agent -> !agent.isEnabled() && AgentQueries.isDockerAgent(agent))
+                .collect(Collectors.toList());
+    }
+
+    // get idle docker agents that we want to disable from the given agents list
+    private List<BuildAgent> getIdleDockerAgentsToDisable(Collection<BuildAgent> agents) {
+        return agents.stream().filter(this::agentShouldBeDisabled).collect(Collectors.toList());
+    }
+
+    // return true if the given agent should be disabled, false otherwise
+    private boolean agentShouldBeDisabled(BuildAgent agent) {
+        if (agent.isEnabled() && AgentQueries.isDockerAgent(agent)) {
+            PipelineDefinition definition = agent.getDefinition();
+            Date creationTime = definition.getCreationDate();
+            long currentTime = System.currentTimeMillis();
+            return (agent.getAgentStatus().isIdle()
+                    && creationTime != null
+                    && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS)
+                    // Ideally BuildCancelledEventListener#onOfflineAgent captures offline agents and removes them.
+                    // However, the removal can fail for other reasons, e.g. bamboo is in a bad state.
+                    // This condition check here works as the last defense to clean offline pbc agents
+                    || !agent.isActive();
+        }
+        return false;
     }
 }
