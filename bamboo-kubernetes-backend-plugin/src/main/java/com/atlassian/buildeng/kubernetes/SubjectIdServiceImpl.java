@@ -10,7 +10,9 @@ import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.plan.cache.ImmutableTopLevelPlan;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 
+@BambooComponent
 public class SubjectIdServiceImpl implements SubjectIdService {
 
     private final AdministrationConfigurationAccessor admConfAccessor;

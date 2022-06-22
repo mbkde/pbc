@@ -36,6 +36,7 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import org.eclipse.jkube.kit.common.util.KubernetesHelper;
@@ -79,6 +80,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *
  * @author mkleint
  */
+@ExportAsService
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
 

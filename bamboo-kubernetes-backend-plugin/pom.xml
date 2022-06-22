@@ -55,7 +55,28 @@ limitations under the License.
                             <version>3.0.10</version>
                         </pluginArtifact>
                     </pluginArtifacts>
+                    <instructions>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+                        <Spring-Context>*</Spring-Context>
+                        <Export-Package>
+                            com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl,
+                            com.atlassian.buildeng.kubernetes.GlobalConfiguration
+                        </Export-Package>
+                    </instructions>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.plugin</groupId>
+                <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
+                <version>${spring.scanner.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>atlassian-spring-scanner</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -181,6 +202,12 @@ limitations under the License.
             <artifactId>json</artifactId>
             <version>20210307</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-annotation</artifactId>
+            <version>${spring.scanner.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
