@@ -48,9 +48,9 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 public class ReaperJobTest {
-    ExecutableAgentsHelper executableAgentsHelper;
+    private ExecutableAgentsHelper executableAgentsHelper;
 
-    JobExecutionContext context;
+    private JobExecutionContext context;
 
     private ReaperJob reaperJob;
 
