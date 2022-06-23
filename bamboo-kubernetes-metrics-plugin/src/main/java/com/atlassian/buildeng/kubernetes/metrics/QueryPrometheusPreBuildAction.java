@@ -22,18 +22,16 @@ import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.error.SimpleErrorCollection;
 import com.atlassian.bamboo.v2.build.BuildContext;
-import com.atlassian.bamboo.v2.build.BuildContextHelper;
-import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import org.codehaus.plexus.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -61,7 +59,8 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
     }
 
     @Override
-    public BuildContext call() throws InterruptedException, Exception {
+    @NotNull
+    public BuildContext call() {
         Configuration config = AccessConfiguration.forContext(buildContext);
 
         if (config.isEnabled()) {
@@ -74,10 +73,9 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
                 return buildContext;
             }
             
-            Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext)
-                    .toPath();
+            buildLogger.addBuildLogEntry("Name of pod:" + KUBE_POD_NAME);
             loadImageDetails(prometheusUrl, "kube_pod_container_info{pod=\"" + KUBE_POD_NAME  + "\"}",
-                    buildLogger, buildContext);
+                    buildLogger);
             loadHost(prometheusUrl, "kube_pod_info{pod=\"" + KUBE_POD_NAME  + "\"}", buildLogger, buildContext);
             
         }
@@ -89,8 +87,8 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
         return QueryPrometheus.query(prometheusUrl, query, STEP_PERIOD, now - 1000, now);
     }
     
-    private void loadImageDetails(String prometheusUrl, String query, 
-            BuildLogger buildLogger, BuildContext buildContext) {
+    private void loadImageDetails(String prometheusUrl, String query,
+                                  BuildLogger buildLogger) {
         try {
             JSONObject jsonResponse = loadJson(prometheusUrl, query);
             JSONArray result = jsonResponse
@@ -116,7 +114,6 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             buildLogger.addErrorLogEntry(
                     String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
                             prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
-            return;
         }
         
     }
@@ -142,7 +139,6 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             buildLogger.addErrorLogEntry(
                     String.format("Error when querying Prometheus server: %s. Query: %s Response %s",
                             prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
-            return;
         }
     }
     
