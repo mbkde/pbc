@@ -28,9 +28,7 @@ import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -66,40 +64,28 @@ public class ReaperJob implements Job {
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
         Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
-                ExecutorQuery.newQueryWithoutAssignments(reqs).withOfflineIncluded()
+                ExecutorQuery.newQueryWithoutAssignments(reqs).withOfflineIncluded().withDisabledIncluded()
         );
 
-        // we want to kill disabled docker agents
-        List<BuildAgent> deathList = getDisabledDockerAgents(agents);
-
-        // Stop and remove disabled agents
-        for (BuildAgent agent : deathList) {
-            agent.accept(new DeleterGraveling(agentRemovals));
-        }
-
-        // Only care about agents which are remote, idle and 'old' or offline
-        List<BuildAgent> disableList = getIdleDockerAgentsToDisable(agents);
-
-        // disable idle agents
-        for (BuildAgent agent : disableList) {
-            agent.accept(new SleeperGraveling(agentManager));
+        for (BuildAgent agent : agents) {
+            if (agentShouldBeKilled(agent)) {
+                // we want to kill disabled docker agents
+                agent.accept(new DeleterGraveling(agentRemovals));
+            } else if (agentShouldBeDisabled(agent)) {
+                // Stop and remove disabled agents
+                agent.accept(new SleeperGraveling(agentManager));
+            }
         }
     }
 
-    // get all disabled docker agents from agents list
-    private List<BuildAgent> getDisabledDockerAgents(Collection<BuildAgent> agents) {
-        return agents.stream()
-                .filter(agent -> !agent.isEnabled() && AgentQueries.isDockerAgent(agent))
-                .collect(Collectors.toList());
-    }
-
-    // get idle docker agents that we want to disable from the given agents list
-    private List<BuildAgent> getIdleDockerAgentsToDisable(Collection<BuildAgent> agents) {
-        return agents.stream().filter(this::agentShouldBeDisabled).collect(Collectors.toList());
+    // return true if the given agent should be killed, false otherwise
+    private boolean agentShouldBeKilled(BuildAgent agent) {
+        return !agent.isEnabled() && AgentQueries.isDockerAgent(agent);
     }
 
     // return true if the given agent should be disabled, false otherwise
     private boolean agentShouldBeDisabled(BuildAgent agent) {
+        // Only care about agents which are remote, idle and 'old' or offline
         if (agent.isEnabled() && AgentQueries.isDockerAgent(agent)) {
             PipelineDefinition definition = agent.getDefinition();
             Date creationTime = definition.getCreationDate();
