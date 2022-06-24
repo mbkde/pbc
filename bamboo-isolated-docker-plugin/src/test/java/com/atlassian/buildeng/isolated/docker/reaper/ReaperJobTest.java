@@ -16,6 +16,17 @@
 
 package com.atlassian.buildeng.isolated.docker.reaper;
 
+import static com.atlassian.buildeng.isolated.docker.reaper.Reaper.REAPER_AGENTS_HELPER_KEY;
+import static com.atlassian.buildeng.isolated.docker.reaper.Reaper.REAPER_AGENT_MANAGER_KEY;
+import static com.atlassian.buildeng.isolated.docker.reaper.Reaper.REAPER_REMOVALS_KEY;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.quartz.JobBuilder.newJob;
+
 import com.atlassian.bamboo.agent.AgentType;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
@@ -27,21 +38,11 @@ import com.atlassian.bamboo.v2.build.agent.RemoteAgentDefinitionImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
-import static com.atlassian.buildeng.isolated.docker.reaper.Reaper.REAPER_AGENT_MANAGER_KEY;
-import static com.atlassian.buildeng.isolated.docker.reaper.Reaper.REAPER_REMOVALS_KEY;
-import static com.atlassian.buildeng.isolated.docker.reaper.Reaper.REAPER_AGENTS_HELPER_KEY;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-import static org.quartz.JobBuilder.newJob;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -54,7 +55,7 @@ public class ReaperJobTest {
 
     private ReaperJob reaperJob;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         JobDataMap jobDataMap = new JobDataMap();
 
