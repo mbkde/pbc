@@ -16,13 +16,12 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
@@ -35,11 +34,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+@ExtendWith(MockitoExtension.class)
 public class PodCreatorTest {
 
     private GlobalConfiguration globalConfiguration;
@@ -48,14 +50,10 @@ public class PodCreatorTest {
     public PodCreatorTest() {
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
 
-
         globalConfiguration = mock(GlobalConfiguration.class);
-        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
-        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
-        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -120,6 +118,9 @@ public class PodCreatorTest {
 
     @Test
     public void testRole() throws IOException {
+        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
+        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
 
         Configuration config = ConfigurationBuilder.create("testImage")
             .withAwsRole("arn:aws:iam::123456789012:role/testrole")
@@ -173,6 +174,10 @@ public class PodCreatorTest {
 
     @Test
     public void testNoRole() {
+        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
+        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
+
         Configuration config = ConfigurationBuilder.create("testImage")
             .withImageSize(Configuration.ContainerSize.REGULAR)
             .build();
