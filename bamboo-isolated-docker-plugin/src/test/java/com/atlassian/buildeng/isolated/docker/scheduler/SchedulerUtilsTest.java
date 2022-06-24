@@ -87,7 +87,7 @@ public class SchedulerUtilsTest {
     }
 
     @Test
-    public void testJobDataMapIsCopied() throws SchedulerException {
+    public void testJobDataMapIsCopiedAndJobIsDeleted() throws SchedulerException {
         JobDetail jd = Mockito.mock(JobDetail.class);
         JobKey jobKey = JobKey.jobKey("test");
         when(jd.getKey()).thenReturn(jobKey);

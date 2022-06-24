@@ -93,17 +93,26 @@ public class SchedulerUtils {
                 logger.debug("Previous map: " + jobDetail.getKey() + "="
                         + MapUtils.toProperties(jobDetail.getJobDataMap()));
                 config.putAll(jobDetail.getJobDataMap());
-                JobKey key = jobDetail.getKey();
-                try {
-                    logger.info("Deleting old job for {}", key);
-                    boolean deletion = scheduler.deleteJob(key);
-                    if (!deletion) {
-                        logger.warn("Was not able to find {} job. Was it already deleted?", key);
-                    }
-                } catch (SchedulerException e) {
-                    logger.error("Was not able to delete {} job. Proceeding anyway. Exception thrown:\n{}", key, e);
-                }
+                deleteJob(jobDetail.getKey());
             });
+    }
+
+    public void deleteJobs(List<JobKey> jobKeys) {
+        for (JobKey jobKey: jobKeys) {
+            deleteJob(jobKey);
+        }
+    }
+
+    public void deleteJob(JobKey jobKey) {
+        try {
+            logger.info("Deleting old job for {}", jobKey);
+            boolean deletion = scheduler.deleteJob(jobKey);
+            if (!deletion) {
+                logger.warn("Was not able to find {} job. Was it already deleted?", jobKey);
+            }
+        } catch (SchedulerException e) {
+            logger.error("Was not able to delete {} job. Proceeding anyway. Exception thrown:\n{}", jobKey, e);
+        }
     }
 
     @VisibleForTesting
