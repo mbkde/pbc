@@ -15,13 +15,14 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class DockerHostTest {
 

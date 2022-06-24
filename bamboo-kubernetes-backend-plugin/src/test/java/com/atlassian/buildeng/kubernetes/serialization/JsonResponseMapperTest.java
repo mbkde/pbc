@@ -3,7 +3,8 @@ package com.atlassian.buildeng.kubernetes.serialization;
 import io.fabric8.kubernetes.api.model.BaseKubernetesList;
 import io.fabric8.utils.Files;
 import java.io.IOException;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 public class JsonResponseMapperTest {
 
@@ -16,8 +17,10 @@ public class JsonResponseMapperTest {
         assert map instanceof BaseKubernetesList;
     }
 
-    @Test(expected = DeserializationException.class)
+    @Test
     public void testFailure() {
-        Object map = mapper.map("something-something".getBytes());
+        assertThrows(DeserializationException.class, () -> {
+            Object map = mapper.map("something-something".getBytes());
+        });
     }
 }

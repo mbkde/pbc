@@ -15,8 +15,9 @@
  */
 package com.atlassian.buildeng.ecs;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.eq;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -35,18 +36,18 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.google.common.base.Objects;
 import java.util.Arrays;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  *
  * @author mkleint
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class GlobalConfigurationTest {
     
     @Mock
@@ -111,7 +112,7 @@ public class GlobalConfigurationTest {
     public void setSidekickAudited() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_CLUSTER_KEY))).thenReturn("cluster1");
-        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY))).thenReturn("sidekick1");
+        Mockito.lenient().when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY))).thenReturn("sidekick1");
         Config config = new Config("cluster1", "asg1", "newsidekick");
         configuration.setConfig(config);
         verify(auditLogService, times(1)).log(matches("sidekick1", "newsidekick"));
@@ -133,7 +134,7 @@ public class GlobalConfigurationTest {
     }
 
     AuditLogEntry matches(final String oldValue, final String newValue) {
-        return Matchers.argThat(item -> {
+        return argThat(item -> {
             System.out.println("m:" + item.getClass());
             AuditLogEntry m =  item;
             return Objects.equal(oldValue, m.getOldValue()) && Objects.equal(newValue, m.getNewValue());

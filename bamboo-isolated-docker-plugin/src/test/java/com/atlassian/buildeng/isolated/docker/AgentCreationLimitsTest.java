@@ -16,17 +16,22 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
-import java.util.Date;
-import java.util.UUID;
-import org.junit.After;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
+import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
+import java.util.Date;
+import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
 public class AgentCreationLimitsTest {
     private final GlobalConfiguration globalConfiguration = mock(GlobalConfiguration.class);
     private final DateTime dateTime = mock(DateTime.class);
@@ -34,14 +39,14 @@ public class AgentCreationLimitsTest {
     private final RetryAgentStartupEvent event = new RetryAgentStartupEvent(null, null, 0, uuid);
     private AgentCreationLimits agentCreationLimits;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         reset(globalConfiguration);
         reset(dateTime);
         agentCreationLimits = new AgentCreationLimits(globalConfiguration, dateTime);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         reset(globalConfiguration);
         reset(dateTime);

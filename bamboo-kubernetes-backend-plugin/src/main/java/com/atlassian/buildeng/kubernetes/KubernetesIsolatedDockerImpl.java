@@ -16,10 +16,14 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.bandana.BandanaManager;
-import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
 import com.atlassian.buildeng.isolated.docker.scheduler.SchedulerUtils;
 import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
@@ -57,16 +61,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.joda.time.DateTime;
-import static org.quartz.JobBuilder.newJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
