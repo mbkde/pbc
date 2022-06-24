@@ -16,18 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
@@ -48,15 +36,24 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventPublisher;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith({MockitoExtension.class})
 public class PreBuildQueuedEventListenerTest {
     @Mock
     private AgentCreationReschedulerImpl scheduler;
@@ -86,7 +83,7 @@ public class PreBuildQueuedEventListenerTest {
     
     
 
-    @Before
+    @BeforeEach
     public void mockSox() {
         when(dockerSoxService.checkSoxCompliance(any())).thenReturn(Boolean.TRUE);
     }
@@ -99,11 +96,11 @@ public class PreBuildQueuedEventListenerTest {
             IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        }).when(isolatedAgentService).startAgent(any(), any());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
         assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
@@ -115,11 +112,11 @@ public class PreBuildQueuedEventListenerTest {
             IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentException("throw"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        }).when(isolatedAgentService).startAgent(any(), any());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
     }
     
     @Test
@@ -127,9 +124,9 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.NOT_BUILT);
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
-        verify(scheduler, never()).reschedule(anyObject());
-        verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
+        verify(buildQueueManager, never()).removeBuildFromQueue(any());
+        verify(scheduler, never()).reschedule(any());
+        verify(isolatedAgentService, never()).startAgent(any(), any());
     }
     
     @Test
@@ -137,25 +134,25 @@ public class PreBuildQueuedEventListenerTest {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.IN_PROGRESS);
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
-        verify(scheduler, never()).reschedule(anyObject());
-        verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
+        verify(buildQueueManager, never()).removeBuildFromQueue(any());
+        verify(scheduler, never()).reschedule(any());
+        verify(isolatedAgentService, never()).startAgent(any(), any());
     }
     
     @Test
     public void testRescheduledRecoverableFailure() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
-        when(scheduler.reschedule(anyObject())).thenReturn(Boolean.TRUE);
+        when(scheduler.reschedule(any())).thenReturn(Boolean.TRUE);
         Mockito.doAnswer(invocation -> {
             IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withRetryRecoverable("error"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        }).when(isolatedAgentService).startAgent(any(), any());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
-        verify(scheduler, times(1)).reschedule(anyObject());
+        verify(buildQueueManager, never()).removeBuildFromQueue(any());
+        verify(scheduler, times(1)).reschedule(any());
         assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
@@ -167,11 +164,11 @@ public class PreBuildQueuedEventListenerTest {
             IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withError("Error"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        }).when(isolatedAgentService).startAgent(any(), any());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
         assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
         
         //now check the rerun
@@ -179,7 +176,7 @@ public class PreBuildQueuedEventListenerTest {
             IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult());
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        }).when(isolatedAgentService).startAgent(any(), any());
 
         when(buildContext.getBuildKey()).thenReturn(new BuildKey());
         event = new BuildQueuedEvent(this, buildContext);
@@ -196,11 +193,11 @@ public class PreBuildQueuedEventListenerTest {
             IsolatedDockerRequestCallback cb = invocation.getArgument(1);
             cb.handle(new IsolatedDockerAgentResult().withError("Error1"));
             return null;
-        }).when(isolatedAgentService).startAgent(anyObject(), anyObject());
+        }).when(isolatedAgentService).startAgent(any(), any());
         
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
         assertEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
         
         //now check the rerun
@@ -221,12 +218,12 @@ public class PreBuildQueuedEventListenerTest {
     public void testLicenseLimitReached() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
-        when(agentLicenseLimits.licenseLimitReached(anyObject())).thenReturn(Boolean.TRUE);
+        when(agentLicenseLimits.licenseLimitReached(any())).thenReturn(Boolean.TRUE);
         listener.call(event);
-        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
+        verify(buildQueueManager, never()).removeBuildFromQueue(any());
         //well, actually called but inside agentLicenseLimits component.
-        verify(scheduler, never()).reschedule(anyObject());
-        verify(isolatedAgentService, never()).startAgent(anyObject(), anyObject());
+        verify(scheduler, never()).reschedule(any());
+        verify(isolatedAgentService, never()).startAgent(any(), any());
     }
 
     @Test
@@ -235,8 +232,8 @@ public class PreBuildQueuedEventListenerTest {
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         when(agentCreationLimits.creationLimitReached()).thenReturn(Boolean.TRUE);
         listener.call(event);
-        verify(buildQueueManager, never()).removeBuildFromQueue(anyObject());
-        verify(scheduler).reschedule(anyObject());
+        verify(buildQueueManager, never()).removeBuildFromQueue(any());
+        verify(scheduler).reschedule(any());
         verify(agentsThrottled).add(event.getContext().getResultKey().getKey());
         verify(jmx).recalculateThrottle(agentsThrottled);
     }

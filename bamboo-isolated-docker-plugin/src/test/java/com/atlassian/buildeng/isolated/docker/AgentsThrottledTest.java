@@ -16,21 +16,22 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 import java.util.Date;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import org.junit.After;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AgentsThrottledTest {
 
     private AgentsThrottled agentsThrottled;
     private final DateTime dateTime = mock(DateTime.class);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         reset(dateTime);
         agentsThrottled = new AgentsThrottled(dateTime);

@@ -2,7 +2,7 @@ package com.atlassian.buildeng.kubernetes.exception;
 
 import com.atlassian.buildeng.kubernetes.shell.ShellException;
 import java.util.Collections;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class KubernetesExceptionParserTest {
 
