@@ -285,12 +285,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         logger.info("PBC Kubernetes Backend plugin started. Checking that jobs from a prior instance of the plugin are not still running.");
         List<JobKey> previousJobKeys = Arrays.asList(PLUGIN_JOB_KEY, PLUGIN_JOB_JMX_KEY);
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
+        // Extra deletion due to only unscheduling this in the previous version, see BUILDENG-20439. Should be removed after deploy.
+        schedulerUtils.deleteJobs(previousJobKeys);
 
         JobDataMap config = new JobDataMap();
-
-        schedulerUtils.copyPreviousJobDataAndDeleteJob(config, previousJobKeys);
-
-        // Overwrite old references to the necessary classes
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
         config.put("kubeJmxService", kubeJmxService);
@@ -326,7 +324,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         return newJob(c)
                 .withIdentity(jobKey)
                 .usingJobData(jobDataMap)
-                .storeDurably()
                 .build();
     }
 
@@ -334,20 +331,20 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     public void onStop() {
         logger.info("Kubernetes Backend plugin unloaded. Unscheduling jobs.");
         try {
-            boolean watchdogJobUnschedule = scheduler.unscheduleJob(watchdogJobTrigger.getKey());
+            boolean watchdogJobUnschedule = scheduler.deleteJob(PLUGIN_JOB_KEY);
             if (!watchdogJobUnschedule) {
-                logger.warn("Was not able to unschedule KubernetesWatchdog job. Was it already unscheduled?");
+                logger.warn("Was not able to delete KubernetesWatchdog job. Was it already delete?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule KubernetesWatchdogJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete KubernetesWatchdogJob", e);
         }
         try {
-            boolean jmxJobUnschedule = scheduler.unscheduleJob(pluginJmxJobTrigger.getKey());
+            boolean jmxJobUnschedule = scheduler.deleteJob(PLUGIN_JOB_JMX_KEY);
             if (!jmxJobUnschedule) {
-                logger.warn("Was not able to unschedule Kubernetes JMX job. Was it already unscheduled?");
+                logger.warn("Was not able to delete Kubernetes JMX job. Was it already delete?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete JmxJob", e);
         }
         executor.shutdown();
     }
