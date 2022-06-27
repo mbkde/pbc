@@ -76,6 +76,8 @@ public class Reaper implements LifecycleAware {
         List<JobKey> previousJobKeys = Collections.singletonList(REAPER_KEY);
         logger.info("PBC Isolated Docker plugin started. Checking that jobs from a prior instance of the plugin are not still running.");
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
+        // Extra deletion due to only unscheduling this in the previous version, see BUILDENG-20439. Should be removed after deploy.
+        schedulerUtils.deleteJobs(previousJobKeys);
 
         JobDataMap data = new JobDataMap();
         data.put(REAPER_AGENT_MANAGER_KEY, agentManager);
