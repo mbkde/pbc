@@ -52,8 +52,9 @@ public class ReaperTest {
 
     @Test
     public void deleteJobIsCalledOnStart() throws SchedulerException {
-        // we want to make sure that the job is deleted when the plugin is stopped
-        // because we do not want two concurrent executions taking place.
+        // We only need to check this is called once as we are updating the code from unscheduling to deleting.
+        // Once this version has been deployed we will no longer need to ensure the job was deleted
+        // as it should be done onStop().
         reaper.onStart();
 
         verify(scheduler, times(1)).deleteJob(Reaper.REAPER_KEY);
@@ -61,9 +62,8 @@ public class ReaperTest {
 
     @Test
     public void deleteJobIsCalledOnStop() throws SchedulerException {
-        // We only need to check this is called once as we are updating the code from unscheduling to deleting.
-        // Once this version has been deployed we will no longer need to ensure the job was deleted
-        // as it should be done onStart().
+        // The scheduler does not allow multiple jobs to run with the same key, and if
+        // we don't delete it, the old job will never be unloaded
         reaper.onStop();
 
         verify(scheduler, times(1)).deleteJob(Reaper.REAPER_KEY);
