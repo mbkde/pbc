@@ -29,7 +29,7 @@ public class Config {
     public boolean useClusterRegistry;
     public String clusterRegistryAvailableSelector;
     public String clusterRegistryPrimarySelector;
-    public String artifactoryCacheAllowlist;
+    public String artifactoryCacheAllowList;
     public String artifactoryCachePodSpec;
 
 
@@ -39,7 +39,7 @@ public class Config {
     public Config(String sidekickImage, String currentContext, String podTemplate, String architecturePodConfig,
                   String iamRequestTemplate, String iamSubjectIdPrefix, String podLogsUrl, String containerSizes,
                   boolean useClusterRegistry, String clusterRegistryAvailableSelector,
-                  String clusterRegistryPrimarySelector, String artifactoryCacheAllowlist, String artifactoryCachePodSpec) {
+                  String clusterRegistryPrimarySelector, String artifactoryCacheAllowList, String artifactoryCachePodSpec) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -51,7 +51,7 @@ public class Config {
         this.useClusterRegistry = useClusterRegistry;
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
-        this.artifactoryCacheAllowlist = artifactoryCacheAllowlist;
+        this.artifactoryCacheAllowList = artifactoryCacheAllowList;
         this.artifactoryCachePodSpec = artifactoryCachePodSpec;
     }
 
@@ -139,12 +139,12 @@ public class Config {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
     }
 
-    public String getArtifactoryCacheAllowlist() {
-        return artifactoryCacheAllowlist;
+    public String getArtifactoryCacheAllowList() {
+        return artifactoryCacheAllowList;
     }
 
-    public void setArtifactoryCacheAllowlist(String artifactoryCacheAllowlist) {
-        this.artifactoryCacheAllowlist = artifactoryCacheAllowlist;
+    public void setArtifactoryCacheAllowList(String artifactoryCacheAllowList) {
+        this.artifactoryCacheAllowList = artifactoryCacheAllowList;
     }
 
     public String getArtifactoryCachePodSpec() {

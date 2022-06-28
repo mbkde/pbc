@@ -62,7 +62,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
     static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
     static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
-    static String BANDANA_ARTIFACTORY_CACHE_ALLOWLIST = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCacheAllowlist";
+    static String BANDANA_ARTIFACTORY_CACHE_ALLOWLIST = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCacheAllowList";
     static String BANDANA_ARTIFACTORY_CACHE_PODSPEC = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCachePodSpec";
 
     private static final String MAIN_PREFIX = "main-";
@@ -199,7 +199,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 BANDANA_POD_LOGS_URL);
     }
 
-    public String getArtifactoryCacheAllowlistAsString() {
+    public String getArtifactoryCacheAllowListAsString() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
     }
@@ -224,7 +224,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         final boolean useClusterRegistry = config.isUseClusterRegistry();
         final String availableSelector = config.getClusterRegistryAvailableSelector();
         final String primarySelector = config.getClusterRegistryPrimarySelector();
-        final String artifactoryCacheAllowlist = config.getArtifactoryCacheAllowlist();
+        final String artifactoryCacheAllowList = config.getArtifactoryCacheAllowList();
         final String artifactoryCachePodSpec = config.getArtifactoryCachePodSpec();
 
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
@@ -307,21 +307,21 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                         BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
             }
         }
-        if (!StringUtils.equals(artifactoryCacheAllowlist, getArtifactoryCacheAllowlistAsString())) {
-            auditLogEntry("PBC Kubernetes Artifactory Cache Allowlist",
-                    getArtifactoryCacheAllowlistAsString(), artifactoryCacheAllowlist);
-            if (StringUtils.isBlank(artifactoryCacheAllowlist)) {
+        if (!StringUtils.equals(artifactoryCacheAllowList, getArtifactoryCacheAllowListAsString())) {
+            auditLogEntry("PBC Kubernetes Artifactory Cache Allow List",
+                    getArtifactoryCacheAllowListAsString(), artifactoryCacheAllowList);
+            if (StringUtils.isBlank(artifactoryCacheAllowList)) {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
             } else {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST, artifactoryCacheAllowlist);
+                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST, artifactoryCacheAllowList);
             }
         }
         if (!StringUtils.equals(artifactoryCachePodSpec, getArtifactoryCachePodSpecAsString())) {
-            auditLogEntry("PBC Kubernetes Artifactory Cache Allowlist",
+            auditLogEntry("PBC Kubernetes Artifactory Cache Pod Spec",
                     getArtifactoryCachePodSpecAsString(), artifactoryCachePodSpec);
-            if (StringUtils.isBlank(artifactoryCacheAllowlist)) {
+            if (StringUtils.isBlank(artifactoryCachePodSpec)) {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_ARTIFACTORY_CACHE_PODSPEC);
             } else {

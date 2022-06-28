@@ -101,10 +101,11 @@ arm64:
         </div>
 
         <div class="field-group">
-            <label for="artifactoryCacheAllowlist">Artifactory Cache Allowed Builds</label>
-            <textarea type="text" style="height: 200px" class="textarea long-field" id="artifactoryCacheAllowlist"></textarea>
+            <label for="artifactoryCacheAllowList">Artifactory Cache Allowed Builds</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="artifactoryCacheAllowList"></textarea>
             <div class="description" id="desc-clusterRegistryPrimarySelector">
-                Allowlist for builds which will use a mounted artifactory cache volume, one build key per line.
+                Allow list for builds which will use a mounted artifactory cache volume, one build key per line as a YAML list.
+                <br><br>
                 Example:
                 <pre><code>
 - SYNTH-PBCSYNTH

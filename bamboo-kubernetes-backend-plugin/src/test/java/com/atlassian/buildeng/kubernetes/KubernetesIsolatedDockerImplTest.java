@@ -265,8 +265,8 @@ public class KubernetesIsolatedDockerImplTest {
     }
 
     @Test
-    public void testLoadAllowlist() {
-        when(globalConfiguration.getArtifactoryCacheAllowlistAsString()).thenReturn(
+    public void testLoadAllowList() {
+        when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn(
                 "- test123\n" +
                 "- test456");
 
@@ -274,7 +274,7 @@ public class KubernetesIsolatedDockerImplTest {
         allowList.add("test123");
         allowList.add("test456");
 
-        assertEquals(kubernetesIsolatedDocker.loadAllowlist(), allowList);
+        assertEquals(kubernetesIsolatedDocker.loadAllowList(), allowList);
     }
 
     @Test

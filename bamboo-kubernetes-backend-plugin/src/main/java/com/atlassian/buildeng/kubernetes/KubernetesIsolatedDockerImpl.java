@@ -149,7 +149,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 finalPod = podWithoutArchOverrides;
             }
 
-            if (loadAllowlist().contains(request.getBuildKey())) {
+            String planKey = "";
+            String[] resultKeyArray = request.getResultKey().split("-");
+            try {
+                planKey = resultKeyArray[0] + "-" + resultKeyArray[0];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                logger.error("Cannot determine plan key of job");
+            }
+
+            if (loadAllowList().contains(planKey)) {
                 finalPod = addCachePodSpec(finalPod);
             }
 
@@ -227,6 +235,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         }
     }
 
+    @VisibleForTesting
     Map<String, Object> addCachePodSpec(Map<String, Object> finalPod) {
         if (globalConfiguration.getArtifactoryCachePodSpecAsString().isEmpty()) {
             return finalPod;
@@ -272,9 +281,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     @SuppressWarnings("unchecked")
     @VisibleForTesting
-    HashSet<String> loadAllowlist() {
+    HashSet<String> loadAllowList() {
+        if (globalConfiguration.getArtifactoryCacheAllowListAsString().isEmpty()) {
+            return new HashSet<>();
+        }
         Yaml yaml = new Yaml(new SafeConstructor());
-        return new HashSet<>((ArrayList<String>) yaml.load(globalConfiguration.getArtifactoryCacheAllowlistAsString()));
+        return new HashSet<>((ArrayList<String>) yaml.load(globalConfiguration.getArtifactoryCacheAllowListAsString()));
     }
 
     private Map<String, Object> loadArchitectureConfig() {
