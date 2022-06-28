@@ -149,9 +149,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 finalPod = podWithoutArchOverrides;
             }
 
-            String planKey = getPlanKey(request.getResultKey());
-
-            if (loadAllowList().contains(planKey)) {
+            if (isArtifactoryCacheEnabled(request.getResultKey())) {
                 finalPod = addCachePodSpec(finalPod);
             }
 
@@ -239,15 +237,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         return mergeMap(finalPod, cachePodSpec);
     }
 
-    private String getPlanKey(String resultKey) {
-        String planKey = "";
+    private boolean isArtifactoryCacheEnabled(String resultKey) {
         String[] resultKeyArray = resultKey.split("-");
         try {
-            planKey = resultKeyArray[0] + "-" + resultKeyArray[1];
+            String planKey = resultKeyArray[0] + "-" + resultKeyArray[1];
+            return loadAllowList().contains(planKey);
         } catch (ArrayIndexOutOfBoundsException e) {
             logger.error("Cannot determine plan key of request: ", e);
+            return false;
         }
-        return planKey;
     }
 
     @VisibleForTesting
