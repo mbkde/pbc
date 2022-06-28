@@ -149,13 +149,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 finalPod = podWithoutArchOverrides;
             }
 
-            String planKey = "";
-            String[] resultKeyArray = request.getResultKey().split("-");
-            try {
-                planKey = resultKeyArray[0] + "-" + resultKeyArray[0];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.error("Cannot determine plan key of job");
-            }
+            String planKey = getPlanKey(request.getResultKey());
 
             if (loadAllowList().contains(planKey)) {
                 finalPod = addCachePodSpec(finalPod);
@@ -243,6 +237,17 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         Yaml yaml = new Yaml(new SafeConstructor());
         Map<String,Object> cachePodSpec = (Map<String, Object>) yaml.load(globalConfiguration.getArtifactoryCachePodSpecAsString());
         return mergeMap(finalPod, cachePodSpec);
+    }
+
+    private String getPlanKey(String resultKey) {
+        String planKey = "";
+        String[] resultKeyArray = resultKey.split("-");
+        try {
+            planKey = resultKeyArray[0] + "-" + resultKeyArray[1];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            logger.error("Cannot determine plan key of request: ", e);
+        }
+        return planKey;
     }
 
     @VisibleForTesting
