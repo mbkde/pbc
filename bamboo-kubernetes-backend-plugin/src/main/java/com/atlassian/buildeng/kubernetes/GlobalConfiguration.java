@@ -48,7 +48,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
-import scala.util.parsing.combinator.testing.Str;
 
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
