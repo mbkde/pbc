@@ -52,6 +52,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -148,6 +149,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 finalPod = podWithoutArchOverrides;
             }
 
+            if (loadAllowlist().contains(request.getBuildKey())) {
+                finalPod = addCachePodSpec(finalPod);
+            }
+
             List<Map<String, Object>> podSpecList = new ArrayList<>();
             podSpecList.add(finalPod);
 
@@ -222,6 +227,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         }
     }
 
+    Map<String, Object> addCachePodSpec(Map<String, Object> finalPod) {
+        if (globalConfiguration.getArtifactoryCachePodSpecAsString().isEmpty()) {
+            return finalPod;
+        }
+        Yaml yaml = new Yaml(new SafeConstructor());
+        Map<String,Object> cachePodSpec = (Map<String, Object>) yaml.load(globalConfiguration.getArtifactoryCachePodSpecAsString());
+        return mergeMap(finalPod, cachePodSpec);
+    }
+
     @VisibleForTesting
     String getSubjectId(IsolatedDockerAgentRequest request) {
         String subjectId;
@@ -254,6 +268,13 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private Map<String, Object> loadTemplatePod() {
         Yaml yaml = new Yaml(new SafeConstructor());
         return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
+    }
+
+    @SuppressWarnings("unchecked")
+    @VisibleForTesting
+    HashSet<String> loadAllowlist() {
+        Yaml yaml = new Yaml(new SafeConstructor());
+        return new HashSet<>((ArrayList<String>) yaml.load(globalConfiguration.getArtifactoryCacheAllowlistAsString()));
     }
 
     private Map<String, Object> loadArchitectureConfig() {

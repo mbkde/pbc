@@ -48,6 +48,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
+import scala.util.parsing.combinator.testing.Str;
 
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
@@ -62,6 +63,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
     static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
     static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
+    static String BANDANA_ARTIFACTORY_CACHE_ALLOWLIST = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCacheAllowlist";
+    static String BANDANA_ARTIFACTORY_CACHE_PODSPEC = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCachePodSpec";
 
     private static final String MAIN_PREFIX = "main-";
     private static final String EXTRA_PREFIX = "extra-";
@@ -197,6 +200,16 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 BANDANA_POD_LOGS_URL);
     }
 
+    public String getArtifactoryCacheAllowlistAsString() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
+    }
+
+    public String getArtifactoryCachePodSpecAsString() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_ARTIFACTORY_CACHE_PODSPEC);
+    }
+
     /**
      * Saves changes to the configuration.
      */
@@ -212,6 +225,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         final boolean useClusterRegistry = config.isUseClusterRegistry();
         final String availableSelector = config.getClusterRegistryAvailableSelector();
         final String primarySelector = config.getClusterRegistryPrimarySelector();
+        final String artifactoryCacheAllowlist = config.getArtifactoryCacheAllowlist();
+        final String artifactoryCachePodSpec = config.getArtifactoryCachePodSpec();
 
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
@@ -219,6 +234,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
         validateContainerSizes(containerSizes);
 
         validateArchitectureConfig(architecturePodConfig);
+        validateArtifactoryCachePodSpec(artifactoryCachePodSpec);
 
         if (useClusterRegistry) {
             Preconditions.checkArgument(StringUtils.isNotBlank(availableSelector), "Clu");
@@ -290,6 +306,28 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             } else {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
+            }
+        }
+        if (!StringUtils.equals(artifactoryCacheAllowlist, getArtifactoryCacheAllowlistAsString())) {
+            auditLogEntry("PBC Kubernetes Artifactory Cache Allowlist",
+                    getArtifactoryCacheAllowlistAsString(), artifactoryCacheAllowlist);
+            if (StringUtils.isBlank(artifactoryCacheAllowlist)) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST, artifactoryCacheAllowlist);
+            }
+        }
+        if (!StringUtils.equals(artifactoryCachePodSpec, getArtifactoryCachePodSpecAsString())) {
+            auditLogEntry("PBC Kubernetes Artifactory Cache Allowlist",
+                    getArtifactoryCachePodSpecAsString(), artifactoryCachePodSpec);
+            if (StringUtils.isBlank(artifactoryCacheAllowlist)) {
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_ARTIFACTORY_CACHE_PODSPEC);
+            } else {
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_ARTIFACTORY_CACHE_PODSPEC, artifactoryCachePodSpec);
             }
         }
         if (currentContext != null) {
@@ -481,6 +519,24 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 throw new IllegalArgumentException("Not all architectures in the PBC General settings were defined in" +
                         " the architecture dependent configuration! Please add configuration for the following" +
                         " architectures: " + architecturesLeftover);
+            }
+        }
+    }
+
+    private void validateArtifactoryCachePodSpec(String artifactoryCacheSpec) throws IllegalArgumentException {
+        if (StringUtils.isNotBlank(artifactoryCacheSpec)) {
+            Yaml rawYaml = new Yaml(new SafeConstructor());
+
+            Map<String, Object> yaml;
+            try {
+                Object uncastYaml = rawYaml.load(artifactoryCacheSpec);
+                if (uncastYaml instanceof Map) {
+                    yaml = (Map<String, Object>) uncastYaml;
+                } else {
+                    throw new IllegalArgumentException("Artifactory cache spec is not a map!");
+                }
+            } catch (YAMLException e) {
+                throw new IllegalArgumentException("Artifactory cache spec is not valid YAML! Error: " + e.getMessage());
             }
         }
     }

@@ -43,9 +43,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -261,6 +264,79 @@ public class KubernetesIsolatedDockerImplTest {
                 () -> kubernetesIsolatedDocker.addArchitectureOverrides(request, new HashMap<>()));
         assertEquals("Architecture specified in build configuration was not found in server's allowed architectures list! Supported architectures are: [myArch]",
                 exception.getMessage());
+    }
+
+    @Test
+    public void testLoadAllowlist() {
+        when(globalConfiguration.getArtifactoryCacheAllowlistAsString()).thenReturn(
+                "- test123\n" +
+                "- test456");
+
+        HashSet<String> allowList = new HashSet<>();
+        allowList.add("test123");
+        allowList.add("test456");
+
+        assertEquals(kubernetesIsolatedDocker.loadAllowlist(), allowList);
+    }
+
+    @Test
+    public void testAddCachePodSpec() {
+        Yaml yaml =  new Yaml(new SafeConstructor());
+
+        String ogSpec = "apiVersion: v1\n"
+                + "kind: Pod\n"
+                + "spec:\n" +
+                "  volumes:\n" +
+                "    - name: git-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/gitcache\n" +
+                "  containers:\n" +
+                "    volumeMounts:\n" +
+                "      - name: git-cache\n" +
+                "        mountPath: /pbc/overlay/gitcache";
+        String expectedSpec = "apiVersion: v1\n"
+                + "kind: Pod\n"
+                + "spec:\n" +
+                "  volumes:\n" +
+                "    - name: git-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/gitcache\n" +
+                "    - name: m2-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/m2cache\n" +
+                "  containers:\n" +
+                "    volumeMounts:\n" +
+                "      - name: git-cache\n" +
+                "        mountPath: /pbc/overlay/gitcache\n" +
+                "      - name: m2-cache\n" +
+                "        mountPath: /pbc/overlay/m2cache";
+        when(globalConfiguration.getArtifactoryCachePodSpecAsString()).thenReturn("spec:\n" +
+                "  volumes:\n" +
+                "    - name: m2-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/m2cache\n" +
+                "  containers:\n" +
+                "    volumeMounts:\n" +
+                "      - name: m2-cache\n" +
+                "        mountPath: /pbc/overlay/m2cache");
+
+        Map<String, Object> ogYaml = (Map<String, Object>) yaml.load(ogSpec);
+        Map<String, Object> newPodSpec = kubernetesIsolatedDocker.addCachePodSpec(ogYaml);
+        Map<String, Object> expected = (Map<String, Object>) yaml.load(expectedSpec);
+
+        assertEquals(newPodSpec, expected);
     }
 
     // Helper functions

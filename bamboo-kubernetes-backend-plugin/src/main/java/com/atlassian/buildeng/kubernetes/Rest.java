@@ -82,6 +82,8 @@ public class Rest {
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
         c.setClusterRegistryAvailableSelector(configuration.getClusterRegistryAvailableClusterSelector());
         c.setClusterRegistryPrimarySelector(configuration.getClusterRegistryPrimaryClusterSelector());
+        c.setArtifactoryCacheAllowlist(configuration.getArtifactoryCacheAllowlistAsString());
+        c.setArtifactoryCachePodSpec(configuration.getArtifactoryCachePodSpecAsString());
         return Response.ok(c).build();
     }
 
