@@ -19,11 +19,9 @@ package com.atlassian.buildeng.isolated.docker.reaper;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.plan.ExecutableAgentsHelper;
-import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.UnmetRequirements;
 import com.atlassian.buildeng.isolated.docker.scheduler.SchedulerUtils;
@@ -31,7 +29,6 @@ import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.quartz.JobDataMap;
@@ -61,7 +58,6 @@ public class Reaper implements LifecycleAware {
     static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     static String REAPER_REMOVALS_KEY = "reaper-agent-removals";
     static String REAPER_UNMET_KEY = "reaper-unmet-requirements";
-    static String REAPER_DEATH_LIST = "reaper-death-list";
     private Trigger reaperTrigger;
 
 
@@ -80,15 +76,14 @@ public class Reaper implements LifecycleAware {
         List<JobKey> previousJobKeys = Collections.singletonList(REAPER_KEY);
         logger.info("PBC Isolated Docker plugin started. Checking that jobs from a prior instance of the plugin are not still running.");
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
+        // Extra deletion due to only unscheduling this in the previous version, see BUILDENG-20439. Should be removed after deploy.
+        schedulerUtils.deleteJobs(previousJobKeys);
 
         JobDataMap data = new JobDataMap();
-        schedulerUtils.copyPreviousJobDataAndDeleteJob(data, previousJobKeys);
-
         data.put(REAPER_AGENT_MANAGER_KEY, agentManager);
         data.put(REAPER_AGENTS_HELPER_KEY, executableAgentsHelper);
         data.put(REAPER_REMOVALS_KEY, agentRemovals);
         data.put(REAPER_UNMET_KEY, unmetRequirements);
-        data.computeIfAbsent(REAPER_DEATH_LIST, k -> new ArrayList<BuildAgent>());
 
         reaperTrigger = newTrigger()
                 .startNow()
@@ -99,7 +94,6 @@ public class Reaper implements LifecycleAware {
                 .build();
         JobDetail reaperJob = newJob(ReaperJob.class)
                 .withIdentity(REAPER_KEY)
-                .storeDurably()
                 .usingJobData(data)
                 .build();
         try {
@@ -112,9 +106,9 @@ public class Reaper implements LifecycleAware {
     @Override
     public void onStop() {
         try {
-            boolean watchdogJobDeletion = scheduler.unscheduleJob(reaperTrigger.getKey());
-            if (!watchdogJobDeletion) {
-                logger.warn("Was not able to unschedule Reaper job. Was it already unscheduled?");
+            boolean reaperJobDeletion = scheduler.deleteJob(REAPER_KEY);
+            if (!reaperJobDeletion) {
+                logger.warn("Was not able to delete Reaper job. Was it already deleted?");
             }
         } catch (SchedulerException e) {
             logger.error("Reaper being stopped but unable to delete ReaperJob", e);
