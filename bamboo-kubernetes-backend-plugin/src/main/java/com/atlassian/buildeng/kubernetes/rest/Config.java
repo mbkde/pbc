@@ -29,6 +29,9 @@ public class Config {
     public boolean useClusterRegistry;
     public String clusterRegistryAvailableSelector;
     public String clusterRegistryPrimarySelector;
+    public String artifactoryCacheAllowList;
+    public String artifactoryCachePodSpec;
+
 
     public Config() {
     }
@@ -36,7 +39,7 @@ public class Config {
     public Config(String sidekickImage, String currentContext, String podTemplate, String architecturePodConfig,
                   String iamRequestTemplate, String iamSubjectIdPrefix, String podLogsUrl, String containerSizes,
                   boolean useClusterRegistry, String clusterRegistryAvailableSelector,
-                  String clusterRegistryPrimarySelector) {
+                  String clusterRegistryPrimarySelector, String artifactoryCacheAllowList, String artifactoryCachePodSpec) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -48,6 +51,8 @@ public class Config {
         this.useClusterRegistry = useClusterRegistry;
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
+        this.artifactoryCacheAllowList = artifactoryCacheAllowList;
+        this.artifactoryCachePodSpec = artifactoryCachePodSpec;
     }
 
     public String getSidekickImage() {
@@ -132,5 +137,21 @@ public class Config {
 
     public void setClusterRegistryPrimarySelector(String clusterRegistryPrimarySelector) {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+    }
+
+    public String getArtifactoryCacheAllowList() {
+        return artifactoryCacheAllowList;
+    }
+
+    public void setArtifactoryCacheAllowList(String artifactoryCacheAllowList) {
+        this.artifactoryCacheAllowList = artifactoryCacheAllowList;
+    }
+
+    public String getArtifactoryCachePodSpec() {
+        return artifactoryCachePodSpec;
+    }
+
+    public void setArtifactoryCachePodSpec(String artifactoryCachePodSpec) {
+        this.artifactoryCachePodSpec = artifactoryCachePodSpec;
     }
 }

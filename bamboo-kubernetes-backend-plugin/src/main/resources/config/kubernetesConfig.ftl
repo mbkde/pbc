@@ -101,6 +101,28 @@ arm64:
         </div>
 
         <div class="field-group">
+            <label for="artifactoryCacheAllowList">Artifactory Cache Allowed Builds</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="artifactoryCacheAllowList"></textarea>
+            <div class="description" id="desc-clusterRegistryPrimarySelector">
+                Allow list for builds which will use a mounted artifactory cache volume, one build key per line as a YAML list.
+                <br><br>
+                Example:
+                <pre><code>
+- SYNTH-PBCSYNTH
+- SYNTH-IDPLUGIN
+                </code></pre>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <label for="artifactoryCachePodSpec">Artifactory Cache Pod Spec</label>
+            <textarea type="text" style="height: 200px" class="textarea long-field" id="artifactoryCachePodSpec"></textarea>
+            <div class="description" id="desc-clusterRegistryPrimarySelector">
+                Pod Spec to add to builds that will use the cache
+            </div>
+        </div>
+
+        <div class="field-group">
             <label for="iamRequestTemplate">IAM Request Template</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="iamRequestTemplate"></textarea>
             <div class="description" id="desc-iamRequestTemplate">

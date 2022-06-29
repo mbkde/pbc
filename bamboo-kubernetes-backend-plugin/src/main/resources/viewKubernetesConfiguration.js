@@ -41,6 +41,8 @@
         updateClusterRegistry();
         AJS.$("#clusterRegistryAvailableSelector").val(response.clusterRegistryAvailableSelector);
         AJS.$("#clusterRegistryPrimarySelector").val(response.clusterRegistryPrimarySelector);
+        AJS.$("#artifactoryCacheAllowList").val(response.artifactoryCacheAllowList);
+        AJS.$("#artifactoryCachePodSpec").val(response.artifactoryCachePodSpec);
     }
 
     function setRemoteConfig() {
@@ -57,6 +59,8 @@
         config.useClusterRegistry = checked;
         config.clusterRegistryAvailableSelector = AJS.$("#clusterRegistryAvailableSelector").val().trim();
         config.clusterRegistryPrimarySelector = AJS.$("#clusterRegistryPrimarySelector").val().trim();
+        config.artifactoryCacheAllowList = AJS.$("#artifactoryCacheAllowList").val().trim();
+        config.artifactoryCachePodSpec = AJS.$("#artifactoryCachePodSpec").val().trim();
 
 
         updateStatus("Saving...");
