@@ -229,11 +229,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     @VisibleForTesting
     Map<String, Object> addCachePodSpec(Map<String, Object> finalPod) {
-        if (globalConfiguration.getArtifactoryCachePodSpecAsString().isEmpty()) {
+        String podSpec = globalConfiguration.getArtifactoryCachePodSpecAsString();
+        if (podSpec.isEmpty()) {
             return finalPod;
         }
         Yaml yaml = new Yaml(new SafeConstructor());
-        Map<String,Object> cachePodSpec = (Map<String, Object>) yaml.load(globalConfiguration.getArtifactoryCachePodSpecAsString());
+        Map<String,Object> cachePodSpec = (Map<String, Object>) yaml.load(podSpec);
         return mergeMap(finalPod, cachePodSpec);
     }
 
@@ -285,11 +286,12 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @SuppressWarnings("unchecked")
     @VisibleForTesting
     HashSet<String> loadAllowList() {
-        if (globalConfiguration.getArtifactoryCacheAllowListAsString().isEmpty()) {
+        String allowList = globalConfiguration.getArtifactoryCacheAllowListAsString();
+        if (allowList.isEmpty()) {
             return new HashSet<>();
         }
         Yaml yaml = new Yaml(new SafeConstructor());
-        return new HashSet<>((ArrayList<String>) yaml.load(globalConfiguration.getArtifactoryCacheAllowListAsString()));
+        return new HashSet<>((ArrayList<String>) yaml.load(allowList));
     }
 
     private Map<String, Object> loadArchitectureConfig() {
