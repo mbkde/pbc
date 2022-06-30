@@ -103,7 +103,7 @@ arm64:
         <div class="field-group">
             <label for="artifactoryCacheAllowList">Artifactory Cache Allowed Builds</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="artifactoryCacheAllowList"></textarea>
-            <div class="description" id="desc-clusterRegistryPrimarySelector">
+            <div class="description" id="desc-artifactoryCacheAllowList">
                 Allow list for builds which will use a mounted artifactory cache volume, one build key per line as a YAML list.
                 <br><br>
                 Example:
@@ -117,7 +117,7 @@ arm64:
         <div class="field-group">
             <label for="artifactoryCachePodSpec">Artifactory Cache Pod Spec</label>
             <textarea type="text" style="height: 200px" class="textarea long-field" id="artifactoryCachePodSpec"></textarea>
-            <div class="description" id="desc-clusterRegistryPrimarySelector">
+            <div class="description" id="desc-artifactoryCachePodSpec">
                 Pod Spec to add to builds that will use the cache
             </div>
         </div>

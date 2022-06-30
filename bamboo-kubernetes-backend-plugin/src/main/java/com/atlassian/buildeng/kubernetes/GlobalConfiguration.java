@@ -200,13 +200,15 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     }
 
     public String getArtifactoryCacheAllowListAsString() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+        String allowList = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
+        return allowList != null ? allowList : "";
     }
 
     public String getArtifactoryCachePodSpecAsString() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+        String podSpec = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_ARTIFACTORY_CACHE_PODSPEC);
+        return podSpec != null ? podSpec : "";
     }
 
     /**
