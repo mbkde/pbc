@@ -17,7 +17,7 @@
 package com.atlassian.buildeng.ecs.remote;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import com.atlassian.buildeng.ecs.shared.StoppedState;
@@ -25,7 +25,7 @@ import com.sun.jersey.api.client.Client;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
 public class RemoteWatchdogJobTest {

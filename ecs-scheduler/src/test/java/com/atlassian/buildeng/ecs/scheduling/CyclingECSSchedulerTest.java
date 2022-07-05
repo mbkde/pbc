@@ -16,14 +16,15 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,15 +55,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 
 @SuppressWarnings("unchecked")
+@ExtendWith(MockitoExtension.class)
 public class CyclingECSSchedulerTest {
-    
+
     public CyclingECSSchedulerTest() {
     }
 
@@ -174,9 +177,9 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Capacity overload", thrown.get());
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
+        assertTrue(thrown.get(), "Capacity overload");
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, times(1)).scaleTo(eq(6), anyString());
     }
     
     @Test
@@ -212,8 +215,8 @@ public class CyclingECSSchedulerTest {
         );
         awaitProcessing(scheduler);
         
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn4", arn.get());
     }
     
@@ -252,8 +255,8 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
     
@@ -292,8 +295,8 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }    
     
@@ -334,8 +337,8 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
 
@@ -381,8 +384,8 @@ public class CyclingECSSchedulerTest {
         );
         awaitProcessing(scheduler);
 
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(argThat(new IsListOfTwoElements()), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, times(1)).terminateAndDetachInstances(argThat(new IsListOfTwoElements()), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
 
@@ -424,8 +427,8 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id1?
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn1", arn.get());
     }
     
@@ -470,9 +473,9 @@ public class CyclingECSSchedulerTest {
         );
         awaitProcessing(scheduler); //wait to have the other thread start the processing
         assertEquals("arn1", arn.get());
-        assertTrue("Exception Thrown correctly", thrown.get());
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.anyInt(), anyString());
+        assertTrue(thrown.get(), "Exception Thrown correctly");
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, times(1)).scaleTo(anyInt(), anyString());
     }
     
     @Test
@@ -495,7 +498,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Exception Thrown correctly", thrown.get());
+        assertTrue(thrown.get(), "Exception Thrown correctly");
     }
 
         
@@ -508,8 +511,8 @@ public class CyclingECSSchedulerTest {
                     ci("id2", "arn2", true, 20, 40)
                 )
         );
+        when(backend.getInstances(anySet())).thenThrow(new ECSException("error2"));
         mockASG(Sets.newHashSet("id1", "id2"), backend);
-        when(backend.getInstances(anyList())).thenThrow(new ECSException("error2"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
@@ -525,7 +528,7 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Exception Thrown correctly", thrown.get());
+        assertTrue(thrown.get(), "Exception Thrown correctly");
     }
     
     @Test
@@ -537,13 +540,13 @@ public class CyclingECSSchedulerTest {
                     ci("id2", "arn2", true, 20, 40)
                     )
         );
-        when(backend.getInstances(anyList())).thenReturn(Arrays.asList(
+        when(backend.getInstances(anySet())).thenReturn(Arrays.asList(
                     ec2("id1", new Date()),
                     ec2("id2", new Date())
                 )
         );
         mockASG(Sets.newHashSet("id1", "id2"), backend);
-        when(backend.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenThrow(new ECSException("error3"));
+        when(backend.schedule(any(), anyString(), any(), any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
         scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(19), null, -1, null),
@@ -559,10 +562,9 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Exception Thrown correctly", thrown.get());
-        
+        assertTrue(thrown.get(), "Exception Thrown correctly");
     }
-    
+
     
     @Test
     public void scheduleScaleUpWithDisconnected() throws Exception {
@@ -598,11 +600,11 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Capacity overload", thrown.get());
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(false), anyString());
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
+        assertTrue(thrown.get(), "Capacity overload");
+        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         //we don't scale up, because the broken, reprovisioned instances are enough.
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
     }    
     
     @Test
@@ -637,11 +639,11 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Capacity overload", thrown.get());
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(false), anyString());
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
+        assertTrue(thrown.get(), "Capacity overload");
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         //we do scale up, because we have all disconnected agents that we cannot terminate yet. (might be a flake)
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
+        verify(schedulerBackend, times(1)).scaleTo(eq(6), anyString());
     }    
     
 
@@ -686,11 +688,11 @@ public class CyclingECSSchedulerTest {
                 }
         );
         awaitProcessing(scheduler);
-        assertTrue("Capacity overload", thrown.get());
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(false), anyString());
-        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
+        assertTrue(thrown.get(), "Capacity overload");
+        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
+        verify(schedulerBackend, never()).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
         //we have to scale up as we failed to terminate the disconnected agents in some way
-        verify(schedulerBackend, times(1)).scaleTo(Matchers.eq(6), anyString());
+        verify(schedulerBackend, times(1)).scaleTo(eq(6), anyString());
     } 
     
     @Test
@@ -758,8 +760,8 @@ public class CyclingECSSchedulerTest {
         awaitProcessing(scheduler);
         
         //TODO how to verify that it contained id5?
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), Matchers.eq(true), anyString());
-        verify(schedulerBackend, never()).scaleTo(Matchers.anyInt(), anyString());
+        verify(schedulerBackend, times(1)).terminateAndDetachInstances(anyList(), anyString(), eq(true), anyString());
+        verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
 
@@ -825,7 +827,7 @@ public class CyclingECSSchedulerTest {
         ReserveRequest reset = new ReserveRequest("111-222", Collections.singletonList("AAA-BBB-CCC-1"), 0, 0, System.currentTimeMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.reserveFutureCapacity(reset);
-        assertTrue("future reservation was reset and entry removed from map", scheduler.futureReservations.isEmpty());
+        assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
     }
 
     @Test
@@ -839,7 +841,7 @@ public class CyclingECSSchedulerTest {
         scheduler.reserveFutureCapacity(r);
         scheduler.reserveFutureCapacity(reset);
         scheduler.reserveFutureCapacity(reset);
-        assertTrue("future reservation was reset and entry removed from map", scheduler.futureReservations.isEmpty());
+        assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
     }
 
     @Test
@@ -851,7 +853,7 @@ public class CyclingECSSchedulerTest {
         ReserveRequest r = new ReserveRequest("111-222", Collections.singletonList("AAA-BBB-CCC-1"), 100, 100, System.currentTimeMillis() - Duration.ofHours(1).toMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.sumOfFutureReservations();
-        assertTrue("future reservation was timedout and entry removed from map", scheduler.futureReservations.isEmpty());
+        assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was timedout and entry removed from map");
     }
 
 
@@ -870,7 +872,7 @@ public class CyclingECSSchedulerTest {
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anySet())).thenReturn(ec2Instances);
         mockASG(asgInstances, mocked);
-        when(mocked.schedule(any(), anyString(), Matchers.any(), Matchers.any())).thenAnswer(invocationOnMock -> {
+        Mockito.lenient().when(mocked.schedule(any(), anyString(), any(),     any())).thenAnswer(invocationOnMock -> {
             DockerHost foo = (DockerHost) invocationOnMock.getArguments()[0];
             return new SchedulingResult(new StartTaskResult(), foo.getContainerInstanceArn(), foo.getInstanceId());
         });
@@ -924,9 +926,9 @@ public class CyclingECSSchedulerTest {
     
     private ECSConfiguration mockGlobalConfig() {
         ECSConfiguration mock = mock(ECSConfiguration.class);
-        when(mock.getCurrentCluster()).thenReturn("cluster");
-        when(mock.getCurrentASG()).thenReturn("asg");
-        when(mock.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        Mockito.lenient().when(mock.getCurrentCluster()).thenReturn("cluster");
+        Mockito.lenient().when(mock.getCurrentASG()).thenReturn("asg");
+        Mockito.lenient().when(mock.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         return mock;
     }
 

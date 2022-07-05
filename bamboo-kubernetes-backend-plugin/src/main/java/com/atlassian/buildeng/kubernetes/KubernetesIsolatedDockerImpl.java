@@ -16,10 +16,14 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.bandana.BandanaManager;
-import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECTURE;
 import com.atlassian.buildeng.isolated.docker.scheduler.SchedulerUtils;
 import com.atlassian.buildeng.kubernetes.exception.ClusterRegistryKubectlException;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
@@ -57,16 +61,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.joda.time.DateTime;
-import static org.quartz.JobBuilder.newJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import org.quartz.Trigger;
-import static org.quartz.TriggerBuilder.newTrigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
@@ -284,12 +284,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         logger.info("PBC Kubernetes Backend plugin started. Checking that jobs from a prior instance of the plugin are not still running.");
         List<JobKey> previousJobKeys = Arrays.asList(PLUGIN_JOB_KEY, PLUGIN_JOB_JMX_KEY);
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
+        // Extra deletion due to only unscheduling this in the previous version, see BUILDENG-20439. Should be removed after deploy.
+        schedulerUtils.deleteJobs(previousJobKeys);
 
         JobDataMap config = new JobDataMap();
-
-        schedulerUtils.copyPreviousJobDataAndDeleteJob(config, previousJobKeys);
-
-        // Overwrite old references to the necessary classes
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
         config.put("kubeJmxService", kubeJmxService);
@@ -325,7 +323,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         return newJob(c)
                 .withIdentity(jobKey)
                 .usingJobData(jobDataMap)
-                .storeDurably()
                 .build();
     }
 
@@ -333,20 +330,20 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     public void onStop() {
         logger.info("Kubernetes Backend plugin unloaded. Unscheduling jobs.");
         try {
-            boolean watchdogJobUnschedule = scheduler.unscheduleJob(watchdogJobTrigger.getKey());
+            boolean watchdogJobUnschedule = scheduler.deleteJob(PLUGIN_JOB_KEY);
             if (!watchdogJobUnschedule) {
-                logger.warn("Was not able to unschedule KubernetesWatchdog job. Was it already unscheduled?");
+                logger.warn("Was not able to delete KubernetesWatchdog job. Was it already delete?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule KubernetesWatchdogJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete KubernetesWatchdogJob", e);
         }
         try {
-            boolean jmxJobUnschedule = scheduler.unscheduleJob(pluginJmxJobTrigger.getKey());
+            boolean jmxJobUnschedule = scheduler.deleteJob(PLUGIN_JOB_JMX_KEY);
             if (!jmxJobUnschedule) {
-                logger.warn("Was not able to unschedule Kubernetes JMX job. Was it already unscheduled?");
+                logger.warn("Was not able to delete Kubernetes JMX job. Was it already delete?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to unschedule JmxJob", e);
+            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete JmxJob", e);
         }
         executor.shutdown();
     }

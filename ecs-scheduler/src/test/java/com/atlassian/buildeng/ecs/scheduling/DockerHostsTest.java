@@ -15,16 +15,17 @@
  */
 package com.atlassian.buildeng.ecs.scheduling;
 
-import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSSchedulerTest.cpu;
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSSchedulerTest.mem;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.util.Date;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
 /**
  *

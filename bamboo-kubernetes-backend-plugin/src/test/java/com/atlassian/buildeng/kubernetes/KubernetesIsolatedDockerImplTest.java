@@ -16,50 +16,49 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import com.atlassian.bandana.BandanaManager;
-import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import static java.util.stream.Collectors.toList;
-import org.apache.commons.io.FileUtils;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThrows;
-import org.mockito.ArgumentMatchers;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
+import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.exception.PodLimitQuotaExceededException;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
+import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith({MockitoExtension.class})
 public class KubernetesIsolatedDockerImplTest {
     @Mock
     GlobalConfiguration globalConfiguration;
@@ -167,7 +166,7 @@ public class KubernetesIsolatedDockerImplTest {
             }
         };
         kubernetesIsolatedDocker.handleKubeCtlException(callback, ke);
-        assertTrue("PBC should retry on exceeding kube quota", retry.get());
+        assertTrue(retry.get(), "PBC should retry on exceeding kube quota");
     }
 
     @Test
@@ -255,7 +254,7 @@ public class KubernetesIsolatedDockerImplTest {
                 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
-        when(bandanaManager.getValue(any(), ArgumentMatchers.matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
+        when(bandanaManager.getValue(any(), matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
                 .thenReturn(new LinkedHashMap<>(Collections.singletonMap("myArch", "")));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
