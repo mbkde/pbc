@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs;
 
-import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
-import com.atlassian.buildeng.ecs.resources.SchedulerResource;
 import com.atlassian.buildeng.ecs.resources.HeartBeatResource;
 import com.atlassian.buildeng.ecs.resources.LogsResource;
+import com.atlassian.buildeng.ecs.resources.SchedulerResource;
 import com.atlassian.buildeng.ecs.scheduling.AWSSchedulerBackend;
 import com.atlassian.buildeng.ecs.scheduling.AwsPullModelLoader;
 import com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.DefaultModelUpdater;
+import com.atlassian.buildeng.ecs.scheduling.ECSConfiguration;
 import com.atlassian.buildeng.ecs.scheduling.ECSScheduler;
 import com.atlassian.buildeng.ecs.scheduling.ModelLoader;
 import com.atlassian.buildeng.ecs.scheduling.ModelUpdater;
@@ -59,13 +60,13 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
     }
 
     private static void validateEnvironment() {
-        if (StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_ASG)) ||
-            StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_CLUSTER)) ||
-            StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_TASK_DEF))) {
-            throw new IllegalStateException("Environment variables " +
-                    ECSConfigurationImpl.ECS_ASG + ", " +
-                    ECSConfigurationImpl.ECS_CLUSTER + ", " +
-                    ECSConfigurationImpl.ECS_TASK_DEF +  " are mandatory.");
+        if (StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_ASG))
+            || StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_CLUSTER))
+            || StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_TASK_DEF))) {
+            throw new IllegalStateException("Environment variables "
+                    + ECSConfigurationImpl.ECS_ASG + ", "
+                    + ECSConfigurationImpl.ECS_CLUSTER + ", "
+                    + ECSConfigurationImpl.ECS_TASK_DEF +  " are mandatory.");
         }
     }
 

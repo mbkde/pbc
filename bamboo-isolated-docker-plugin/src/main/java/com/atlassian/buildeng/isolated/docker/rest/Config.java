@@ -16,10 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * Simply used for REST JSON serialization/deserialization.
  */
@@ -39,7 +35,9 @@ public class Config {
         this.defaultImage = defaultImage;
     }
 
-    public Integer getMaxAgentCreationPerMinute() { return maxAgentCreationPerMinute; }
+    public Integer getMaxAgentCreationPerMinute() {
+        return maxAgentCreationPerMinute;
+    }
 
     public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
         this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;

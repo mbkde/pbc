@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AWSSchedulerBackend implements SchedulerBackend {
     
-    private final static Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
+    private static final Logger logger = LoggerFactory.getLogger(AWSSchedulerBackend.class);
     private final Map<String, Instance> cachedInstances = new HashMap<>();
 
     //there seems to be a limit of 100 to the tasks that can be described in a batch
@@ -198,7 +198,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 DetachInstancesResult result = 
                       asClient.detachInstances(new DetachInstancesRequest()
                             .withAutoScalingGroupName(asgName)
-                              //only detach instances that are actually in the ASG group
+                            //only detach instances that are actually in the ASG group
                             .withInstanceIds(asgInstances)
                             .withShouldDecrementDesiredCapacity(decrementSize));
                 logger.info("Result of detachment: {}", result);
@@ -322,10 +322,10 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     /**
-     * 
+     * describeAutoScalingGroup.
      * @param autoScalingGroup name
      * @return described autoscaling group
-     * @throws ECSException 
+     * @throws ECSException when there are none or multiple matching AGSs
      */
     @Override
     public AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException {
@@ -386,15 +386,13 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
                 .forEach((c) -> {
                     sb.append(c.getName()).append("[").append(c.getReason()).append("],");
-        });
+                });
         return sb.toString();
     }
 
     /**
      * adjust the list of commands if required, eg. in case of storage-driver switch for
      * docker in docker images.
-     * @param t
-     * @return
      */
     static List<String> adjustCommands(Configuration.ExtraContainer t, DockerHost host) {
         if (TaskDefinitionRegistrations.isDockerInDockerImage(t.getImage())) {

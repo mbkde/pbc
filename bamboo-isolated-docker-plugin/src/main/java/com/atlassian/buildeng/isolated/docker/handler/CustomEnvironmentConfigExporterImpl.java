@@ -55,7 +55,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     static final String ENV_CONFIG_MODULE_KEY =
             "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
 
-    public CustomEnvironmentConfigExporterImpl( Validator validator) {
+    public CustomEnvironmentConfigExporterImpl(Validator validator) {
         this.validator = validator;
     }
 

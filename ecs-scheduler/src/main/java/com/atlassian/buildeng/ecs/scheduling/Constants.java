@@ -38,7 +38,7 @@ public interface Constants {
     String PROPERTY_DIND_OVERRIDE_IMAGES = "pbc.dind.override.versions";
 
     /**
-     * This is the version of Docker in Docker that will override the versions specified above
+     * This is the version of Docker in Docker that will override the versions specified above.
      */
     String PROPERTY_DIND_IMAGE = "pbc.dind.version";
 

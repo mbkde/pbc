@@ -419,12 +419,10 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                 Object uncastYaml = rawYaml.load(architectureConfig);
                 if (uncastYaml instanceof Map) {
                     yaml = (Map<String, Object>) uncastYaml;
-                }
-                else {
+                } else {
                     throw new IllegalArgumentException("Architecture config was not a map!");
                 }
-            }
-            catch (YAMLException e) {
+            } catch (YAMLException e) {
                 throw new IllegalArgumentException("Architecture config was not valid YAML! Error: " + e.getMessage());
             }
 
@@ -437,8 +435,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
                         "Default architecture cannot be 'default', as this is the internal default key!");
                 Preconditions.checkArgument(yaml.containsKey(defaultArchName),
                         "Specified default architecture does not exist in configuration!");
-            }
-            else {
+            } else {
                 throw new IllegalArgumentException("Value under 'default' key must be a string!");
             }
 
@@ -451,36 +448,35 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
             for (Map.Entry<String, Object> arch : yaml.entrySet()) {
                 if (!arch.getKey().equals(DEFAULT_ARCHITECTURE)) {
                     Preconditions.checkArgument(availableArchitectures.containsKey(arch.getKey()),
-                            "Each architecture entry must be defined in the PBC General Settings first before " +
-                                    "it can be configured in the PBC Kubernetes Backend settings. '" + arch.getKey() +
-                                    "' is currently missing from the list of available architectures: " +
-                                    availableArchitectures.keySet());
+                            "Each architecture entry must be defined in the PBC General Settings first before "
+                                    + "it can be configured in the PBC Kubernetes Backend settings. '" + arch.getKey()
+                                    + "' is currently missing from the list of available architectures: "
+                                    + availableArchitectures.keySet());
                     Preconditions.checkArgument(arch.getValue() instanceof Map,
-                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!" +
-                                    " Please fix the entry: " + arch.getKey());
+                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!"
+                                    + " Please fix the entry: " + arch.getKey());
                     Preconditions.checkArgument(((Map<String, Object>) arch.getValue()).containsKey("config"),
                             "Each architecture must contain a sub-key 'config'! Please fix the entry: "
                                     + arch.getKey());
 
                     Object config = ((Map<String, Object>) arch.getValue()).get("config");
                     if (config == null) {
-                        throw new IllegalArgumentException("The 'config' key for each architecture should contain a" +
-                                " map. If you do not require any additional config, use an empty map with {} instead of" +
-                                " leaving the value blank (i.e. null). Please fix the entry: " + arch.getKey());
-                    }
-                    else {
+                        throw new IllegalArgumentException("The 'config' key for each architecture should contain a"
+                                + " map. If you do not require any additional config, use an empty map with {} instead of"
+                                + " leaving the value blank (i.e. null). Please fix the entry: " + arch.getKey());
+                    } else {
                         Preconditions.checkArgument(config instanceof Map,
-                                "The 'config' key for each architecture should contain a map. Please fix the entry: " +
-                                        arch.getKey());
+                                "The 'config' key for each architecture should contain a map. Please fix the entry: "
+                                        + arch.getKey());
                     }
                     architecturesLeftover.remove(arch.getKey());
                 }
             }
 
             if (architecturesLeftover.size() > 0) {
-                throw new IllegalArgumentException("Not all architectures in the PBC General settings were defined in" +
-                        " the architecture dependent configuration! Please add configuration for the following" +
-                        " architectures: " + architecturesLeftover);
+                throw new IllegalArgumentException("Not all architectures in the PBC General settings were defined in"
+                        + " the architecture dependent configuration! Please add configuration for the following"
+                        + " architectures: " + architecturesLeftover);
             }
         }
     }

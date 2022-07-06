@@ -593,8 +593,8 @@ public class KubernetesWatchdog extends WatchdogJob {
             try {
                 // Short circuit AND so that we don't grab the line if unnecessary
                 if (message == null && client.lastLogLinePod(pod).trim().endsWith("exec format error")) {
-                    message = "An 'exec format error' was detected when starting your container. Check that the " +
-                            "architecture of your image matches the architecture your build is configured to run on.";
+                    message = "An 'exec format error' was detected when starting your container. Check that the "
+                            + "architecture of your image matches the architecture your build is configured to run on.";
                 }
             } catch (KubectlException e) {
                 logger.info("Failed to retrieve last line of pod logs from "

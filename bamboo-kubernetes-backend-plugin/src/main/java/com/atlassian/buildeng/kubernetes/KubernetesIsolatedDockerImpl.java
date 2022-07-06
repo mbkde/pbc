@@ -143,8 +143,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             Map<String, Object> finalPod;
             if (darkFeatureManager.isEnabledForAllUsers("pbc.architecture.support").orElse(false)) {
                 finalPod = addArchitectureOverrides(request, podWithoutArchOverrides);
-            }
-            else {
+            } else {
                 finalPod = podWithoutArchOverrides;
             }
 
@@ -206,14 +205,14 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         } else {
             if (request.getConfiguration().isArchitectureDefined()) {
                 String architecture = request.getConfiguration().getArchitecture();
-            if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
+                if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
                     return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
                 } else {
                     String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
                             .getArchitectureConfigWithBandana(bandanaManager).keySet().toString();
-                    throw new IllegalArgumentException("Architecture specified in build configuration was not " +
-                            "found in server's allowed architectures list! Supported architectures are: " +
-                            supportedArchs);
+                    throw new IllegalArgumentException("Architecture specified in build configuration was not "
+                            + "found in server's allowed architectures list! Supported architectures are: "
+                            + supportedArchs);
                 }
             } else { // Architecture is not specified at all
                 return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig,
@@ -435,15 +434,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-                    try {
-                        URIBuilder bb = new URIBuilder(resolvedUrl);
-                        return Pair.make(t, bb.build().toURL());
-                    } catch (URISyntaxException | MalformedURLException ex) {
-                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                        return Pair.make(t, (URL) null);
-                    }
-                }).filter((Pair t) -> t.getSecond() != null)
+            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+            try {
+                URIBuilder bb = new URIBuilder(resolvedUrl);
+                return Pair.make(t, bb.build().toURL());
+            } catch (URISyntaxException | MalformedURLException ex) {
+                logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                return Pair.make(t, (URL) null);
+            }
+        }).filter((Pair t) -> t.getSecond() != null)
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 

@@ -97,7 +97,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             } catch (ECSException ex) {
                 logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
                 //Have to catch some of the exceptions here instead of the callback to use retries.
-                if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     callback.handle(toRet);
