@@ -337,9 +337,9 @@ public class PodCreator {
     private static List<Map<String, Object>> createVolumes(IsolatedDockerAgentRequest r) {
         ImmutableList.Builder<Map<String, Object>> bldr = ImmutableList.builder();
         if (GENERATE_SHM_VOLUME) {
-            // workaround for low default of 64M in docker daemon. 
+            // workaround for low default of 64M in docker daemon.
             //https://docs.openshift.org/latest/dev_guide/shared_memory.html
-            // since docker daemon 17.06 
+            // since docker daemon 17.06
             //the default size should be configurable on the docker daemon size and is likely preferable.
             bldr.add(ImmutableMap.of("name", "shm", "emptyDir", ImmutableMap.of("medium", "Memory")));
         }

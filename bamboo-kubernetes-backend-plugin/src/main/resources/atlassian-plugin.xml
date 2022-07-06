@@ -60,7 +60,7 @@ limitations under the License.
     <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.GlobalConfiguration" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor</interface>
     </component>
-    
+
     <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
 
     <component key="subjectIdService" class="com.atlassian.buildeng.kubernetes.SubjectIdServiceImpl"/>
@@ -73,6 +73,7 @@ limitations under the License.
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
 
     <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
+    <component key="podSpecList" class="com.atlassian.buildeng.kubernetes.KubernetesPodSpecList"/>
 
     <!-- REST resources -->
     <rest key="pbc-kubernetes" path="/pbc-kubernetes" version="1.0">
@@ -108,10 +109,10 @@ limitations under the License.
             </action>
         </package>
     </xwork>
-    
+
     <bambooEventListener key="onCancelledBuild" name="Listens on Build Cancelled events"
                          class="com.atlassian.buildeng.kubernetes.OnCancelledBuild">
         <description>Listens to events of Bamboo.</description>
-    </bambooEventListener>    
+    </bambooEventListener>
 
 </atlassian-plugin>
