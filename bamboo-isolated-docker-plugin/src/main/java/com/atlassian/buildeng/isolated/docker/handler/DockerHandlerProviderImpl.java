@@ -32,6 +32,7 @@ import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.opensymphony.xwork2.TextProvider;
 import java.util.Map;
+import javax.inject.Inject;
 
 public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDescriptor> {
 
@@ -48,6 +49,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     /**
      * New stateless instance.
      */
+    @Inject
     public DockerHandlerProviderImpl(TemplateRenderer templateRenderer,
                                      EnvironmentCustomConfigService environmentCustomConfigService,
                                      EnvironmentRequirementService environmentRequirementService,

@@ -29,6 +29,7 @@ import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
+import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import org.quartz.JobDataMap;
@@ -61,6 +62,7 @@ public class Reaper implements LifecycleAware {
     private Trigger reaperTrigger;
 
 
+    @Inject
     public Reaper(Scheduler scheduler, ExecutableAgentsHelper executableAgentsHelper,
             AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
         this.scheduler = scheduler;

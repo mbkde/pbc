@@ -41,6 +41,7 @@ import com.atlassian.event.api.EventListener;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.inject.Inject;
 import org.acegisecurity.AccessDeniedException;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +59,7 @@ public class PostCreationListeners {
     private final EnvironmentCustomConfigService environmentCustomConfigService;
     private final EnvironmentRequirementService environmentRequirementService;
 
+    @Inject
     public PostCreationListeners(PlanManager pm, DeploymentProjectService deploymentProjectService, 
             EnvironmentCustomConfigService environmentCustomConfigService, 
             EnvironmentRequirementService environmentRequirementService) {
