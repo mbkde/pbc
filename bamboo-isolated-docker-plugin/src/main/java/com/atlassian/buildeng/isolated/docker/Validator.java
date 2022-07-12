@@ -26,12 +26,14 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 
 @BambooComponent
 public class Validator {
     private final GlobalConfiguration globalConfiguration;
 
+    @Inject
     public Validator(GlobalConfiguration globalConfiguration) {
         this.globalConfiguration = globalConfiguration;
     }

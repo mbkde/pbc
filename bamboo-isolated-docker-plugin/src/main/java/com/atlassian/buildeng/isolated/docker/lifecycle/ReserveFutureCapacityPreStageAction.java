@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,7 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
     private final CachedPlanManager cachedPlanManager;
     private final ContainerSizeDescriptor sizeDescriptor;
 
+    @Inject
     public ReserveFutureCapacityPreStageAction(IsolatedAgentService isoService,
             ResultsSummaryManager resultsSummaryManager, CachedPlanManager cachedPlanManager,
             ContainerSizeDescriptor sizeDescriptor) {

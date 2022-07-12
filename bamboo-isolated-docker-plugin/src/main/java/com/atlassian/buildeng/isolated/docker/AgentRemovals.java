@@ -22,6 +22,7 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.messages.StopAgentNicelyMessage;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.concurrent.TimeoutException;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ public class AgentRemovals {
     private final AgentManager agentManager;
     private final AgentCommandSender agentCommandSender;
 
+    @Inject
     public AgentRemovals(AgentManager agentManager, AgentCommandSender agentCommandSender) {
         this.agentManager = agentManager;
         this.agentCommandSender = agentCommandSender;

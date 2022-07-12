@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class DockerSoxService {
     static final String BANDANA_SOX_PATTERNS = "com.atlassian.buildeng.pbc.sox.whitelist";
     private List<Pattern> soxPatterns;
 
+    @Inject
     public DockerSoxService(FeatureManager featureManager, AuditLogService auditLogService,
             BandanaManager bandanaManager, BambooAuthenticationContext authenticationContext) {
         this.featureManager = featureManager;
