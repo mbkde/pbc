@@ -33,7 +33,6 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.sal.api.features.DarkFeatureManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -43,7 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +52,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-@ExtendWith({ MockitoExtension.class })
+@ExtendWith({MockitoExtension.class})
 public class KubernetesPodSpecListTest {
     public KubernetesPodSpecListTest() {
     }
@@ -338,7 +336,7 @@ public class KubernetesPodSpecListTest {
     }
 
     private void assertPodSpecFileCreated(MockedStatic<File> mockFile, MockedStatic<FileUtils> mockFileUtils,
-            File file) {
+                                          File file) {
         mockFile.verify(() -> File.createTempFile("pod", "yaml"));
         mockFileUtils.verify(() -> FileUtils.write(
                 eq(file),

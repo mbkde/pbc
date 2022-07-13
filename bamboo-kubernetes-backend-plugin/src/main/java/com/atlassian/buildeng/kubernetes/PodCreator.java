@@ -124,7 +124,7 @@ public class PodCreator {
      * comes with docker 17.06+
      */
     private static final boolean GENERATE_SHM_VOLUME = Boolean.parseBoolean(
-        System.getProperty("pbc.kube.shm.generate", "true"));
+            System.getProperty("pbc.kube.shm.generate", "true"));
 
 
     static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
@@ -141,7 +141,7 @@ public class PodCreator {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
         iamRequest.put("metadata",
-            ImmutableMap.of("name", createIamRequestName(r),
+                ImmutableMap.of("name", createIamRequestName(r),
                         "annotations", ImmutableMap.of(ANN_POD_NAME, createPodName(r)))
         );
         iamRequest.put("spec", ImmutableMap.of("subjectID", subjectId, "outputSecretName", createIrsaSecretName(r)));
@@ -199,22 +199,22 @@ public class PodCreator {
             }
 
             ImmutableList.Builder<Map<String, Object>> mountsBuilder =
-                ImmutableList.<Map<String, Object>>builder().addAll(commonVolumeMounts());
+                    ImmutableList.<Map<String, Object>>builder().addAll(commonVolumeMounts());
 
             if (c.isAwsRoleDefined()) {
                 mountsBuilder.add(ImmutableMap.of("name", "aws-iam-token", "mountPath", AWS_WEB_IDENTITY_TOKEN_FILE,
-                    "readOnly", true));
+                        "readOnly", true));
                 List<Configuration.EnvVariable> currentEnvVariable = new LinkedList<>(t.getEnvVariables());
                 currentEnvVariable.add(new Configuration.EnvVariable(ENV_AWS_ROLE_ARN, c.getAwsRole()));
                 currentEnvVariable.add(new Configuration.EnvVariable(
-                    ENV_AWS_WEB_IDENTITY, AWS_WEB_IDENTITY_TOKEN_FILE + "token"));
+                        ENV_AWS_WEB_IDENTITY, AWS_WEB_IDENTITY_TOKEN_FILE + "token"));
                 t.setEnvVariables(currentEnvVariable);
             }
 
             map.put("env", t.getEnvVariables().stream()
-                .map((Configuration.EnvVariable t1) ->
-                    ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
-                .collect(Collectors.toList()));
+                    .map((Configuration.EnvVariable t1) ->
+                            ImmutableMap.of("name", t1.getName(), "value", t1.getValue()))
+                    .collect(Collectors.toList()));
 
 
             if (GENERATE_SHM_VOLUME) {
@@ -257,8 +257,8 @@ public class PodCreator {
 
     static List<String> containerNames(Configuration config) {
         return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT), config.getExtraContainers().stream()
-            .map(t -> t.getName()))
-            .collect(Collectors.toList());
+                        .map(t -> t.getName()))
+                .collect(Collectors.toList());
     }
 
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
@@ -271,10 +271,10 @@ public class PodCreator {
     }
 
     static String createPodName(IsolatedDockerAgentRequest r) {
-        return createName(r,"", KUBE_NAME_MAX_LENGTH);
+        return createName(r, "", KUBE_NAME_MAX_LENGTH);
     }
 
-    static String createIrsaSecretName(IsolatedDockerAgentRequest r)  {
+    static String createIrsaSecretName(IsolatedDockerAgentRequest r) {
         return "iamtoken-" + r.getUniqueIdentifier().toString();
     }
 
@@ -298,18 +298,18 @@ public class PodCreator {
             int len = maxNameLength - ("" + prk.getBuildNumber()).length() - 1;
             if (suffix.isEmpty()) {
                 name = pk.substring(0,
-                    Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
+                        Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
             } else {
                 //Remove the length of the suffix and a '-'
                 len -= suffix.length() + 1;
                 name = pk.substring(0,
-                    Math.min(pk.length(), len))  + "-" + prk.getBuildNumber() + "-" + suffix;
+                        Math.min(pk.length(), len)) + "-" + prk.getBuildNumber() + "-" + suffix;
             }
 
         }
         //together with the identifier we are not at 88 max,in BUILDENG-15619 the failure in CNI plugin network creation
         // was linked both to pod name and namespace lengths. this way we should accomodate fairly long namespace names.
-        return name.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier().toString();
+        return name.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier();
     }
 
 
@@ -344,23 +344,23 @@ public class PodCreator {
             bldr.add(ImmutableMap.of("name", "shm", "emptyDir", ImmutableMap.of("medium", "Memory")));
         }
         bldr.add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
-            .add(ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()))
-            .add(ImmutableMap.of("name", "logspool", "emptyDir", new HashMap<>()))
-            .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
+                .add(ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()))
+                .add(ImmutableMap.of("name", "logspool", "emptyDir", new HashMap<>()))
+                .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
         if (r.getConfiguration().isAwsRoleDefined()) {
             bldr.add(
-                ImmutableMap.<String, Object>builder()
-                    .put("name", "aws-iam-token")
-                    .put("projected", ImmutableMap.builder()
-                        .put("defaultMode", 420)
-                        .put("sources", ImmutableList.<Map<String, Object>>builder()
-                            .add(ImmutableMap.of("secret", ImmutableMap.builder()
-                                .put("name", createIrsaSecretName(r))
-                                .put("items", ImmutableList.of(ImmutableMap.of("key", "token", "path", "token")))
-                                .build()))
-                            .build())
-                        .build())
-                    .build());
+                    ImmutableMap.<String, Object>builder()
+                            .put("name", "aws-iam-token")
+                            .put("projected", ImmutableMap.builder()
+                                    .put("defaultMode", 420)
+                                    .put("sources", ImmutableList.<Map<String, Object>>builder()
+                                            .add(ImmutableMap.of("secret", ImmutableMap.builder()
+                                                    .put("name", createIrsaSecretName(r))
+                                                    .put("items", ImmutableList.of(ImmutableMap.of("key", "token", "path", "token")))
+                                                    .build()))
+                                            .build())
+                                    .build())
+                            .build());
         }
         return bldr.build();
     }
@@ -379,20 +379,20 @@ public class PodCreator {
         map.put("image", sanitizeImageName(currentSidekick));
         map.put("imagePullPolicy", "Always");
         map.put("command", ImmutableList.of("sh", "-c",
-            "cp -r /buildeng/* /buildeng-data;"
-                + "mkdir " + PBC_DIR + ";"
-                + "chmod a+wt " + PBC_DIR + ";"));
+                "cp -r /buildeng/* /buildeng-data;"
+                        + "mkdir " + PBC_DIR + ";"
+                        + "chmod a+wt " + PBC_DIR + ";"));
         map.put("volumeMounts", ImmutableList.of(
-            ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
-            ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)));
+                ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", "/buildeng-data", "readOnly", false),
+                ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false)));
         map.put("resources", createResources(SIDEKICK_MEMORY, SIDEKICK_MEMORY, SIDEKICK_CPU));
         return map;
     }
 
     private static Map<String, Object> createResources(int softMemory, int hardMemory, int cpu) {
         return ImmutableMap.of(
-            "limits", ImmutableMap.of("memory", "" + hardMemory + "Mi"),
-            "requests", ImmutableMap.of("memory", "" + softMemory + "Mi", "cpu", "" + cpu + "m")
+                "limits", ImmutableMap.of("memory", "" + hardMemory + "Mi"),
+                "requests", ImmutableMap.of("memory", "" + softMemory + "Mi", "cpu", "" + cpu + "m")
         );
     }
 
@@ -416,29 +416,29 @@ public class PodCreator {
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
         ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
-            .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))
-            .addAll(commonVolumeMounts());
+                .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))
+                .addAll(commonVolumeMounts());
         if (GENERATE_SHM_VOLUME) {
             mountsBuilder.add(ImmutableMap.of("name", "shm", "mountPath", "/dev/shm", "readOnly", false));
         }
         if (r.getConfiguration().isAwsRoleDefined()) {
             mountsBuilder.add(ImmutableMap.of("name", "aws-iam-token", "mountPath", AWS_WEB_IDENTITY_TOKEN_FILE,
-                "readOnly", true));
+                    "readOnly", true));
         }
         map.put("volumeMounts", mountsBuilder.build());
         ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
         map.put("resources", createResources(
-            sizeDescriptor.getMemory(r.getConfiguration().getSize()),
-            sizeDescriptor.getMemoryLimit(r.getConfiguration().getSize()),
-            sizeDescriptor.getCpu(r.getConfiguration().getSize())));
+                sizeDescriptor.getMemory(r.getConfiguration().getSize()),
+                sizeDescriptor.getMemoryLimit(r.getConfiguration().getSize()),
+                sizeDescriptor.getCpu(r.getConfiguration().getSize())));
         return map;
     }
 
     private static List<Map<String, Object>> commonVolumeMounts() {
         return ImmutableList.of(
-            ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
-            ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false),
-            ImmutableMap.of("name", "logspool", "mountPath", LOG_SPOOL_DIR, "readOnly", false)
+                ImmutableMap.of("name", "workdir", "mountPath", BUILD_DIR, "readOnly", false),
+                ImmutableMap.of("name", "pbcwork", "mountPath", "/pbc", "readOnly", false),
+                ImmutableMap.of("name", "logspool", "mountPath", LOG_SPOOL_DIR, "readOnly", false)
         );
     }
 
@@ -446,8 +446,8 @@ public class PodCreator {
                                                   IsolatedDockerAgentRequest r) {
         List<Map<String, Object>> envs = new ArrayList<>();
         Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream()
-            .filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage()))
-            .findFirst();
+                .filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage()))
+                .findFirst();
         if (optDind.isPresent()) {
             envs.add(ImmutableMap.of("name", "DOCKER_HOST", "value", "tcp://" + optDind.get().getName() + ":2375"));
         }
@@ -458,7 +458,7 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));
         envs.add(ImmutableMap.of("name", KUBE_NUM_EXTRA_CONTAINERS, "value",
-            "" + r.getConfiguration().getExtraContainers().size()));
+                "" + r.getConfiguration().getExtraContainers().size()));
         if (r.getConfiguration().isAwsRoleDefined()) {
             String awsRole = r.getConfiguration().getAwsRole();
             envs.add(ImmutableMap.of("name", ENV_AWS_ROLE_ARN, "value", awsRole));
@@ -470,8 +470,8 @@ public class PodCreator {
     private static Object createLocalhostAliases(Configuration c) {
         List<Map<String, Object>> ips = new ArrayList<>();
         ips.add(ImmutableMap.of(
-            "ip", "127.0.0.1",
-            "hostnames", containerNames(c)));
+                "ip", "127.0.0.1",
+                "hostnames", containerNames(c)));
         return ips;
     }
 
