@@ -35,12 +35,14 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 public class PlanSummaryPanel implements WebPanel {
 
     private final BuildQueueManager buildQueueManager;
     private final IsolatedAgentService detail;
 
+    @Inject
     public PlanSummaryPanel(BuildQueueManager buildQueueManager, IsolatedAgentService detail) {
         this.buildQueueManager = buildQueueManager;
         this.detail = detail;

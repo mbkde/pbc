@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 @BambooComponent
 public class UnmetRequirements {
@@ -64,7 +65,8 @@ public class UnmetRequirements {
     private final EventPublisher eventPublisher;
     private final AgentAssignmentService agentAssignmentService;
 
-    public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager, 
+    @Inject
+    public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager,
                             AgentManager agentManager, AgentRemovals agentRemovals,
                             AgentAssignmentService agentAssignmentService,
                             ErrorUpdateHandler errorUpdateHandler, EventPublisher eventPublisher) {
