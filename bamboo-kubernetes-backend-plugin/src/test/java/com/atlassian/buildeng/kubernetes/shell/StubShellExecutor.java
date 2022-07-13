@@ -47,7 +47,6 @@ public class StubShellExecutor implements ShellExecutor {
         }
 
         try {
-//            byte[] bytes = Files.readBytes(getClass().getResourceAsStream(response.getStdout()));
             byte[] bytes = IOUtils.toByteArray(getClass().getResourceAsStream(response.getStdout()));
             return responseMapper.map(bytes);
         } catch (DeserializationException | IOException e) {
