@@ -165,8 +165,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             // do a dummy name check, not clear how this dependency is even pulled into
             // bamboo,
             // it's likely part of a plugin only and we would not have the class in question
-            // on classpath
-            // anyway
+            // on classpath anyway
             if (e.getClass().getSimpleName().equals("ServiceProxyDestroyedException")) {
                 IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
                 logger.warn("OSGi plugin system binding error:" + e.getMessage());
@@ -186,8 +185,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             subjectId = subjectIdService.getSubjectId(PlanKeys.getPlanKey(request.getResultKey()));
         } else {
             // Result Key comes in the format projectId-EnvironmentId-ResultId, we just need
-            // the project
-            // Id
+            // the project Id
             Long deploymentId = Long.parseLong(request.getResultKey().split("-")[0]);
             subjectId = subjectIdService.getSubjectId(deploymentId);
         }
@@ -294,15 +292,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-            try {
-                URIBuilder bb = new URIBuilder(resolvedUrl);
-                return Pair.make(t, bb.build().toURL());
-            } catch (URISyntaxException | MalformedURLException ex) {
-                logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL) null);
-            }
-        }).filter((Pair<String, URL> t) -> t.getSecond() != null)
+                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+                    try {
+                        URIBuilder bb = new URIBuilder(resolvedUrl);
+                        return Pair.make(t, bb.build().toURL());
+                    } catch (URISyntaxException | MalformedURLException ex) {
+                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        return Pair.make(t, (URL) null);
+                    }
+                }).filter((Pair<String, URL> t) -> t.getSecond() != null)
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
