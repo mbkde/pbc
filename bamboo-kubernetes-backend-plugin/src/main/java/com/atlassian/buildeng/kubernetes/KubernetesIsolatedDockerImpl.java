@@ -220,8 +220,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                         + " plugin are not still running.");
         List<JobKey> previousJobKeys = Arrays.asList(PLUGIN_JOB_KEY, PLUGIN_JOB_JMX_KEY);
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
-        // Extra deletion due to only unscheduling this in the previous version, see
-        // BUILDENG-20439. Should be removed after deploy.
         schedulerUtils.deleteJobs(previousJobKeys);
 
         JobDataMap config = new JobDataMap();

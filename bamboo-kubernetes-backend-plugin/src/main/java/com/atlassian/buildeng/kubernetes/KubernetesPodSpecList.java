@@ -155,7 +155,6 @@ public class KubernetesPodSpecList {
     private void deletePodFile(File podFile) {
         Boolean success = true;
         if (podFile != null) {
-            success = false;
             try {
                 success = podFile.delete();
             } catch (SecurityException e) {
