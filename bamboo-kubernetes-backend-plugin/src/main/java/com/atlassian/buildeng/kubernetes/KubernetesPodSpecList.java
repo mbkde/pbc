@@ -63,7 +63,7 @@ public class KubernetesPodSpecList {
     }
 
     private List<Map<String, Object>> createPodSpecList(
-            IsolatedDockerAgentRequest request, String subjectId) throws IOException {
+            IsolatedDockerAgentRequest request, String subjectId) {
         Map<String, Object> template = loadTemplatePod();
         Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
         Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
@@ -153,7 +153,7 @@ public class KubernetesPodSpecList {
     }
 
     private void deletePodFile(File podFile) {
-        Boolean success = true;
+        boolean success = true;
         if (podFile != null) {
             try {
                 success = podFile.delete();
@@ -162,14 +162,14 @@ public class KubernetesPodSpecList {
             }
         }
         if (!success) {
-            logger.warn("Failed to delete podSpec file after request: ", podFile.getAbsolutePath());
+            logger.warn("Failed to delete podSpec file after request: {}", podFile.getAbsolutePath());
         }
     }
 
     // A hacky way to remove a default role being provided by kube2iam
     // Will remove once we fully migrate to IRSA
     @SuppressWarnings("unchecked")
-    private void removeDefaultRole(Map<String, Object> finalPod) throws IOException {
+    private void removeDefaultRole(Map<String, Object> finalPod) {
         if (finalPod.containsKey("metadata")) {
             Map<String, Object> metadata = (Map<String, Object>) finalPod.get("metadata");
             if (metadata.containsKey("annotations")) {

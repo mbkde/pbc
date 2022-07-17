@@ -54,6 +54,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -89,8 +90,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
     private final KubernetesPodSpecList podSpecList;
-    private Trigger watchdogJobTrigger;
-    private Trigger pluginJmxJobTrigger;
 
     public KubernetesIsolatedDockerImpl(
             GlobalConfiguration globalConfiguration,
@@ -114,10 +113,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         logger.debug("Kubernetes received request for " + request.getResultKey());
         String subjectId = getSubjectId(request);
-        executor.submit(
-                () -> {
-                    exec(request, callback, subjectId);
-                });
+        executor.submit(() -> exec(request, callback, subjectId));
     }
 
     private Pod createPod(File podFile) throws KubectlException {
@@ -161,10 +157,10 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             callback.handle(new IsolatedDockerAgentException(e));
         } catch (Throwable e) {
             // org.eclipse.gemini.blueprint.service.importer.ServiceProxyDestroyedException
-            // is occassionally thrown when live reloading plugins. reattempt later.
+            // is occasionally thrown when live reloading plugins. reattempt later.
             // do a dummy name check, not clear how this dependency is even pulled into
             // bamboo,
-            // it's likely part of a plugin only and we would not have the class in question
+            // it's likely part of a plugin only, and we would not have the class in question
             // on classpath anyway
             if (e.getClass().getSimpleName().equals("ServiceProxyDestroyedException")) {
                 IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
@@ -228,8 +224,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
         JobDetail watchdogJob = jobDetail(KubernetesWatchdog.class, PLUGIN_JOB_KEY, config);
         JobDetail pluginJmxJob = jobDetail(JmxJob.class, PLUGIN_JOB_JMX_KEY, config);
-        watchdogJobTrigger = jobTrigger(PLUGIN_JOB_INTERVAL_MILLIS);
-        pluginJmxJobTrigger = jobTrigger(PLUGIN_JOB_JMX_INTERVAL_MILLIS);
+        Trigger watchdogJobTrigger = jobTrigger(PLUGIN_JOB_INTERVAL_MILLIS);
+        Trigger pluginJmxJobTrigger = jobTrigger(PLUGIN_JOB_JMX_INTERVAL_MILLIS);
 
         try {
             scheduler.scheduleJob(watchdogJob, watchdogJobTrigger);
@@ -281,7 +277,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
-    public Map<String, URL> getContainerLogs(
+    public @NotNull Map<String, URL> getContainerLogs(
             Configuration configuration, Map<String, String> customData) {
         String url = globalConfiguration.getPodLogsUrl();
         String podName = customData.get(RESULT_PREFIX + NAME);
@@ -294,7 +290,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                         URIBuilder bb = new URIBuilder(resolvedUrl);
                         return Pair.make(t, bb.build().toURL());
                     } catch (URISyntaxException | MalformedURLException ex) {
-                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        logger.error("Kubernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
                         return Pair.make(t, (URL) null);
                     }
                 }).filter((Pair<String, URL> t) -> t.getSecond() != null)

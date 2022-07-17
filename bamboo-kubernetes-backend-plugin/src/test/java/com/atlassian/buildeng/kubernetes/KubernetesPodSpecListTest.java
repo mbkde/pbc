@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,6 +40,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
@@ -102,7 +102,7 @@ public class KubernetesPodSpecListTest {
 
         List<Map<String, Object>> containers = ((List<Map<String, Object>>) spec.get("containers"));
         assertEquals(
-                1, containers.stream().filter(c -> c.containsValue("main")).collect(toList()).size());
+                1, (int) containers.stream().filter(c -> c.containsValue("main")).count());
         for (Map<String, Object> container : containers) {
             if (container.containsValue("main")) {
                 assertNotEquals(null, container.get("image"));
@@ -114,9 +114,9 @@ public class KubernetesPodSpecListTest {
                 2,
                 hostAliases.stream()
                         .filter((Map<String, Object> t) -> "127.0.0.1".equals(t.get("ip")))
-                        .flatMap((Map<String, Object> t) -> ((List<String>) t.get("hostnames"))
-                                .stream())
-                        .count());
+                        .mapToLong((Map<String, Object> t) -> ((List<String>) t.get("hostnames"))
+                                .size())
+                        .sum());
     }
 
     @Test
@@ -311,15 +311,14 @@ public class KubernetesPodSpecListTest {
 
     private String getArchitecturePodOverridesAsString() throws IOException {
         return FileUtils.readFileToString(
-                new File(this.getClass().getResource("/architecturePodOverrides.yaml").getFile()),
+                new File(Objects.requireNonNull(this.getClass().getResource("/architecturePodOverrides.yaml")).getFile()),
                 "UTF-8");
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> convertStringSpecToYaml(String spec) throws IOException {
+    private Map<String, Object> convertStringSpecToYaml(String spec) {
         Yaml yamlReader = new Yaml(new SafeConstructor());
-        Map<String, Object> yaml = (Map<String, Object>) yamlReader.load(spec);
-        return yaml;
+        return (Map<String, Object>) yamlReader.load(spec);
     }
 
     private Map<String, Object> getArchitecturePodOverridesAsYaml() throws IOException {

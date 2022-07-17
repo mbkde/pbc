@@ -133,11 +133,9 @@ public class KubernetesIsolatedDockerImplTest {
 
         try (MockedConstruction<KubernetesClient> mocked = mockConstruction(KubernetesClient.class,
                 // Could be worth moving the generation of KubeClient / createPod to its own
-                // service that can be dependancy injected in the same way as the others, and
+                // service that can be dependency injected in the same way as the others, and
                 // then we don't have to take this hacky approach
-                (mock, context) -> {
-                    when(mock.createPod(file)).thenReturn(pod);
-                })) {
+                (mock, context) -> when(mock.createPod(file)).thenReturn(pod))) {
             // when
             kubernetesIsolatedDocker.exec(request, callback, subjectId);
 
