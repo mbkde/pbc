@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -74,6 +75,7 @@ public class DockerHandlerImpl implements DockerHandler {
      * Creates new stateful instance.
      */
 
+    @Inject
     public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager,
                              TemplateRenderer templateRenderer,
                              EnvironmentCustomConfigService environmentCustomConfigService,

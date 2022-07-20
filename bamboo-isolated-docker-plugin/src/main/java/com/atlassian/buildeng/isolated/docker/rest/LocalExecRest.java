@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -48,6 +49,7 @@ public class LocalExecRest {
     private final CachedPlanManager cpm;
     private final ContainerSizeDescriptor sizeDescriptor;
 
+    @Inject
     public LocalExecRest(CachedPlanManager cpm, ContainerSizeDescriptor sizeDescriptor) {
         this.cpm = cpm;
         this.sizeDescriptor = sizeDescriptor;

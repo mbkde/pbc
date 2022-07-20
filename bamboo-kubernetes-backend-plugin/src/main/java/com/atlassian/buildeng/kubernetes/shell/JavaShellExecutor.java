@@ -3,7 +3,6 @@ package com.atlassian.buildeng.kubernetes.shell;
 import com.atlassian.buildeng.kubernetes.serialization.DeserializationException;
 import com.atlassian.buildeng.kubernetes.serialization.ResponseMapper;
 import com.google.common.base.Charsets;
-//import io.fabric8.utils.Files;
 import java.io.IOException;
 import java.util.List;
 import org.apache.commons.io.IOUtils;

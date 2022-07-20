@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
     private static final Duration MAX_RETRY_DELAY = Duration.ofSeconds(300);
     private static final String KEY = "custom.isolated.docker.waiting";
 
+    @Inject
     public AgentCreationReschedulerImpl(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
         this.eventPublisher = eventPublisher;
         this.buildQueueManager = buildQueueManager;
