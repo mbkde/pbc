@@ -36,10 +36,10 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import com.google.common.annotations.VisibleForTesting;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
@@ -60,8 +60,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -80,7 +82,8 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *
  * @author mkleint
  */
-@ExportAsService
+@BambooComponent
+@ExportAsService({KubernetesIsolatedDockerImpl.class, IsolatedAgentService.class, LifecycleAware.class})
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
 
@@ -105,6 +108,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private Trigger watchdogJobTrigger;
     private Trigger pluginJmxJobTrigger;
 
+    @Inject
     public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
                                         Scheduler scheduler,
                                         KubeJmxService kubeJmxService,

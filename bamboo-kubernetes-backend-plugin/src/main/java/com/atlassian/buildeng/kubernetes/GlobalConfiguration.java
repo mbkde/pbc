@@ -29,6 +29,7 @@ import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
@@ -50,7 +51,8 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
-@ExportAsService
+@BambooComponent
+@ExportAsService({GlobalConfiguration.class, ContainerSizeDescriptor.class})
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";

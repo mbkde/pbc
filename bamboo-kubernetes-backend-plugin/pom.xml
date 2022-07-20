@@ -25,6 +25,7 @@ limitations under the License.
     <packaging>atlassian-plugin</packaging>
     <properties>
         <pbc.kubectl.path>kubectl</pbc.kubectl.path>
+        <atlassian.plugin.key>${parent.groupId}.${project.artifactId}</atlassian.plugin.key>
     </properties>
     <build>
         <plugins>
@@ -62,6 +63,9 @@ limitations under the License.
                             com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl,
                             com.atlassian.buildeng.kubernetes.GlobalConfiguration
                         </Export-Package>
+                        <Import-Package>
+                            com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition
+                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>

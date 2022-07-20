@@ -70,9 +70,9 @@ limitations under the License.
 <!--        <interface>org.quartz.Scheduler</interface>-->
 <!--    </component-import>-->
 
-    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+<!--    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>-->
 
-    <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
+<!--    <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>-->
 
     <!-- REST resources -->
     <rest key="pbc-kubernetes" path="/pbc-kubernetes" version="1.0">

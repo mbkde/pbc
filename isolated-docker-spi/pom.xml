@@ -23,6 +23,9 @@ limitations under the License.
     </parent>
     <artifactId>isolated-docker-spi</artifactId>
     <packaging>atlassian-plugin</packaging>
+    <properties>
+        <atlassian.plugin.key>${parent.groupId}.${project.artifactId}</atlassian.plugin.key>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -32,6 +35,7 @@ limitations under the License.
                 <configuration>
                     <extractDependencies>false</extractDependencies>
                     <instructions>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
                         <Export-Package>
                             com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}",
                             com.atlassian.buildeng.spi.isolated.docker.events.*;version="${project.version}",
