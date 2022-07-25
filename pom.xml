@@ -137,6 +137,19 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- Workaround for VULN-867593. The kubernetes-client (in bamboo-kubernetes-backend-plugin) uses
+                 okhttp 3.12.12. We need 4.9.2
+                 https://github.com/fabric8io/kubernetes-client/blob/master/doc/KubernetesClientWithIPv6Clusters.md -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>4.9.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>logging-interceptor</artifactId>
+                <version>4.9.2</version>
+            </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
