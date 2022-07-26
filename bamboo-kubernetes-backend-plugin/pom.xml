@@ -60,11 +60,15 @@ limitations under the License.
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
                         <Spring-Context>*</Spring-Context>
                         <Export-Package>
-                            com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl,
-                            com.atlassian.buildeng.kubernetes.GlobalConfiguration
+                            com.atlassian.buildeng.kubernetes
                         </Export-Package>
                         <Import-Package>
-                            com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition
+                            com.atlassian.bamboo.plugins.web.conditions,
+                            com.atlassian.buildeng.spi.isolated.docker,
+                            com.atlassian.sal.api.lifecycle,
+                            org.springframework.beans.factory,
+                            org.quartz,
+                            *;resolution:=optional
                         </Import-Package>
                     </instructions>
                 </configuration>
@@ -211,6 +215,16 @@ limitations under the License.
             <groupId>com.atlassian.plugin</groupId>
             <artifactId>atlassian-spring-scanner-annotation</artifactId>
             <version>${spring.scanner.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

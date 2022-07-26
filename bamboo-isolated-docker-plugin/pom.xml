@@ -47,6 +47,7 @@ limitations under the License.
                             com.atlassian.buildeng.spi.isolated.docker,
                             com.atlassian.sal.api.lifecycle,
                             com.atlassian.sal.api.scheduling,
+                            org.quartz,
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>

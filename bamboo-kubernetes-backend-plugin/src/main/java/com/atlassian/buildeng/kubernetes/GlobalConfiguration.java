@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
@@ -80,7 +81,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     private final Map<String, String> labelSizes = new HashMap<>();
     private final ContainerSizeDescriptor defaults = new DefaultContainerSizeDescriptor();
 
-
+    @Inject
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
                                AdministrationConfigurationAccessor admConfAccessor,
                                BambooAuthenticationContext authenticationContext) {

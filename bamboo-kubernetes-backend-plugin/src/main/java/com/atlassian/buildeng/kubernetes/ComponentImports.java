@@ -16,6 +16,12 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.plan.cache.CachedPlanManager;
+import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -24,11 +30,29 @@ import org.quartz.Scheduler;
 
 public class ComponentImports {
     @BambooImport
-    Scheduler scheduler;
+    public Scheduler scheduler;
 
     @BambooImport
-    BandanaManager bandanaManager;
+    public BandanaManager bandanaManager;
+
+    @BambooImport
+    public AuditLogService auditLogService;
+
+    @BambooImport
+    public AdministrationConfigurationAccessor administrationConfigurationAccessor;
+
+    @BambooImport
+    public BambooAuthenticationContext bambooAuthenticationContext;
+
+    @BambooImport
+    public CachedPlanManager cachedPlanManager;
+
+    @BambooImport
+    public DeploymentProjectService deploymentProjectService;
+
+    @BambooImport
+    public ResultsSummaryManager resultsSummaryManager;
 
     @ComponentImport
-    DarkFeatureManager darkFeatureManager;
+    public DarkFeatureManager darkFeatureManager;
 }
