@@ -29,7 +29,6 @@ import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
-import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import org.quartz.JobDataMap;
@@ -40,6 +39,7 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @BambooComponent
 @ExportAsService({Reaper.class, LifecycleAware.class})
@@ -59,10 +59,9 @@ public class Reaper implements LifecycleAware {
     static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     static String REAPER_REMOVALS_KEY = "reaper-agent-removals";
     static String REAPER_UNMET_KEY = "reaper-unmet-requirements";
-    private Trigger reaperTrigger;
 
 
-    @Inject
+    @Autowired
     public Reaper(Scheduler scheduler, ExecutableAgentsHelper executableAgentsHelper,
             AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
         this.scheduler = scheduler;
@@ -85,12 +84,12 @@ public class Reaper implements LifecycleAware {
         data.put(REAPER_REMOVALS_KEY, agentRemovals);
         data.put(REAPER_UNMET_KEY, unmetRequirements);
 
-        reaperTrigger = newTrigger()
+        Trigger reaperTrigger = newTrigger()
                 .startNow()
-                    .withSchedule(simpleSchedule()
-                            .withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS)
-                            .repeatForever()
-                    )
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS)
+                        .repeatForever()
+                )
                 .build();
         JobDetail reaperJob = newJob(ReaperJob.class)
                 .withIdentity(REAPER_KEY)

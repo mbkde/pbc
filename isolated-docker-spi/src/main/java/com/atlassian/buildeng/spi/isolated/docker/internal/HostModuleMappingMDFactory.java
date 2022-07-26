@@ -16,18 +16,17 @@
 
 package com.atlassian.buildeng.spi.isolated.docker.internal;
 
-import com.atlassian.buildeng.spi.isolated.docker.internal.HostModuleMappingMDImpl;
 import com.atlassian.plugin.hostcontainer.HostContainer;
 import com.atlassian.plugin.osgi.external.ListableModuleDescriptorFactory;
 import com.atlassian.plugin.osgi.external.SingleModuleDescriptorFactory;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ModuleType;
-import javax.inject.Inject;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @ModuleType(ListableModuleDescriptorFactory.class)
 @BambooComponent
 public class HostModuleMappingMDFactory extends SingleModuleDescriptorFactory<HostModuleMappingMDImpl> {
-    @Inject
+    @Autowired
     public HostModuleMappingMDFactory(HostContainer hostContainer, String type, Class<HostModuleMappingMDImpl> moduleDescriptorClass) {
         super(hostContainer, type, moduleDescriptorClass);
     }
