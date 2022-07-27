@@ -54,6 +54,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import org.jetbrains.annotations.NotNull;
@@ -65,7 +66,6 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
 
 /**
@@ -97,7 +97,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
     private final KubernetesPodSpecList podSpecList;
 
-    @Autowired
+    @Inject
     public KubernetesIsolatedDockerImpl(
             GlobalConfiguration globalConfiguration,
             Scheduler scheduler,
@@ -292,15 +292,15 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-            try {
-                URIBuilder bb = new URIBuilder(resolvedUrl);
-                return Pair.make(t, bb.build().toURL());
-            } catch (URISyntaxException | MalformedURLException ex) {
-                logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL) null);
-            }
-        }).filter((Pair t) -> t.getSecond() != null)
+                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+                    try {
+                        URIBuilder bb = new URIBuilder(resolvedUrl);
+                        return Pair.make(t, bb.build().toURL());
+                    } catch (URISyntaxException | MalformedURLException ex) {
+                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        return Pair.make(t, (URL) null);
+                    }
+                }).filter((Pair t) -> t.getSecond() != null)
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 

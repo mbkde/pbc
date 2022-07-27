@@ -31,6 +31,7 @@ import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import javax.inject.Inject;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -39,7 +40,6 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @BambooComponent
 @ExportAsService({Reaper.class, LifecycleAware.class})
@@ -52,18 +52,17 @@ public class Reaper implements LifecycleAware {
     private final AgentRemovals agentRemovals;
     private final UnmetRequirements unmetRequirements;
     //BUILDENG-12799 Reap agents if they're older than 40 minutes, see the issue to learn why the number is so high.
-    static long   REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(40).toMillis();
-    static long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
+    static long REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(40).toMillis();
+    static long REAPER_INTERVAL_MILLIS = 30000L; //Reap once every 30 seconds
     static JobKey REAPER_KEY = JobKey.jobKey("isolated-docker-reaper");
     static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
     static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     static String REAPER_REMOVALS_KEY = "reaper-agent-removals";
     static String REAPER_UNMET_KEY = "reaper-unmet-requirements";
 
-
-    @Autowired
+    @Inject
     public Reaper(Scheduler scheduler, ExecutableAgentsHelper executableAgentsHelper,
-            AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
+                  AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
         this.scheduler = scheduler;
         this.executableAgentsHelper = executableAgentsHelper;
         this.agentManager = agentManager;

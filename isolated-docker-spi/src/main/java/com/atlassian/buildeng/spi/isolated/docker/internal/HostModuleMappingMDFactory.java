@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @BambooComponent
 public class HostModuleMappingMDFactory extends SingleModuleDescriptorFactory<HostModuleMappingMDImpl> {
     @Autowired
-    public HostModuleMappingMDFactory(HostContainer hostContainer, String type, Class<HostModuleMappingMDImpl> moduleDescriptorClass) {
-        super(hostContainer, type, moduleDescriptorClass);
+    public HostModuleMappingMDFactory(HostContainer hostContainer) {
+        super(hostContainer, "host-module-mapping", HostModuleMappingMDImpl.class);
     }
 }
