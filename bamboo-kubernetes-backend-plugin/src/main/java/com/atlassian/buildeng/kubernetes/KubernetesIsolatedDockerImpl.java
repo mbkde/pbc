@@ -292,16 +292,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-                    try {
-                        URIBuilder bb = new URIBuilder(resolvedUrl);
-                        return Pair.make(t, bb.build().toURL());
-                    } catch (URISyntaxException | MalformedURLException ex) {
-                        logger.error("KUbernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                        return Pair.make(t, (URL) null);
-                    }
-                }).filter((Pair t) -> t.getSecond() != null)
-                .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+            try {
+                URIBuilder bb = new URIBuilder(resolvedUrl);
+                return Pair.make(t, bb.build().toURL());
+            } catch (URISyntaxException | MalformedURLException ex) {
+                logger.error("Kubernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                return Pair.make(t, (URL) null);
+            }
+        }).filter((Pair<String, URL> t) -> t.getSecond() != null)
+        .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
 }
