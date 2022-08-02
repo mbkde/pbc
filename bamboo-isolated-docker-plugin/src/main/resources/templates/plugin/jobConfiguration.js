@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2016 - 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,8 @@
 /**
  * expectations on side of the js code.
  * <input> with class 'docker-container-autocomplete' to add autocomplete to
- * <input> with class 'docker-extra-containers' to save and load the extra containers 
- * 
+ * <input> with class 'docker-extra-containers' to save and load the extra containers
+ *
  */
 
 pbcConfig = {
@@ -34,14 +34,14 @@ pbcConfig = {
             newone.size = AJS.$("select#dockerExtraImage-size").val();
             newone.commands = [];
             AJS.$("input.dockerExtraImage-command").each(function () {
-               newone.commands.push(AJS.$(this).val()); 
+               newone.commands.push(AJS.$(this).val());
             });
             newone.envVars = [];
             AJS.$("div.dockerExtraImage-envVar").each(function () {
                var env = {};
                env.name = AJS.$(this).find(".dockerExtraImage-envkey").val();
                env.value = AJS.$(this).find(".dockerExtraImage-envval").val();
-               newone.envVars.push(env); 
+               newone.envVars.push(env);
             });
 
             AJS.dialog2("#dockerExtraImage-dialog").hide();
@@ -210,19 +210,23 @@ pbcConfig = {
         AJS.dialog2("#dockerExtraImage-dialog").show();
     }
 }
-AJS.$(document).ready(function () {
-    var knownImages = {};
-    AJS.$.getJSON(AJS.contextPath() + "/rest/docker-ui/1.0/ui/knownImages", function (data) {
-        knownImages = data;
-        AJS.$(".docker-container-autocomplete").autocomplete({
-            minLength: 0,
-//                    position: { my : "right top", at: "right bottom" },
-            source: knownImages
-        }
-        );
+require(['jquery',
+        'aui',
+        'widget/autocomplete',
+        'util/ajax'],
+    function ($, AJS, Autocomplete, ajax) {
+        var knownImages = {};
+        ajax(AJS.contextPath() + "/rest/docker-ui/1.0/ui/knownImages").then(function (data) {
+            knownImages = data;
+            if (knownImages.length > 0) {
+                new Autocomplete({
+                    el: $(".docker-container-autocomplete"),
+                    minimumInputLength: 0,
+                    data: knownImages
+                })
+            }
+        });
+        pbcConfig.generateExtraContainersForJson();
+        pbcConfig.extraContainersDialogButtons();
     });
-    pbcConfig.generateExtraContainersForJson();
-    pbcConfig.extraContainersDialogButtons();
-
-});
 
