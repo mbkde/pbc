@@ -10,7 +10,10 @@ import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutableJob;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.plan.cache.ImmutableTopLevelPlan;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import javax.inject.Inject;
 
+@BambooComponent
 public class SubjectIdServiceImpl implements SubjectIdService {
 
     private final AdministrationConfigurationAccessor admConfAccessor;
@@ -19,6 +22,7 @@ public class SubjectIdServiceImpl implements SubjectIdService {
 
     private static final Integer IAM_REQUEST_LIMIT = 63;
 
+    @Inject
     public SubjectIdServiceImpl(AdministrationConfigurationAccessor admConfAccessor,
                                 CachedPlanManager cachedPlanManager,
                                 DeploymentProjectService deploymentProjectService) {
