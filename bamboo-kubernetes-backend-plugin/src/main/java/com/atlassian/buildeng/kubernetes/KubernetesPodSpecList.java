@@ -20,7 +20,6 @@ import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECT
 
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
-import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -32,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,14 +39,12 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-@BambooComponent
 public class KubernetesPodSpecList {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesPodSpecList.class);
     private final GlobalConfiguration globalConfiguration;
     private final BandanaManager bandanaManager;
     private final DarkFeatureManager darkFeatureManager;
 
-    @Inject
     public KubernetesPodSpecList(
             GlobalConfiguration globalConfiguration,
             BandanaManager bandanaManager,

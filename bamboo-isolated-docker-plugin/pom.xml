@@ -47,7 +47,6 @@ limitations under the License.
                             com.atlassian.buildeng.spi.isolated.docker,
                             com.atlassian.sal.api.lifecycle,
                             com.atlassian.sal.api.scheduling,
-                            org.quartz,
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>
@@ -153,11 +152,6 @@ limitations under the License.
             <groupId>com.atlassian.plugin</groupId>
             <artifactId>atlassian-spring-scanner-annotation</artifactId>
             <version>${spring.scanner.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>
