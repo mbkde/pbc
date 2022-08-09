@@ -22,4 +22,5 @@ limitations under the License.
     <preBuildAction key="dummyPreBuildAction" name="Action performing a very complicated thing" class="com.atlassian.buildeng.spi.isolated.docker.DummyPreBuildAction">
         <description/>
     </preBuildAction>
+    <module-type key="hostFolderMapping" class="com.atlassian.buildeng.spi.isolated.docker.internal.HostModuleMappingMDImpl" />
 </atlassian-plugin>
