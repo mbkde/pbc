@@ -52,6 +52,7 @@ limitations under the License.
                             com.atlassian.bamboo.deployments.results.*,
                             com.atlassian.bamboo.deployments.results.service.*,
                             com.atlassian.bamboo.plan.cache.*,
+                            com.atlassian.bamboo.plan,
                             com.atlassian.bamboo.resultsummary.*,
                             com.atlassian.bamboo.task.*,
                             com.atlassian.bamboo.task.runtime.*,

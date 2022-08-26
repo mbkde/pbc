@@ -63,7 +63,9 @@ limitations under the License.
                             com.atlassian.buildeng.kubernetes
                         </Export-Package>
                         <Import-Package>
+                            com.atlassian.bamboo.plan,
                             com.atlassian.bamboo.plugins.web.conditions,
+                            com.atlassian.bamboo.security,
                             com.atlassian.buildeng.spi.isolated.docker,
                             com.atlassian.sal.api.lifecycle,
                             org.springframework.beans.factory,

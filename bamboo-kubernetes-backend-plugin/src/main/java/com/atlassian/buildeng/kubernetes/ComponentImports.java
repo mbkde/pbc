@@ -19,8 +19,10 @@ package com.atlassian.buildeng.kubernetes;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.plan.PlanManager;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
@@ -54,4 +56,10 @@ public class ComponentImports {
 
     @BambooImport
     public DarkFeatureManager darkFeatureManager;
+
+    @BambooImport
+    public BambooPermissionManager bambooPermissionManager;
+
+    @BambooImport
+    public PlanManager planManager;
 }
