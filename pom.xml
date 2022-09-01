@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
         <version>6.2.2</version>
-        <relativePath />
+        <relativePath/>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.atlassian.buildeng</groupId>
@@ -37,6 +38,7 @@
         <bamboo.version>8.2.2</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.4.1</amps.version>
+        <snakeyaml.version>1.31</snakeyaml.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.3.4</platform.version>
         <spring.scanner.version>2.2.3</spring.scanner.version>
