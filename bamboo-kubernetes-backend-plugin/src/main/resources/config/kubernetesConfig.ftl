@@ -1,3 +1,4 @@
+[#-- @ftlvariable name="action" type="ConfigurationAction" --]
 <head xmlns="http://www.w3.org/1999/html">
     <meta name="decorator" content="atl.admin">
     <title>Per-build Container Kubernetes Backend</title>
@@ -6,9 +7,9 @@
 
 <body>
     <h1>Per-build Container Kubernetes Backend</h1>
-<br>
+<p>
 Global Configuration for running Per-build Container agents using Kubernetes to schedule agents.
-</br>
+</p>
 
 
 <h2>Kubernetes configuration</h2>
@@ -19,19 +20,19 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
         <div class="field-group">
             <label for="sidekickToUse">Bamboo Sidekick Image</label>
             <input type="text" class="text long-field" id="sidekickToUse"
-                    placeholder=""></input>
+                    placeholder="" />
         </div>
         <div class="field-group">
-            <label for="curentContext">Current Context</label>
+            <label for="currentContext">Current Context</label>
             <input type="text" class="text long-field" id="currentContext"
-                   placeholder="Default context"></input>
+                   placeholder="Default context"/>
             <div class="description" id="desc-currentContext">
                 Explicitly set kubernetes context to use by the plugin. Empty value is to rely on default context.
             </div>
         </div>
         <div class="field-group">
             <div id="fieldArea_useClusterRegistry" class="checkbox">
-                <input type="checkbox" name="useClusterRegistry" id="useClusterRegistry" 
+                <input type="checkbox" name="useClusterRegistry" id="useClusterRegistry"
                     onclick="updateClusterRegistry()" class="checkbox">
                 <label for="useClusterRegistry" id="label_useClusterRegistry">Use Cluster Registry</label>
                 <div class="description" id="desc-useClusterRegistry">
@@ -42,7 +43,7 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             <div class="field-group dependsClusterRegistryShow" style="display:none;">
                 <label for="clusterRegistryAvailableSelector">Available cluster label</label>
                 <input type="text" class="text long-field" id="clusterRegistryAvailableSelector"
-                       placeholder=""></input>
+                       placeholder=""/>
                 <div class="description" id="desc-clusterRegistryAvailableSelector">
                     Label name on cluster(s) in registry. The expected label value is the name of context defined on Bamboo server.
                     The value will be used to associate context (cluster url, namespace and credentials) to access the given cluster and
@@ -53,7 +54,7 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
             <div class="field-group dependsClusterRegistryShow" style="display:none;">
                 <label for="clusterRegistryPrimarySelector">Primary cluster label</label>
                 <input type="text" class="text long-field" id="clusterRegistryPrimarySelector"
-                       placeholder="If not defined randomly select one of available clusters"></input>
+                       placeholder="If not defined randomly select one of available clusters"/>
                 <div class="description" id="desc-clusterRegistryPrimarySelector">
                     Label name on cluster(s) in registry. The label value doesn't matter.
                     If present, only marked clusters will be used to schedule new pods on. If multiple are marked random one is picked.
@@ -66,15 +67,16 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
 
         <div class="field-group">
             <label for="podTemplate">Pod Template</label>
-            <textarea type="text" style="height: 200px" class="textarea long-field" id="podTemplate"></textarea>
+            <textarea style="height: 200px" class="textarea long-field" id="podTemplate"></textarea>
             <div class="description" id="desc-podTemplate">
                 Add your pod configuration here
             </div>
         </div>
-
+        [@ww.hidden name='showAwsSpecificFields' /]
+[#if action.showAwsSpecificFields]
         <div class="field-group">
             <label for="architecturePodConfig">Architecture Dependent Pod Config</label>
-            <textarea type="text" style="height: 200px" class="textarea long-field" id="architecturePodConfig"></textarea>
+            <textarea style="height: 200px" class="textarea long-field" id="architecturePodConfig"></textarea>
             <div class="description" id="desc-architecturePodConfig">
                 Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
                 be name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
@@ -102,7 +104,7 @@ arm64:
 
         <div class="field-group">
             <label for="iamRequestTemplate">IAM Request Template</label>
-            <textarea type="text" style="height: 200px" class="textarea long-field" id="iamRequestTemplate"></textarea>
+            <textarea style="height: 200px" class="textarea long-field" id="iamRequestTemplate"></textarea>
             <div class="description" id="desc-iamRequestTemplate">
                 Add your IAM request configuration here
             </div>
@@ -110,16 +112,16 @@ arm64:
 
         <div class="field-group">
             <label for="iamSubjectIdPrefix">IAM Subject ID Prefix</label>
-            <textarea type="text" style="height: 200px" class="text text-field" id="iamSubjectIdPrefix"></textarea>
+            <textarea style="height: 200px" class="text text-field" id="iamSubjectIdPrefix"></textarea>
             <div class="description" id="desc-iamSubjectIdPrefix">
                 Add your IAM Subject ID prefix here. This prefix is only used when displaying the Subject ID from the
                 "View AWS IAM Subject ID for PBC" dropdown and not used internally.
             </div>
         </div>
-
+[/#if]
         <div class="field-group">
             <label for="containerSizes">Container size definitions</label>
-            <textarea type="text" style="height: 200px" class="textarea long-field" id="containerSizes"></textarea>
+            <textarea style="height: 200px" class="textarea long-field" id="containerSizes"></textarea>
             <div class="description" id="desc-containerSizes">
                 Define container memory/cpu size limits for main and extra containers.
             </div>
@@ -128,9 +130,9 @@ arm64:
         <div class="field-group">
             <label for="podLogsUrl">Container Logs URL</label>
             <input type="text" class="text long-field" id="podLogsUrl"
-                    placeholder=""></input>
+                    placeholder=""/>
             <div class="description" id="desc-podLogsUrl">
-                URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants 
+                URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants
                 in the URL will be replaced with actual values.
             </div>
         </div>
@@ -139,7 +141,7 @@ arm64:
         </div>
 
         <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
-        <div class="save-status"/>
+        <div class="save-status"></div>
     </fieldset>
 </form>
 

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,7 @@ public class KubernetesPodSpecList {
     private final BandanaManager bandanaManager;
     private final DarkFeatureManager darkFeatureManager;
 
+    @Inject
     public KubernetesPodSpecList(
             GlobalConfiguration globalConfiguration,
             BandanaManager bandanaManager,

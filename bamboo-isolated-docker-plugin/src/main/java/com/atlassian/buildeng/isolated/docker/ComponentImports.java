@@ -47,6 +47,7 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.atlassian.struts.TextProvider;
 import org.quartz.Scheduler;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 public class ComponentImports {
     @ComponentImport
@@ -74,7 +75,7 @@ public class ComponentImports {
     @BambooImport
     public BandanaManager bandanaManager;
 
-    @BambooImport
+    @BambooImport @Qualifier("bambooAuthenticationContext")
     public BambooAuthenticationContext authenticationContext;
 
     @BambooImport

@@ -37,6 +37,8 @@ limitations under the License.
                         <!-- sort of a thing that will make Milos' life easier.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
                         <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
+                        <bamboo.context.batching.disable>true</bamboo.context.batching.disable>
+                        <plugin.webresource.batching.off>true</plugin.webresource.batching.off>
                     </systemProperties>
                     <pluginArtifacts>
                         <pluginArtifact>
@@ -48,11 +50,6 @@ limitations under the License.
                             <groupId>${project.groupId}</groupId>
                             <artifactId>bamboo-isolated-docker-plugin</artifactId>
                             <version>${project.version}</version>
-                        </pluginArtifact>
-                        <pluginArtifact>
-                            <groupId>com.atlassian.buildeng</groupId>
-                            <artifactId>hung-build-killer</artifactId>
-                            <version>3.0.10</version>
                         </pluginArtifact>
                     </pluginArtifacts>
                 </configuration>
@@ -164,6 +161,7 @@ limitations under the License.
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>${snakeyaml.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

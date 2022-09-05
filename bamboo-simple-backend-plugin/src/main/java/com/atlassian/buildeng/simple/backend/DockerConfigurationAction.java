@@ -16,11 +16,11 @@
 
 package com.atlassian.buildeng.simple.backend;
 
-import com.opensymphony.xwork2.ActionSupport;
+import com.atlassian.bamboo.configuration.GlobalAdminAction;
 
 /**
  *
  * @author mkleint
  */
-public class DockerConfigurationAction extends ActionSupport {
+public class DockerConfigurationAction extends GlobalAdminAction {
 }

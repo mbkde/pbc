@@ -30,13 +30,16 @@ public class Config {
     public String clusterRegistryAvailableSelector;
     public String clusterRegistryPrimarySelector;
 
+    public boolean showAwsSpecificFields;
+
     public Config() {
     }
 
     public Config(String sidekickImage, String currentContext, String podTemplate, String architecturePodConfig,
                   String iamRequestTemplate, String iamSubjectIdPrefix, String podLogsUrl, String containerSizes,
                   boolean useClusterRegistry, String clusterRegistryAvailableSelector,
-                  String clusterRegistryPrimarySelector) {
+                  String clusterRegistryPrimarySelector,
+                  boolean showAwsSpecificFields) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -48,6 +51,7 @@ public class Config {
         this.useClusterRegistry = useClusterRegistry;
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
+        this.showAwsSpecificFields = showAwsSpecificFields;
     }
 
     public String getSidekickImage() {
@@ -136,5 +140,13 @@ public class Config {
 
     public void setClusterRegistryPrimarySelector(String clusterRegistryPrimarySelector) {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+    }
+
+    public boolean isShowAwsSpecificFields() {
+        return showAwsSpecificFields;
+    }
+
+    public void setShowAwsSpecificFields(boolean showAwsSpecificFields) {
+        this.showAwsSpecificFields = showAwsSpecificFields;
     }
 }

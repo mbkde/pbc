@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,15 +32,10 @@
         AJS.$("#sidekickToUse").val(response.sidekickImage);
         AJS.$("#currentContext").val(response.currentContext);
         AJS.$("#podTemplate").val(response.podTemplate);
-        AJS.$("#architecturePodConfig").val(response.architecturePodConfig);
-        AJS.$("#iamRequestTemplate").val(response.iamRequestTemplate);
-        AJS.$("#iamSubjectIdPrefix").val(response.iamSubjectIdPrefix);
         AJS.$("#containerSizes").val(response.containerSizes);
         AJS.$("#podLogsUrl").val(response.podLogsUrl);
-        AJS.$("input#useClusterRegistry").prop('checked', response.useClusterRegistry);
-        updateClusterRegistry();
-        AJS.$("#clusterRegistryAvailableSelector").val(response.clusterRegistryAvailableSelector);
-        AJS.$("#clusterRegistryPrimarySelector").val(response.clusterRegistryPrimarySelector);
+        updateClusterRegistry(response);
+        updateAWSSpecificFields(response);
     }
 
     function setRemoteConfig() {
@@ -48,13 +43,14 @@
         config.sidekickImage = AJS.$("#sidekickToUse").val().trim();
         config.currentContext = AJS.$("#currentContext").val().trim();
         config.podTemplate = AJS.$("#podTemplate").val().trim();
-        config.architecturePodConfig = AJS.$("#architecturePodConfig").val().trim();
-        config.iamRequestTemplate = AJS.$("#iamRequestTemplate").val().trim();
-        config.iamSubjectIdPrefix = AJS.$("#iamSubjectIdPrefix").val().trim();
+        if(AJS.$('#showAwsSpecificFields').val() == true) {
+            config.architecturePodConfig = AJS.$("#architecturePodConfig").val().trim();
+            config.iamRequestTemplate = AJS.$("#iamRequestTemplate").val().trim();
+            config.iamSubjectIdPrefix = AJS.$("#iamSubjectIdPrefix").val().trim();
+        }
         config.containerSizes = AJS.$("#containerSizes").val().trim();
         config.podLogsUrl = AJS.$("#podLogsUrl").val().trim();
-        var checked = AJS.$("input#useClusterRegistry").is(":checked");
-        config.useClusterRegistry = checked;
+        config.useClusterRegistry = AJS.$("input#useClusterRegistry").is(":checked");
         config.clusterRegistryAvailableSelector = AJS.$("#clusterRegistryAvailableSelector").val().trim();
         config.clusterRegistryPrimarySelector = AJS.$("#clusterRegistryPrimarySelector").val().trim();
 
@@ -90,16 +86,26 @@
     function hideError() {
         AJS.$("#errorMessage").empty();
     }
-    
-    function updateClusterRegistry() {
-        var checkbox = AJS.$("input#useClusterRegistry");
-        if (checkbox.is(":checked")) {
+
+    function updateClusterRegistry(response) {
+        AJS.$("input#useClusterRegistry").prop('checked', response.useClusterRegistry);
+        if (response.useClusterRegistry) {
             AJS.$(".dependsClusterRegistryShow").show();
         } else {
             AJS.$(".dependsClusterRegistryShow").hide();
         }
+        AJS.$("#clusterRegistryAvailableSelector").val(response.clusterRegistryAvailableSelector);
+        AJS.$("#clusterRegistryPrimarySelector").val(response.clusterRegistryPrimarySelector);
     }
-    
+
+    function updateAWSSpecificFields(response) {
+        if (response.showAwsSpecificFields) {
+            AJS.$("#architecturePodConfig").val(response.architecturePodConfig);
+            AJS.$("#iamRequestTemplate").val(response.iamRequestTemplate);
+            AJS.$("#iamSubjectIdPrefix").val(response.iamSubjectIdPrefix);
+        }
+        AJS.$('#showAwsSpecificFields').val(response.showAwsSpecificFields);
+    }
 
 
 AJS.$(document).ready(function() {

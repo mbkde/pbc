@@ -16,7 +16,25 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import com.opensymphony.xwork2.ActionSupport;
+import com.atlassian.bamboo.configuration.GlobalAdminAction;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
+import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
+import javax.inject.Inject;
 
-public class ConfigurationAction extends ActionSupport {
+public class ConfigurationAction extends GlobalAdminAction {
+
+    private final GlobalConfiguration globalConfiguration;
+
+    @Inject
+    public ConfigurationAction(BandanaManager bandanaManager,
+                               AuditLogService auditLogService,
+                               BambooAuthenticationContext authenticationContext) {
+        this.globalConfiguration = new GlobalConfiguration(bandanaManager, auditLogService, authenticationContext);
+    }
+
+    public boolean isShowAwsSpecificFields() {
+        return GlobalConfiguration.VENDOR_AWS.equals(globalConfiguration.getVendor());
+    }
 }
