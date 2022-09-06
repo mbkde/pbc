@@ -7,8 +7,8 @@ image: maven:3.8-jdk-8
 
 definitions:
   services:
-    chrome:
-      image: selenium/standalone-chrome:3.11.0
+    selenium:
+      image: selenium/standalone-chrome:3.141.59
 
 pipelines:
   default:
@@ -16,8 +16,8 @@ pipelines:
         caches:
           - maven
         services:
-          - chrome
+          - selenium
         script: # Modify the commands below to build your repository.
           - apt-get update
           - apt-get install -y xvfb
-          - mvn -s settings.xml clean install
+          - mvn -s settings.xml -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" clean install
