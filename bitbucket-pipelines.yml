@@ -5,9 +5,18 @@
 # You can specify a custom docker image from Docker Hub as your build environment.
 image: maven:3.8-jdk-8
 
+definitions:
+  services:
+    chrome:
+      image: selenium/standalone-chrome:3.11.0
+
 pipelines:
   default:
     - step:
+        caches:
+          - maven
+        services:
+          - chrome
         script: # Modify the commands below to build your repository.
           - apt-get update
           - apt-get install -y xvfb
