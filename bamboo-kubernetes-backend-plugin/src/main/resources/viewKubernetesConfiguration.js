@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2017 Atlassian Pty Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,6 +41,7 @@
         updateClusterRegistry();
         AJS.$("#clusterRegistryAvailableSelector").val(response.clusterRegistryAvailableSelector);
         AJS.$("#clusterRegistryPrimarySelector").val(response.clusterRegistryPrimarySelector);
+        AJS.$('#saveButton').removeAttr('disabled');
     }
 
     function setRemoteConfig() {
@@ -90,7 +91,7 @@
     function hideError() {
         AJS.$("#errorMessage").empty();
     }
-    
+
     function updateClusterRegistry() {
         var checkbox = AJS.$("input#useClusterRegistry");
         if (checkbox.is(":checked")) {
@@ -99,8 +100,6 @@
             AJS.$(".dependsClusterRegistryShow").hide();
         }
     }
-    
-
 
 AJS.$(document).ready(function() {
     updateStatus("Loading...");

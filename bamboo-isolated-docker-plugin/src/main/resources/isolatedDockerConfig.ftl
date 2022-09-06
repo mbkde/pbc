@@ -52,7 +52,7 @@ arm64: "arm64 (ARMv8 aarch64)"
         <div id="errorMessage" style="white-space: pre-line">
         </div>
 
-        <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
+        <button type="button" class="aui-button aui-button-primary" id="saveButton" disabled="disabled" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>
 </form>

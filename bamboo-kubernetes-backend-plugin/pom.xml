@@ -37,6 +37,7 @@ limitations under the License.
                         <!-- sort of a thing that will make Milos' life easier.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
                         <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
+                        <acceptanceTestSettings /> <!-- make sure BuildUtils.isFunctionalTest returns true -->
                     </systemProperties>
                     <pluginArtifacts>
                         <pluginArtifact>
@@ -55,6 +56,16 @@ limitations under the License.
                             <version>3.0.10</version>
                         </pluginArtifact>
                     </pluginArtifacts>
+                    <testGroups>
+                        <!-- TODO: properly split Bitbucket Server integration tests into suites -->
+                        <!-- (current split only aims to speed up the tests so that each suite is executed under ~30 mins) -->
+                        <testGroup>
+                            <id>integration-tests</id>
+                            <includes>
+                                <include>it/**/*Test.java</include>
+                            </includes>
+                        </testGroup>
+                    </testGroups>
                 </configuration>
             </plugin>
         </plugins>
@@ -186,6 +197,30 @@ limitations under the License.
             <artifactId>json</artifactId>
             <version>20210307</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-test-utils</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo.plugins</groupId>
+            <artifactId>atlassian-bamboo-plugin-test-utils</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-pageobjects</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.aui</groupId>
+            <artifactId>aui-pageobjects</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

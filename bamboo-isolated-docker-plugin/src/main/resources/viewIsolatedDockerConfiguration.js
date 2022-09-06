@@ -32,6 +32,7 @@
         AJS.$("#defaultImage").val(response.defaultImage);
         AJS.$("#maxAgentCreationPerMinute").val(response.maxAgentCreationPerMinute);
         AJS.$("#architectureConfig").val(response.architectureConfig);
+        AJS.$('#saveButton').removeAttr('disabled');
     }
 
     function setRemoteConfig() {
