@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package it.com.atlassian.buildeng.kubernetes.pageobject;
+package com.atlassian.buildeng.kubernetes.pageobject;
 
 import com.atlassian.bamboo.pageobjects.pages.AbstractBambooPage;
 import com.atlassian.pageobjects.elements.ElementBy;

@@ -24,16 +24,17 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import com.atlassian.bamboo.testutils.user.TestUser;
 import com.atlassian.pageobjects.elements.timeout.TimeoutType;
-import it.com.atlassian.buildeng.kubernetes.pageobject.GenericPerBuildContainerConfigurationPage;
+import com.atlassian.buildeng.kubernetes.pageobject.GenericPerBuildContainerConfigurationPage;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
-public class PbcGeneralConfigurationTest extends AbstractPbcTest{
+public class PbcGeneralConfigurationTest extends AbstractPbcTest {
 
     @Test
     public void adminCanSaveGeneralPbcConfiguration() {
         bamboo.fastLogin(TestUser.ADMIN);
-        GenericPerBuildContainerConfigurationPage genericConfigPage = bamboo.visit(GenericPerBuildContainerConfigurationPage.class);
+        GenericPerBuildContainerConfigurationPage genericConfigPage =
+                bamboo.visit(GenericPerBuildContainerConfigurationPage.class);
         genericConfigPage.setDefaultImage("docker.atl-paas.net/sox/buildeng/agent-baseagent");
         genericConfigPage.setAgentCreationThrottling(10);
         genericConfigPage.save();
@@ -44,11 +45,13 @@ public class PbcGeneralConfigurationTest extends AbstractPbcTest{
     @Test
     public void testFormValidation() {
         bamboo.fastLogin(TestUser.ADMIN);
-        GenericPerBuildContainerConfigurationPage genericConfigPage = bamboo.visit(GenericPerBuildContainerConfigurationPage.class);
+        GenericPerBuildContainerConfigurationPage genericConfigPage =
+                bamboo.visit(GenericPerBuildContainerConfigurationPage.class);
         genericConfigPage.setDefaultImage("docker.atl-paas.net/sox/buildeng/agent-baseagent");
         genericConfigPage.setArchitectureConfig("invalidyaml");
         genericConfigPage.save();
-        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), () -> StringUtils.isNotBlank(genericConfigPage.getErrors())));
+        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD),
+                () -> StringUtils.isNotBlank(genericConfigPage.getErrors())));
         assertThat(genericConfigPage.getErrors(), containsString("Received invalid YAML for architecture list"));
     }
 }

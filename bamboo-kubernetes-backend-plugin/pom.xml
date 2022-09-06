@@ -14,7 +14,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
@@ -25,6 +26,7 @@ limitations under the License.
     <packaging>atlassian-plugin</packaging>
     <properties>
         <pbc.kubectl.path>kubectl</pbc.kubectl.path>
+        <testGroups>integration-tests</testGroups>
     </properties>
     <build>
         <plugins>
@@ -37,30 +39,34 @@ limitations under the License.
                         <!-- sort of a thing that will make Milos' life easier.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
                         <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
-                        <acceptanceTestSettings /> <!-- make sure BuildUtils.isFunctionalTest returns true -->
+                        <acceptanceTestSettings/> <!-- make sure BuildUtils.isFunctionalTest returns true -->
                     </systemProperties>
-                    <pluginArtifacts>
-                        <pluginArtifact>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>isolated-docker-spi</artifactId>
-                            <version>${project.version}</version>
-                        </pluginArtifact>
-                        <pluginArtifact>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>bamboo-isolated-docker-plugin</artifactId>
-                            <version>${project.version}</version>
-                        </pluginArtifact>
-                        <pluginArtifact>
-                            <groupId>com.atlassian.buildeng</groupId>
-                            <artifactId>hung-build-killer</artifactId>
-                            <version>3.0.10</version>
-                        </pluginArtifact>
-                    </pluginArtifacts>
+                    <products>
+                        <product>
+                            <id>bamboo</id>
+                            <instanceId>bamboo</instanceId>
+                            <version>${bamboo.version}</version>
+                            <productDataVersion>${bamboo.version}</productDataVersion>
+                            <pluginArtifacts>
+                                <pluginArtifact>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>isolated-docker-spi</artifactId>
+                                    <version>${project.version}</version>
+                                </pluginArtifact>
+                                <pluginArtifact>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>bamboo-isolated-docker-plugin</artifactId>
+                                    <version>${project.version}</version>
+                                </pluginArtifact>
+                            </pluginArtifacts>
+                        </product>
+                    </products>
                     <testGroups>
-                        <!-- TODO: properly split Bitbucket Server integration tests into suites -->
-                        <!-- (current split only aims to speed up the tests so that each suite is executed under ~30 mins) -->
                         <testGroup>
                             <id>integration-tests</id>
+                            <productIds>
+                                <productId>bamboo</productId>
+                            </productIds>
                             <includes>
                                 <include>it/**/*Test.java</include>
                             </includes>
@@ -220,6 +226,11 @@ limitations under the License.
             <groupId>com.atlassian.aui</groupId>
             <artifactId>aui-pageobjects</artifactId>
             <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

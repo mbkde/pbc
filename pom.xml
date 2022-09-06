@@ -36,7 +36,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <bamboo.version>8.2.2</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
-        <amps.version>8.4.1</amps.version>
+        <amps.version>8.8.0</amps.version>
         <snakeyaml.version>1.31</snakeyaml.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.3.4</platform.version>
@@ -174,6 +174,12 @@
                 <version>4.13.2</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -195,6 +201,7 @@
             <version>4.5.0</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-junit</artifactId>
@@ -228,8 +235,15 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.0</version>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0-M7</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.vintage</groupId>
+                        <artifactId>junit-vintage-engine</artifactId>
+                        <version>${junit.jupiter.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
         <pluginManagement>

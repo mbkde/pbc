@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import com.atlassian.bamboo.testutils.user.TestUser;
 import com.atlassian.pageobjects.elements.timeout.TimeoutType;
-import it.com.atlassian.buildeng.kubernetes.pageobject.GenericKubernetesConfigPage;
+import com.atlassian.buildeng.kubernetes.pageobject.GenericKubernetesConfigPage;
 import org.junit.Test;
 
 public class PbcKubernetesConfigurationTest extends AbstractPbcTest {

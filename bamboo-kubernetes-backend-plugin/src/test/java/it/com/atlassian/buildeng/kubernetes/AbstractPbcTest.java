@@ -20,12 +20,10 @@ import com.atlassian.bamboo.pageobjects.BambooTestedProduct;
 import com.atlassian.bamboo.pageobjects.BambooTestedProductFactory;
 import com.atlassian.bamboo.testutils.config.BambooEnvironmentData;
 import com.atlassian.bamboo.testutils.junit.rule.BackdoorRule;
-import com.atlassian.bamboo.webdriver.BambooJSRule;
 import com.atlassian.bamboo.webdriver.PageObjectInjectionTestRule;
 import com.atlassian.bamboo.webdriver.TestInjectionTestRule;
 import com.atlassian.bamboo.webdriver.WebDriverTestEnvironmentData;
 import com.atlassian.pageobjects.elements.timeout.Timeouts;
-import com.atlassian.webdriver.testing.rule.JavaScriptErrorsRule;
 import com.atlassian.webdriver.testing.rule.WebDriverScreenshotRule;
 import javax.inject.Inject;
 import org.junit.Rule;
@@ -40,16 +38,13 @@ public abstract class AbstractPbcTest {
     private final WebDriverScreenshotRule screenshotRule = new WebDriverScreenshotRule();
     private final TestInjectionTestRule injectionRule = new TestInjectionTestRule(this, bamboo);
     private final PageObjectInjectionTestRule pageObjectInjectionRule = new PageObjectInjectionTestRule(this, bamboo);
-    private final JavaScriptErrorsRule javaScriptErrorsRule = BambooJSRule.rule(bamboo.getTester().getDriver());
 
     @Inject
     protected Timeouts timeouts;
 
     @Rule
-    public final TestRule ruleChain = RuleChain
-            .outerRule(screenshotRule)
+    public final TestRule ruleChain = RuleChain.outerRule(screenshotRule)
             .around(backdoor)
             .around(pageObjectInjectionRule)
-            .around(javaScriptErrorsRule)
             .around(injectionRule);
 }
