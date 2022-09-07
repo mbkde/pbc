@@ -52,29 +52,6 @@ limitations under the License.
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
     </web-item>
 
-    <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl" public="true">
-        <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
-        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
-    </component>
-
-    <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.GlobalConfiguration" public="true">
-        <interface>com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor</interface>
-    </component>
-
-    <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
-
-    <component key="subjectIdService" class="com.atlassian.buildeng.kubernetes.SubjectIdServiceImpl"/>
-
-    <component-import key="scheduler">
-        <description>Quartz Scheduler</description>
-        <interface>org.quartz.Scheduler</interface>
-    </component-import>
-
-    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
-
-    <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
-    <component key="podSpecList" class="com.atlassian.buildeng.kubernetes.KubernetesPodSpecList"/>
-
     <!-- REST resources -->
     <rest key="pbc-kubernetes" path="/pbc-kubernetes" version="1.0">
         <description>Provides the REST resource</description>
