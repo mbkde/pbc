@@ -20,4 +20,4 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - apt-get update
           - apt-get install -y xvfb
-          - mvn -s settings.xml -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" clean install
+          - mvn -s settings.xml -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" -Dmaven.test.it.skip=false clean install

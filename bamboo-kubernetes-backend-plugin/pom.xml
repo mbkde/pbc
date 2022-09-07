@@ -27,6 +27,7 @@ limitations under the License.
     <properties>
         <pbc.kubectl.path>kubectl</pbc.kubectl.path>
         <testGroups>integration-tests</testGroups>
+        <maven.test.it.skip>true</maven.test.it.skip> <!--don't execute integration tests by default-->
     </properties>
     <build>
         <plugins>
@@ -35,6 +36,7 @@ limitations under the License.
                 <artifactId>bamboo-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <skipITs>${maven.test.it.skip}</skipITs>
                     <systemProperties>
                         <!-- sort of a thing that will make Milos' life easier.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
@@ -234,4 +236,18 @@ limitations under the License.
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>integration-tests</id>
+            <activation>
+                <property>
+                    <name>server</name>
+                    <value>localhost</value>
+                </property>
+            </activation>
+            <properties>
+                <maven.test.it.skip>false</maven.test.it.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>
