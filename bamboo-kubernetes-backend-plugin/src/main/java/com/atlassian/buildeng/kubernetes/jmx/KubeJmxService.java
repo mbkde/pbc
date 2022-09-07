@@ -22,6 +22,7 @@ import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl;
 import com.atlassian.buildeng.kubernetes.KubernetesWatchdog;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
+@BambooComponent
 public class KubeJmxService implements DisposableBean, InitializingBean {
     private static final Logger logger = LoggerFactory.getLogger(KubeJmxService.class);
 

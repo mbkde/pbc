@@ -23,6 +23,9 @@ limitations under the License.
     </parent>
     <artifactId>isolated-docker-spi</artifactId>
     <packaging>atlassian-plugin</packaging>
+    <properties>
+        <atlassian.plugin.key>${parent.groupId}.${project.artifactId}</atlassian.plugin.key>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -32,6 +35,7 @@ limitations under the License.
                 <configuration>
                     <extractDependencies>false</extractDependencies>
                     <instructions>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
                         <Export-Package>
                             com.atlassian.buildeng.spi.isolated.docker.*;version="${project.version}",
                             com.atlassian.buildeng.spi.isolated.docker.events.*;version="${project.version}",
@@ -39,6 +43,7 @@ limitations under the License.
 
                         </Export-Package>
                         <Import-Package>
+                            com.atlassian.bamboo,
                             com.atlassian.bamboo.builder.*,
                             com.atlassian.bamboo.build.*,
                             com.atlassian.bamboo.v2.build.queue.*,
@@ -47,6 +52,7 @@ limitations under the License.
                             com.atlassian.bamboo.deployments.results.*,
                             com.atlassian.bamboo.deployments.results.service.*,
                             com.atlassian.bamboo.plan.cache.*,
+                            com.atlassian.bamboo.plan,
                             com.atlassian.bamboo.resultsummary.*,
                             com.atlassian.bamboo.task.*,
                             com.atlassian.bamboo.task.runtime.*,
@@ -56,6 +62,7 @@ limitations under the License.
                             com.atlassian.bamboo.ww2.actions.build.admin.create.*,
                             com.atlassian.plugin.*,
                             com.atlassian.plugin.module.*,
+                            com.atlassian.plugin.osgi.bridge.external,
                             com.atlassian.bamboo.plugin.descriptor.*,
                             com.atlassian.sal.api.scheduling.*,
                             com.atlassian.bamboo.security.*,
@@ -65,11 +72,25 @@ limitations under the License.
                             com.google.gson.*,
                             org.slf4j.*,
                             org.apache.commons.*,
+                            org.quartz,
                             javax.annotation.*,
                             io.atlassian.fugue.*,
                         </Import-Package>
                     </instructions>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.plugin</groupId>
+                <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
+                <version>${spring.scanner.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>atlassian-spring-scanner</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -84,13 +105,25 @@ limitations under the License.
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
-            <version>2.3.2</version>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-annotation</artifactId>
+            <version>${spring.scanner.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-api</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
