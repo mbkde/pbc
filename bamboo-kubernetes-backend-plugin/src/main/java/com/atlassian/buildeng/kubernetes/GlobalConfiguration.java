@@ -29,8 +29,6 @@ import com.atlassian.buildeng.kubernetes.rest.Config;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
-import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
-import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -45,15 +43,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
-@BambooComponent
-@ExportAsService({GlobalConfiguration.class, ContainerSizeDescriptor.class})
 public class GlobalConfiguration implements ContainerSizeDescriptor {
 
     static String BANDANA_SIDEKICK_KEY = "com.atlassian.buildeng.pbc.kubernetes.sidekick";
@@ -81,7 +76,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor {
     private final Map<String, String> labelSizes = new HashMap<>();
     private final ContainerSizeDescriptor defaults = new DefaultContainerSizeDescriptor();
 
-    @Inject
+
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
                                AdministrationConfigurationAccessor admConfAccessor,
                                BambooAuthenticationContext authenticationContext) {

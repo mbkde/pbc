@@ -34,9 +34,8 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
-import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
-import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
+import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import com.google.common.annotations.VisibleForTesting;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
@@ -54,9 +53,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.apache.http.client.utils.URIBuilder;
-import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import org.jetbrains.annotations.NotNull;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -73,8 +70,6 @@ import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
  *
  * @author mkleint
  */
-@BambooComponent
-@ExportAsService({KubernetesIsolatedDockerImpl.class, IsolatedAgentService.class, LifecycleAware.class})
 public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesIsolatedDockerImpl.class);
 
@@ -94,10 +89,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final Scheduler scheduler;
     private final ExecutorService executor;
     private final SubjectIdService subjectIdService;
-
     private final KubernetesPodSpecList podSpecList;
 
-    @Inject
     public KubernetesIsolatedDockerImpl(
             GlobalConfiguration globalConfiguration,
             Scheduler scheduler,
@@ -292,16 +285,16 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             return Collections.emptyMap();
         }
         return PodCreator.containerNames(configuration).stream().map((String t) -> {
-            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-            try {
-                URIBuilder bb = new URIBuilder(resolvedUrl);
-                return Pair.make(t, bb.build().toURL());
-            } catch (URISyntaxException | MalformedURLException ex) {
-                logger.error("Kubernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL) null);
-            }
-        }).filter((Pair<String, URL> t) -> t.getSecond() != null)
-        .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+                    try {
+                        URIBuilder bb = new URIBuilder(resolvedUrl);
+                        return Pair.make(t, bb.build().toURL());
+                    } catch (URISyntaxException | MalformedURLException ex) {
+                        logger.error("Kubernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        return Pair.make(t, (URL) null);
+                    }
+                }).filter((Pair<String, URL> t) -> t.getSecond() != null)
+                .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
 }
