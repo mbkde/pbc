@@ -31,7 +31,7 @@ Global Configuration for running Per-build Container agents using Kubernetes to 
         </div>
         <div class="field-group">
             <div id="fieldArea_useClusterRegistry" class="checkbox">
-                <input type="checkbox" name="useClusterRegistry" id="useClusterRegistry" 
+                <input type="checkbox" name="useClusterRegistry" id="useClusterRegistry"
                     onclick="updateClusterRegistry()" class="checkbox">
                 <label for="useClusterRegistry" id="label_useClusterRegistry">Use Cluster Registry</label>
                 <div class="description" id="desc-useClusterRegistry">
@@ -130,7 +130,7 @@ arm64:
             <input type="text" class="text long-field" id="podLogsUrl"
                     placeholder=""></input>
             <div class="description" id="desc-podLogsUrl">
-                URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants 
+                URL template to reach container logs for given pod and container. POD_NAME and CONTAINER_NAME constants
                 in the URL will be replaced with actual values.
             </div>
         </div>
@@ -138,7 +138,7 @@ arm64:
         <div id="errorMessage" style="white-space: pre-line">
         </div>
 
-        <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
+        <button type="button" class="aui-button aui-button-primary" disabled="disabled" id="saveButton" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"/>
     </fieldset>
 </form>
