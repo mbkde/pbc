@@ -36,6 +36,7 @@
         AJS.$("#podLogsUrl").val(response.podLogsUrl);
         updateClusterRegistry(response);
         updateAWSSpecificFields(response);
+        AJS.$('#saveButton').removeAttr('disabled');
     }
 
     function setRemoteConfig() {
@@ -106,7 +107,6 @@
         }
         AJS.$('#showAwsSpecificFields').val(response.showAwsSpecificFields);
     }
-
 
 AJS.$(document).ready(function() {
     updateStatus("Loading...");

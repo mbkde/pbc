@@ -46,14 +46,17 @@ define('feature/isolate-docker-plugin/config', [
     }
 
     function processResource(callback, relativeEndpoint) {
+        $('#setRemoteConfig_saveButton').addAttr('disabled', 'disabled');
         $.ajax({
             type: 'GET',
             url: restEndpoint + relativeEndpoint,
             success: function (text) {
                 callback(text);
+                $('#setRemoteConfig_saveButton').removeAttr('disabled');
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
                 showError(`An error occurred while attempting to read config:\n\n${textStatus}\n${errorThrown}\n${XMLHttpRequest.responseText}`);
+                $('#setRemoteConfig_saveButton').removeAttr('disabled');
             }
         });
     }

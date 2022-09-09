@@ -14,17 +14,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.119-SNAPSHOT</version>
+        <version>2.120-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-kubernetes-backend-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
     <properties>
         <pbc.kubectl.path>kubectl</pbc.kubectl.path>
+        <testGroups>integration-tests</testGroups>
+        <maven.test.it.skip>true</maven.test.it.skip> <!--don't execute integration tests by default-->
     </properties>
     <build>
         <plugins>
@@ -33,25 +36,46 @@ limitations under the License.
                 <artifactId>bamboo-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <skipITs>${maven.test.it.skip}</skipITs>
                     <systemProperties>
                         <!-- sort of a thing that will make Milos' life easier.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
                         <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
+                        <acceptanceTestSettings/> <!-- make sure BuildUtils.isFunctionalTest returns true -->
                         <bamboo.context.batching.disable>true</bamboo.context.batching.disable>
                         <plugin.webresource.batching.off>true</plugin.webresource.batching.off>
                     </systemProperties>
-                    <pluginArtifacts>
-                        <pluginArtifact>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>isolated-docker-spi</artifactId>
-                            <version>${project.version}</version>
-                        </pluginArtifact>
-                        <pluginArtifact>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>bamboo-isolated-docker-plugin</artifactId>
-                            <version>${project.version}</version>
-                        </pluginArtifact>
-                    </pluginArtifacts>
+                    <products>
+                        <product>
+                            <id>bamboo</id>
+                            <instanceId>bamboo</instanceId>
+                            <version>${bamboo.version}</version>
+                            <productDataVersion>${bamboo.version}</productDataVersion>
+                            <pluginArtifacts>
+                                <pluginArtifact>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>isolated-docker-spi</artifactId>
+                                    <version>${project.version}</version>
+                                </pluginArtifact>
+                                <pluginArtifact>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>bamboo-isolated-docker-plugin</artifactId>
+                                    <version>${project.version}</version>
+                                </pluginArtifact>
+                            </pluginArtifacts>
+                        </product>
+                    </products>
+                    <testGroups>
+                        <testGroup>
+                            <id>integration-tests</id>
+                            <productIds>
+                                <productId>bamboo</productId>
+                            </productIds>
+                            <includes>
+                                <include>it/**/*Test.java</include>
+                            </includes>
+                        </testGroup>
+                    </testGroups>
                 </configuration>
             </plugin>
         </plugins>
@@ -185,5 +209,48 @@ limitations under the License.
             <version>20210307</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-test-utils</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo.plugins</groupId>
+            <artifactId>atlassian-bamboo-plugin-test-utils</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-pageobjects</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.aui</groupId>
+            <artifactId>aui-pageobjects</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>integration-tests</id>
+            <activation>
+                <property>
+                    <name>server</name>
+                    <value>localhost</value>
+                </property>
+            </activation>
+            <properties>
+                <maven.test.it.skip>false</maven.test.it.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>

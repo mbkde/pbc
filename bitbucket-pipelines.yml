@@ -3,10 +3,21 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: maven:3.6-jdk-8
+image: maven:3.8-jdk-8
+
+definitions:
+  services:
+    selenium:
+      image: selenium/standalone-chrome:3.141.59
 
 pipelines:
   default:
     - step:
+        caches:
+          - maven
+        services:
+          - selenium
         script: # Modify the commands below to build your repository.
-          - mvn -s settings.xml clean install
+          - apt-get update
+          - apt-get install -y xvfb
+          - mvn -s settings.xml -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" -Dmaven.test.it.skip=false clean install

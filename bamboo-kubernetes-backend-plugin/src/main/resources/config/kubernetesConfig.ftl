@@ -140,7 +140,7 @@ arm64:
         <div id="errorMessage" style="white-space: pre-line">
         </div>
 
-        <button type="button" class="aui-button aui-button-primary" onclick="setRemoteConfig()">Save</button>
+        <button type="button" class="aui-button aui-button-primary" disabled="disabled" id="saveButton" onclick="setRemoteConfig()">Save</button>
         <div class="save-status"></div>
     </fieldset>
 </form>
