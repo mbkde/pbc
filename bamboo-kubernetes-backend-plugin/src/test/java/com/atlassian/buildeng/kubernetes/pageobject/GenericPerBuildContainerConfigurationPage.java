@@ -16,19 +16,22 @@
 
 package com.atlassian.buildeng.kubernetes.pageobject;
 
+import com.atlassian.aui.auipageobjects.AuiCheckbox;
 import com.atlassian.bamboo.pageobjects.pages.AbstractBambooPage;
 import com.atlassian.pageobjects.elements.ElementBy;
 import com.atlassian.pageobjects.elements.PageElement;
 import com.atlassian.pageobjects.elements.query.TimedCondition;
 
 public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPage {
-    @ElementBy(id = "defaultImage")
+    @ElementBy(id = "setRemoteConfig_awsVendor")
+    private AuiCheckbox awsVendor;
+    @ElementBy(id = "setRemoteConfig_defaultImage")
     private PageElement defaultImage;
-    @ElementBy(id = "maxAgentCreationPerMinute")
+    @ElementBy(id = "setRemoteConfig_maxAgentCreationPerMinute")
     private PageElement maxAgentCreationPerMinute;
-    @ElementBy(id = "architectureConfig")
+    @ElementBy(id = "setRemoteConfig_architectureConfig")
     private PageElement architectureConfig;
-    @ElementBy(xpath = "//form[@id='setRemoteConfig']//button[text()='Save']")
+    @ElementBy(id = "setRemoteConfig_save")
     private PageElement saveButton;
     @ElementBy(id = "errorMessage")
     private PageElement errorMessage;
@@ -48,6 +51,15 @@ public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPag
     @Override
     public String getUrl() {
         return "/admin/viewIsolatedDockerConfiguration.action";
+    }
+
+    public GenericPerBuildContainerConfigurationPage awsVendor(boolean awsVendor) {
+        if(awsVendor) {
+            this.awsVendor.check();
+        } else {
+            this.awsVendor.uncheck();
+        }
+        return this;
     }
 
     public GenericPerBuildContainerConfigurationPage setDefaultImage(String defaultImage) {
