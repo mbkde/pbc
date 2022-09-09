@@ -34,7 +34,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>8.2.2</bamboo.version>
+        <bamboo.version>9.1.0-m106</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.4.1</amps.version>
         <snakeyaml.version>1.31</snakeyaml.version>
