@@ -50,6 +50,7 @@ public class AwsVendorTest extends AbstractPbcTest {
     public void awsVendorMakesUIElementsVisible() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME); //dismiss H2 warning
         updateAwsVendor(true);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
@@ -68,6 +69,7 @@ public class AwsVendorTest extends AbstractPbcTest {
     public void someElementsAreNotVisibleWhenNonAwsVendorIsChosen() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  //dismiss H2 warning
         updateAwsVendor(false);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
