@@ -8,7 +8,6 @@ definitions:
 pipelines:
   default:
     - step:
-        size: 2x # Double resources available for this step.
         caches:
           - maven
         services:
