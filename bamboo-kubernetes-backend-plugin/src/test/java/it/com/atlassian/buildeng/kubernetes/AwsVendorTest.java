@@ -40,21 +40,16 @@ import com.atlassian.buildeng.kubernetes.pageobject.GenericKubernetesConfigPage;
 import com.atlassian.buildeng.kubernetes.pageobject.GenericPerBuildContainerConfigurationPage;
 import com.atlassian.buildeng.kubernetes.pageobject.PerBuildContainerConfigPage;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests UI elements are visible or hidden depending on vendor choice
  */
 public class AwsVendorTest extends AbstractPbcTest {
-    @BeforeAll
-    public static void dismissMessages() {
-        new Backdoor(ENVIRONMENT_DATA).troubleshooting().dismissLocalAgentNotification();
-    }
-
     @Test
     public void awsVendorMakesUIElementsVisible() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
+        backdoor.troubleshooting().dismissLocalAgentNotification();
         updateAwsVendor(true);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
@@ -72,6 +67,7 @@ public class AwsVendorTest extends AbstractPbcTest {
     @Test
     public void someElementsAreNotVisibleWhenNonAwsVendorIsChosen() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
+        backdoor.troubleshooting().dismissLocalAgentNotification();
         updateAwsVendor(false);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
