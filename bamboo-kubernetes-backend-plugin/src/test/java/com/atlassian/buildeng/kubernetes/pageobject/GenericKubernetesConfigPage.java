@@ -20,35 +20,43 @@ import com.atlassian.aui.auipageobjects.AuiCheckbox;
 import com.atlassian.bamboo.pageobjects.pages.AbstractBambooPage;
 import com.atlassian.pageobjects.elements.ElementBy;
 import com.atlassian.pageobjects.elements.PageElement;
+import com.atlassian.pageobjects.elements.PageElementFinder;
 import com.atlassian.pageobjects.elements.query.TimedCondition;
+import javax.inject.Inject;
+import org.openqa.selenium.By;
 
 public class GenericKubernetesConfigPage extends AbstractBambooPage {
-    @ElementBy(id = "sidekickToUse")
+    public static final String IAM_REQUEST_TEMPLATE = "setRemoteConfig_iamRequestTemplate";
+    public static final String IAM_SUBJECT_ID_PREFIX = "setRemoteConfig_iamSubjectIdPrefix";
+    @ElementBy(id = "setRemoteConfig_sidekickToUse")
     private PageElement sidekickImage;
-    @ElementBy(id = "currentContext")
+    @ElementBy(id = "setRemoteConfig_currentContext")
     private PageElement currentContext;
-    @ElementBy(id = "useClusterRegistry")
+    @ElementBy(id = "setRemoteConfig_useClusterRegistry")
     private AuiCheckbox useClusterRegistry;
-    @ElementBy(id = "clusterRegistryAvailableSelector")
+    @ElementBy(id = "setRemoteConfig_clusterRegistryAvailableSelector")
     private PageElement availableClusterLabel;
-    @ElementBy(id = "clusterRegistryPrimarySelector")
+    @ElementBy(id = "setRemoteConfig_clusterRegistryPrimarySelector")
     private PageElement clusterRegistryPrimarySelector;
-    @ElementBy(id = "podTemplate")
+    @ElementBy(id = "setRemoteConfig_podTemplate")
     private PageElement podTemplate;
-    @ElementBy(id = "architecturePodConfig")
+    @ElementBy(id = "setRemoteConfig_architecturePodConfig")
     private PageElement architecturePodConfig;
-    @ElementBy(id = "iamRequestTemplate")
+    @ElementBy(id = IAM_REQUEST_TEMPLATE)
     private PageElement iamRequestTemplate;
-    @ElementBy(id = "iamSubjectIdPrefix")
+    @ElementBy(id = IAM_SUBJECT_ID_PREFIX)
     private PageElement iamSubjectIdPrefix;
-    @ElementBy(id = "containerSizes")
+    @ElementBy(id = "setRemoteConfig_containerSizes")
     private PageElement containerSizes;
     @ElementBy(id = "errorMessage")
     private PageElement errorMessage;
     @ElementBy(cssSelector = ".save-status")
     private PageElement saveStatus;
-    @ElementBy(xpath = "//form[@id='setRemoteConfig']//button[text()='Save']")
+    @ElementBy(id = "setRemoteConfig_save")
     private PageElement saveButton;
+
+    @Inject
+    private PageElementFinder elementFinder;
 
     @Override
     public PageElement indicator() {
@@ -109,9 +117,17 @@ public class GenericKubernetesConfigPage extends AbstractBambooPage {
         return this;
     }
 
+    public boolean isIamRequestTemplateVisible() {
+        return !elementFinder.findAll(By.id(IAM_REQUEST_TEMPLATE)).isEmpty();
+    }
+
     public GenericKubernetesConfigPage setIamSubjectIdPrefix(String iamSubjectIdPrefix) {
         this.iamSubjectIdPrefix.clear().type(iamSubjectIdPrefix);
         return this;
+    }
+
+    public boolean isIamSubjectIdPrefixVisible() {
+        return !elementFinder.findAll(By.id(IAM_SUBJECT_ID_PREFIX)).isEmpty();
     }
 
     public GenericKubernetesConfigPage setContainerSizes(String containerSizes) {

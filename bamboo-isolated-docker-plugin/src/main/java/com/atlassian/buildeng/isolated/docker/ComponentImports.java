@@ -75,7 +75,7 @@ public class ComponentImports {
     @BambooImport
     public BandanaManager bandanaManager;
 
-    @BambooImport @Qualifier("bambooAuthenticationContext")
+    @BambooImport
     public BambooAuthenticationContext authenticationContext;
 
     @BambooImport

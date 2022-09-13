@@ -51,6 +51,7 @@ limitations under the License.
                             <instanceId>bamboo</instanceId>
                             <version>${bamboo.version}</version>
                             <productDataVersion>${bamboo.version}</productDataVersion>
+                            <jvmArgs>-Xmx2048m</jvmArgs>
                             <pluginArtifacts>
                                 <pluginArtifact>
                                     <groupId>${project.groupId}</groupId>

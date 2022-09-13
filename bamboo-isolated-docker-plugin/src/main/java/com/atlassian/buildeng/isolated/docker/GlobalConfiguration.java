@@ -67,7 +67,7 @@ public class GlobalConfiguration {
 
     @Inject
     public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
-                               @Qualifier("bambooAuthenticationContext") BambooAuthenticationContext authenticationContext) {
+                               BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;
