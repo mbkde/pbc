@@ -40,7 +40,7 @@ import com.atlassian.buildeng.kubernetes.pageobject.GenericKubernetesConfigPage;
 import com.atlassian.buildeng.kubernetes.pageobject.GenericPerBuildContainerConfigurationPage;
 import com.atlassian.buildeng.kubernetes.pageobject.PerBuildContainerConfigPage;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 /**
  * Tests UI elements are visible or hidden depending on vendor choice
