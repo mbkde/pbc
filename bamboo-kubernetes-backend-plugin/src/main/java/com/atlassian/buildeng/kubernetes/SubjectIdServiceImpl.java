@@ -12,7 +12,6 @@ import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.plan.cache.ImmutableTopLevelPlan;
 
 public class SubjectIdServiceImpl implements SubjectIdService {
-
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final CachedPlanManager cachedPlanManager;
     private final DeploymentProjectService deploymentProjectService;

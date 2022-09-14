@@ -23,6 +23,7 @@ public class Config {
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
     public String architectureConfig;
+    public boolean awsVendor;
 
     public Config() {
     }
@@ -51,5 +52,12 @@ public class Config {
         this.architectureConfig = architectureConfig;
     }
 
+    public boolean isAwsVendor() {
+        return awsVendor;
+    }
+
+    public void setAwsVendor(boolean awsVendor) {
+        this.awsVendor = awsVendor;
+    }
 }
 

@@ -2,7 +2,7 @@
 ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
 
 [@ui.bambooSection title=" " descriptionKey='isolated.docker.misc.header.description']
-    [@ww.textfield cssClass='long-field docker-container-autocomplete' required=true 
+    [@ww.textfield cssClass='long-field docker-container-autocomplete' required=true
         labelKey='isolated.docker.image' name='custom.isolated.docker.image' descriptionKey="isolated.docker.image.description"
         /]
 
@@ -18,10 +18,11 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
     [/@ww.select]
     [@ww.hidden cssClass='long-field docker-extra-containers' name='custom.isolated.docker.extraContainers' /]
     [#include "extraContainersUI.ftl"]
-
+[#if showAwsVendorFields]
     [@ww.textfield cssClass='long-field' required=false
-        labelKey='isolated.docker.awsRole' name='custom.isolated.docker.awsRole' descriptionKey="isolated.docker.awsRole.description"
-    /]
+        labelKey='isolated.docker.awsRole' name='custom.isolated.docker.awsRole' descriptionKey="isolated.docker.awsRole.description" /]
+[/#if]
+
 
 [/@ui.bambooSection]
 
