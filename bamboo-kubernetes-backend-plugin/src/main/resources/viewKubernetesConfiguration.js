@@ -25,18 +25,17 @@ define('feature/kubernetes-backend-plugin/config', [
     var restEndpoint = `${AJS.contextPath()}/rest/pbc-kubernetes/latest/`;
 
     function processResource(callback, relativeEndpoint) {
-        $('#setRemoteConfig_save').attr('disabled', 'disabled');
         $.ajax({
             type: 'GET',
             url: restEndpoint + relativeEndpoint,
             success: function (text) {
                 callback(text);
-                $('#setRemoteConfig_save').removeAttr('disabled');
+                loadComplete();
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 showError('An error occurred while attempting to save:\n\n' + textStatus + '\n' +
                     errorThrown + '\n' + jqXHR.responseText);
-                $('#setRemoteConfig_save').removeAttr('disabled');
+                loadComplete();
             }
         });
     }
@@ -83,6 +82,11 @@ define('feature/kubernetes-backend-plugin/config', [
         $('#setRemoteConfig_showAwsSpecificFields').val(response.showAwsSpecificFields);
     }
 
+    function loadComplete() {
+        $('#setRemoteConfig_save').removeAttr('disabled');
+        $('#load_complete').val('true');
+    }
+
     return {
         saveRemoteConfig: (e) => {
             e.preventDefault();
@@ -121,7 +125,9 @@ define('feature/kubernetes-backend-plugin/config', [
         },
 
         onInit: function () {
-            $('#setRemoteConfig_save').on('click', this.saveRemoteConfig);
+            $('#setRemoteConfig_save')
+                .on('click', this.saveRemoteConfig)
+                .attr('disabled', 'disabled');
             updateStatus('Loading...');
             processResource(processConfig, 'config');
         }

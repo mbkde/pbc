@@ -16,6 +16,8 @@
 
 package it.com.atlassian.buildeng.kubernetes;
 
+import static com.atlassian.pageobjects.elements.query.Conditions.forSupplier;
+import static com.atlassian.pageobjects.elements.query.Poller.waitUntilTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -39,6 +41,7 @@ import com.atlassian.buildeng.kubernetes.pageobject.CustomViewDeploymentProjectP
 import com.atlassian.buildeng.kubernetes.pageobject.GenericKubernetesConfigPage;
 import com.atlassian.buildeng.kubernetes.pageobject.GenericPerBuildContainerConfigurationPage;
 import com.atlassian.buildeng.kubernetes.pageobject.PerBuildContainerConfigPage;
+import com.atlassian.pageobjects.elements.timeout.TimeoutType;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
@@ -122,5 +125,6 @@ public class AwsVendorTest extends AbstractPbcTest {
         genericConfigPage.setDefaultImage("docker.atl-paas.net/sox/buildeng/agent-baseagent");
         genericConfigPage.setAgentCreationThrottling(10);
         genericConfigPage.save();
+        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), genericConfigPage::isSaved));
     }
 }

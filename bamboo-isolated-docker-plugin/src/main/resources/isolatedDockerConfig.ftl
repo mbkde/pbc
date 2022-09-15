@@ -28,6 +28,7 @@ arm64: "arm64 (ARMv8 aarch64)"
         <div id="errorMessage" style="white-space: pre-line">
         </div>
         <div class="save-status"></div>
+    <input type="hidden" id="load_complete" value="false"/>
 [/@s.form]
 <script lang="text/javascript">
     require(['feature/isolate-docker-plugin/config'], function(Config) {
