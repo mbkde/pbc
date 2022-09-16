@@ -139,7 +139,6 @@ limitations under the License.
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
