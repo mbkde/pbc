@@ -37,6 +37,8 @@ public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPag
     private PageElement errorMessage;
     @ElementBy(cssSelector = ".save-status")
     private PageElement saveStatus;
+    @ElementBy(id="load_complete")
+    private PageElement loadComplete;
 
     @Override
     public PageElement indicator() {
@@ -45,7 +47,7 @@ public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPag
 
     @Override
     protected TimedCondition isPageLoaded() {
-        return saveButton.timed().isEnabled();
+        return loadComplete.timed().hasValue("true");
     }
 
     @Override

@@ -58,6 +58,7 @@ arm64:
         </div>
 
         <div class="save-status"></div>
+        <input type="hidden" id="load_complete" value="false"/>
     </fieldset>
 [/@s.form]
     <script lang="text/javascript">
