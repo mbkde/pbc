@@ -54,6 +54,8 @@ public class GenericKubernetesConfigPage extends AbstractBambooPage {
     private PageElement saveStatus;
     @ElementBy(id = "setRemoteConfig_save")
     private PageElement saveButton;
+    @ElementBy(id="load_complete")
+    private PageElement loadComplete;
 
     @Inject
     private PageElementFinder elementFinder;
@@ -70,7 +72,7 @@ public class GenericKubernetesConfigPage extends AbstractBambooPage {
 
     @Override
     protected TimedCondition isPageLoaded() {
-        return saveButton.timed().isEnabled();
+        return loadComplete.timed().hasValue("true");
     }
 
     public GenericKubernetesConfigPage setSidekickImage(String sidekickImage) {
