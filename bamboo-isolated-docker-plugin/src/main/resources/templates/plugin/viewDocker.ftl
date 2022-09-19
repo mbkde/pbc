@@ -27,9 +27,21 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
     [/@ui.bambooSection]
 
     [#include "extraContainersDialog.ftl"]
+[#elseif fn.hasAdminPermission()]
+    [@ui.messageBox type="warning"]
+        <p>
+            [@s.text name="isolated.docker.templateAccessible.warning" /]
+            <a href="${req.contextPath}/admin/viewIsolatedDockerConfiguration.action">
+                [@s.text name="isolated.docker.templateAccessible.admin.info" /]
+            </a>
+        </p>
+    [/@ui.messageBox]
 [#else]
     [@ui.messageBox type="warning"]
-        <p>[@s.text name="isolated.docker.templateAccessible.warning" /]</p>
+        <p>
+            [@s.text name="isolated.docker.templateAccessible.warning" /]
+            <a href="${req.contextPath}/viewAdministrators.action">Contact Administrators</a> in order to configure it.
+        </p>
     [/@ui.messageBox]
 [/#if]
 
