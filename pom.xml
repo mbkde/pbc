@@ -37,7 +37,7 @@
         <bamboo.version>9.1.0-m106</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.8.0</amps.version>
-        <snakeyaml.version>1.31</snakeyaml.version>
+        <snakeyaml.version>1.32</snakeyaml.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.3.4</platform.version>
         <spring.scanner.version>2.2.3</spring.scanner.version>
@@ -150,6 +150,12 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>logging-interceptor</artifactId>
                 <version>4.9.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
