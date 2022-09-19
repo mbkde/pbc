@@ -24,6 +24,7 @@ import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -33,11 +34,13 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
 public class DockerSoxService {
     private static final Logger logger = LoggerFactory.getLogger(DockerSoxService.class);
 
@@ -49,6 +52,7 @@ public class DockerSoxService {
     static final String BANDANA_SOX_PATTERNS = "com.atlassian.buildeng.pbc.sox.whitelist";
     private List<Pattern> soxPatterns;
 
+    @Inject
     public DockerSoxService(FeatureManager featureManager, AuditLogService auditLogService,
             BandanaManager bandanaManager, BambooAuthenticationContext authenticationContext) {
         this.featureManager = featureManager;
@@ -83,14 +87,16 @@ public class DockerSoxService {
         SoxRestConfig old = getConfig();
         if (old.isEnabled() != config.isEnabled()) {
             AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(),
-                    new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Enabled",
+                    new Date(), null, null, null, null,
+                    AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Enabled",
                     Boolean.toString(old.isEnabled()), Boolean.toString(config.isEnabled()));
             auditLogService.log(ent);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_ENABLED, config.isEnabled());
         }
         if (!Arrays.equals(old.getWhitelistPatterns(), config.getWhitelistPatterns())) {
             AuditLogEntry ent = new  AuditLogMessage(this.authenticationContext.getUserName(),
-                    new Date(), null, null, AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Whitelist",
+                    new Date(), null, null, null, null,
+                    AuditLogEntry.TYPE_FIELD_CHANGE, "PBC SOX Whitelist",
                     Arrays.toString(old.getWhitelistPatterns()), Arrays.toString(config.getWhitelistPatterns()));
             auditLogService.log(ent);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_PATTERNS,

@@ -34,10 +34,6 @@ limitations under the License.
                     class="com.atlassian.buildeng.isolated.docker.lifecycle.StopDockerAgentBuildProcessor">
         <skipIfFailed>false</skipIfFailed>
     </buildProcessor>
-    <component-import key="isolatedAgentService"
-                      interface="com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService"/>
-    <component-import key="containerSizeDescriptor"
-                      interface="com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor"/>
     <bambooEventListener key="bambooEventListener" name="Bamboo Event Listener"
                          class="com.atlassian.buildeng.isolated.docker.PreBuildQueuedEventListener">
         <description>Listens to events of Bamboo.</description>
@@ -47,7 +43,7 @@ limitations under the License.
                          class="com.atlassian.buildeng.isolated.docker.AgentRegisteredListener">
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
-    
+
     <bambooEventListener key="buildCancelledEventListener" name="Listens on Build Cancelled events"
                          class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildCancelledEventListener">
         <description>Listens to events of Bamboo.</description>
@@ -58,63 +54,20 @@ limitations under the License.
         <description>Listens to events of Bamboo.</description>
     </bambooEventListener>
 
-            
-    <component key="agentCreationRescheduler" class="com.atlassian.buildeng.isolated.docker.AgentCreationReschedulerImpl" public="true">
-        <interface>com.atlassian.buildeng.spi.isolated.docker.AgentCreationRescheduler</interface>
-        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
-    </component>
-    
-    <component key="JMXManager" class="com.atlassian.buildeng.isolated.docker.jmx.JMXAgentsService" public="true" >
-        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
-    </component>
-
-    <component key="dockerSoxService" 
-               class="com.atlassian.buildeng.isolated.docker.sox.DockerSoxService">
-    </component>
-    
-    <component-import key="pluginScheduler">
-        <description>SAL Scheduler</description>
-        <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
-    </component-import>
-
-    <buildAgentRequirementFilter key="theMightyAgentFilter" name="Agent Filter ensuring only PBC agents can pick up PBC jobs" 
+    <buildAgentRequirementFilter key="theMightyAgentFilter" name="Agent Filter ensuring only PBC agents can pick up PBC jobs"
                                  class="com.atlassian.buildeng.isolated.docker.TheMightyAgentFilter">
         <description/>
     </buildAgentRequirementFilter>
-    
+
     <postJobAction key="postJobActionImpl" name="PBC: remove agent from server db after build"
                    class="com.atlassian.buildeng.isolated.docker.lifecycle.PostJobActionImpl">
     </postJobAction>
 
-    <component key="isolated-docker-reaper" class="com.atlassian.buildeng.isolated.docker.reaper.Reaper"
-               system="true" public="true">
-        <description>Reaps dangling isolated docker agents</description>
-        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
-    </component>
-
-    <component key="agentRemovals" class="com.atlassian.buildeng.isolated.docker.AgentRemovals">
-    </component>
-
-    <component key="agentLicenseLimits" class="com.atlassian.buildeng.isolated.docker.AgentLicenseLimits">
-    </component>
-
-    <component key="agentCreationLimits" class="com.atlassian.buildeng.isolated.docker.AgentCreationLimits">
-    </component>
-
-    <component key="agentsThrottled" class="com.atlassian.buildeng.isolated.docker.AgentsThrottled">
-    </component>
-
-    <component key="dateTime" class="com.atlassian.buildeng.isolated.docker.DateTime">
-    </component>
-
-    <component key="unmetRequirements" class="com.atlassian.buildeng.isolated.docker.UnmetRequirements">
-    </component>
-
-    <component key="globalConfiguration" class="com.atlassian.buildeng.isolated.docker.GlobalConfiguration">
-    </component>
-
     <web-resource key="config-js">
-        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <transformation extension="js">
+            <transformer key="jsI18n"/>
+        </transformation>
+        <dependency>bamboo.web.resources:lib-aui</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
 
         <resource type="download" name="viewIsolatedDockerConfiguration.js" location="/viewIsolatedDockerConfiguration.js"/>
@@ -156,9 +109,9 @@ limitations under the License.
     <web-resource key="docker-job-ui-js" name="JavaScript dependencies for editing isolated docker configuration">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
-        <dependency>com.atlassian.auiplugin:dialog2</dependency>
-        <resource type="download" name="jquery-autocomplete.css" location="css/jquery-ui-1.8.18.custom.css" />
-        <resource type="download" name="jquery-autocomplete.js" location="js/jquery-ui-1.8.18.custom.min.js" />
+        <dependency>com.atlassian.auiplugin:aui-dialog2</dependency>
+        <dependency>bamboo.web.resources.common:widget-autocomplete</dependency>
+        <dependency>bamboo.web.resources.common:util-ajax</dependency>
         <resource type="download" name="images/" location="images/" />
         <context>atl.general</context>
     </web-resource>
@@ -174,17 +127,17 @@ limitations under the License.
         <package>com.atlassian.buildeng.isolated.docker.rest</package>
         <description>Provides the REST resource for javascript code</description>
     </rest>
-    
+
     <buildProcessorServer key="agentSafeguard" name="PBC: Safeguarding agents get properly discarded after build."
                           class="com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl">
     </buildProcessorServer>
-    
+
     <taskType key="dockertask" name="(Deprecated) Per-build Container (PBC) Agent for Deployments" class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTask">
       <description>Reserves the deployment to run on per-build container (PBC) agent. Do not use, instead configure in Docker tab in environment or job.</description>
       <configuration class="com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator"/>
       <resource type="freemarker" name="edit" location="/templates/plugin/editRequirementTask.ftl"/>
     </taskType>
-    
+
     <xwork key="local" name="Show Docker Compose for dev execution">
         <package name="localExec" extends="buildResultView">
             <action name="viewLocalExec" class="com.atlassian.buildeng.isolated.docker.compose.LocalExecAction">
@@ -197,7 +150,7 @@ limitations under the License.
     <link linkId="PBC:${buildKey}-${buildNumber}">/build/result/viewLocalExec.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
     <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
   </web-item>
-  
+
   <!-- the 'pbcEnvironment' key or plugin key can never ever change value, because they end up as part of export -->
     <customEnvironmentConfig key="pbcEnvironment" name="Dummy environment config"
                                         class = "com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigPluginImpl">
@@ -206,6 +159,6 @@ limitations under the License.
         </description>
         <resource type="freemarker" name="edit" location="/templates/plugin/empty.ftl" />
         <exporter class="com.atlassian.buildeng.isolated.docker.handler.CustomEnvironmentConfigExporterImpl" />
-    </customEnvironmentConfig>  
-    
+    </customEnvironmentConfig>
+
 </atlassian-plugin>

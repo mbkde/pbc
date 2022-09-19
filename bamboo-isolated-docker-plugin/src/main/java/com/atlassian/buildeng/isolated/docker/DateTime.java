@@ -16,8 +16,10 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Date;
 
+@BambooComponent
 public class DateTime {
     /**
      * Get the time one minute ago.
@@ -31,7 +33,7 @@ public class DateTime {
      * Get the current time.
      * @return the number of milliseconds since January 1, 1970, 00:00:00 GMT
      */
-    private long getCurrentTime() {
+    public long getCurrentTime() {
         return new Date().getTime();
     }
 }

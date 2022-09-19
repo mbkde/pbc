@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.simple.backend;
 
-import com.atlassian.sal.api.scheduling.PluginJob;
 import com.google.common.base.Splitter;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,16 +23,21 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DockerWatchdogJob implements PluginJob {
+@DisallowConcurrentExecution
+public class DockerWatchdogJob implements Job {
     private static final Logger logger = LoggerFactory.getLogger(DockerWatchdogJob.class);
 
     @Override
-    public void execute(Map<String, Object> jobDataMap) {
+    public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            executeImpl(jobDataMap);
+            executeImpl(context.getJobDetail().getJobDataMap());
         } catch (Throwable t) { 
             //this is throwable because of NoClassDefFoundError and alike. 
             // These are not Exception subclasses and actually
@@ -66,18 +70,18 @@ public class DockerWatchdogJob implements PluginJob {
                         .filter((PsItem t) -> t.isExited() && t.name.equals("bamboo-agent"))
                         .map((PsItem t) -> t.uuid)
                         .forEach((String t) -> {
-                    try {
-                        ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
-                        //yes. docker-compose up can pass -p and -f parameters but all other commands
-                        // rely on env variables to do the same (facepalm)
-                        globalConfiguration.decorateCommands(pb);
-                        rm.environment().put("COMPOSE_PROJECT_NAME", t);
-                        rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
-                        Process p2 = rm.inheritIO().start();
-                    } catch (IOException ex) {
-                        logger.error("Failed to run docker-compose down", ex);
-                    }
-                });
+                            try {
+                                ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
+                                //yes. docker-compose up can pass -p and -f parameters but all other commands
+                                // rely on env variables to do the same (facepalm)
+                                globalConfiguration.decorateCommands(pb);
+                                rm.environment().put("COMPOSE_PROJECT_NAME", t);
+                                rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
+                                Process p2 = rm.inheritIO().start();
+                            } catch (IOException ex) {
+                                logger.error("Failed to run docker-compose down", ex);
+                            }
+                        });
             }        
         } catch (IOException ex) {
             logger.error("Failed to run docker commands", ex);

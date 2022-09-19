@@ -33,11 +33,11 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
 public class KubeJmxService implements DisposableBean, InitializingBean {
-    private static final Logger logger = LoggerFactory.getLogger(JmxJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(KubeJmxService.class);
 
     private KubeAgents agentsCount;
     private ObjectName name;
-    
+
     @Override
     public void destroy() throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -51,7 +51,7 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
         name = new ObjectName("com.atlassian.buildeng.kubernetes:type=KubeAgents");
         mbs.registerMBean(agentsCount, name);
     }
-    
+
     /**
      * recalculate the numbers of agents queued.
      * @param buildQueueManager service
@@ -73,7 +73,7 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
             if (podName != null) {
                 long queueTime = Long.parseLong(current.getCustomBuildData().get(KubernetesWatchdog.QUEUE_TIMESTAMP));
                 long minutes = Duration.millis(now - queueTime).getStandardMinutes();
-                
+
                 total.getAndIncrement();
                 if (minutes >= 5) {
                     minutes5.getAndIncrement();
@@ -93,7 +93,7 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
                 if (minutes >= 30) {
                     minutes30.getAndIncrement();
                 }
-            }    
+            }
         });
         agentsCount.total.getAndSet(total.get());
         agentsCount.minute5.getAndSet(minutes5.get());
@@ -105,5 +105,5 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
         logger.debug("total:{} 5min={} 10min={} 15min={} 20min={} 25min={} 30min={}",
                 total, minutes5, minutes10, minutes15, minutes20, minutes25, minutes30);
     }
-    
+
 }

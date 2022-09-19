@@ -29,13 +29,15 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
-import com.atlassian.sal.api.scheduling.PluginJob;
 import com.atlassian.spring.container.ContainerManager;
 import java.util.Map;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 
 
-public abstract class WatchdogJob implements PluginJob {
+public abstract class WatchdogJob implements Job {
     protected final void killBuild(
             DeploymentExecutionService deploymentExecutionService,
             DeploymentResultService deploymentResultService,
@@ -75,4 +77,5 @@ public abstract class WatchdogJob implements PluginJob {
         return type.cast(obj);
     }
 
+    public abstract void execute(JobExecutionContext context) throws JobExecutionException;
 }

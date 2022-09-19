@@ -19,7 +19,7 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.92-SNAPSHOT</version>
+        <version>2.120-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-isolated-docker-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -30,6 +30,26 @@ limitations under the License.
                 <artifactId>bamboo-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <instructions>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+                        <Spring-Context>*</Spring-Context>
+                        <!--
+                            Bundle-SymbolicName must match Atlassian-Plugin-Key until com.atlassian.bamboo.serialization.PluginResolver will be smarter
+                        -->
+                        <Bundle-SymbolicName>${atlassian.plugin.key}</Bundle-SymbolicName>
+                        <Export-Package>
+                            com.atlassian.buildeng.isolated.docker,
+                            com.atlassian.buildeng.isolated.docker.reaper,
+                            com.atlassian.buildeng.isolated.docker.jmx,
+                            com.atlassian.buildeng.isolated.docker.scheduler
+                        </Export-Package>
+                        <Import-Package>
+                            com.atlassian.buildeng.spi.isolated.docker,
+                            com.atlassian.sal.api.lifecycle,
+                            com.atlassian.sal.api.scheduling,
+                            *;resolution:=optional
+                        </Import-Package>
+                    </instructions>
                     <pluginArtifacts>
                         <pluginArtifact>
                             <groupId>${project.groupId}</groupId>
@@ -43,6 +63,19 @@ limitations under the License.
                         </pluginArtifact>
                     </pluginArtifacts>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.plugin</groupId>
+                <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
+                <version>${spring.scanner.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>atlassian-spring-scanner</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -80,7 +113,7 @@ limitations under the License.
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20141113</version>
+            <version>20220320</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -89,9 +122,14 @@ limitations under the License.
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.atlassian.buildeng</groupId>
             <artifactId>bamboo-pbc-specs</artifactId>
-            <version>1.4.3</version>
+            <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -101,13 +139,18 @@ limitations under the License.
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.16</version>
-            <type>jar</type>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-web</artifactId>
             <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-annotation</artifactId>
+            <version>${spring.scanner.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

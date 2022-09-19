@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.ecs;
 
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
+
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
@@ -34,19 +39,22 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +66,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     private final GlobalConfiguration globalConfiguration;
     private final ECSScheduler ecsScheduler;
-    private final PluginScheduler pluginScheduler;
+    private final Scheduler scheduler;
     private final SchedulerBackend schedulerBackend;
     private final TaskDefinitionRegistrations taskDefRegistrations;
     //not used in the class but in the bundled library and apparently in that case for
@@ -68,11 +76,11 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final EventPublisher eventPublisher;
 
     public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
-            PluginScheduler pluginScheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
+            Scheduler scheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
             EventPublisher eventPublisher) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
-        this.pluginScheduler = pluginScheduler;
+        this.scheduler = scheduler;
         this.schedulerBackend = schedulerBackend;
         this.taskDefRegistrations = taskDefRegistrations;
         this.eventPublisher = eventPublisher;
@@ -89,7 +97,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             } catch (ECSException ex) {
                 logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
                 //Have to catch some of the exceptions here instead of the callback to use retries.
-                if(ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     callback.handle(toRet);
@@ -165,16 +173,37 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public void onStart() {
-        Map<String, Object> config = new HashMap<>();
+        JobDataMap config = new JobDataMap();
         config.put("globalConfiguration", globalConfiguration);
         config.put("schedulerBackend", schedulerBackend);
         config.put("isolatedAgentService", this);
-        pluginScheduler.scheduleJob(Constants.PLUGIN_JOB_KEY, ECSWatchdogJob.class, config, new Date(), Constants.PLUGIN_JOB_INTERVAL_MILLIS);
+        Trigger jobTrigger = newTrigger()
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(Constants.PLUGIN_JOB_INTERVAL_MILLIS)
+                        .repeatForever()
+                )
+                .build();
+        JobDetail pluginJob = newJob(ECSWatchdogJob.class)
+                .withIdentity(Constants.PLUGIN_JOB_KEY)
+                .usingJobData(config)
+                .build();
+        try {
+            scheduler.scheduleJob(pluginJob, jobTrigger);
+        } catch (SchedulerException e) {
+            logger.error("Unable to schedule RemoteWatchdogJob", e);
+        }
     }
 
     @Override
     public void onStop() {
-        pluginScheduler.unscheduleJob(Constants.PLUGIN_JOB_KEY);
+        try {
+            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(Constants.PLUGIN_JOB_KEY));
+            if (!watchdogJobDeletion) {
+                logger.warn("Was not able to delete ECS Watchdog job. Was it already deleted?");
+            }
+        } catch (SchedulerException e) {
+            logger.error("Remote ECS Backend Plugin is being stopped but is unable to delete RemoteWatchdogJob", e);
+        }
     }
-
 }

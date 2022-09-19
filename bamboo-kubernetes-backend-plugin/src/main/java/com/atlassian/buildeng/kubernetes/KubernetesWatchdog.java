@@ -19,6 +19,7 @@ package com.atlassian.buildeng.kubernetes;
 import com.atlassian.bamboo.deployments.execution.service.DeploymentExecutionService;
 import com.atlassian.bamboo.deployments.results.service.DeploymentResultService;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
+import com.atlassian.bamboo.util.Narrow;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
@@ -34,10 +35,8 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.PluginAccessor;
-import com.atlassian.plugin.osgi.factory.descriptor.ComponentModuleDescriptor;
-import io.fabric8.kubernetes.api.KubernetesHelper;
+import com.atlassian.plugin.module.ContainerManagedPlugin;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.IOException;
@@ -45,6 +44,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -64,10 +64,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jkube.kit.common.util.KubernetesHelper;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,12 +83,16 @@ import org.slf4j.LoggerFactory;
 /**
  * Background job checking the state of the cluster.
  */
+@DisallowConcurrentExecution
+@PersistJobDataAfterExecution
 public class KubernetesWatchdog extends WatchdogJob {
     private static final String RESULT_ERROR = "custom.isolated.docker.error";
     public static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
     private static final Long MAX_QUEUE_TIME_MINUTES = 60L;
     private static final String KEY_TERMINATED_POD_REASONS = "TERMINATED_PODS_MAP";
     private static final int MISSING_POD_GRACE_PERIOD_MINUTES = 1;
+    // Mitigation for duplicate agents - see BUILDENG-20299
+    private static final int MISSING_POD_RETRY_AFTER_PERIOD_MINUTES = 12;
     private static final int MAX_BACKOFF_SECONDS = 600;
     private static final int MAX_RETRY_COUNT = 30;
     private static final int MAX_WAIT_FOR_TERMINATION_IN_SECONDS = 30;
@@ -103,10 +115,10 @@ public class KubernetesWatchdog extends WatchdogJob {
     
     
     @Override
-    public final void execute(Map<String, Object> jobDataMap) {
+    public void execute(JobExecutionContext context) throws JobExecutionException {
         long start = System.currentTimeMillis();
         try {
-            executeImpl(jobDataMap);
+            executeImpl(context.getJobDetail().getJobDataMap());
         } catch (Throwable t) { 
             // this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
@@ -131,25 +143,19 @@ public class KubernetesWatchdog extends WatchdogJob {
         IsolatedAgentService isolatedAgentService = getService(
                 IsolatedAgentService.class, "isolatedAgentService", jobDataMap);
 
-        //AgentCreationRescheduler - this component cannot be injected by spring 
-        // as it introduces cycles in spring injection between plugins.
-        // Ugly but I haven't found a shortcut utility method do to the same in bamboo.
+        // AgentCreationRescheduler - this component cannot be injected by Spring, as it introduces cycles in Spring
+        // injection between plugins. It is always instantiated by the required bamboo-isolated-docker-plugin, so we
+        // directly use the plugin accessor to fetch the instance of it from there.
         PluginAccessor pluginAccessor = getService(PluginAccessor.class, "pluginAccessor");
-        AgentCreationRescheduler acr = null;
-        ModuleDescriptor md = pluginAccessor.getPluginModule(
-                "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler");
-        if (md instanceof ComponentModuleDescriptor) {
-            ComponentModuleDescriptor cmd = (ComponentModuleDescriptor) md;
-            Object o = cmd.getModule();
-            if (o instanceof AgentCreationRescheduler) {
-                acr = (AgentCreationRescheduler) o;
-            }
-        }
-        AgentCreationRescheduler agentCreationRescheduler = acr;
-        if (agentCreationRescheduler == null) {
-            throw new IllegalStateException("Cannot find component "
-                    + "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler");
-        }
+        AgentCreationRescheduler agentCreationRescheduler =
+                Optional.ofNullable(pluginAccessor.getPlugin("com.atlassian.buildeng.bamboo-isolated-docker-plugin"))
+                        .map(plugin -> Narrow.downTo(plugin, ContainerManagedPlugin.class))
+                        .map(ContainerManagedPlugin::getContainerAccessor)
+                        .map(containerAccessor -> containerAccessor.getBeansOfType(AgentCreationRescheduler.class))
+                        .map(Collection::stream)
+                        .flatMap(Stream::findFirst)
+                        .orElseThrow(() -> new IllegalStateException("Cannot find component "
+                                + "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler"));
 
         KubernetesClient client = new KubernetesClient(globalConfiguration, new JavaShellExecutor());
         long clusterStateQueryTime = System.currentTimeMillis();
@@ -217,7 +223,7 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
 
         for (Pod pod : alivePods) {
-            //identify if pod is stuck in "imagePullBackOff' loop.
+            // identify if pod is stuck in "imagePullBackOff" loop.
             newBackedOff.addAll(
                     Stream.concat(
                             pod.getStatus().getContainerStatuses().stream(),
@@ -265,6 +271,7 @@ public class KubernetesWatchdog extends WatchdogJob {
                 });
 
 
+        AtomicBoolean shouldPrintDebugInfo = new AtomicBoolean(false);
         Map<String, Pod> nameToPod = alivePods.stream().collect(Collectors.toMap(KubernetesHelper::getName, x -> x));
         // Kill queued jobs waiting on alivePods that no longer exist or which have been queued for too long
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
@@ -295,6 +302,7 @@ public class KubernetesWatchdog extends WatchdogJob {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
+
                         if (reason != null && reason.isRestartPod() 
                                 && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             try {
@@ -322,8 +330,13 @@ public class KubernetesWatchdog extends WatchdogJob {
                                         buildQueueManager, context, current);
                             } else {
                                 errorMessage = "Termination reason unknown, pod deleted by Kubernetes infrastructure.";
-                                retryPodCreation(context, null, errorMessage,
-                                        podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
+                                if (grace.toMinutes() > MISSING_POD_RETRY_AFTER_PERIOD_MINUTES) {
+                                    // Uncomment this and remove debug after resolving BUILDENG-20299
+                                    logger.debug("Rescheduling pod {} for build {}", podName, context.getResultKey());
+                                    shouldPrintDebugInfo.set(true);
+//                                    retryPodCreation(context, null, errorMessage,
+//                                            podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
+                                }
                             }
                         }
                     } else {
@@ -353,6 +366,13 @@ public class KubernetesWatchdog extends WatchdogJob {
                 }
             }
         });
+
+        if (shouldPrintDebugInfo.get()) {
+            logger.debug("All pods:" + bambooPods.size() + "\n"
+                    + new JSONArray(bambooPods.stream().map(Pod::getMetadata).collect(Collectors.toList())));
+            logger.debug("Alive pods:" + alivePods.size() + "\n"
+                    + new JSONObject(alivePods.stream().collect(Collectors.toMap(KubernetesHelper::getName, Pod::getMetadata))));
+        }
     }
     
     private int getRetryCount(Pod pod) {
@@ -364,7 +384,7 @@ public class KubernetesWatchdog extends WatchdogJob {
     private void retryPodCreation(CommonContext context, Pod pod, 
             String errorMessage, String podName, int retryCount, EventPublisher eventPublisher, 
             AgentCreationRescheduler rescheduler, GlobalConfiguration configuration) {
-        logger.debug("retrying pod creation for {} for {} time because: {}",
+        logger.info("Retrying pod creation for {} for {} time because: {}",
                 context.getResultKey(), retryCount, errorMessage);
         Configuration config = AccessConfiguration.forContext(context);
         //when pod is not around, just generate new UUID :(
@@ -570,9 +590,20 @@ public class KubernetesWatchdog extends WatchdogJob {
             String message = pod.getStatus().getContainerStatuses().stream()
                     .filter((ContainerStatus t) -> t.getName().equals(PodCreator.CONTAINER_NAME_BAMBOOAGENT))
                     .findFirst().get().getState().getTerminated().getMessage();
+            try {
+                // Short circuit AND so that we don't grab the line if unnecessary
+                if (message == null && client.lastLogLinePod(pod).trim().endsWith("exec format error")) {
+                    message = "An 'exec format error' was detected when starting your container. Check that the "
+                            + "architecture of your image matches the architecture your build is configured to run on.";
+                }
+            } catch (KubectlException e) {
+                logger.info("Failed to retrieve last line of pod logs from "
+                        + KubernetesHelper.getName(pod) + ": " + e);
+            }
+            final String finalMessage = message;
             return () -> deletePod(
                     client, pod, "Bamboo agent container prematurely exited" 
-                            + (message != null ? " : " + message : ""), false);
+                            + (finalMessage != null ? " : " + finalMessage : ""), false);
         }
         
     }

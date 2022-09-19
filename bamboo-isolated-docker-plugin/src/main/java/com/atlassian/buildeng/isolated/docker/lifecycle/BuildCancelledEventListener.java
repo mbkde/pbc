@@ -28,6 +28,7 @@ import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.event.api.EventListener;
 import java.util.Collection;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,7 @@ public class BuildCancelledEventListener {
     private final AgentManager agentManager;
     private final ExecutableAgentsHelper executableAgentsHelper;
 
+    @Inject
     public BuildCancelledEventListener(AgentRemovals agentRemovals, AgentManager agentManager,
             ExecutableAgentsHelper executableAgentsHelper) {
         this.agentRemovals = agentRemovals;

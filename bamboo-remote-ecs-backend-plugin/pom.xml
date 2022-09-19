@@ -19,7 +19,7 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.92-SNAPSHOT</version>
+        <version>2.120-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-remote-ecs-backend-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -36,8 +36,19 @@ limitations under the License.
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-web</artifactId>
             <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>

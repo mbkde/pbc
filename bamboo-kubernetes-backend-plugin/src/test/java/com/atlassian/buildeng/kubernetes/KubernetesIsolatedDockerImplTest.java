@@ -16,17 +16,16 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
+import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.kubernetes.exception.KubectlException;
 import com.atlassian.buildeng.kubernetes.exception.PodLimitQuotaExceededException;
 import com.atlassian.buildeng.kubernetes.jmx.KubeJmxService;
@@ -34,111 +33,43 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentException;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import com.atlassian.sal.api.features.DarkFeatureManager;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.Pod;
+import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.mockito.MockedConstruction;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.quartz.Scheduler;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith({MockitoExtension.class})
 public class KubernetesIsolatedDockerImplTest {
     @Mock
     GlobalConfiguration globalConfiguration;
     @Mock
     KubeJmxService kubeJmxService;
     @Mock
-    PluginScheduler pluginScheduler;
-    @Mock
     ExecutorService executor;
+    @Mock
+    Scheduler scheduler;
     @Mock
     SubjectIdService subjectIdService;
     @Mock
-    KubernetesClient kubernetesClient;
+    BandanaManager bandanaManager;
+    @Mock
+    DarkFeatureManager darkFeatureManager;
+    @Mock
+    KubernetesPodSpecList podSpecList;
 
     @InjectMocks
     KubernetesIsolatedDockerImpl kubernetesIsolatedDocker;
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testContainersMergedByName() {
-        Yaml yaml =  new Yaml(new SafeConstructor());
-        String ts = "apiVersion: v1\n"
-              + "kind: Pod\n"
-              + "metadata:\n"
-              + "  name: aws-cli\n"
-              + "spec:\n"
-              + "  hostAliases:\n"
-              + "    - ip: 192.168.1.1\n"
-              + "      hostnames:\n"
-              + "          - wifi\n"  
-              + "    - ip: 127.0.0.1\n"
-              + "      hostnames:\n"
-              + "          - me.local\n"  
-              + "  containers:\n"
-              + "    - name: main\n"
-              + "      volumeMounts:\n"
-              + "          - name: secrets\n"
-              + "            mountPath: /root/.aws\n"
-              + "    - name: myContainer2\n"
-              + "      image: xueshanf/awscli:latest\n"
-              + "  restartPolicy: Never\n"
-              + "  volumes:\n"
-              + "    - name: secrets\n"
-              + "      secret:\n"
-              + "        secretName: bitbucket-bamboo\n";
-        String os =
-                "metadata:\n"
-              + "    namespace: buildeng\n"
-              + "    annotations:\n"
-              + "        iam.amazonaws.com/role: arn:aws:iam::123456678912:role/staging-bamboo\n"
-              + "spec:\n"
-              + "  hostAliases:\n"
-              + "    - ip: 100.100.0.1\n"
-              + "      hostnames:\n"
-              + "          - remote\n"  
-              + "    - ip: 127.0.0.1\n"
-              + "      hostnames:\n"
-              + "          - bamboo-agent\n"  
-              + "  containers:\n"
-              + "    - name: main\n"
-              + "      image: xueshanf/awscli:latest\n"
-              + "    - name: myContainer3\n"
-              + "      image: xueshanf/awscli:latest\n"
-              + "  volumes:\n"
-              + "    - name: myvolume\n";
-
-        Map<String, Object> template = (Map<String, Object>) yaml.load(ts);
-        Map<String, Object> overrides = (Map<String, Object>) yaml.load(os);
-        Map<String, Object> merged = KubernetesIsolatedDockerImpl.mergeMap(template, overrides);
-        Map<String, Object> spec = (Map<String, Object>) merged.get("spec");
-        assertEquals(3, ((Collection) spec.get("containers")).size());
-        assertEquals(2, ((Collection) spec.get("volumes")).size());
-        assertEquals(3, ((Collection) spec.get("hostAliases")).size());
-
-        List<Map<String, Object>> containers = ((List<Map<String, Object>>) spec.get("containers"));
-        assertEquals(1, containers.stream().filter(c -> c.containsValue("main")).collect(toList()).size());
-        for (Map<String, Object> container : containers) {
-            if (container.containsValue("main")) {
-                assertNotEquals(null, container.get("image"));
-                assertNotEquals(null, container.get("volumeMounts"));
-            }
-        }
-        List<Map<String, Object>> hostAliases = ((List<Map<String, Object>>) spec.get("hostAliases"));
-        assertEquals(2, hostAliases.stream()
-                .filter((Map<String, Object> t) -> "127.0.0.1".equals(t.get("ip")))
-                .flatMap((Map<String, Object> t) -> ((List<String>) t.get("hostnames")).stream())
-                .count());
-        
-    }
 
     @Test
     public void pbcShouldRetryOnExceedingQuota() {
@@ -152,19 +83,22 @@ public class KubernetesIsolatedDockerImplTest {
 
             @Override
             public void handle(IsolatedDockerAgentException exception) {
-
             }
         };
         kubernetesIsolatedDocker.handleKubeCtlException(callback, ke);
-        assertTrue("PBC should retry on exceeding kube quota", retry.get());
+        assertTrue(retry.get(), "PBC should retry on exceeding kube quota");
     }
 
     @Test
     public void testSubjectIdForPlan() {
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
-            "TEST-PLAN-JOB1",
-            UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-            0, "bk", 0, true);
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                null,
+                "TEST-PLAN-JOB1",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0,
+                "bk",
+                0,
+                true);
 
         when(subjectIdService.getSubjectId(any(PlanKey.class))).thenReturn("mock-subject-id");
 
@@ -174,13 +108,55 @@ public class KubernetesIsolatedDockerImplTest {
 
     @Test
     public void testSubjectIdForDeployment() {
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
-            "111-222-333",
-            UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-            0, "bk", 0, false);
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                null,
+                "111-222-333",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0,
+                "bk",
+                0,
+                false);
 
         when(subjectIdService.getSubjectId(any(Long.class))).thenReturn("mock-subject-id");
         kubernetesIsolatedDocker.getSubjectId(request);
         verify(subjectIdService).getSubjectId(111L);
     }
+
+    @Test
+    public void testPodFileDeleted() throws IOException {
+        // given
+        final IsolatedDockerAgentRequest request = mock(IsolatedDockerAgentRequest.class);
+        final String subjectId = "subjectId";
+        final IsolatedDockerRequestCallback callback = mock(IsolatedDockerRequestCallback.class);
+        final File file = mock(File.class);
+        final Pod pod = setupMocksForPodFileDeleted(request, subjectId, file);
+
+        try (MockedConstruction<KubernetesClient> mocked = mockConstruction(KubernetesClient.class,
+                // Could be worth moving the generation of KubeClient / createPod to its own
+                // service that can be dependency injected in the same way as the others, and
+                // then we don't have to take this hacky approach
+                (mock, context) -> when(mock.createPod(file)).thenReturn(pod))) {
+            // when
+            kubernetesIsolatedDocker.exec(request, callback, subjectId);
+
+        }
+        // then
+        verify(podSpecList).generate(request, subjectId);
+        verify(podSpecList).cleanUp(file);
+        verify(callback).handle(any(IsolatedDockerAgentResult.class));
+    }
+
+    // helper functions
+
+    private Pod setupMocksForPodFileDeleted(IsolatedDockerAgentRequest request, String subjectId, File file)
+            throws IOException {
+        final Pod pod = mock(Pod.class);
+        final ObjectMeta podMeta = mock(ObjectMeta.class);
+        final String uid = "abc123";
+        when(podSpecList.generate(request, subjectId)).thenReturn(file);
+        when(pod.getMetadata()).thenReturn(podMeta);
+        when(podMeta.getUid()).thenReturn(uid);
+        return pod;
+    }
+
 }

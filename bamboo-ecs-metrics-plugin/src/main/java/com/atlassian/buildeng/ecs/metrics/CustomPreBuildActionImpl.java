@@ -83,7 +83,7 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
                                 String hash = curr.get("hash").getAsString();
                                 String tag  = curr.get("tag").getAsString();
                                 buildLogger.addBuildLogEntry(
-                                        String.format("Docker image '%s' had hash: %s", tag, hash ));
+                                        String.format("Docker image '%s' had hash: %s", tag, hash));
                             }
                         });
                     }

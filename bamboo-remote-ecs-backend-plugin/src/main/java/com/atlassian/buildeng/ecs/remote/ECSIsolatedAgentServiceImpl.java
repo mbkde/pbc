@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
+
 import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
@@ -28,7 +33,6 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -43,8 +47,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -53,11 +55,18 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.utils.URIBuilder;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
-    private final static Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     static String PLUGIN_JOB_KEY = "ecs-remote-watchdog";
     static long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; //Reap once every 60 seconds
     
@@ -68,13 +77,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     static final String AGENT_CONTAINER_NAME = "bamboo-agent";
 
     private final GlobalConfiguration globalConfiguration;
-    private final PluginScheduler pluginScheduler;
+    private final Scheduler scheduler;
     private final PluginAccessor pluginAccessor;
 
     public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, 
-            PluginScheduler pluginScheduler, PluginAccessor pluginAccessor) {
+            Scheduler scheduler, PluginAccessor pluginAccessor) {
         this.globalConfiguration = globalConfiguration;
-        this.pluginScheduler = pluginScheduler;
+        this.scheduler = scheduler;
         this.pluginAccessor = pluginAccessor;
     }
 
@@ -85,7 +94,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         Client client = createClient();
 
         final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler");
-//        resource.addFilter(new HTTPBasicAuthFilter(username, password));
+        // resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
         try {
             IsolatedDockerAgentResult result =
@@ -95,9 +104,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                         .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
             logger.info("result:" + result.isRetryRecoverable() + " " + result.getErrors() + " " + result.getCustomResultData());
             callback.handle(result);
-        }
-        catch (UniformInterfaceException e) {
-            int code = e.getResponse().getClientResponseStatus().getStatusCode();
+        } catch (UniformInterfaceException e) {
+            int code = e.getResponse().getStatusInfo().getStatusCode();
             String s = "";
             if (e.getResponse().hasEntity()) {
                 s = e.getResponse().getEntity(String.class);
@@ -164,9 +172,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 resource
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
-            }
-            catch (UniformInterfaceException e) {
-                int code = e.getResponse().getClientResponseStatus().getStatusCode();
+            } catch (UniformInterfaceException e) {
+                int code = e.getResponse().getStatusInfo().getStatusCode();
                 String s = "";
                 if (e.getResponse().hasEntity()) {
                     s = e.getResponse().getEntity(String.class);
@@ -182,15 +189,37 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
     @Override
     public void onStart() {
-        Map<String, Object> config = new HashMap<>();
+        JobDataMap config = new JobDataMap();
         config.put("globalConfiguration", globalConfiguration);
         config.put("isolatedAgentService", this);
-        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, RemoteWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
+        Trigger jobTrigger = newTrigger()
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
+                        .repeatForever()
+                )
+                .build();
+        JobDetail pluginJob = newJob(RemoteWatchdogJob.class)
+                .withIdentity(PLUGIN_JOB_KEY)
+                .usingJobData(config)
+                .build();
+        try {
+            scheduler.scheduleJob(pluginJob, jobTrigger);
+        } catch (SchedulerException e) {
+            logger.error("Unable to schedule RemoteWatchdogJob", e);
+        }
     }
 
     @Override
     public void onStop() {
-        pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
+        try {
+            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(PLUGIN_JOB_KEY));
+            if (!watchdogJobDeletion) {
+                logger.warn("Was not able to delete ECS Remote Watchdog job. Was it already deleted?");
+            }
+        } catch (SchedulerException e) {
+            logger.error("Remote ECS Backend Plugin is being stopped but is unable to delete RemoteWatchdogJob", e);
+        }
     }
 
     private String createBody(IsolatedDockerAgentRequest request, GlobalConfiguration globalConfiguration) {

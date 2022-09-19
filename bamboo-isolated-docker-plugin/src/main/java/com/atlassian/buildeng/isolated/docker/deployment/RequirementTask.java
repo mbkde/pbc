@@ -27,12 +27,14 @@ import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.agent.ExecutableBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.AgentContext;
 import java.util.Map;
+import javax.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 
 public class RequirementTask implements CommonTaskType {
 
     private final AgentContext agentContext;
 
+    @Inject
     public RequirementTask(AgentContext agentContext) {
         this.agentContext = agentContext;
     }

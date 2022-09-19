@@ -39,19 +39,22 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcher;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityRequirementsMatcherImpl;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
-import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
-import com.atlassian.bamboo.v2.build.agent.capability.RequirementSet;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
+import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirement;
+import com.atlassian.bamboo.v2.build.requirement.ImmutableRequirementSet;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentDedicatedJobEvent;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentNonMatchedRequirementEvent;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.google.common.collect.Iterables;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
+@BambooComponent
 public class UnmetRequirements {
     private final BuildQueueManager buildQueueManager;
     private final CachedPlanManager cachedPlanManager;
@@ -62,7 +65,8 @@ public class UnmetRequirements {
     private final EventPublisher eventPublisher;
     private final AgentAssignmentService agentAssignmentService;
 
-    public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager, 
+    @Inject
+    public UnmetRequirements(BuildQueueManager buildQueueManager, CachedPlanManager cachedPlanManager,
                             AgentManager agentManager, AgentRemovals agentRemovals,
                             AgentAssignmentService agentAssignmentService,
                             ErrorUpdateHandler errorUpdateHandler, EventPublisher eventPublisher) {
@@ -100,7 +104,7 @@ public class UnmetRequirements {
                         ImmutableBuildable.class);
                 if (build != null) {
                     //only builds
-                    RequirementSet req = build.getEffectiveRequirementSet();
+                    ImmutableRequirementSet req = build.getEffectiveRequirementSet();
                     if (!capabilityRequirementsMatcher.matches(capabilitySet, req)) {
                         current.getCustomBuildData().put(Constants.RESULT_ERROR,
                                 "Capabilities of <a href=\"/admin/agent/viewAgent.action?agentId="
@@ -157,10 +161,10 @@ public class UnmetRequirements {
         return false;
     }
 
-    private List<String> findMissingRequirements(CapabilitySet capabilitySet, RequirementSet req) {
+    private List<String> findMissingRequirements(CapabilitySet capabilitySet, ImmutableRequirementSet req) {
         return req.getRequirements().stream()
-                .filter((Requirement t) -> !capabilityRequirementsMatcher.matches(capabilitySet, t))
-                .map((Requirement t) -> t.getKey())
+                .filter((ImmutableRequirement t) -> !capabilityRequirementsMatcher.matches(capabilitySet, t))
+                .map((ImmutableRequirement t) -> t.getKey())
                 .collect(Collectors.toList());
     }
 }

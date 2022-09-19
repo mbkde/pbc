@@ -1,9 +1,11 @@
 package com.atlassian.buildeng.kubernetes.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import io.fabric8.kubernetes.api.model.BaseKubernetesList;
-import io.fabric8.utils.Files;
 import java.io.IOException;
-import org.junit.Test;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 
 public class JsonResponseMapperTest {
 
@@ -11,13 +13,15 @@ public class JsonResponseMapperTest {
 
     @Test
     public void testSuccess() throws IOException {
-        byte[] bytes = Files.readBytes(getClass().getResourceAsStream("/fixture/kubectl/get-pods-1.json"));
+        byte[] bytes = IOUtils.toByteArray(getClass().getResourceAsStream("/fixture/kubectl/get-pods-1.json"));
         Object map = mapper.map(bytes);
         assert map instanceof BaseKubernetesList;
     }
 
-    @Test(expected = DeserializationException.class)
+    @Test
     public void testFailure() {
-        Object map = mapper.map("something-something".getBytes());
+        assertThrows(DeserializationException.class, () -> {
+            Object map = mapper.map("something-something".getBytes());
+        });
     }
 }

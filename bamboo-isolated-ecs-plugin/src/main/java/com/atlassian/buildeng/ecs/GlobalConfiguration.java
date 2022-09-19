@@ -17,7 +17,7 @@
 package com.atlassian.buildeng.ecs;
 
 import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.DeregisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -147,7 +147,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     }
 
     /**
-     * Get custom logging driver to use with job tasks
+     * Get custom logging driver to use with job tasks.
      *
      * @return the custom logging driver or null of none defined.
      */
@@ -222,7 +222,7 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     
     @VisibleForTesting
     AmazonECS createClient() {
-        return new AmazonECSClient();
+        return AmazonECSClientBuilder.defaultClient();
     }    
 
     private Map<Configuration, Integer> convertFromPersisted(Map<String, Integer> persisted) {
@@ -284,7 +284,8 @@ public class GlobalConfiguration implements ECSConfiguration, TaskDefinitionRegi
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(), null, null, 
+        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(),
+                null, null, null, null,
                 AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
         auditLogService.log(ent);
     }

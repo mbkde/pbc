@@ -20,9 +20,12 @@ import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.v2.build.queue.BuildQueueManager;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
 public class AgentLicenseLimits {
 
     private final Logger logger = LoggerFactory.getLogger(PreBuildQueuedEventListener.class);
@@ -31,6 +34,7 @@ public class AgentLicenseLimits {
     private final AgentCreationReschedulerImpl rescheduler;
     private final BuildQueueManager buildQueueManager;
 
+    @Inject
     public AgentLicenseLimits(AgentManager agentManager, AgentCreationReschedulerImpl rescheduler,
             BuildQueueManager buildQueueManager) {
         this.agentManager = agentManager;
@@ -51,7 +55,7 @@ public class AgentLicenseLimits {
         boolean limitReached = !agentManager.allowNewRemoteAgents((int) (1 + queued));
         if (limitReached) {
             //intentionally not creating new event object to avoid increasing the retry count.
-            logger.debug("Remote agent limit reached, delaying agent creation for {}",
+            logger.info("Remote agent limit reached, delaying agent creation for {}",
                     event.getContext().getResultKey());
             rescheduler.reschedule(event);
         }

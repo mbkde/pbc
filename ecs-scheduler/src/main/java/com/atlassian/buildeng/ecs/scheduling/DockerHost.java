@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.Attribute;
 import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
 import com.amazonaws.services.ecs.model.Resource;
 import com.atlassian.buildeng.ecs.exceptions.ECSException;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DockerHost {
-    private final static Logger logger = LoggerFactory.getLogger(DockerHost.class);
+    private static final Logger logger = LoggerFactory.getLogger(DockerHost.class);
 
     private int remainingMemory;
     private int remainingCpu;
@@ -144,21 +143,19 @@ public class DockerHost {
         remainingCpu = remainingCpu - cpu;
     }
     
-    public void reduceAvailableMemoryBy( int memory ) {
+    public void reduceAvailableMemoryBy(int memory) {
         remainingMemory = remainingMemory - memory;
     }
 
     /**
-     * the total amount of cpu available for docker containers on the instance
-     * @return
+     * the total amount of cpu available for docker containers on the instance.
      */
     public int getRegisteredCpu() {
         return registeredCpu;
     }
 
     /**
-     * the amount of memory available for docker containers on the instance
-     * @return
+     * the amount of memory available for docker containers on the instance.
      */
     public int getRegisteredMemory() {
         return registeredMemory;
@@ -186,8 +183,12 @@ public class DockerHost {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DockerHost that = (DockerHost) o;
 
@@ -218,15 +219,15 @@ public class DockerHost {
 
     @Override
     public String toString() {
-        return "DockerHost{" +
-                "remainingMemory=" + remainingMemory +
-                ", remainingCpu=" + remainingCpu +
-                ", registeredMemory=" + registeredMemory +
-                ", registeredCpu=" + registeredCpu +
-                ", containerInstanceArn='" + containerInstanceArn + '\'' +
-                ", instanceId='" + instanceId + '\'' +
-                ", launchTime=" + launchTime +
-                ", agentConnected=" + agentConnected +
-                '}';
+        return "DockerHost{"
+                + "remainingMemory=" + remainingMemory
+                + ", remainingCpu=" + remainingCpu
+                + ", registeredMemory=" + registeredMemory
+                + ", registeredCpu=" + registeredCpu
+                + ", containerInstanceArn='" + containerInstanceArn + '\''
+                + ", instanceId='" + instanceId + '\''
+                + ", launchTime=" + launchTime
+                + ", agentConnected=" + agentConnected
+                + '}';
     }
 }

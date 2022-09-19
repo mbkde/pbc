@@ -25,6 +25,7 @@ public class YamlConfigParser {
         String IMAGE = "image";
         String SIZE = "size";
         String AWS_ROLE = "awsRole";
+        String ARCHITECTURE = "architecture";
         String EXTRA_CONTAINERS = "extra-containers";
         String EXTRA_CONTAINER_NAME = "name";
         String EXTRA_CONTAINER_COMMANDS = "commands";
@@ -58,6 +59,9 @@ public class YamlConfigParser {
                     final String awsRole = pbcMapNode.getOptionalString(YamlTags.AWS_ROLE)
                             .map(StringNode::get)
                             .orElse(null);
+                    final String architecture = pbcMapNode.getOptionalString(YamlTags.ARCHITECTURE)
+                            .map(StringNode::get)
+                            .orElse(null);
                     final Configuration.ContainerSize size;
                     try {
                         size = Configuration.ContainerSize.valueOf(sizeStr.toUpperCase());
@@ -79,6 +83,7 @@ public class YamlConfigParser {
                     return ConfigurationBuilder.create(dockerImage)
                             .withImageSize(size)
                             .withAwsRole(awsRole)
+                            .withArchitecture(architecture)
                             .withExtraContainers(extraContainers)
                             .build();
                 }
@@ -102,6 +107,9 @@ public class YamlConfigParser {
         config.put(YamlTags.SIZE, configuration.getSize().name());
         if (StringUtils.isNotBlank(configuration.getAwsRole())) {
             config.put(YamlTags.AWS_ROLE, configuration.getAwsRole());
+        }
+        if (StringUtils.isNotBlank(configuration.getArchitecture())) {
+            config.put(YamlTags.ARCHITECTURE, configuration.getArchitecture());
         }
         if (configuration.getExtraContainers() != null && !configuration.getExtraContainers().isEmpty()) {
             config.put(YamlTags.EXTRA_CONTAINERS, configuration.getExtraContainers().stream()

@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
+
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
 
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.buildeng.simple.backend.rest.Config;
@@ -27,25 +33,27 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentResult;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-import com.atlassian.sal.api.scheduling.PluginScheduler;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -55,17 +63,17 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     /**
-     * The environment variable to override on the agent per image
+     * The environment variable to override on the agent per image.
      */
     static String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
-     * The environment variable to override on the agent per server
+     * The environment variable to override on the agent per server.
      */
     static String ENV_VAR_SERVER = "BAMBOO_SERVER";
     
     /**
-     * The environment variable to set the result spawning up the agent
+     * The environment variable to set the result spawning up the agent.
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
 
@@ -73,22 +81,22 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     private static final String BUILD_DIR_VOLUME_NAME = "build-dir";
 
     private final AdministrationConfigurationAccessor admConfAccessor;
-    private final PluginScheduler pluginScheduler;
+    private final Scheduler scheduler;
     private final PluginAccessor pluginAccessor;
     private final GlobalConfiguration globalConfiguration;
     private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
     private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
-    
+    private final Logger logger = Logger.getLogger(IsolatedDockerImpl.class.getName());
 
-    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor, 
-            PluginScheduler pluginScheduler, GlobalConfiguration globalConfiguration,
+    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor,
+            Scheduler scheduler, GlobalConfiguration globalConfiguration,
             PluginAccessor pluginAccessor) {
         this.admConfAccessor = admConfAccessor;
-        this.pluginScheduler = pluginScheduler;
+        this.scheduler = scheduler;
         this.globalConfiguration = globalConfiguration;
         this.pluginAccessor = pluginAccessor;
     }
-    
+
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
         Configuration config = request.getConfiguration();
@@ -98,7 +106,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         File f;
         try {
             f = fileForUUID(request.getUniqueIdentifier().toString());
-            Files.write(yaml, f, Charset.forName("UTF-8"));
+            Files.asCharSink(f, StandardCharsets.UTF_8).write(yaml);
             ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),  "up");
             globalConfiguration.decorateCommands(pb);
             pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
@@ -112,7 +120,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
                 callback.handle(new IsolatedDockerAgentResult().withError("Failed to start, docker-compose exited with " + p.exitValue()));
             }
         } catch (IOException ex) {
-            Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             callback.handle(new IsolatedDockerAgentException(ex));
         } catch (InterruptedException ex) {
             Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -130,7 +138,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         root.put("volumes", volumes);
         root.put("services", services);
         root.put("version", "2");
-        
+
         Map<String, Object> buildDirVolume = new HashMap<>();
         buildDirVolume.put("driver", "local");
         volumes.put(BUILD_DIR_VOLUME_NAME, buildDirVolume);
@@ -154,7 +162,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         agent.put("labels", Collections.singletonList("bamboo.uuid=" + uuid.toString()));
         agent.put("volumes", agentVolumes);
         services.put("bamboo-agent", agent);
-        
+
         Config gc = globalConfiguration.getDockerConfig();
         if (gc.isSidekickImage()) {
             Map<String, Object> sidekick = new HashMap<>();
@@ -168,9 +176,9 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
                 agentVolumes.add(path + ":/buildeng");
             }
         }
-        
+
         final List<String> links = new ArrayList<>();
-        
+
         config.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             Map<String, Object> toRet = new HashMap<>();
             toRet.put("image", t.getImage());
@@ -196,7 +204,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         if (!links.isEmpty()) {
             agent.put("links", links);
         }
-        
+
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setIndent(4);
@@ -207,14 +215,36 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
 
     @Override
     public void onStart() {
-        Map<String, Object> config = new HashMap<>();
+        JobDataMap config = new JobDataMap();
         config.put("globalConfiguration", globalConfiguration);
-        pluginScheduler.scheduleJob(PLUGIN_JOB_KEY, DockerWatchdogJob.class, config, new Date(), PLUGIN_JOB_INTERVAL_MILLIS);
+        Trigger jobTrigger = newTrigger()
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
+                        .repeatForever()
+                )
+                .build();
+        JobDetail pluginJob = newJob(DockerWatchdogJob.class)
+                .withIdentity(PLUGIN_JOB_KEY)
+                .usingJobData(config)
+                .build();
+        try {
+            scheduler.scheduleJob(pluginJob, jobTrigger);
+        } catch (SchedulerException e) {
+            Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, e);
+        }
     }
 
     @Override
     public void onStop() {
-        pluginScheduler.unscheduleJob(PLUGIN_JOB_KEY);
+        try {
+            boolean watchdogJobDeletion = scheduler.deleteJob(JobKey.jobKey(PLUGIN_JOB_KEY));
+            if (!watchdogJobDeletion) {
+                logger.log(Level.WARNING,"Was not able to delete Docker Watchdog job. Was it already deleted?");
+            }
+        } catch (SchedulerException e) {
+            Logger.getLogger(IsolatedDockerImpl.class.getName()).log(Level.SEVERE, null, e);
+        }
     }
     
     private boolean isDockerInDockerImage(String image) {

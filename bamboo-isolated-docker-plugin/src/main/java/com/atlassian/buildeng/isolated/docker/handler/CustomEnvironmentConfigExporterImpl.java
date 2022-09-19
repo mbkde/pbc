@@ -38,23 +38,26 @@ import com.atlassian.buildeng.isolated.docker.yaml.YamlConfigParser;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.StringUtils;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentConfigPluginExporter {
 
+    private final Validator validator;
+
     // these things can never ever change value, because they end up as part of export
     static final String ENV_CONFIG_MODULE_KEY =
             "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
+
+    public CustomEnvironmentConfigExporterImpl(Validator validator) {
+        this.validator = validator;
+    }
 
     @NotNull
     @Override
@@ -65,6 +68,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 .image(config.getDockerImage())
                 .size(config.getSize().name())
                 .awsRole(config.getAwsRole())
+                .architecture(config.getArchitecture())
                 .extraContainers(config.getExtraContainers().stream()
                         .map((Configuration.ExtraContainer t) ->
                                 new ExtraContainer()
@@ -94,6 +98,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             toRet.put(Configuration.DOCKER_IMAGE, custom.getImage());
             toRet.put(Configuration.DOCKER_IMAGE_SIZE, custom.getSize());
             toRet.put(Configuration.DOCKER_AWS_ROLE, custom.getAwsRole());
+            toRet.put(Configuration.DOCKER_ARCHITECTURE, custom.getArchitecture());
             toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     BuildProcessorServerImpl.toJsonString(custom.getExtraContainers()));
             return toRet;
@@ -112,12 +117,16 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             String image = any.getConfiguration().get(Configuration.DOCKER_IMAGE);
             String extraCont = any.getConfiguration().get(Configuration.DOCKER_EXTRA_CONTAINERS);
             String awsRole = any.getConfiguration().get(Configuration.DOCKER_AWS_ROLE);
+            String architecture = any.getConfiguration().get(Configuration.DOCKER_ARCHITECTURE);
             if (StringUtils.isBlank(awsRole)) {
                 awsRole = null;
             }
+            if (StringUtils.isBlank(architecture)) {
+                architecture = null;
+            }
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
-                Validator.validate(image, size, awsRole, extraCont, coll, false);
+                validator.validate(image, size, awsRole, architecture, extraCont, coll, false);
                 return coll.getAllErrorMessages().stream()
                         .map(ValidationProblem::new)
                         .collect(Collectors.toList());
@@ -127,8 +136,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
-            Validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
-                    BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
+            validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
+                    pbc.getArchitecture(), BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
             return coll.getAllErrorMessages().stream()
                     .map(ValidationProblem::new)
                     .collect(Collectors.toList());
@@ -136,6 +145,13 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         return Collections.emptyList();
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @Override
     public PerBuildContainerForEnvironment fromYaml(@NotNull Node node) throws PropertiesValidationException {
         YamlConfigParser parser = new YamlConfigParser();
@@ -148,6 +164,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
+                    .architecture(config.getArchitecture())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
@@ -166,6 +183,9 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
         if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
             builder.withAwsRole(specsProperties.getAwsRole());
+        }
+        if (StringUtils.isNotBlank(specsProperties.getArchitecture())) {
+            builder.withArchitecture(specsProperties.getArchitecture());
         }
         if (specsProperties.getExtraContainers() != null) {
             specsProperties.getExtraContainers().forEach(container -> {

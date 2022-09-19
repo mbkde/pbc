@@ -20,6 +20,7 @@ public class Config {
 
     public String sidekickImage;
     public String podTemplate;
+    public String architecturePodConfig;
     public String iamRequestTemplate;
     public String iamSubjectIdPrefix;
     public String containerSizes;
@@ -29,15 +30,20 @@ public class Config {
     public String clusterRegistryAvailableSelector;
     public String clusterRegistryPrimarySelector;
 
+    public boolean showAwsSpecificFields;
+
     public Config() {
     }
 
-    public Config(String sidekickImage, String currentContext, String podTemplate, String iamRequestTemplate,
-                  String iamSubjectIdPrefix, String podLogsUrl, String containerSizes, boolean useClusterRegistry,
-                  String clusterRegistryAvailableSelector, String clusterRegistryPrimarySelector) {
+    public Config(String sidekickImage, String currentContext, String podTemplate, String architecturePodConfig,
+                  String iamRequestTemplate, String iamSubjectIdPrefix, String podLogsUrl, String containerSizes,
+                  boolean useClusterRegistry, String clusterRegistryAvailableSelector,
+                  String clusterRegistryPrimarySelector,
+                  boolean showAwsSpecificFields) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
+        this.architecturePodConfig = architecturePodConfig;
         this.iamRequestTemplate = iamRequestTemplate;
         this.iamSubjectIdPrefix = iamSubjectIdPrefix;
         this.podLogsUrl = podLogsUrl;
@@ -45,6 +51,7 @@ public class Config {
         this.useClusterRegistry = useClusterRegistry;
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
+        this.showAwsSpecificFields = showAwsSpecificFields;
     }
 
     public String getSidekickImage() {
@@ -69,6 +76,14 @@ public class Config {
 
     public void setPodTemplate(String podTemplate) {
         this.podTemplate = podTemplate;
+    }
+
+    public String getArchitecturePodConfig() {
+        return architecturePodConfig;
+    }
+
+    public void setArchitecturePodConfig(String architecturePodConfig) {
+        this.architecturePodConfig = architecturePodConfig;
     }
 
     public void setIamRequestTemplate(String iamRequestTemplate) {
@@ -125,5 +140,13 @@ public class Config {
 
     public void setClusterRegistryPrimarySelector(String clusterRegistryPrimarySelector) {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+    }
+
+    public boolean isShowAwsSpecificFields() {
+        return showAwsSpecificFields;
+    }
+
+    public void setShowAwsSpecificFields(boolean showAwsSpecificFields) {
+        this.showAwsSpecificFields = showAwsSpecificFields;
     }
 }

@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
+import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
+
 import com.atlassian.bamboo.build.Job;
 import com.atlassian.bamboo.buildqueue.manager.AgentManager;
 import com.atlassian.bamboo.chains.StageExecution;
@@ -28,18 +30,14 @@ import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
-
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
-
 import java.util.Optional;
-
+import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.atlassian.buildeng.isolated.docker.lifecycle.ReserveFutureCapacityPreStageAction.stagePBCJobResultKeys;
 
 /**
  * runs on server and removes the agent from db after StopDockerAgentBuildProcessor killed it.
@@ -51,6 +49,7 @@ public class PostJobActionImpl implements PostJobAction {
     private final AgentManager agentManager;
     private final IsolatedAgentService isoService;
 
+    @Inject
     private PostJobActionImpl(AgentRemovals agentRemovals, AgentManager agentManager, IsolatedAgentService isoService) {
         this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;

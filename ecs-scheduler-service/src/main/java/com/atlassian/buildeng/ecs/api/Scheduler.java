@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.api;
 
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -30,8 +31,7 @@ public class Scheduler {
 
     //silly BUT we already (de)serialize Configuration this way
     public static Scheduler fromJson(String v) {
-        JsonParser p = new JsonParser();
-        JsonElement obj = p.parse(v);
+        JsonElement obj = JsonParser.parseString(v);
         if (obj.isJsonObject()) {
             JsonObject oo = obj.getAsJsonObject();
             JsonPrimitive uuid = oo.getAsJsonPrimitive("uuid");
@@ -77,6 +77,7 @@ public class Scheduler {
         }
         throw new IllegalArgumentException("Wrong format!");
     }
+
     private final String uuid;
     private final String resultId;
     private final String bambooServer;

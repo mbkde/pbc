@@ -19,7 +19,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 import com.amazonaws.Request;
 import com.amazonaws.protocol.json.JsonClientMetadata;
 import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.HostVolumeProperties;
 import com.amazonaws.services.ecs.model.KeyValuePair;
@@ -59,7 +59,9 @@ public class TaskDefinitionRegistrations {
     //TODO this should be refactored to no expose the internal structure at all.
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
+
         Map<String, Integer> getAllECSTaskRegistrations();
+
         void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings);
     }
 
@@ -176,13 +178,15 @@ public class TaskDefinitionRegistrations {
             return null;
         }
     }
-  /**
-     * Synchronously register a docker image to be used with isolated docker builds
+
+    /**
+     * Synchronously register a docker image to be used with isolated docker builds.
      *
      * @param configuration The configuration to register
      * @return The internal identifier for the registered image.
      */
     private static final Object registerLock = new Object();
+
     public int registerDockerImage(Configuration configuration, BambooServerEnvironment env) throws ECSException {
         synchronized (registerLock) {
             Map<String, Integer> registrationMappings = backend.getAllECSTaskRegistrations();
@@ -209,8 +213,9 @@ public class TaskDefinitionRegistrations {
             throw new ECSException(e);
         }
     }
- /**
-     * find task definition registration for given configuration
+
+    /**
+     * find task definition registration for given configuration.
      * @param configuration conf to use
      * @return either the revision or -1 when not found
      */
@@ -223,7 +228,7 @@ public class TaskDefinitionRegistrations {
 
     @VisibleForTesting
     AmazonECS createClient() {
-        return new AmazonECSClient();
+        return AmazonECSClientBuilder.defaultClient();
     }
 
     private static Collection<String> generateExtraContainerLinks(Configuration.ExtraContainer t) {

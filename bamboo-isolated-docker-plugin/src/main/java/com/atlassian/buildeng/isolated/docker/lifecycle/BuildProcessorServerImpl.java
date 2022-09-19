@@ -44,7 +44,7 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
+import javax.inject.Inject;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -75,25 +75,14 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     private BuildContext buildContext;
     private AgentRemovals agentRemovals;
     private BuildExecutionManager buildExecutionManager;
+    private Validator validator;
 
     //setters here for components, otherwise the parent fields don't get injected.
-    public BuildProcessorServerImpl() {
-    }
-
-    public AgentRemovals getAgentRemovals() {
-        return agentRemovals;
-    }
-
-    public void setAgentRemovals(AgentRemovals agentRemovals) {
+    @Inject
+    public BuildProcessorServerImpl(AgentRemovals agentRemovals, BuildExecutionManager buildExecutionManager, Validator validator) {
         this.agentRemovals = agentRemovals;
-    }
-
-    public BuildExecutionManager getBuildExecutionManager() {
-        return buildExecutionManager;
-    }
-
-    public void setBuildExecutionManager(BuildExecutionManager buildExecutionManager) {
         this.buildExecutionManager = buildExecutionManager;
+        this.validator = validator;
     }
 
     @Override
@@ -120,9 +109,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 agentRemovals.stopAgentRemotely(agentId);
                 agentRemovals.removeAgent(agentId);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.",
-                        buildContext.getBuildResultKey(), agentId);
+                        buildContext.getPlanResultKey().getKey(), agentId);
             } else {
-                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getBuildResultKey());
+                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getPlanResultKey().getKey());
             }
 
         }
@@ -136,9 +125,17 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Configuration.DOCKER_IMAGE,
                 Configuration.DOCKER_IMAGE_SIZE,
                 Configuration.DOCKER_AWS_ROLE,
-                Configuration.DOCKER_EXTRA_CONTAINERS));
+                Configuration.DOCKER_EXTRA_CONTAINERS,
+                Configuration.DOCKER_ARCHITECTURE));
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @NotNull
     @Override
     public PerBuildContainerForJob toSpecsEntity(HierarchicalConfiguration buildConfiguration) {
@@ -161,11 +158,16 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         if (role != null) {
             cc.put(Configuration.DOCKER_AWS_ROLE, role);
         }
+        String architecture = buildConfiguration.getString(Configuration.DOCKER_ARCHITECTURE);
+        if (architecture != null) {
+            cc.put(Configuration.DOCKER_ARCHITECTURE, architecture);
+        }
         Configuration c = AccessConfiguration.forMap(cc);
         return new PerBuildContainerForJob().enabled(c.isEnabled())
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
                 .awsRole(c.getAwsRole())
+                .architecture(c.getArchitecture())
                 .extraContainers(c.getExtraContainers().stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
@@ -194,8 +196,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             // and the infra is not calling it either. Doing it here for the lack of a better place.
             specsProperties.validate();
             ErrorCollection errorCollection = new SimpleErrorCollection();
-            Validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
-                    toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
+            validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
+                    specsProperties.getArchitecture(), toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
             if (errorCollection.hasAnyErrors()) {
                 throw new PropertiesValidationException(
                         errorCollection.getAllErrorMessages().stream()
@@ -207,10 +209,18 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
         buildConfiguration.setProperty(Configuration.DOCKER_AWS_ROLE, specsProperties.getAwsRole());
+        buildConfiguration.setProperty(Configuration.DOCKER_ARCHITECTURE, specsProperties.getArchitecture());
         buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 toJsonString(specsProperties.getExtraContainers()));
     }
 
+    /**
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
+     * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
+     * annotation on the string builder method. However, the usage of this method is mandatory here,
+     * in order to support architectures which may not be specified in the Architecture enum.
+     */
     @Nullable
     @Override
     public PerBuildContainerForJob fromYaml(@NotNull Node node) {
@@ -224,6 +234,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
+                    .architecture(config.getArchitecture())
                     .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
@@ -259,6 +270,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
         if (StringUtils.isNotBlank(specsProperties.getAwsRole())) {
             builder.withAwsRole(specsProperties.getAwsRole());
+        }
+        if (StringUtils.isNotBlank(specsProperties.getArchitecture())) {
+            builder.withArchitecture(specsProperties.getArchitecture());
         }
         if (specsProperties.getExtraContainers() != null) {
             specsProperties.getExtraContainers().forEach(container -> {

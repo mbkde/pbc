@@ -19,21 +19,30 @@ package com.atlassian.buildeng.isolated.docker;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 
+@BambooComponent
 public class Validator {
+    private final GlobalConfiguration globalConfiguration;
+
+    @Inject
+    public Validator(GlobalConfiguration globalConfiguration) {
+        this.globalConfiguration = globalConfiguration;
+    }
 
     /**
      * Validate configuration.
      * Errors are collected in ErrorCollection parameter passed in.
      */
-    public static void validate(String image, String size, String role, String extraCont,
+    public void validate(String image, String size, String role, String architecture, String extraCont,
             ErrorCollection errorCollection, boolean task) {
         if (role != null) {
             if (!StringUtils.deleteWhitespace(role).equals(role)) {
@@ -43,6 +52,13 @@ public class Validator {
                 errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                     "AWS IAM Role doesn't match ARN pattern.");
             }
+        }
+
+        if (StringUtils.isNotBlank(architecture) && !(globalConfiguration.getArchitectureConfig().containsKey(architecture))) {
+            errorCollection.addError(task ? Configuration.TASK_DOCKER_ARCHITECTURE :
+                            Configuration.DOCKER_ARCHITECTURE,
+                    "Specified architecture is not supported on this server. Supported architectures: "
+                            + globalConfiguration.getArchitectureConfig().keySet());
         }
 
         validateExtraContainers(extraCont, errorCollection);
@@ -75,7 +91,7 @@ public class Validator {
     private static void validateExtraContainers(String value, ErrorCollection errorCollection) {
         if (!StringUtils.isBlank(value)) {
             try {
-                JsonElement obj = new JsonParser().parse(value);
+                JsonElement obj = JsonParser.parseString(value);
                 if (!obj.isJsonArray()) {
                     errorCollection.addErrorMessage("Extra containers json needs to be an array.");
                 } else {

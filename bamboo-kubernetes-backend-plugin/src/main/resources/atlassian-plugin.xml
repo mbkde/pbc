@@ -29,6 +29,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <web-item key="sub_id_result" name="Subject ID Generator for PBC in Plan Result" section="chainResult.actions/chainResultActions" weight="70">
@@ -36,6 +37,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <web-item key="sub_id_job" name="Subject ID Generator for PBC in Job" section="job.actions/jobActions" weight="70">
@@ -43,6 +45,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_job_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <web-item key="sub_id_job_result" name="Subject ID Generator for PBC in Job Result" section="jobResult.actions/jobResultActions" weight="70">
@@ -50,6 +53,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_job_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl" public="true">
@@ -60,17 +64,21 @@ limitations under the License.
     <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.GlobalConfiguration" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor</interface>
     </component>
-    
+
     <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
 
     <component key="subjectIdService" class="com.atlassian.buildeng.kubernetes.SubjectIdServiceImpl"/>
 
-    <component-import key="pluginScheduler">
-        <description>SAL Scheduler</description>
-        <interface>com.atlassian.sal.api.scheduling.PluginScheduler</interface>
+    <component-import key="scheduler">
+        <description>Quartz Scheduler</description>
+        <interface>org.quartz.Scheduler</interface>
     </component-import>
-    
+
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+    <component-import key="deploymentProjectService" interface="com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService" />
+
+    <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
+    <component key="podSpecList" class="com.atlassian.buildeng.kubernetes.KubernetesPodSpecList"/>
 
     <!-- REST resources -->
     <rest key="pbc-kubernetes" path="/pbc-kubernetes" version="1.0">
@@ -91,6 +99,7 @@ limitations under the License.
 
         <resource type="download" name="insertViewSubjectId.js" location="/insertViewSubjectId.js"/>
         <context>bamboo.deployment</context>
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-resource>
 
     <web-item key="kubernetes-config" name="Configure Kubernetes Backend" section="system.admin/plugins" weight="296">
@@ -106,10 +115,10 @@ limitations under the License.
             </action>
         </package>
     </xwork>
-    
+
     <bambooEventListener key="onCancelledBuild" name="Listens on Build Cancelled events"
                          class="com.atlassian.buildeng.kubernetes.OnCancelledBuild">
         <description>Listens to events of Bamboo.</description>
-    </bambooEventListener>    
+    </bambooEventListener>
 
 </atlassian-plugin>

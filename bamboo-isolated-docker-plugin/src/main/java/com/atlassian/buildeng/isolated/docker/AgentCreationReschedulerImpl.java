@@ -31,39 +31,49 @@ import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.RetryAgentStartupEvent;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.fugue.Iterables;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
+
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@BambooComponent
+@ExportAsService({AgentCreationReschedulerImpl.class, LifecycleAware.class, AgentCreationRescheduler.class})
 public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreationRescheduler  {
     private final Logger logger = LoggerFactory.getLogger(AgentCreationReschedulerImpl.class);
     private final EventPublisher eventPublisher;
     private final BuildQueueManager buildQueueManager;
     private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, 
             "Docker Agent Retry Pool");
-    private static final int MAX_RETRY_COUNT = 90;
-    private static final long RETRY_DELAY = Constants.RETRY_DELAY.getSeconds(); //20 seconds times 90 = 30 minutes
+    private static final int MAX_RETRY_COUNT = 10;
+    private static final Duration INITIAL_RETRY_DELAY = Duration.ofSeconds(20);
+    private static final Duration MAX_RETRY_DELAY = Duration.ofSeconds(300);
     private static final String KEY = "custom.isolated.docker.waiting";
 
-    private AgentCreationReschedulerImpl(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
+    @Inject
+    public AgentCreationReschedulerImpl(EventPublisher eventPublisher, BuildQueueManager buildQueueManager) {
         this.eventPublisher = eventPublisher;
         this.buildQueueManager = buildQueueManager;
     }
     
     public boolean reschedule(RetryAgentStartupEvent event) {
-        if (event.getRetryCount() > MAX_RETRY_COUNT) {
+        int retryCount = event.getRetryCount();
+        if (retryCount > MAX_RETRY_COUNT) {
             return false;
         }
-        logger.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
+        logger.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), retryCount);
         event.getContext().getCurrentResult().getCustomBuildData().put(KEY, "true");
         executor.schedule(() -> {
-            logger.info("Publishing {} for the {} time", event.getContext().getResultKey(), event.getRetryCount());
+            logger.info("Publishing {} for the {} time", event.getContext().getResultKey(), retryCount);
             eventPublisher.publish(event);
             event.getContext().getCurrentResult().getCustomBuildData().remove(KEY);
-        }, RETRY_DELAY, TimeUnit.SECONDS);
+        }, getDelay(retryCount), TimeUnit.SECONDS);
         return true;
     }
 
@@ -114,6 +124,19 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
             executor.shutdownNow();
         }
     }
-    
+
+    /**
+     * @param numRetries Number of retries
+     * @return The delay in seconds
+     */
+    private long getDelay(int numRetries) {
+        if (numRetries == 0 || numRetries == 1) {
+            return INITIAL_RETRY_DELAY.getSeconds();
+        } else if (numRetries <= 5) {
+            return INITIAL_RETRY_DELAY.getSeconds() * 2 * (numRetries - 1);
+        } else {
+            return MAX_RETRY_DELAY.getSeconds();
+        }
+    }
 
 }

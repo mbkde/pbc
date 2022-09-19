@@ -23,6 +23,8 @@ public class Config {
     public Boolean enabled;
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
+    public String architectureConfig;
+    public boolean awsVendor;
 
     public Config() {
     }
@@ -43,10 +45,28 @@ public class Config {
         this.defaultImage = defaultImage;
     }
 
-    public Integer getMaxAgentCreationPerMinute() { return maxAgentCreationPerMinute; }
+    public Integer getMaxAgentCreationPerMinute() {
+        return maxAgentCreationPerMinute;
+    }
 
     public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
         this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
+    }
+
+    public String getArchitectureConfig() {
+        return architectureConfig;
+    }
+
+    public void setArchitectureConfig(String architectureConfig) {
+        this.architectureConfig = architectureConfig;
+    }
+
+    public boolean isAwsVendor() {
+        return awsVendor;
+    }
+
+    public void setAwsVendor(boolean awsVendor) {
+        this.awsVendor = awsVendor;
     }
 }
 

@@ -16,16 +16,18 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.HashMap;
 
+@BambooComponent
 public class AgentsThrottled {
 
-    // build key maps to number of times that event has been throttled
-    private final HashMap<String, Integer> agentsThrottled;
-    private static final double RETRY_DELAY_SECONDS = Constants.RETRY_DELAY.getSeconds();
-    private static final double RETRIES_EACH_MINUTE = 60 / RETRY_DELAY_SECONDS;
+    private final DateTime dateTime;
+    // build key maps to start time that agent was throttled
+    private final HashMap<String, Long> agentsThrottled;
 
-    public AgentsThrottled() {
+    public AgentsThrottled(DateTime dateTime) {
+        this.dateTime = dateTime;
         agentsThrottled = new HashMap<>();
     }
 
@@ -34,8 +36,9 @@ public class AgentsThrottled {
      * @param key Build key of the event being throttled
      */
     public void add(String key) {
-        int val = agentsThrottled.getOrDefault(key, 0);
-        agentsThrottled.put(key, val + 1);
+        if (!agentsThrottled.containsKey(key)) {
+            agentsThrottled.put(key, dateTime.getCurrentTime());
+        }
     }
 
     /**
@@ -63,7 +66,11 @@ public class AgentsThrottled {
         return agentsThrottled
                 .values()
                 .stream()
-                .filter(numTimesThrottled -> numTimesThrottled >= RETRIES_EACH_MINUTE * minutes)
+                .filter(startTimeThrottled -> throttledOverXMinutesAgo(startTimeThrottled, minutes))
                 .count();
+    }
+
+    private boolean throttledOverXMinutesAgo(long timeThrottled, int minutesAgo) {
+        return dateTime.getCurrentTime() > (timeThrottled + ((long) minutesAgo * 60 * 1000));
     }
 }

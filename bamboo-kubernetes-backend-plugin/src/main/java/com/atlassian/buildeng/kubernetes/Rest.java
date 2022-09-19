@@ -20,15 +20,15 @@ import com.atlassian.bamboo.deployments.projects.DeploymentProject;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.plan.PlanManager;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.security.acegi.acls.BambooPermission;
+import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.kubernetes.rest.Config;
-import com.atlassian.sal.api.websudo.WebSudoRequired;
 import com.google.common.base.Throwables;
 import java.io.IOException;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -37,9 +37,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.springframework.beans.factory.annotation.Autowired;
 
-@WebSudoRequired
 @Path("/")
 public class Rest {
 
@@ -48,19 +46,22 @@ public class Rest {
     private final DeploymentProjectService deploymentProjectService;
     private BambooPermissionManager bambooPermissionManager;
     private final CachedPlanManager cachedPlanManager;
+    private final BandanaManager bandanaManager;
 
 
-    @Autowired
+    @Inject
     public Rest(GlobalConfiguration configuration,
                 SubjectIdService subjectIdService,
                 DeploymentProjectService deploymentProjectService,
                 BambooPermissionManager bambooPermissionManager,
-                PlanManager planManager, CachedPlanManager cachedPlanManager) {
+                CachedPlanManager cachedPlanManager,
+                BandanaManager bandanaManager) {
         this.configuration = configuration;
         this.subjectIdService = subjectIdService;
         this.deploymentProjectService = deploymentProjectService;
         this.bambooPermissionManager = bambooPermissionManager;
         this.cachedPlanManager = cachedPlanManager;
+        this.bandanaManager = bandanaManager;
     }
 
     /**
@@ -74,6 +75,7 @@ public class Rest {
         c.setSidekickImage(configuration.getCurrentSidekick());
         c.setCurrentContext(configuration.getCurrentContext());
         c.setPodTemplate(configuration.getPodTemplateAsString());
+        c.setArchitecturePodConfig(configuration.getBandanaArchitecturePodConfig());
         c.setIamRequestTemplate(configuration.getBandanaIamRequestTemplateAsString());
         c.setIamSubjectIdPrefix(configuration.getIamSubjectIdPrefix());
         c.setContainerSizes(configuration.getContainerSizesAsString());
@@ -81,6 +83,7 @@ public class Rest {
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
         c.setClusterRegistryAvailableSelector(configuration.getClusterRegistryAvailableClusterSelector());
         c.setClusterRegistryPrimarySelector(configuration.getClusterRegistryPrimaryClusterSelector());
+        c.setShowAwsSpecificFields(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS.equals(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getVendorWithBandana(bandanaManager)));
         return Response.ok(c).build();
     }
 
