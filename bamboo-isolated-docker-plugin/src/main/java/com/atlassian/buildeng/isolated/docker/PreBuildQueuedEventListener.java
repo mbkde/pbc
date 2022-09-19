@@ -74,6 +74,7 @@ public class PreBuildQueuedEventListener {
     private final ContainerSizeDescriptor sizeDescriptor;
     private final AgentCreationLimits agentCreationLimits;
     private final AgentsThrottled agentsThrottled;
+    private final GlobalConfiguration globalConfiguration;
 
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
@@ -196,7 +197,7 @@ public class PreBuildQueuedEventListener {
             return;
         }
 
-        final IsolatedDockerRequestCallback requestCallback =                         new IsolatedDockerRequestCallback() {
+        final IsolatedDockerRequestCallback requestCallback = new IsolatedDockerRequestCallback() {
             @Override
             public void handle(IsolatedDockerAgentResult result) {
                 if (result.isRetryRecoverable()) {

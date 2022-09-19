@@ -24,7 +24,6 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
             labelKey='isolated.docker.awsRole' name='custom.isolated.docker.awsRole' descriptionKey="isolated.docker.awsRole.description" /]
     [/#if]
 
-
     [/@ui.bambooSection]
 
     [#include "extraContainersDialog.ftl"]
@@ -35,5 +34,5 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
 [/#if]
 
 <script>
-[#include "jobConfiguration.js"]
+    [#include "jobConfiguration.js"]
 </script>

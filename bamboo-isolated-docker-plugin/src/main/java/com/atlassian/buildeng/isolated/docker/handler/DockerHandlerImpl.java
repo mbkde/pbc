@@ -95,8 +95,6 @@ public class DockerHandlerImpl implements DockerHandler {
         this.providerEnabled = providerEnabled;
     }
 
-    
-
     @Override
     public String getEditHtml() {
         return render("edit");
