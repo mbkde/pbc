@@ -33,8 +33,9 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class GlobalConfiguration {
 
-    static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
-    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
+    static final String BANDANA_ENABLED_PROPERTY = "com.atlassian.buildeng.pbc.enabled";
+    static final String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
+    static final String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
@@ -58,12 +59,19 @@ public class GlobalConfiguration {
         return maxAgents != null ? maxAgents : 100;
     }
 
+    public Boolean getEnabledProperty() {
+        Boolean enabled = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_ENABLED_PROPERTY);
+        return enabled != null ?  enabled : false;
+    }
+
     /**
      * Saves changes to the configuration.
      */
     public void persist(Config config) {
-        String defaultImage = config.getDefaultImage();
-        Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
+        final String defaultImage = config.getDefaultImage();
+        final Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
+        final Boolean enabled = config.isEnabled();
 
         if (!StringUtils.equals(defaultImage, getDefaultImage())) {
             auditLogEntry("PBC Default Image", getDefaultImage(), defaultImage);
@@ -74,6 +82,11 @@ public class GlobalConfiguration {
                     Integer.toString(getMaxAgentCreationPerMinute()), Integer.toString(maxAgentCreationPerMinute));
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
+        }
+        if (!enabled.equals(getEnabledProperty())) {
+            auditLogEntry("PBC Global Enable Flag", Boolean.toString(getEnabledProperty()),
+                    Boolean.toString(enabled));
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENABLED_PROPERTY, enabled);
         }
     }
 

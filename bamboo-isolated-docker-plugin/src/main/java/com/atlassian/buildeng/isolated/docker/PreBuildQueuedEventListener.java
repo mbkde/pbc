@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.events.DeploymentQueuedEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
@@ -72,6 +73,7 @@ public class PreBuildQueuedEventListener {
     private final ContainerSizeDescriptor sizeDescriptor;
     private final AgentCreationLimits agentCreationLimits;
     private final AgentsThrottled agentsThrottled;
+    private final GlobalConfiguration globalConfiguration;
 
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
@@ -88,7 +90,8 @@ public class PreBuildQueuedEventListener {
                                         DockerSoxService dockerSoxService,
                                         ContainerSizeDescriptor sizeDescriptor,
                                         AgentCreationLimits agentCreationLimits,
-                                        AgentsThrottled agentsThrottled) {
+                                        AgentsThrottled agentsThrottled,
+                                        GlobalConfiguration globalConfiguration) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -103,6 +106,7 @@ public class PreBuildQueuedEventListener {
         this.sizeDescriptor = sizeDescriptor;
         this.agentCreationLimits = agentCreationLimits;
         this.agentsThrottled = agentsThrottled;
+        this.globalConfiguration = globalConfiguration;
     }
 
     @EventListener
@@ -111,9 +115,16 @@ public class PreBuildQueuedEventListener {
         Configuration config = AccessConfiguration.forContext(buildContext);
         if (config.isEnabled()) {
             if (!dockerSoxService.checkSoxCompliance(config)) {
-                String message = "PBC Docker image(s) used by "
-                        + event.getContext().getResultKey() +  " not SOX compliant";
+                final String message = generateNotSOXCompliant(event.getContext().getResultKey());
                 errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
+                logger.debug(message);
+                terminateBuild(message, buildContext);
+                return;
+            }
+            if (!globalConfiguration.getEnabledProperty()) {
+                final String message = generateFeatureDisabledMessage(event.getContext().getResultKey());
+                errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
+                logger.debug(message);
                 terminateBuild(message, buildContext);
                 return;
             }
@@ -138,7 +149,7 @@ public class PreBuildQueuedEventListener {
         //when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             logger.info("Retrying but {} was already cancelled, aborting. (state:{})",
-                    event.getContext().getResultKey().getKey(), 
+                    event.getContext().getResultKey().getKey(),
                     event.getContext().getCurrentResult().getLifeCycleState());
             //TODO cancel future reservations if any
             jmx.incrementCancelled();
@@ -149,7 +160,7 @@ public class PreBuildQueuedEventListener {
             //done between clear and set to avoid counting the current one.
             if (agentLicenseLimits.licenseLimitReached(event)) {
                 logger.info("Limit of existing online agents and those already "
-                        + "started by PBC was reached. Rescheduling {}",
+                                + "started by PBC was reached. Rescheduling {}",
                         event.getContext().getResultKey());
                 return;
             }
@@ -182,55 +193,65 @@ public class PreBuildQueuedEventListener {
             return;
         }
 
+        final IsolatedDockerRequestCallback requestCallback = new IsolatedDockerRequestCallback() {
+            @Override
+            public void handle(IsolatedDockerAgentResult result) {
+                if (result.isRetryRecoverable()) {
+                    logger.warn("Build {} was not queued but recoverable, retrying.. Error message: {}",
+                            event.getContext().getResultKey().getKey(),
+                            Joiner.on("\n").join(result.getErrors()));
+                    if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
+                        return;
+                    }
+                    jmx.incrementTimedOut();
+                    eventPublisher.publish(new DockerAgentTimeoutEvent(event.getRetryCount(),
+                            event.getContext().getEntityKey()));
+                }
+                //custom items pushed by the implementation, we give it a unique prefix
+                result.getCustomResultData().entrySet().stream().forEach(ent -> {
+                    event.getContext().getCurrentResult().getCustomBuildData()
+                            .put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
+                });
+                if (result.hasErrors()) {
+                    String error = Joiner.on("\n").join(result.getErrors());
+                    terminateBuild(error, event.getContext());
+                    synchronized (this) {
+                        agentCreationLimits.removeEventFromQueue(event);
+                    }
+                    errorUpdateHandler.recordError(event.getContext().getEntityKey(),
+                            "Build was not queued due to error:" + error);
+                } else {
+                    jmx.incrementScheduled();
+                    logger.info("Scheduled {} with custom data: {}", event.getContext().getResultKey(),
+                            result.getCustomResultData());
+                }
+            }
+
+            @Override
+            public void handle(IsolatedDockerAgentException exception) {
+                terminateBuild(exception.getLocalizedMessage(), event.getContext());
+                synchronized (this) {
+                    agentCreationLimits.removeEventFromQueue(event);
+                }
+                errorUpdateHandler.recordError(event.getContext().getEntityKey(),
+                        "Build was not queued due to error", exception);
+            }
+        };
+
+        if (!globalConfiguration.getEnabledProperty()) {
+            final String message = generateFeatureDisabledMessage(event.getContext().getResultKey());
+            logger.debug(message);
+            requestCallback.handle(new IsolatedDockerAgentException(message));
+            return;
+        }
+
         isolatedAgentService.startAgent(
                 new IsolatedDockerAgentRequest(event.getConfiguration(), event.getContext().getResultKey().getKey(),
-                        event.getUniqueIdentifier(), 
+                        event.getUniqueIdentifier(),
                         getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
                         event.getRetryCount(), isPlan),
-                        new IsolatedDockerRequestCallback() {
-                    @Override
-                    public void handle(IsolatedDockerAgentResult result) {
-                        if (result.isRetryRecoverable()) {
-                            logger.warn("Build {} was not queued but recoverable, retrying.. Error message: {}", 
-                                    event.getContext().getResultKey().getKey(), 
-                                    Joiner.on("\n").join(result.getErrors()));
-                            if (rescheduler.reschedule(new RetryAgentStartupEvent(event))) {
-                                return;
-                            }
-                            jmx.incrementTimedOut();
-                            eventPublisher.publish(new DockerAgentTimeoutEvent(event.getRetryCount(), 
-                                    event.getContext().getEntityKey()));
-                        }
-                        //custom items pushed by the implementation, we give it a unique prefix
-                        result.getCustomResultData().entrySet().stream().forEach(ent -> {
-                            event.getContext().getCurrentResult().getCustomBuildData()
-                                    .put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
-                        });
-                        if (result.hasErrors()) {
-                            String error = Joiner.on("\n").join(result.getErrors()); 
-                            terminateBuild(error, event.getContext());
-                            synchronized (this) {
-                                agentCreationLimits.removeEventFromQueue(event);
-                            }
-                            errorUpdateHandler.recordError(event.getContext().getEntityKey(),
-                                    "Build was not queued due to error:" + error);
-                        } else {
-                            jmx.incrementScheduled();
-                            logger.info("Scheduled {} with custom data: {}", event.getContext().getResultKey(),
-                                    result.getCustomResultData());
-                        }
-                    }
-
-                    @Override
-                    public void handle(IsolatedDockerAgentException exception) {
-                        terminateBuild(exception.getLocalizedMessage(), event.getContext());
-                        synchronized (this) {
-                            agentCreationLimits.removeEventFromQueue(event);
-                        }
-                        errorUpdateHandler.recordError(event.getContext().getEntityKey(), 
-                                "Build was not queued due to error", exception);
-                    }
-                });
+                requestCallback
+        );
 
     }
 
@@ -242,7 +263,7 @@ public class PreBuildQueuedEventListener {
             context.getCurrentResult().setLifeCycleState(LifeCycleState.NOT_BUILT);
             buildQueueManager.removeBuildFromQueue(context.getResultKey());
         } else if (context instanceof DeploymentContext) {
-            DeploymentContext dc = (DeploymentContext)context;
+            DeploymentContext dc = (DeploymentContext) context;
             ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
                 //without runWithSystemAuthority() this call terminates execution with a log entry only
                 DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(
@@ -269,10 +290,8 @@ public class PreBuildQueuedEventListener {
         LifeCycleState state = context.getCurrentResult().getLifeCycleState();
         return LifeCycleState.isPending(state) || LifeCycleState.isQueued(state);
     }
-    
 
-    
-    
+
     //2 events related to deployment environments
     @EventListener
     public void deploymentTriggered(DeploymentQueuedEvent event) {
@@ -282,9 +301,16 @@ public class PreBuildQueuedEventListener {
         Configuration config = AccessConfiguration.forContext(context);
         if (config.isEnabled()) {
             if (!dockerSoxService.checkSoxCompliance(config)) {
-                String message = "PBC Docker image(s) used by " 
-                        + event.getContext().getResultKey() +  " not SOX compliant";
+                final String message = generateNotSOXCompliant(event.getContext().getResultKey());
                 errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
+                logger.debug(message);
+                terminateBuild(message, context);
+                return;
+            }
+            if (!globalConfiguration.getEnabledProperty()) {
+                final String message = generateFeatureDisabledMessage(event.getContext().getResultKey());
+                errorUpdateHandler.recordError(event.getContext().getResultKey(), message, null);
+                logger.debug(message);
                 terminateBuild(message, context);
                 return;
             }
@@ -300,7 +326,7 @@ public class PreBuildQueuedEventListener {
             context.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
         }
     }
-    
+
     @EventListener
     public void deploymentFinished(DeploymentFinishedEvent event) {
         logger.debug("deployment finished event:" + event.getDeploymentResultId());
@@ -326,7 +352,7 @@ public class PreBuildQueuedEventListener {
         }
         return -1;
     }
-    
+
     private void setQueueTimestamp(CommonContext context) {
         context.getCurrentResult().getCustomBuildData().put(QUEUE_TIMESTAMP, "" + System.currentTimeMillis());
     }
@@ -339,7 +365,15 @@ public class PreBuildQueuedEventListener {
     // BuildKey is unique for each run/rerun and as such we can compare the value in customData and the context itself
     // and if both are equal be sure that we are in correct state.
     private void setBuildkeyCustomData(CommonContext context) {
-        context.getCurrentResult().getCustomBuildData().put(DockerAgentBuildQueue.BUILD_KEY, 
+        context.getCurrentResult().getCustomBuildData().put(DockerAgentBuildQueue.BUILD_KEY,
                 context.getBuildKey().getKey());
+    }
+
+    private String generateFeatureDisabledMessage(final ResultKey key) {
+        return key + " could not be started in the per-build container as the PBC feature is turned off globally";
+    }
+
+    private String generateNotSOXCompliant(final ResultKey key) {
+        return "PBC Docker image(s) used by " + key + " not SOX compliant";
     }
 }

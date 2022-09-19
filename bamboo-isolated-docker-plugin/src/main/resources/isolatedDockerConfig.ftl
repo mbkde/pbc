@@ -20,6 +20,11 @@ Global Configuration for generic PBC settings
     <fieldset>
 
         <div class="field-group">
+            <label for="enableSwitch">Enable</label>
+            <aui-toggle id="enableSwitch" label="enableSwitch"></aui-toggle>
+        </div>
+
+        <div class="field-group">
             <label for="defaultImage">Default image:</label>
             <input type="text" class="text long-field" id="defaultImage"
                    placeholder=""/>

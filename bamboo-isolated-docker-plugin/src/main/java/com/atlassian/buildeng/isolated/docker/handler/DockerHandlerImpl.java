@@ -64,6 +64,7 @@ public class DockerHandlerImpl implements DockerHandler {
     private final Configuration configuration;
     private final WebResourceManager webResourceManager;
     private final EnvironmentRequirementService environmentRequirementService;
+    private final Boolean providerEnabled;
 
     /**
      * Creates new stateful instance.
@@ -73,7 +74,7 @@ public class DockerHandlerImpl implements DockerHandler {
             TemplateRenderer templateRenderer, 
             EnvironmentCustomConfigService environmentCustomConfigService,
             EnvironmentRequirementService environmentRequirementService,
-            boolean create, Configuration configuration) {
+            boolean create, Configuration configuration, Boolean providerEnabled) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
@@ -81,6 +82,7 @@ public class DockerHandlerImpl implements DockerHandler {
         this.create = create;
         this.configuration = configuration;
         this.webResourceManager = webResourceManager;
+        this.providerEnabled = providerEnabled;
     }
 
     
@@ -235,6 +237,7 @@ public class DockerHandlerImpl implements DockerHandler {
             cc.put("imageSize", configuration.getSize().name());
             cc.put("awsRole", configuration.getAwsRole());
             cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
+            cc.put("templateAccessible", providerEnabled);
             context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
 
             String templatePath = resourceLocation.getLocation();

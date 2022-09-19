@@ -29,12 +29,14 @@
 
     function processConfig(response) {
         updateStatus("");
+        AJS.$("#enableSwitch").prop("checked", response.enabled);
         AJS.$("#defaultImage").val(response.defaultImage);
         AJS.$("#maxAgentCreationPerMinute").val(response.maxAgentCreationPerMinute);
     }
 
     function setRemoteConfig() {
         var config = {};
+        config.enabled = AJS.$("#enableSwitch").prop("checked");
         config.defaultImage = AJS.$("#defaultImage").val().trim();
         config.maxAgentCreationPerMinute = AJS.$("#maxAgentCreationPerMinute").val().trim();
 

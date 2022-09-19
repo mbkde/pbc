@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -80,17 +81,17 @@ public class PreBuildQueuedEventListenerTest {
     private AgentCreationLimits agentCreationLimits;
     @Mock
     private AgentsThrottled agentsThrottled;
+    @Mock
+    private GlobalConfiguration globalConfiguration;
 
     @InjectMocks
     private PreBuildQueuedEventListener listener;
-    
-    
 
     @Before
-    public void mockSox() {
+    public void mockFlags() {
         when(dockerSoxService.checkSoxCompliance(any())).thenReturn(Boolean.TRUE);
+        when(globalConfiguration.getEnabledProperty()).thenReturn(Boolean.TRUE);
     }
-
 
     @Test
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
@@ -120,6 +121,18 @@ public class PreBuildQueuedEventListenerTest {
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+    }
+
+    @Test
+    public void testWhenGlobalPropertyDisabled() {
+        final BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
+        when(globalConfiguration.getEnabledProperty()).thenReturn(Boolean.FALSE);
+
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(anyObject());
+        verify(eventPublisher, times(1)).publish(any(DockerAgentFailEvent.class));
     }
     
     @Test
@@ -185,7 +198,6 @@ public class PreBuildQueuedEventListenerTest {
         event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         assertNotEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
-        
     }
     
     @Test
@@ -213,9 +225,7 @@ public class PreBuildQueuedEventListenerTest {
         assertNotEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
         assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.ENABLED_FOR_JOB));
         assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.DOCKER_IMAGE));
-    }    
-    
-    
+    }
   
     @Test
     public void testLicenseLimitReached() throws IsolatedDockerAgentException {
