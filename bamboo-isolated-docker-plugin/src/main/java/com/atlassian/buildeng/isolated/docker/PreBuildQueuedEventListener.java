@@ -374,7 +374,7 @@ public class PreBuildQueuedEventListener {
     }
 
     private String generateFeatureDisabledMessage(final ResultKey key) {
-        return key + " could not be started in the per-build container as the PBC feature is turned off globally";
+        return key + " couldn’t be started in the per-build container. Per-build containers are disabled globally.";
     }
 
     private String generateNotSOXCompliant(final ResultKey key) {

@@ -40,7 +40,7 @@ ${webResourceManager.requireResourcesForContext("docker.jobConfiguration")}
     [@ui.messageBox type="warning"]
         <p>
             [@s.text name="isolated.docker.templateAccessible.warning" /]
-            <a href="${req.contextPath}/viewAdministrators.action">Contact Administrators</a> in order to configure it.
+            <a href="${req.contextPath}/viewAdministrators.action">Find an admin</a> who can configure the plugin for you.
         </p>
     [/@ui.messageBox]
 [/#if]
