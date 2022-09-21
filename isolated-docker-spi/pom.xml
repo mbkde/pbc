@@ -51,8 +51,9 @@ limitations under the License.
                             com.atlassian.bamboo.deployments.execution.service.*,
                             com.atlassian.bamboo.deployments.results.*,
                             com.atlassian.bamboo.deployments.results.service.*,
+                            com.atlassian.bamboo.deployments.environments.*,
                             com.atlassian.bamboo.plan.cache.*,
-                            com.atlassian.bamboo.plan,
+                            com.atlassian.bamboo.plan.*,
                             com.atlassian.bamboo.resultsummary.*,
                             com.atlassian.bamboo.task.*,
                             com.atlassian.bamboo.task.runtime.*,
@@ -60,9 +61,12 @@ limitations under the License.
                             com.atlassian.bamboo.utils.*,
                             com.atlassian.bamboo.v2.build.*,
                             com.atlassian.bamboo.ww2.actions.build.admin.create.*,
+                            com.atlassian.event.api.*,
                             com.atlassian.plugin.*,
+                            com.atlassian.plugin.hostcontainer.*,
                             com.atlassian.plugin.module.*,
                             com.atlassian.plugin.osgi.bridge.external,
+                            com.atlassian.plugin.web.*,
                             com.atlassian.bamboo.plugin.descriptor.*,
                             com.atlassian.sal.api.scheduling.*,
                             com.atlassian.bamboo.security.*,
@@ -75,6 +79,7 @@ limitations under the License.
                             org.quartz,
                             javax.annotation.*,
                             io.atlassian.fugue.*,
+                            org.apache.commons.lang3.*,
                         </Import-Package>
                     </instructions>
                 </configuration>
