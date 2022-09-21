@@ -29,6 +29,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <web-item key="sub_id_result" name="Subject ID Generator for PBC in Plan Result" section="chainResult.actions/chainResultActions" weight="70">
@@ -36,6 +37,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <web-item key="sub_id_job" name="Subject ID Generator for PBC in Job" section="job.actions/jobActions" weight="70">
@@ -43,6 +45,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_job_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <web-item key="sub_id_job_result" name="Subject ID Generator for PBC in Job Result" section="jobResult.actions/jobResultActions" weight="70">
@@ -50,6 +53,7 @@ limitations under the License.
         <label key="kubernetes-config-link.generator"/>
         <link  linkd_id="sub_id_job_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-item>
 
     <!-- REST resources -->
@@ -71,6 +75,7 @@ limitations under the License.
 
         <resource type="download" name="insertViewSubjectId.js" location="/insertViewSubjectId.js"/>
         <context>bamboo.deployment</context>
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
     </web-resource>
 
     <web-item key="kubernetes-config" name="Configure Kubernetes Backend" section="system.admin/plugins" weight="296">

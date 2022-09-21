@@ -16,6 +16,8 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.persister.AuditLogEntry;
 import com.atlassian.bamboo.persister.AuditLogMessage;
@@ -24,6 +26,7 @@ import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.isolated.docker.rest.Config;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -34,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -46,15 +50,16 @@ import org.yaml.snakeyaml.error.YAMLException;
  * attempting to cast it back to the intended class. Stick to Java built-ins.
  */
 @BambooComponent
+@ExportAsService
 public class GlobalConfiguration {
-    private final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
-
     static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
     static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
     // See class Javadoc about why these are stored separately
     static String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
     static String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
 
+    static String BANDANA_VENDOR_CONFIG = "com.atlassian.buildeng.pbc.vendor";
+    public static String VENDOR_AWS = "aws";
 
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
@@ -88,6 +93,11 @@ public class GlobalConfiguration {
         return architectureConfig != null ? architectureConfig : "";
     }
 
+    @NotNull
+    public String getVendor() {
+        return getVendorWithBandana(bandanaManager);
+    }
+
     /**
      * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
      *     map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
@@ -114,6 +124,11 @@ public class GlobalConfiguration {
         return architectureConfig != null ? Collections.unmodifiableMap(architectureConfig) : new LinkedHashMap<>();
     }
 
+    public static String getVendorWithBandana(BandanaManager bandanaManager) {
+        String vendor = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG);
+        return vendor == null ? "" : vendor;
+    }
+
     /**
      * Saves changes to the configuration.
      */
@@ -121,6 +136,7 @@ public class GlobalConfiguration {
         String defaultImage = config.getDefaultImage();
         Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
         String archRawString = config.getArchitectureConfig();
+        boolean awsVendor = config.isAwsVendor();
 
         // Don't use non-static Instance.equals() methods, if the new object is null, you will get NPE
 
@@ -136,12 +152,24 @@ public class GlobalConfiguration {
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
         }
 
+        if (awsVendor) {
+            if (!VENDOR_AWS.equals(getVendor())) {
+                auditLogEntry("PBC Vendor", getVendor(), VENDOR_AWS);
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG, VENDOR_AWS);
+            }
+        } else {
+            if (isNotBlank(getVendor())) {
+                auditLogEntry("PBC Vendor", getVendor(), "");
+                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG, "");
+            }
+        }
+
         if (!StringUtils.equals(archRawString, getArchitectureConfigAsString())) {
             auditLogEntry("PBC Architectures supported",
                     getArchitectureConfigAsString(), archRawString);
 
             LinkedHashMap<String, String> yaml = null;
-            if (StringUtils.isNotBlank(archRawString)) {
+            if (isNotBlank(archRawString)) {
                 Yaml yamlParser = new Yaml(new SafeConstructor());
                 try {
                     // Will be loaded as a LinkedHashMap, and we want to keep that to preserver ordering (i.e. default on top)

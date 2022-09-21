@@ -16,7 +16,7 @@
 
 package com.atlassian.buildeng.kubernetes.metrics;
 
-import com.opensymphony.xwork2.ActionSupport;
+import com.atlassian.bamboo.configuration.GlobalAdminAction;
 
-public class ConfigurationAction extends ActionSupport {
+public class ConfigurationAction extends GlobalAdminAction {
 }

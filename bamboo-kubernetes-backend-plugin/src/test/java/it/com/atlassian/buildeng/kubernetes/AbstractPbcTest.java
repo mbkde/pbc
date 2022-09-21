@@ -18,8 +18,8 @@ package it.com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.pageobjects.BambooTestedProduct;
 import com.atlassian.bamboo.pageobjects.BambooTestedProductFactory;
+import com.atlassian.bamboo.testutils.backdoor.Backdoor;
 import com.atlassian.bamboo.testutils.config.BambooEnvironmentData;
-import com.atlassian.bamboo.testutils.junit.rule.BackdoorRule;
 import com.atlassian.bamboo.webdriver.PageObjectInjectionTestRule;
 import com.atlassian.bamboo.webdriver.TestInjectionTestRule;
 import com.atlassian.bamboo.webdriver.WebDriverTestEnvironmentData;
@@ -34,7 +34,7 @@ public abstract class AbstractPbcTest {
     protected static final BambooEnvironmentData ENVIRONMENT_DATA = new WebDriverTestEnvironmentData();
     protected static final BambooTestedProduct bamboo = BambooTestedProductFactory.create();
 
-    protected final BackdoorRule backdoor = new BackdoorRule(ENVIRONMENT_DATA);
+    protected final Backdoor backdoor = new Backdoor(ENVIRONMENT_DATA);
     private final WebDriverScreenshotRule screenshotRule = new WebDriverScreenshotRule();
     private final TestInjectionTestRule injectionRule = new TestInjectionTestRule(this, bamboo);
     private final PageObjectInjectionTestRule pageObjectInjectionRule = new PageObjectInjectionTestRule(this, bamboo);
@@ -44,7 +44,6 @@ public abstract class AbstractPbcTest {
 
     @Rule
     public final TestRule ruleChain = RuleChain.outerRule(screenshotRule)
-            .around(backdoor)
             .around(pageObjectInjectionRule)
             .around(injectionRule);
 }

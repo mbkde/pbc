@@ -15,7 +15,6 @@ import javax.inject.Inject;
 
 @BambooComponent
 public class SubjectIdServiceImpl implements SubjectIdService {
-
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final CachedPlanManager cachedPlanManager;
     private final DeploymentProjectService deploymentProjectService;
