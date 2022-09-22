@@ -38,6 +38,7 @@ public class PbcGeneralConfigurationTest extends AbstractPbcTest {
         genericConfigPage.awsVendor(true);
         genericConfigPage.setDefaultImage("docker.atl-paas.net/sox/buildeng/agent-baseagent");
         genericConfigPage.setAgentCreationThrottling(10);
+        genericConfigPage.setEnableSwitch(false);
         genericConfigPage.save();
         waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), genericConfigPage::isSaved));
         assertThat(genericConfigPage.getErrors(), isEmptyOrNullString());
@@ -50,6 +51,7 @@ public class PbcGeneralConfigurationTest extends AbstractPbcTest {
                 bamboo.visit(GenericPerBuildContainerConfigurationPage.class);
         genericConfigPage.awsVendor(true);
         genericConfigPage.setDefaultImage("docker.atl-paas.net/sox/buildeng/agent-baseagent");
+        genericConfigPage.setEnableSwitch(true);
         genericConfigPage.setArchitectureConfig("invalidyaml");
         genericConfigPage.save();
         waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD),

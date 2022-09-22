@@ -9,6 +9,10 @@
 
 [@s.form id="setRemoteConfig" submitLabelKey='global.buttons.update' cancelUri="${currentUrl}" ]
     [@ui.bambooSection titleKey='isolated.docker.config.section.heading' ]
+        <div class="field-group">
+            <label for="enableSwitch">Enable</label>
+            <aui-toggle id="enableSwitch" label="enableSwitch"></aui-toggle>
+        </div>
         [@s.checkbox labelKey='isolated.docker.config.form.awsVendor' name='awsVendor' value='aws'/]
         [@s.textfield labelKey='isolated.docker.config.form.defaultImage' name='defaultImage' cssClass='long-field' /]
         [@s.textfield labelKey='isolated.docker.config.form.throttling' name='maxAgentCreationPerMinute' /]

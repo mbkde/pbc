@@ -71,15 +71,14 @@ public class DockerSoxService {
         if (isSoxEnabled()) {
             Stream<String> images = Stream.concat(
                     Stream.of(config.getDockerImage()),
-                    config.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getImage()));
+                    config.getExtraContainers().stream().map(Configuration.ExtraContainer::getImage));
             return images.allMatch(matchesPatterns());
         }
         return true;
     }
 
     private Predicate<String> matchesPatterns() {
-        return (String image) -> getSoxPatterns()
-                .stream().filter((Pattern t) -> t.matcher(image).matches()).findFirst().isPresent();
+        return (String image) -> getSoxPatterns().stream().anyMatch((Pattern t) -> t.matcher(image).matches());
     }
 
     public synchronized void updateConfig(SoxRestConfig config) {
