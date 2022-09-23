@@ -35,6 +35,9 @@ import java.util.Objects;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -49,14 +52,13 @@ import org.yaml.snakeyaml.error.YAMLException;
 @BambooComponent
 @ExportAsService
 public class GlobalConfiguration {
-    static final String BANDANA_ENABLED_PROPERTY = "com.atlassian.buildeng.pbc.enabled";
-    static final String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
-    static final String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
+    static String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
+    static String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
     // See class Javadoc about why these are stored separately
-    static final String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
-    static final String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
+    static String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
+    static String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
 
-    static final String BANDANA_VENDOR_CONFIG = "com.atlassian.buildeng.pbc.vendor";
+    static String BANDANA_VENDOR_CONFIG = "com.atlassian.buildeng.pbc.vendor";
     public static String VENDOR_AWS = "aws";
 
     private final BandanaManager bandanaManager;
@@ -82,13 +84,6 @@ public class GlobalConfiguration {
         Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
         return maxAgents != null ? maxAgents : 100;
-    }
-
-    @NotNull
-    public Boolean getEnabledProperty() {
-        Boolean enabled = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ENABLED_PROPERTY);
-        return enabled != null ?  enabled : false;
     }
 
     @NotNull
@@ -138,11 +133,10 @@ public class GlobalConfiguration {
      * Saves changes to the configuration.
      */
     public void persist(Config config) {
-        final String defaultImage = config.getDefaultImage();
-        final Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
-        final String archRawString = config.getArchitectureConfig();
-        final boolean awsVendor = config.isAwsVendor();
-        final Boolean enabled = config.isEnabled();
+        String defaultImage = config.getDefaultImage();
+        Integer maxAgentCreationPerMinute = config.getMaxAgentCreationPerMinute();
+        String archRawString = config.getArchitectureConfig();
+        boolean awsVendor = config.isAwsVendor();
 
         // Don't use non-static Instance.equals() methods, if the new object is null, you will get NPE
 
@@ -156,11 +150,6 @@ public class GlobalConfiguration {
                     Integer.toString(getMaxAgentCreationPerMinute()), Integer.toString(maxAgentCreationPerMinute));
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
-        }
-        if (!enabled.equals(getEnabledProperty())) {
-            auditLogEntry("PBC Global Enable Flag", Boolean.toString(getEnabledProperty()),
-                    Boolean.toString(enabled));
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENABLED_PROPERTY, enabled);
         }
 
         if (awsVendor) {

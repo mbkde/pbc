@@ -23,8 +23,6 @@ import com.atlassian.pageobjects.elements.PageElement;
 import com.atlassian.pageobjects.elements.query.TimedCondition;
 
 public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPage {
-    @ElementBy(id = "enableSwitch")
-    private PageElement enableSwitch;
     @ElementBy(id = "setRemoteConfig_awsVendor")
     private AuiCheckbox awsVendor;
     @ElementBy(id = "setRemoteConfig_defaultImage")
@@ -55,16 +53,6 @@ public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPag
     @Override
     public String getUrl() {
         return "/admin/viewIsolatedDockerConfiguration.action";
-    }
-
-    public GenericPerBuildContainerConfigurationPage setEnableSwitch(boolean enabled) {
-        final String checked = this.enableSwitch.asWebElement().getAttribute("checked");
-        if (enabled && (checked == null || Boolean.valueOf(checked).equals(Boolean.FALSE))) {
-            this.enableSwitch.click();
-        } else if (!enabled && Boolean.valueOf(checked).equals(Boolean.TRUE)) {
-            this.enableSwitch.click();
-        }
-        return this;
     }
 
     public GenericPerBuildContainerConfigurationPage awsVendor(boolean awsVendor) {

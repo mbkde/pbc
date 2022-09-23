@@ -29,7 +29,6 @@ import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.opensymphony.xwork2.TextProvider;
 import java.util.Map;
@@ -80,8 +79,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
-                environmentCustomConfigService, environmentRequirementService, create, c, globalConfiguration,
-                validator, globalConfiguration.getEnabledProperty());
+                environmentCustomConfigService, environmentRequirementService, create, c, globalConfiguration, validator);
     }
 
     @Override
@@ -95,7 +93,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService,
-                create, c, globalConfiguration, validator, globalConfiguration.getEnabledProperty());
+                create, c, globalConfiguration, validator);
     }
 
     @Override
@@ -103,7 +101,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
         Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService,
-                create, c, globalConfiguration, validator, globalConfiguration.getEnabledProperty());
+                create, c, globalConfiguration, validator);
     }
 
     @Override

@@ -67,7 +67,7 @@ public class DockerHandlerImplTest {
 
         DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor, webResourceManager,
                 templateRenderer, environmentCustomConfigService, environmentRequirementService,
-                true, c, globalConfiguration, validator, true);
+                true, c, globalConfiguration, validator);
 
         when(globalConfiguration.getArchitectureConfig()).thenReturn(archList);
 
@@ -86,7 +86,7 @@ public class DockerHandlerImplTest {
 
         DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor, webResourceManager,
                 templateRenderer, environmentCustomConfigService, environmentRequirementService,
-                true, c, globalConfiguration, validator, true);
+                true, c, globalConfiguration, validator);
 
         when(globalConfiguration.getArchitectureConfig()).thenReturn(archList);
 
@@ -106,7 +106,7 @@ public class DockerHandlerImplTest {
 
         DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor, webResourceManager,
                 templateRenderer, environmentCustomConfigService, environmentRequirementService,
-                true, c, globalConfiguration, validator, true);
+                true, c, globalConfiguration, validator);
 
         when(globalConfiguration.getArchitectureConfig()).thenReturn(new LinkedHashMap<>());
 
