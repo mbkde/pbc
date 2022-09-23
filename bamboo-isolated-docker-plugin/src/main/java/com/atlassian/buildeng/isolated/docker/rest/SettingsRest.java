@@ -46,7 +46,6 @@ public class SettingsRest {
     @Path("/config")
     public Response getConfig() {
         Config c = new Config();
-        c.setEnabled(configuration.getEnabledProperty());
         c.setDefaultImage(configuration.getDefaultImage());
         c.setMaxAgentCreationPerMinute(configuration.getMaxAgentCreationPerMinute());
         c.setArchitectureConfig(configuration.getArchitectureConfigAsString());

@@ -25,6 +25,7 @@ import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.pageobjects.elements.ElementBy;
 import com.atlassian.pageobjects.elements.PageElement;
 import com.atlassian.pageobjects.elements.PageElementFinder;
+import com.atlassian.pageobjects.elements.query.Poller;
 import com.atlassian.pageobjects.elements.timeout.TimeoutType;
 import javax.inject.Inject;
 import org.openqa.selenium.By;
@@ -48,21 +49,12 @@ public class PerBuildContainerConfigPage extends ConfigureJobDockerPage {
         return dockerImage.isVisible();
     }
 
-    public boolean isDockerImagePresent() {
-        return dockerImage.isPresent();
-    }
-
-    public boolean eitherDockerImageVisibleOrWarning() {
-        return (isDockerImagePresent() && isDockerImageVisible())
-                || !pageElementFinder.findAll(By.className("aui-message-warning")).isEmpty();
-    }
-
     public boolean isAwsIamRoleVisible() {
         return !pageElementFinder.findAll(By.id(ISOLATED_DOCKER_AWS_ROLE)).isEmpty();
     }
 
     public void choosePerBuildContainerPlugin() {
         choosePbc.click();
-        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), this::eitherDockerImageVisibleOrWarning));
+        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), this::isDockerImageVisible));
     }
 }

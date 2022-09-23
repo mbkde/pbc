@@ -33,6 +33,7 @@ import com.atlassian.bamboo.specs.api.builders.plan.PlanIdentifier;
 import com.atlassian.bamboo.specs.api.builders.plan.Stage;
 import com.atlassian.bamboo.specs.api.builders.project.Project;
 import com.atlassian.bamboo.testutils.UniqueNameHelper;
+import com.atlassian.bamboo.testutils.backdoor.Backdoor;
 import com.atlassian.bamboo.testutils.specs.TestPlanSpecsHelper;
 import com.atlassian.bamboo.testutils.user.TestUser;
 import com.atlassian.buildeng.kubernetes.pageobject.CustomPlanSummaryPage;
@@ -53,7 +54,7 @@ public class AwsVendorTest extends AbstractPbcTest {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
         backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME); //dismiss H2 warning
-        updateGenericPerBuildContainerConfigurationPage(true, true);
+        updateAwsVendor(true);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
         k8sGenericConfigPage.setSidekickImage("docker.atl-paas.net/sox/buildeng/bamboo-agent-sidekick:latest");
@@ -72,7 +73,7 @@ public class AwsVendorTest extends AbstractPbcTest {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
         backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  //dismiss H2 warning
-        updateGenericPerBuildContainerConfigurationPage(false, true);
+        updateAwsVendor(false);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
         k8sGenericConfigPage.setSidekickImage("docker.atl-paas.net/sox/buildeng/bamboo-agent-sidekick:latest");
@@ -83,42 +84,6 @@ public class AwsVendorTest extends AbstractPbcTest {
 
         PlanKey planKey = assertPlanSpecificAwsControlsVisible(false);
         assertDeploymentSpecificAwsControlsVisible(planKey, false);
-    }
-
-    @Test
-    public void allElementsNotVisibleWhenPluginDisabled() throws Exception {
-        bamboo.fastLogin(TestUser.ADMIN);
-        backdoor.troubleshooting().dismissLocalAgentNotification();
-        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  //dismiss H2 warning
-        updateGenericPerBuildContainerConfigurationPage(false, false);
-
-        GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
-        k8sGenericConfigPage.setSidekickImage("docker.atl-paas.net/sox/buildeng/bamboo-agent-sidekick:latest");
-        assertFalse(k8sGenericConfigPage.isIamRequestTemplateVisible());
-        assertFalse(k8sGenericConfigPage.isIamSubjectIdPrefixVisible());
-        k8sGenericConfigPage.save();
-
-        assertNothingIsVisible();
-    }
-
-    private void assertNothingIsVisible() throws Exception {
-        String projectKey = UniqueNameHelper.makeUniqueName("PROJ");
-        String planKeyStr = UniqueNameHelper.makeUniqueName("PLAN");
-        String jobKey = "JOB1";
-
-        Plan plan = new Plan(new Project().key(projectKey).name(projectKey), planKeyStr, planKeyStr).stages(new Stage(
-                "Default stage").jobs(new Job("Default job", jobKey)));
-        final PlanKey planKey = TestPlanSpecsHelper.getPlanKey(plan);
-        backdoor.plans().createPlan(plan);
-        PerBuildContainerConfigPage dockerConfigPage =
-                bamboo.visit(PerBuildContainerConfigPage.class, PlanKeys.getPlanKey(projectKey, planKeyStr, jobKey));
-        dockerConfigPage.choosePerBuildContainerPlugin();
-
-        assertThat(dockerConfigPage.isAwsIamRoleVisible(), CoreMatchers.is(false));
-        assertThat(dockerConfigPage.isDockerImagePresent(), CoreMatchers.is(false));
-
-        CustomPlanSummaryPage summaryPage = bamboo.visit(CustomPlanSummaryPage.class, planKey);
-        assertThat(summaryPage.isViewIamSubjectLinkVisible(), CoreMatchers.is(false));
     }
 
     private void assertDeploymentSpecificAwsControlsVisible(PlanKey planKey, boolean isVisible) throws Exception {
@@ -153,13 +118,12 @@ public class AwsVendorTest extends AbstractPbcTest {
         return planKey;
     }
 
-    private void updateGenericPerBuildContainerConfigurationPage(boolean awsVendor, boolean enabled) {
+    private void updateAwsVendor(boolean awsVendor) {
         GenericPerBuildContainerConfigurationPage genericConfigPage =
                 bamboo.visit(GenericPerBuildContainerConfigurationPage.class);
         genericConfigPage.awsVendor(awsVendor);
         genericConfigPage.setDefaultImage("docker.atl-paas.net/sox/buildeng/agent-baseagent");
         genericConfigPage.setAgentCreationThrottling(10);
-        genericConfigPage.setEnableSwitch(enabled);
         genericConfigPage.save();
         waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), genericConfigPage::isSaved));
     }

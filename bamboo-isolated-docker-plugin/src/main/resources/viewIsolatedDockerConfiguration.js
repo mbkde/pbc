@@ -39,7 +39,6 @@ define('feature/isolate-docker-plugin/config', [
 
     function processConfig(response) {
         updateStatus('');
-        $('#enableSwitch').prop("checked", response.enabled);
         $('#setRemoteConfig_defaultImage').val(response.defaultImage);
         $('#setRemoteConfig_maxAgentCreationPerMinute').val(response.maxAgentCreationPerMinute);
         $('#setRemoteConfig_architectureConfig').val(response.architectureConfig);
@@ -70,7 +69,6 @@ define('feature/isolate-docker-plugin/config', [
         saveRemoteConfig: function (e) {
             e.preventDefault();
             const config = {};
-            config.enabled = $('#enableSwitch').prop("checked");
             config.defaultImage = $('#setRemoteConfig_defaultImage').val().trim();
             config.maxAgentCreationPerMinute = $('#setRemoteConfig_maxAgentCreationPerMinute').val().trim();
             config.architectureConfig = $('#setRemoteConfig_architectureConfig').val().trim();
