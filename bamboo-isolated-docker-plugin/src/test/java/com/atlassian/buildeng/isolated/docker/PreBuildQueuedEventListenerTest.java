@@ -16,6 +16,14 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+
 import com.atlassian.bamboo.build.BuildDefinition;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.logger.ErrorUpdateHandler;
@@ -36,21 +44,14 @@ import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerRequestCallback;
 import com.atlassian.event.api.EventPublisher;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith({MockitoExtension.class})
@@ -77,17 +78,17 @@ public class PreBuildQueuedEventListenerTest {
     private AgentCreationLimits agentCreationLimits;
     @Mock
     private AgentsThrottled agentsThrottled;
+    @Mock
+    private GlobalConfiguration globalConfiguration;
 
     @InjectMocks
     private PreBuildQueuedEventListener listener;
-    
-    
 
     @BeforeEach
-    public void mockSox() {
+    public void mockFlags() {
         when(dockerSoxService.checkSoxCompliance(any())).thenReturn(Boolean.TRUE);
+        when(globalConfiguration.getEnabledProperty()).thenReturn(Boolean.TRUE);
     }
-
 
     @Test
     public void testNonRecoverableFailure() throws IsolatedDockerAgentException {
@@ -101,7 +102,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
-        assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        Assertions.assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
     @Test
@@ -118,7 +119,19 @@ public class PreBuildQueuedEventListenerTest {
         listener.call(event);
         verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
     }
-    
+
+    @Test
+    public void testWhenGlobalPropertyDisabled() {
+        final BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.QUEUED);
+        when(globalConfiguration.getEnabledProperty()).thenReturn(Boolean.FALSE);
+
+        BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
+        listener.call(event);
+
+        verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
+        verify(eventPublisher, times(1)).publish(any(DockerAgentFailEvent.class));
+    }
+
     @Test
     public void testCancelledByUser() throws IsolatedDockerAgentException {
         BuildContext buildContext = mockBuildContext(true, "image", LifeCycleState.NOT_BUILT);
@@ -153,7 +166,7 @@ public class PreBuildQueuedEventListenerTest {
         listener.call(event);
         verify(buildQueueManager, never()).removeBuildFromQueue(any());
         verify(scheduler, times(1)).reschedule(any());
-        assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        Assertions.assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
     @Test
@@ -169,7 +182,7 @@ public class PreBuildQueuedEventListenerTest {
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
-        assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        Assertions.assertEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
         
         //now check the rerun
         Mockito.doAnswer(invocation -> {
@@ -181,8 +194,7 @@ public class PreBuildQueuedEventListenerTest {
         when(buildContext.getBuildKey()).thenReturn(new BuildKey());
         event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        assertNotEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
-        
+        Assertions.assertNotEquals("Error", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
     }
     
     @Test
@@ -198,21 +210,19 @@ public class PreBuildQueuedEventListenerTest {
         BuildQueuedEvent event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
         verify(buildQueueManager, times(1)).removeBuildFromQueue(any());
-        assertEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        Assertions.assertEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
         
         //now check the rerun
         buildContext.getBuildDefinition().getCustomConfiguration().put(Configuration.ENABLED_FOR_JOB, "false");
-        assertEquals("false", buildContext.getBuildDefinition().getCustomConfiguration().get(Configuration.ENABLED_FOR_JOB));
+        Assertions.assertEquals("false", buildContext.getBuildDefinition().getCustomConfiguration().get(Configuration.ENABLED_FOR_JOB));
 
         when(buildContext.getBuildKey()).thenReturn(new BuildKey());
         event = new BuildQueuedEvent(this, buildContext);
         listener.call(event);
-        assertNotEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
-        assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.ENABLED_FOR_JOB));
-        assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.DOCKER_IMAGE));
-    }    
-    
-    
+        Assertions.assertNotEquals("Error1", buildContext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR));
+        Assertions.assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.ENABLED_FOR_JOB));
+        Assertions.assertNull(buildContext.getCurrentResult().getCustomBuildData().get(Configuration.DOCKER_IMAGE));
+    }
   
     @Test
     public void testLicenseLimitReached() throws IsolatedDockerAgentException {
@@ -254,7 +264,7 @@ public class PreBuildQueuedEventListenerTest {
         when(buildContext.getBuildDefinition()).thenReturn(bd);
         when(buildContext.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-CCC-1"));
         Map<String, String> resultData = new HashMap<>();
-        when(result.getLifeCycleState()).thenReturn(state);
+        Mockito.lenient().when(result.getLifeCycleState()).thenReturn(state);
         when(result.getCustomBuildData()).thenReturn(resultData);
         Map<String, String> customConfig = new HashMap<>();
         customConfig.put(Configuration.ENABLED_FOR_JOB, "" + dockerEnabled);

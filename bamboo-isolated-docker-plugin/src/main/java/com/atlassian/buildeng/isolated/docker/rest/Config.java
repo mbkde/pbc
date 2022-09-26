@@ -20,12 +20,21 @@ package com.atlassian.buildeng.isolated.docker.rest;
  * Simply used for REST JSON serialization/deserialization.
  */
 public class Config {
+    public Boolean enabled;
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
     public String architectureConfig;
     public boolean awsVendor;
 
     public Config() {
+    }
+
+    public Boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getDefaultImage() {
