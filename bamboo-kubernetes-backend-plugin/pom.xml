@@ -14,13 +14,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.120-SNAPSHOT</version>
+        <version>2.121-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-kubernetes-backend-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -42,7 +41,7 @@ limitations under the License.
                         <!-- sort of a thing that will make Milos' life easier.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
                         <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
-                        <acceptanceTestSettings/> <!-- make sure BuildUtils.isFunctionalTest returns true -->
+                        <acceptanceTestSettings /> <!-- make sure BuildUtils.isFunctionalTest returns true -->
                         <bamboo.context.batching.disable>true</bamboo.context.batching.disable>
                         <plugin.webresource.batching.off>true</plugin.webresource.batching.off>
                     </systemProperties>

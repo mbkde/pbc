@@ -70,6 +70,7 @@ public class DockerHandlerImpl implements DockerHandler {
     private final EnvironmentRequirementService environmentRequirementService;
     private final GlobalConfiguration globalConfiguration;
     private final Validator validator;
+    private final Boolean providerEnabled;
 
     /**
      * Creates new stateful instance.
@@ -80,7 +81,8 @@ public class DockerHandlerImpl implements DockerHandler {
                              TemplateRenderer templateRenderer,
                              EnvironmentCustomConfigService environmentCustomConfigService,
                              EnvironmentRequirementService environmentRequirementService,
-                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration, Validator validator) {
+                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration,
+                             Validator validator, Boolean providerEnabled) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
@@ -90,9 +92,8 @@ public class DockerHandlerImpl implements DockerHandler {
         this.webResourceManager = webResourceManager;
         this.globalConfiguration = globalConfiguration;
         this.validator = validator;
+        this.providerEnabled = providerEnabled;
     }
-
-
 
     @Override
     public String getEditHtml() {
@@ -255,6 +256,7 @@ public class DockerHandlerImpl implements DockerHandler {
             cc.put("awsRole", configuration.getAwsRole());
             cc.put("architecture", configuration.getArchitecture());
             cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
+            cc.put("templateAccessible", providerEnabled);
             context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
 
             String templatePath = resourceLocation.getLocation();
