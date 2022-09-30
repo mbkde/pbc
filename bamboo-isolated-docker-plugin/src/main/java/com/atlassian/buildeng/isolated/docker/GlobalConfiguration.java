@@ -27,14 +27,20 @@ import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.isolated.docker.rest.Config;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
+import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -48,10 +54,11 @@ import org.yaml.snakeyaml.error.YAMLException;
  */
 @BambooComponent
 @ExportAsService
-public class GlobalConfiguration {
+public class GlobalConfiguration implements LifecycleAware {
     static final String BANDANA_ENABLED_PROPERTY = "com.atlassian.buildeng.pbc.enabled";
     static final String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
-    static final String BANDANA_MAX_AGENT_CREATION_PER_MINUTE = "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
+    static final String BANDANA_MAX_AGENT_CREATION_PER_MINUTE =
+            "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
     // See class Javadoc about why these are stored separately
     static final String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
     static final String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
@@ -63,8 +70,11 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
+    private final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
+
     @Inject
-    public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
+    public GlobalConfiguration(BandanaManager bandanaManager,
+                               AuditLogService auditLogService,
                                BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.auditLogService = auditLogService;
@@ -73,29 +83,68 @@ public class GlobalConfiguration {
 
     @NotNull
     public String getDefaultImage() {
-        String image = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DEFAULT_IMAGE);
+        String image = getDefaultImageRaw();
         return image != null ? image : "";
+    }
+
+    /**
+     * Retrieves the raw default image from Bandana, without checking for nullity. This method should
+     * not be used unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw default image value from Bandana, which may be null
+     */
+    @Nullable
+    private String getDefaultImageRaw() {
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                GlobalConfiguration.BANDANA_DEFAULT_IMAGE);
     }
 
     @NotNull
     public Integer getMaxAgentCreationPerMinute() {
+        Integer maxAgents = getMaxAgentCreationPerMinuteRaw();
+        return maxAgents != null ? maxAgents : 100;
+    }
+
+    /**
+     * Retrieves the raw max agent creation rate limit from Bandana, without checking for nullity. This method should
+     * not be used unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw max agent creation rate limit value from Bandana, which may be null
+     */
+    @Nullable
+    private Integer getMaxAgentCreationPerMinuteRaw() {
         Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
-        return maxAgents != null ? maxAgents : 100;
+        return maxAgents;
     }
 
     @NotNull
     public Boolean getEnabledProperty() {
-        Boolean enabled = (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ENABLED_PROPERTY);
-        return enabled != null ?  enabled : false;
+        Boolean enabled = getEnabledRaw();
+        return enabled != null ? enabled : false;
+    }
+
+    /**
+     * Retrieves the raw enabled property from Bandana, without checking for nullity. This method should not be used
+     * unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw enabled value from Bandana, which may be null
+     */
+    @Nullable
+    private Boolean getEnabledRaw() {
+        return (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENABLED_PROPERTY);
     }
 
     @NotNull
     public String getArchitectureConfigAsString() {
-        String architectureConfig = (String) bandanaManager
-                .getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_RAW);
+        String architectureConfig = getArchitectureConfigAsStringRaw();
         return architectureConfig != null ? architectureConfig : "";
+    }
+
+    private String getArchitectureConfigAsStringRaw() {
+        String architectureConfig = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_ARCHITECTURE_CONFIG_RAW);
+        return architectureConfig;
     }
 
     @NotNull
@@ -105,8 +154,8 @@ public class GlobalConfiguration {
 
     /**
      * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     *     map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
-     *     Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
+     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     @NotNull
     public Map<String, String> getArchitectureConfig() {
@@ -120,12 +169,13 @@ public class GlobalConfiguration {
      *
      * @param bandanaManager An instance of {@link BandanaManager} that should be wired from Bamboo
      * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     *     map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
-     *     Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
+     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     public static Map<String, String> getArchitectureConfigWithBandana(BandanaManager bandanaManager) {
-        LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>) bandanaManager
-                .getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED);
+        LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>) bandanaManager.getValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                BANDANA_ARCHITECTURE_CONFIG_PARSED);
         return architectureConfig != null ? Collections.unmodifiableMap(architectureConfig) : new LinkedHashMap<>();
     }
 
@@ -144,6 +194,8 @@ public class GlobalConfiguration {
         final boolean awsVendor = config.isAwsVendor();
         final Boolean enabled = config.isEnabled();
 
+        logger.info("Applying new PBC config: " + config);
+
         // Don't use non-static Instance.equals() methods, if the new object is null, you will get NPE
 
         if (!StringUtils.equals(defaultImage, getDefaultImage())) {
@@ -153,14 +205,15 @@ public class GlobalConfiguration {
 
         if (!Objects.equals(maxAgentCreationPerMinute, getMaxAgentCreationPerMinute())) {
             auditLogEntry("PBC Maximum Number of Agent Creation Per Minute",
-                    Integer.toString(getMaxAgentCreationPerMinute()), Integer.toString(maxAgentCreationPerMinute));
+                    Integer.toString(getMaxAgentCreationPerMinute()),
+                    Integer.toString(maxAgentCreationPerMinute));
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_MAX_AGENT_CREATION_PER_MINUTE, maxAgentCreationPerMinute);
+                    BANDANA_MAX_AGENT_CREATION_PER_MINUTE,
+                    maxAgentCreationPerMinute);
         }
         if (!enabled.equals(getEnabledProperty())) {
-            auditLogEntry("PBC Global Enable Flag", Boolean.toString(getEnabledProperty()),
-                    Boolean.toString(enabled));
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENABLED_PROPERTY, enabled);
+            auditLogEntry("PBC Global Enable Flag", Boolean.toString(getEnabledProperty()), Boolean.toString(enabled));
+            setEnabledProperty(enabled);
         }
 
         if (awsVendor) {
@@ -176,8 +229,7 @@ public class GlobalConfiguration {
         }
 
         if (!StringUtils.equals(archRawString, getArchitectureConfigAsString())) {
-            auditLogEntry("PBC Architectures supported",
-                    getArchitectureConfigAsString(), archRawString);
+            auditLogEntry("PBC Architectures supported", getArchitectureConfigAsString(), archRawString);
 
             LinkedHashMap<String, String> yaml = null;
             if (isNotBlank(archRawString)) {
@@ -187,10 +239,13 @@ public class GlobalConfiguration {
                     Object uncastYaml = yamlParser.load(archRawString);
                     if (uncastYaml instanceof LinkedHashMap) {
                         yaml = (LinkedHashMap) uncastYaml;
-                        for (Map.Entry entry: yaml.entrySet()) {
+                        for (Map.Entry entry : yaml.entrySet()) {
                             if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
-                                throw new IllegalArgumentException("Architecture configuration must be a map from String to"
-                                        + " String, but " + entry + " was not!");
+                                throw new IllegalArgumentException(
+                                        "Architecture configuration must be a map from String to" +
+                                                " String, but " +
+                                                entry +
+                                                " was not!");
                             }
                         }
                         yaml = (LinkedHashMap<String, String>) uncastYaml;
@@ -204,18 +259,54 @@ public class GlobalConfiguration {
             }
 
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_CONFIG_RAW, archRawString);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_CONFIG_PARSED, yaml);
+                    BANDANA_ARCHITECTURE_CONFIG_RAW,
+                    archRawString);
+            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED, yaml);
         }
     }
 
+    @VisibleForTesting
+    void setEnabledProperty(Boolean enabled) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ENABLED_PROPERTY, enabled);
+    }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
         AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
-                new Date(), null, null, null, null,
-                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+                new Date(),
+                null,
+                null,
+                null,
+                null,
+                AuditLogEntry.TYPE_FIELD_CHANGE,
+                name,
+                oldValue,
+                newValue);
         auditLogService.log(ent);
+    }
+
+    void migrateEnabled() {
+        Boolean enabled = getEnabledRaw();
+        if (enabled == null) {
+            boolean optionsNotNull = Stream.of(getDefaultImageRaw(),
+                    getMaxAgentCreationPerMinuteRaw(),
+                    getArchitectureConfigAsStringRaw()).anyMatch(Objects::nonNull);
+
+            if (optionsNotNull) {
+                logger.info("Detected non-null PBC settings but PBC enable status was null! Now enabling PBC.");
+                auditLogEntry("PBC Global Enable Flag", "null", "true");
+                setEnabledProperty(true);
+            }
+        }
+    }
+
+    @Override
+    public void onStart() {
+        migrateEnabled();
+    }
+
+    @Override
+    public void onStop() {
+
     }
 }
 

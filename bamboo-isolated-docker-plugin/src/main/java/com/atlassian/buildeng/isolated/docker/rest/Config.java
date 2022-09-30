@@ -16,6 +16,9 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * Simply used for REST JSON serialization/deserialization.
  */
@@ -67,6 +70,11 @@ public class Config {
 
     public void setAwsVendor(boolean awsVendor) {
         this.awsVendor = awsVendor;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.NO_CLASS_NAME_STYLE);
     }
 }
 
