@@ -63,7 +63,7 @@ public class GlobalConfiguration implements LifecycleAware {
     static final String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
     static final String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
 
-    static final String BANDANA_VENDOR_CONFIG = "com.atlassian.buildeng.pbc.vendor";
+    public static final String BANDANA_VENDOR_CONFIG = "com.atlassian.buildeng.pbc.vendor";
     public static String VENDOR_AWS = "aws";
 
     private final BandanaManager bandanaManager;
@@ -180,8 +180,13 @@ public class GlobalConfiguration implements LifecycleAware {
     }
 
     public static String getVendorWithBandana(BandanaManager bandanaManager) {
-        String vendor = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG);
+        String vendor = getVendorWithBandanaRaw(bandanaManager);
         return vendor == null ? "" : vendor;
+    }
+
+    public static String getVendorWithBandanaRaw(BandanaManager bandanaManager) {
+        String vendor = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG);
+        return vendor;
     }
 
     /**
@@ -219,7 +224,7 @@ public class GlobalConfiguration implements LifecycleAware {
         if (awsVendor) {
             if (!VENDOR_AWS.equals(getVendor())) {
                 auditLogEntry("PBC Vendor", getVendor(), VENDOR_AWS);
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG, VENDOR_AWS);
+                setVendorWithBandana(bandanaManager, VENDOR_AWS);
             }
         } else {
             if (isNotBlank(getVendor())) {
@@ -263,6 +268,10 @@ public class GlobalConfiguration implements LifecycleAware {
                     archRawString);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED, yaml);
         }
+    }
+
+    public static void setVendorWithBandana(BandanaManager bandanaManager, String vendor) {
+        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG, vendor);
     }
 
     @VisibleForTesting

@@ -13,9 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container Kubernetes Backend" plugins-version="2">
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container Kubernetes Backend"
+                  plugins-version="2">
     <plugin-info>
-        <description>The Kubernetes Backend for per-build container docker agents, managed by the Bamboo server.</description>
+        <description>The Kubernetes Backend for per-build container docker agents, managed by the Bamboo server.
+        </description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
     </plugin-info>
@@ -27,42 +29,47 @@ limitations under the License.
     <web-item key="sub_id" name="Subject ID Generator for PBC" section="chain.actions/chainActions" weight="70">
         <description>Subject Id Generator Menu Item</description>
         <label key="kubernetes-config-link.generator"/>
-        <link  linkd_id="sub_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
-        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
-        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
+        <link linkd_id="sub_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
 
-    <web-item key="sub_id_result" name="Subject ID Generator for PBC in Plan Result" section="chainResult.actions/chainResultActions" weight="70">
+    <web-item key="sub_id_result" name="Subject ID Generator for PBC in Plan Result"
+              section="chainResult.actions/chainResultActions" weight="70">
         <description>Subject Id Generator Menu Item in Plan Result</description>
         <label key="kubernetes-config-link.generator"/>
-        <link  linkd_id="sub_id_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
-        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
-        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
+        <link linkd_id="sub_id_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
 
     <web-item key="sub_id_job" name="Subject ID Generator for PBC in Job" section="job.actions/jobActions" weight="70">
         <description>Subject Id Generator Menu Item in Job</description>
         <label key="kubernetes-config-link.generator"/>
-        <link  linkd_id="sub_id_job_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
-        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
-        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
+        <link linkd_id="sub_id_job_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
 
-    <web-item key="sub_id_job_result" name="Subject ID Generator for PBC in Job Result" section="jobResult.actions/jobResultActions" weight="70">
+    <web-item key="sub_id_job_result" name="Subject ID Generator for PBC in Job Result"
+              section="jobResult.actions/jobResultActions" weight="70">
         <description>Subject Id Generator Menu Item in Job Result</description>
         <label key="kubernetes-config-link.generator"/>
-        <link  linkd_id="sub_id_job_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
-        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition" />
-        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
+        <link linkd_id="sub_id_job_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}
+        </link>
+        <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
 
-    <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl" public="true">
+    <component key="isolatedAgentService" class="com.atlassian.buildeng.kubernetes.KubernetesIsolatedDockerImpl"
+               public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService</interface>
         <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
 
     <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.GlobalConfiguration" public="true">
         <interface>com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor</interface>
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
     </component>
 
     <component key="kubeJmxService" class="com.atlassian.buildeng.kubernetes.jmx.KubeJmxService"/>
@@ -75,7 +82,8 @@ limitations under the License.
     </component-import>
 
     <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
-    <component-import key="deploymentProjectService" interface="com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService" />
+    <component-import key="deploymentProjectService"
+                      interface="com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService"/>
 
     <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
     <component key="podSpecList" class="com.atlassian.buildeng.kubernetes.KubernetesPodSpecList"/>
@@ -99,7 +107,7 @@ limitations under the License.
 
         <resource type="download" name="insertViewSubjectId.js" location="/insertViewSubjectId.js"/>
         <context>bamboo.deployment</context>
-        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition" />
+        <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-resource>
 
     <web-item key="kubernetes-config" name="Configure Kubernetes Backend" section="system.admin/plugins" weight="296">
