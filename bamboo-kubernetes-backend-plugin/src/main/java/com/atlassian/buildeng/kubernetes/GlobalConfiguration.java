@@ -574,6 +574,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
 
     @Override
     public void onStop() {
-
+        // We don't need to do anything on stop for this class
     }
 }
