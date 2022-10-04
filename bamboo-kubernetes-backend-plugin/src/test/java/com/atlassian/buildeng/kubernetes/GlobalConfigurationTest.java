@@ -16,12 +16,11 @@
 
 package com.atlassian.buildeng.kubernetes;
 
-import static com.atlassian.buildeng.isolated.docker.GlobalConfiguration.BANDANA_VENDOR_CONFIG;
-import static com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -33,22 +32,22 @@ import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class GlobalConfigurationTest {
     private AutoCloseable close;
 
-    private BandanaManager bandanaManager = mock(BandanaManager.class);
-    private AdministrationConfigurationAccessor admConfAccessor = mock(AdministrationConfigurationAccessor.class);
-    private AuditLogService auditLogService = mock(AuditLogService.class);
-    private BambooAuthenticationContext authenticationContext = mock(BambooAuthenticationContext.class);
+    private final BandanaManager bandanaManager = mock(BandanaManager.class);
+    private final AdministrationConfigurationAccessor admConfAccessor = mock(AdministrationConfigurationAccessor.class);
+    private final AuditLogService auditLogService = mock(AuditLogService.class);
+    private final BambooAuthenticationContext authenticationContext = mock(BambooAuthenticationContext.class);
 
-    @Spy
     GlobalConfiguration globalConfiguration =
-            new GlobalConfiguration(bandanaManager, auditLogService, admConfAccessor, authenticationContext);
+            spy(new GlobalConfiguration(bandanaManager, auditLogService, admConfAccessor, authenticationContext));
 
     @BeforeEach
     public void setup() {
@@ -69,11 +68,14 @@ public class GlobalConfigurationTest {
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
 
-        globalConfiguration.migrateAwsVendor();
+        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
+                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
+            globalConfiguration.migrateAwsVendor();
+            globalConfigurationMock.verify(() -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(
+                    any(),
+                    any()), times(0));
 
-        verify(bandanaManager, times(0)).setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_VENDOR_CONFIG,
-                VENDOR_AWS);
+        }
     }
 
     @Test
@@ -84,12 +86,14 @@ public class GlobalConfigurationTest {
                 GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE)).thenReturn("template");
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
-
-        globalConfiguration.migrateAwsVendor();
-
-        verify(bandanaManager, times(1)).setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_VENDOR_CONFIG,
-                VENDOR_AWS);
+        
+        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
+                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
+            globalConfiguration.migrateAwsVendor();
+            globalConfigurationMock.verify(() -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(
+                    any(),
+                    any()), times(1));
+        }
     }
 
     @Test

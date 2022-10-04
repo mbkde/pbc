@@ -37,9 +37,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class GlobalConfigurationTest {
     private AutoCloseable close;
 
-    BandanaManager bandanaManager = mock(BandanaManager.class);
-    AuditLogService auditLogService = mock(AuditLogService.class);
-    BambooAuthenticationContext authenticationContext = mock(BambooAuthenticationContext.class);
+    private final BandanaManager bandanaManager = mock(BandanaManager.class);
+    private final AuditLogService auditLogService = mock(AuditLogService.class);
+    private final BambooAuthenticationContext authenticationContext = mock(BambooAuthenticationContext.class);
 
     GlobalConfiguration globalConfiguration =
             spy(new GlobalConfiguration(bandanaManager, auditLogService, authenticationContext));
