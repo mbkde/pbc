@@ -17,19 +17,92 @@
 package com.atlassian.buildeng.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Test;
+import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
+import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
+import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.user.BambooAuthenticationContext;
+import com.atlassian.bandana.BandanaManager;
+import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class GlobalConfigurationTest {
-    
+    private AutoCloseable close;
+
+    private final BandanaManager bandanaManager = mock(BandanaManager.class);
+    private final AdministrationConfigurationAccessor admConfAccessor = mock(AdministrationConfigurationAccessor.class);
+    private final AuditLogService auditLogService = mock(AuditLogService.class);
+    private final BambooAuthenticationContext authenticationContext = mock(BambooAuthenticationContext.class);
+
+    GlobalConfiguration globalConfiguration =
+            spy(new GlobalConfiguration(bandanaManager, auditLogService, admConfAccessor, authenticationContext));
+
+    @BeforeEach
+    public void setup() {
+        close = MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        close.close();
+    }
+
+    @Test
+    public void testMigrationDoesntEnableIfNoPriorPbcSettings() {
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS)).thenReturn(null);
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE)).thenReturn(null);
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
+
+        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
+                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
+            globalConfiguration.migrateAwsVendor();
+            globalConfigurationMock.verify(() -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(
+                    any(),
+                    any()), times(0));
+
+        }
+    }
+
+    @Test
+    public void testMigrationEnablesIfPriorPbcSettings() {
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS)).thenReturn(null);
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE)).thenReturn("template");
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
+        
+        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
+                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
+            globalConfiguration.migrateAwsVendor();
+            globalConfigurationMock.verify(() -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(
+                    any(),
+                    any()), times(1));
+        }
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testContainersMergedByName() {
         assertEquals("httplocalhost6990bamboo", GlobalConfiguration.stripLabelValue("http://localhost:6990/bamboo"));
-        assertEquals("httpsstaging-bamboo.internal.atlassian.com", 
+        assertEquals("httpsstaging-bamboo.internal.atlassian.com",
                 GlobalConfiguration.stripLabelValue("https://staging-bamboo.internal.atlassian.com"));
     }
-    
-    
+
+
 }
