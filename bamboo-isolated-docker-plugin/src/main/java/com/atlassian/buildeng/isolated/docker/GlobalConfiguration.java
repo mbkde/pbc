@@ -88,7 +88,7 @@ public class GlobalConfiguration implements LifecycleAware {
     }
 
     /**
-     * Retrieves the raw default image from Bandana, without checking for nullity. This method should
+     * Retrieves the raw default image from Bandana, without checking for null. This method should
      * not be used unless you need to check whether this value is null explicitly.
      *
      * @return the raw default image value from Bandana, which may be null
@@ -106,7 +106,7 @@ public class GlobalConfiguration implements LifecycleAware {
     }
 
     /**
-     * Retrieves the raw max agent creation rate limit from Bandana, without checking for nullity. This method should
+     * Retrieves the raw max agent creation rate limit from Bandana, without checking for null. This method should
      * not be used unless you need to check whether this value is null explicitly.
      *
      * @return the raw max agent creation rate limit value from Bandana, which may be null
@@ -125,7 +125,7 @@ public class GlobalConfiguration implements LifecycleAware {
     }
 
     /**
-     * Retrieves the raw enabled property from Bandana, without checking for nullity. This method should not be used
+     * Retrieves the raw enabled property from Bandana, without checking for null. This method should not be used
      * unless you need to check whether this value is null explicitly.
      *
      * @return the raw enabled value from Bandana, which may be null
@@ -141,6 +141,12 @@ public class GlobalConfiguration implements LifecycleAware {
         return architectureConfig != null ? architectureConfig : "";
     }
 
+    /**
+     * Retrieves the raw architecture config from Bandana, without checking for null. This method should not be used
+     * unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw architecture config from Bandana, which may be null
+     */
     private String getArchitectureConfigAsStringRaw() {
         String architectureConfig = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_ARCHITECTURE_CONFIG_RAW);
@@ -184,6 +190,12 @@ public class GlobalConfiguration implements LifecycleAware {
         return vendor == null ? "" : vendor;
     }
 
+    /**
+     * Retrieves the raw vendor from Bandana, without checking for null. This method should not be used
+     * unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw vendor value from Bandana, which may be null
+     */
     public static String getVendorWithBandanaRaw(BandanaManager bandanaManager) {
         String vendor = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_VENDOR_CONFIG);
         return vendor;

@@ -173,6 +173,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         return template;
     }
 
+    /**
+     * Retrieves the raw IAM request template from Bandana, without checking for null. This method should not be used
+     * unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw IAM request template from Bandana, which may be null
+     */
     private String getBandanaIamRequestTemplateRaw() {
         String template =
                 (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE);
@@ -208,6 +214,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         return iamSubjectId;
     }
 
+    /**
+     * Retrieves the raw IAM subject ID prefix from Bandana, without checking for null. This method should not be used
+     * unless you need to check whether this value is null explicitly.
+     *
+     * @return the raw IAM subject ID prefix from Bandana, which may be null
+     */
     private String getIamSubjectIdPrefixRaw() {
         String iamSubjectId =
                 (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX);
