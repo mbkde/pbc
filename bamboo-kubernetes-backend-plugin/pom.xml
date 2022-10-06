@@ -61,6 +61,11 @@ limitations under the License.
                                     <artifactId>bamboo-isolated-docker-plugin</artifactId>
                                     <version>${project.version}</version>
                                 </pluginArtifact>
+                                <pluginArtifact>
+                                    <groupId>com.atlassian.bamboo.plugins</groupId>
+                                    <artifactId>atlassian-bamboo-plugin-test-utils</artifactId>
+                                    <version>${bamboo.version}</version>
+                                </pluginArtifact>
                             </pluginArtifacts>
                         </product>
                     </products>
