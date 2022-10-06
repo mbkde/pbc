@@ -41,11 +41,11 @@ limitations under the License.
                         On mac non terminal apps (netbeans) /url/local/bin is not on path. This let's me configure absolute path. -->
                         <pbc.kubectl.path>${pbc.kubectl.path}</pbc.kubectl.path>
                         <acceptanceTestSettings /> <!-- make sure BuildUtils.isFunctionalTest returns true -->
-                        <atlassian.bamboo.pbc.image.pull.policy>IfNotPresent</atlassian.bamboo.pbc.image.pull.policy>
                         <bamboo.context.batching.disable>true</bamboo.context.batching.disable>
                         <plugin.webresource.batching.off>true</plugin.webresource.batching.off>
                     </systemProperties>
                     <systemPropertyVariables>
+                        <atlassian.bamboo.pbc.image.pull.policy>IfNotPresent</atlassian.bamboo.pbc.image.pull.policy>
                         <webdriver.browser>firefox</webdriver.browser>
                     </systemPropertyVariables>
                     <products>
