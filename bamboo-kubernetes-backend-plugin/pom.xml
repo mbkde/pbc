@@ -44,6 +44,9 @@ limitations under the License.
                         <bamboo.context.batching.disable>true</bamboo.context.batching.disable>
                         <plugin.webresource.batching.off>true</plugin.webresource.batching.off>
                     </systemProperties>
+                    <systemPropertyVariables>
+                        <webdriver.browser>firefox</webdriver.browser>
+                    </systemPropertyVariables>
                     <products>
                         <product>
                             <id>bamboo</id>
