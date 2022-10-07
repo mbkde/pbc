@@ -18,6 +18,7 @@ package com.atlassian.buildeng.isolated.docker.rest;
 
 import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import com.google.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -25,16 +26,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.springframework.beans.factory.annotation.Autowired;
 
-@WebSudoRequired
 @Path("/")
 public class SettingsRest {
 
     private final GlobalConfiguration configuration;
 
 
-    @Autowired
+    @Inject
     public SettingsRest(GlobalConfiguration configuration) {
         this.configuration = configuration;
     }
@@ -47,9 +46,11 @@ public class SettingsRest {
     @Path("/config")
     public Response getConfig() {
         Config c = new Config();
+        c.setEnabled(configuration.getEnabledProperty());
         c.setDefaultImage(configuration.getDefaultImage());
         c.setMaxAgentCreationPerMinute(configuration.getMaxAgentCreationPerMinute());
         c.setArchitectureConfig(configuration.getArchitectureConfigAsString());
+        c.setAwsVendor(GlobalConfiguration.VENDOR_AWS.equals(configuration.getVendor()));
         return Response.ok(c).build();
     }
 

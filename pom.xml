@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.atlassian.buildeng</groupId>
     <artifactId>bamboo-isolated-docker</artifactId>
-    <version>2.119-SNAPSHOT</version>
+    <version>2.122-SNAPSHOT</version>
     <name>Bamboo plugins for cluster based Docker agents</name>
     <description>more relevant text here</description>
     <packaging>pom</packaging>
@@ -34,15 +34,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <bamboo.version>8.2.2</bamboo.version>
+        <bamboo.version>9.1.0-m106</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
-        <amps.version>8.4.1</amps.version>
-        <snakeyaml.version>1.31</snakeyaml.version>
+        <amps.version>8.8.0</amps.version>
+        <snakeyaml.version>1.32</snakeyaml.version>
         <xvfb.enable>true</xvfb.enable>
         <platform.version>5.3.4</platform.version>
         <spring.scanner.version>2.2.3</spring.scanner.version>
         <aws-java.version>1.12.188</aws-java.version>
-        <jackson-core.version>2.13.2</jackson-core.version>
+        <jackson-core.version>2.13.4</jackson-core.version>
         <checkstyle.version>10.1</checkstyle.version>
         <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
@@ -119,7 +119,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.13.2.2</version>
+                <version>2.13.4</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -152,6 +152,12 @@
                 <version>4.9.2</version>
             </dependency>
             <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>4.5.0</version>
@@ -172,6 +178,12 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -195,6 +207,7 @@
             <version>4.5.0</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-junit</artifactId>
@@ -226,14 +239,8 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.0</version>
-            </plugin>
         </plugins>
         <pluginManagement>
-
             <plugins>
                 <plugin>
                     <groupId>com.atlassian.maven.plugins</groupId>
@@ -254,6 +261,18 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>2.10</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.0.0-M7</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${junit.jupiter.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>

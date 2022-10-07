@@ -64,7 +64,10 @@ limitations under the License.
     </postJobAction>
 
     <web-resource key="config-js">
-        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <transformation extension="js">
+            <transformer key="jsI18n"/>
+        </transformation>
+        <dependency>bamboo.web.resources:lib-aui</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
 
         <resource type="download" name="viewIsolatedDockerConfiguration.js" location="/viewIsolatedDockerConfiguration.js"/>
@@ -106,7 +109,7 @@ limitations under the License.
     <web-resource key="docker-job-ui-js" name="JavaScript dependencies for editing isolated docker configuration">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
-        <dependency>com.atlassian.auiplugin:dialog2</dependency>
+        <dependency>com.atlassian.auiplugin:aui-dialog2</dependency>
         <dependency>bamboo.web.resources.common:widget-autocomplete</dependency>
         <dependency>bamboo.web.resources.common:util-ajax</dependency>
         <resource type="download" name="images/" location="images/" />

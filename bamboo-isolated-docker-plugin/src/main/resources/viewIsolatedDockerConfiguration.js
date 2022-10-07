@@ -13,70 +13,92 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-   var restEndpoint = AJS.contextPath() + "/rest/docker-ui/latest/";
-    function processResource(callback, relativeEndpoint) {
-        AJS.$.ajax({
-                type: 'GET',
-                url: restEndpoint + relativeEndpoint,
-                success: function (text) {
-                    callback(text);
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
-                        errorThrown + "\n" + XMLHttpRequest.responseText);                }
-            });
+define('feature/isolate-docker-plugin/config', [
+    'jquery',
+    'aui'
+], (
+    $,
+    AJS
+) => {
+    'use strict';
+
+    var restEndpoint = `${AJS.contextPath()}/rest/docker-ui/latest/`;
+
+    function updateStatus(message) {
+        hideError();
+        $('.save-status').empty().append(message);
+    }
+
+    function hideError() {
+        $('#errorMessage').empty();
+    }
+
+    function showError(message) {
+        $('#errorMessage').append(`<div class='aui-message aui-message-error error'>${message}</div>`);
     }
 
     function processConfig(response) {
-        updateStatus("");
-        AJS.$("#defaultImage").val(response.defaultImage);
-        AJS.$("#maxAgentCreationPerMinute").val(response.maxAgentCreationPerMinute);
-        AJS.$("#architectureConfig").val(response.architectureConfig);
+        updateStatus('');
+        $('#enableSwitch').prop("checked", response.enabled);
+        $('#setRemoteConfig_defaultImage').val(response.defaultImage);
+        $('#setRemoteConfig_maxAgentCreationPerMinute').val(response.maxAgentCreationPerMinute);
+        $('#setRemoteConfig_architectureConfig').val(response.architectureConfig);
+        $('#setRemoteConfig_awsVendor').prop('checked', response.awsVendor);
     }
 
-    function setRemoteConfig() {
-        var config = {};
-        config.defaultImage = AJS.$("#defaultImage").val().trim();
-        config.maxAgentCreationPerMinute = AJS.$("#maxAgentCreationPerMinute").val().trim();
-        config.architectureConfig = AJS.$("#architectureConfig").val().trim();
-
-        updateStatus("Saving...");
-
-        AJS.$.ajax({
-            type: "POST",
-            url: restEndpoint + "config",
-            contentType: 'application/json',
-            data: JSON.stringify(config),
-            success: function () {
-                updateStatus("Saved");
+    function processResource(callback, relativeEndpoint) {
+        $.ajax({
+            type: 'GET',
+            url: restEndpoint + relativeEndpoint,
+            success: function (text) {
+                callback(text);
+                loadComplete();
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                updateStatus("");
-                showError("An error occurred while attempting to save:\n\n" + textStatus + "\n" +
-                    errorThrown + "\n" + XMLHttpRequest.responseText);
-
+                showError(`An error occurred while attempting to read config:\n\n${textStatus}\n${errorThrown}\n${XMLHttpRequest.responseText}`);
+                loadComplete();
             }
         });
     }
 
-    function updateStatus(message) {
-        hideError();
-        AJS.$(".save-status").empty();
-        AJS.$(".save-status").append(message);
+    function loadComplete() {
+        $('#setRemoteConfig_save').removeAttr('disabled');
+        $('#load_complete').val('true');
     }
 
-    function showError(message) {
-        AJS.$("#errorMessage").append("<div class='aui-message aui-message-error error'>" + message + "</div>");
+    return {
+        saveRemoteConfig: function (e) {
+            e.preventDefault();
+            const config = {};
+            config.enabled = $('#enableSwitch').prop("checked");
+            config.defaultImage = $('#setRemoteConfig_defaultImage').val().trim();
+            config.maxAgentCreationPerMinute = $('#setRemoteConfig_maxAgentCreationPerMinute').val().trim();
+            config.architectureConfig = $('#setRemoteConfig_architectureConfig').val().trim();
+            config.awsVendor = $('#setRemoteConfig_awsVendor').is(':checked');
+
+            updateStatus('Saving...');
+
+            $.ajax({
+                type: 'POST',
+                url: restEndpoint + 'config',
+                contentType: 'application/json',
+                data: JSON.stringify(config),
+                success: function () {
+                    updateStatus('Saved');
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    updateStatus('');
+                    showError(`An error occurred while attempting to save:\n\n${textStatus}\n${errorThrown}\n${XMLHttpRequest.responseText}`);
+                }
+            });
+        },
+
+        onInit: function () {
+            $('#setRemoteConfig_save')
+                .on('click', this.saveRemoteConfig)
+                .attr('disabled', 'disabled');
+            updateStatus('Loading...');
+            processResource(processConfig, 'config');
+        }
     }
-
-    function hideError() {
-        AJS.$("#errorMessage").empty();
-    }
-
-
-AJS.$(document).ready(function() {
-    updateStatus("Loading...");
-    processResource(processConfig, "config");
 });
-
-

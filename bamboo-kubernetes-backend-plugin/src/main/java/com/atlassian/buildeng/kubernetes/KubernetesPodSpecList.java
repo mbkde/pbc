@@ -20,7 +20,6 @@ import static com.atlassian.buildeng.isolated.docker.Constants.DEFAULT_ARCHITECT
 
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
-import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -41,7 +40,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-@BambooComponent
 public class KubernetesPodSpecList {
     private static final Logger logger = LoggerFactory.getLogger(KubernetesPodSpecList.class);
     private final GlobalConfiguration globalConfiguration;

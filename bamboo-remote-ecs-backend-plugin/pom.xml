@@ -19,7 +19,7 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.119-SNAPSHOT</version>
+        <version>2.122-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-remote-ecs-backend-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
@@ -43,6 +43,12 @@ limitations under the License.
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-core</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-web</artifactId>
             <version>${bamboo.version}</version>
             <scope>provided</scope>
         </dependency>

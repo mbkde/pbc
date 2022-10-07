@@ -16,15 +16,28 @@
 
 package com.atlassian.buildeng.isolated.docker.rest;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * Simply used for REST JSON serialization/deserialization.
  */
 public class Config {
+    public Boolean enabled;
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
     public String architectureConfig;
+    public boolean awsVendor;
 
     public Config() {
+    }
+
+    public Boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getDefaultImage() {
@@ -51,5 +64,17 @@ public class Config {
         this.architectureConfig = architectureConfig;
     }
 
+    public boolean isAwsVendor() {
+        return awsVendor;
+    }
+
+    public void setAwsVendor(boolean awsVendor) {
+        this.awsVendor = awsVendor;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.NO_CLASS_NAME_STYLE);
+    }
 }
 
