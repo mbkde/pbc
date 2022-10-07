@@ -15,7 +15,6 @@
         </value>
       </option>
       <option name="RECORD_COMPONENTS_WRAP" value="5" />
-      <option name="MULTI_CATCH_TYPES_WRAP" value="5" />
     </JavaCodeStyleSettings>
     <codeStyleSettings language="JAVA">
       <option name="KEEP_LINE_BREAKS" value="false" />
