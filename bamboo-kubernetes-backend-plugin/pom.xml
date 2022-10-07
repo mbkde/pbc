@@ -46,7 +46,7 @@ limitations under the License.
                     </systemProperties>
                     <systemPropertyVariables>
                         <atlassian.bamboo.pbc.image.pull.policy>IfNotPresent</atlassian.bamboo.pbc.image.pull.policy>
-                        <webdriver.browser>firefox</webdriver.browser>
+<!--                        <webdriver.browser>firefox</webdriver.browser>-->
                     </systemPropertyVariables>
                     <products>
                         <product>
