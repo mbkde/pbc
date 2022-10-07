@@ -55,7 +55,6 @@ public class PbcSetupTest extends AbstractPbcTest {
 
     @Test
     public void testPbcConfiguration() throws Exception {
-        //TODO bamboo and broker address
         bamboo.fastLogin(TestUser.ADMIN);
 
         backdoor.agents().enableRemoteAgents(true);
@@ -72,7 +71,7 @@ public class PbcSetupTest extends AbstractPbcTest {
                 .setArchitecturePodConfig("")
                 .save();
 
-        // TODO move this to another suite
+        // TODO jmajkutewicz: move this to a different class:
         final String pythonImage = "python:3.10-slim-bullseye";
         bamboo.fastLogin(TestUser.ADMIN);
 

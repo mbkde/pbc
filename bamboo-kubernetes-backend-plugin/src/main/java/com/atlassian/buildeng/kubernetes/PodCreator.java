@@ -127,7 +127,7 @@ public class PodCreator {
     private static final boolean GENERATE_SHM_VOLUME = Boolean.parseBoolean(
             System.getProperty("pbc.kube.shm.generate", "true"));
 
-    protected static String IMAGE_PULL_POLICY = new SystemProperty(false, "atlassian.bamboo.pbc.image.pull.policy").getValue("Always");
+    private static final String IMAGE_PULL_POLICY = new SystemProperty(false, "atlassian.bamboo.pbc.image.pull.policy").getValue("Always");
 
     static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Map<String, Object> root = new HashMap<>();
