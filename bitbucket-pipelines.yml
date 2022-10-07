@@ -14,4 +14,4 @@ pipelines:
         services:
           - selenium
         script:
-          - mvn -s settings.xml -Dxvfb.enable=false -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" -Dmaven.test.it.skip=false clean install
+          - mvn -s settings.xml -Dxvfb.enable=false -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" -Dmaven.test.it.skip=false -DtestGroups=pbc-integration-tests-ui clean install

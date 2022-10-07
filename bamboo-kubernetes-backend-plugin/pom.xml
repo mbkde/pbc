@@ -46,7 +46,6 @@ limitations under the License.
                     </systemProperties>
                     <systemPropertyVariables>
                         <atlassian.bamboo.pbc.image.pull.policy>IfNotPresent</atlassian.bamboo.pbc.image.pull.policy>
-<!--                        <webdriver.browser>firefox</webdriver.browser>-->
                     </systemPropertyVariables>
                     <products>
                         <product>
@@ -75,12 +74,21 @@ limitations under the License.
                     </products>
                     <testGroups>
                         <testGroup>
-                            <id>integration-tests</id>
+                            <id>pbc-integration-tests-ui</id>
                             <productIds>
                                 <productId>bamboo</productId>
                             </productIds>
                             <includes>
-                                <include>it/**/*Test.java</include>
+                                <include>it/com/atlassian/buildeng/kubernetes/PbcIntegrationTestUi.java</include>
+                            </includes>
+                        </testGroup>
+                        <testGroup>
+                            <id>pbc-integration-tests-kubernetes</id>
+                            <productIds>
+                                <productId>bamboo</productId>
+                            </productIds>
+                            <includes>
+                                <include>it/com/atlassian/buildeng/kubernetes/PbcIntegrationTestKubernetes.java</include>
                             </includes>
                         </testGroup>
                     </testGroups>
@@ -88,6 +96,7 @@ limitations under the License.
             </plugin>
         </plugins>
     </build>
+
     <dependencies>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
@@ -246,6 +255,7 @@ limitations under the License.
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <profiles>
         <profile>
             <id>integration-tests</id>
@@ -260,4 +270,5 @@ limitations under the License.
             </properties>
         </profile>
     </profiles>
+
 </project>
