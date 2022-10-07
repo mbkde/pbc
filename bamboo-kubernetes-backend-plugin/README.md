@@ -119,3 +119,25 @@ To access AWS resources, we are running a combination of Kube secrets and https:
 includes the kube2iam annotations to have the agent container assume the given role per Bamboo server.
 Per-plan/per-deployment AWS IAM Role is also supported since version 2.59 and relies on the same kube2iam service.
 
+
+Running integration tests locally
+========
+To run integration tests locally, you need to prepare your environment first. Detailed instructions how to do it can be found in: https://hello.atlassian.net/wiki/spaces/BAMBOO/pages/1536591697/Setup+Kubernetes+at+dev+environment.
+In short, to run tests:
+* install Docker Desktop & kubectl
+* configure kubectl to use Docker Desktop as the current context:
+    ```
+    kubectl config use-context docker-desktop
+    ```
+* create secret to pull images from docker.atl-paas.net:
+    ```
+    kubectl create secret docker-registry docker-atl-paas-registry --docker-server=docker.atl-paas.net --docker-username=<user> --docker-password=<API_KEY> --docker-email=<user@atlassian.com> --context docker-desktop
+    ```
+  * Get API key from https://packages.atlassian.com/ui/admin/artifactory/user_profile 
+* start bamboo:  
+    ```
+    atlas-debug
+    ```
+* make sure that Bamboo base and broker urls use non-localhost name, so agents will be able to access server from a pod
+* uncomment the `imagePullSecrets` property in the `src/test/resources/basePodTemplate.yaml` to use the secret for docker.atl-paas.net
+* run `it.com.atlassian.buildeng.kubernetes.PbcSetupTest`. It will configure PBC automatically for you
