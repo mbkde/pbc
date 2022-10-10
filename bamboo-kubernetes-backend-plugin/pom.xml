@@ -258,7 +258,7 @@ limitations under the License.
 
     <profiles>
         <profile>
-            <id>integration-tests</id>
+            <id>integration-tests-ui</id>
             <activation>
                 <property>
                     <name>server</name>
@@ -267,6 +267,20 @@ limitations under the License.
             </activation>
             <properties>
                 <maven.test.it.skip>false</maven.test.it.skip>
+                <testGroups>pbc-integration-tests-ui</testGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-tests-full</id>
+            <activation>
+                <property>
+                    <name>server</name>
+                    <value>localhost</value>
+                </property>
+            </activation>
+            <properties>
+                <maven.test.it.skip>false</maven.test.it.skip>
+                <testGroups>pbc-integration-tests-ui,pbc-integration-tests-kubernetes</testGroups>
             </properties>
         </profile>
     </profiles>
