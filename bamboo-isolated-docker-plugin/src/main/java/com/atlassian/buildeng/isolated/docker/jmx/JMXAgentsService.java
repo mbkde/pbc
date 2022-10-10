@@ -56,10 +56,10 @@ public class JMXAgentsService implements LifecycleAware {
         try {
             name = new ObjectName("com.atlassian.buildeng.isolated.docker:type=AgentCounts");
             mbs.registerMBean(agentsCount, name);
-        } catch (MalformedObjectNameException
-                | InstanceAlreadyExistsException
-                | MBeanRegistrationException
-                | NotCompliantMBeanException e) {
+            logger.info("Successfully registered mbean {}, confirming object is not null: {}",
+                    name,
+                    agentsCount != null);
+        } catch (MalformedObjectNameException | InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException e) {
             logger.error("Failed to register mbean {}: {}", name, e.getMessage());
         }
 
@@ -84,13 +84,14 @@ public class JMXAgentsService implements LifecycleAware {
     public void incrementScheduled() {
         agentsCount.scheduled.incrementAndGet();
     }
-    
+
     public void incrementActive() {
         agentsCount.active.incrementAndGet();
     }
 
     /**
      * Recalculate the number of throttled agents.
+     *
      * @param agentsThrottled class holding information relating to throttled agents
      */
     public void recalculateThrottle(AgentsThrottled agentsThrottled) {
@@ -102,5 +103,5 @@ public class JMXAgentsService implements LifecycleAware {
         agentsCount.throttled25Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(25));
         agentsCount.throttled30Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(30));
     }
-    
+
 }
