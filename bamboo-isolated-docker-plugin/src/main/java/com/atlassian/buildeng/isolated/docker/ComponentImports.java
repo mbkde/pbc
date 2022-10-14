@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.FeatureManager;
+import com.atlassian.bamboo.agent.AgentSecurityTokenService;
 import com.atlassian.bamboo.build.BuildExecutionManager;
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.buildqueue.manager.AgentAssignmentService;
@@ -47,7 +48,6 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.atlassian.struts.TextProvider;
 import org.quartz.Scheduler;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 public class ComponentImports {
     @ComponentImport
@@ -138,5 +138,8 @@ public class ComponentImports {
 
     @BambooImport
     public ResultsSummaryManager resultsSummaryManager;
+
+    @BambooImport
+    public AgentSecurityTokenService agentSecurityTokenService;
 
 }

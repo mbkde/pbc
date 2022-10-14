@@ -65,6 +65,10 @@ public class PodCreator {
     static final String ENV_AWS_WEB_IDENTITY = "AWS_WEB_IDENTITY_TOKEN_FILE";
 
     /**
+     * The argument to set the security token for the Bamboo instance for which the agent is spawned.
+     */
+    static final String ARG_SECURITY_TOKEN = "SECURITY_TOKEN";
+    /**
      * The environment variable with the number of side containers in the pod.
      * Used by the sidekick run_agent script to wait until all containers started up.
      */
@@ -454,6 +458,7 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", ENV_VAR_IMAGE, "value", r.getConfiguration().getDockerImage()));
         envs.add(ImmutableMap.of("name", ENV_VAR_RESULT_ID, "value", r.getResultKey()));
         envs.add(ImmutableMap.of("name", ENV_VAR_SERVER, "value", globalConfiguration.getBambooBaseUrl()));
+        envs.add(ImmutableMap.of("name", ARG_SECURITY_TOKEN, "value", r.getSecurityToken()));
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
         envs.add(ImmutableMap.of("name", "KUBE_POD_NAME", "value", createPodName(r)));

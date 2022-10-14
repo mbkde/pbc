@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.ResultKey;
+import com.atlassian.bamboo.agent.AgentSecurityTokenService;
 import com.atlassian.bamboo.builder.LifeCycleState;
 import com.atlassian.bamboo.deployments.events.DeploymentQueuedEvent;
 import com.atlassian.bamboo.deployments.execution.DeploymentContext;
@@ -75,6 +76,7 @@ public class PreBuildQueuedEventListener {
     private final AgentCreationLimits agentCreationLimits;
     private final AgentsThrottled agentsThrottled;
     private final GlobalConfiguration globalConfiguration;
+    private final AgentSecurityTokenService agentSecurityTokenService;
 
     private static final String QUEUE_TIMESTAMP = "pbcJobQueueTime";
 
@@ -93,7 +95,8 @@ public class PreBuildQueuedEventListener {
                                         ContainerSizeDescriptor sizeDescriptor,
                                         AgentCreationLimits agentCreationLimits,
                                         AgentsThrottled agentsThrottled,
-                                        GlobalConfiguration globalConfiguration) {
+                                        GlobalConfiguration globalConfiguration,
+                                        AgentSecurityTokenService agentSecurityTokenService) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -109,6 +112,7 @@ public class PreBuildQueuedEventListener {
         this.agentCreationLimits = agentCreationLimits;
         this.agentsThrottled = agentsThrottled;
         this.globalConfiguration = globalConfiguration;
+        this.agentSecurityTokenService = agentSecurityTokenService;
     }
 
     @EventListener
@@ -253,7 +257,7 @@ public class PreBuildQueuedEventListener {
                 new IsolatedDockerAgentRequest(event.getConfiguration(), eventKey,
                         event.getUniqueIdentifier(),
                         getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
-                        event.getRetryCount(), isPlan),
+                        event.getRetryCount(), isPlan, agentSecurityTokenService.getSecurityToken()),
                 requestCallback
                 );
 

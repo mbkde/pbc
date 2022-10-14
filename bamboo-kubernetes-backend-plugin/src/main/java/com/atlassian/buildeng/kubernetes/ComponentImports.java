@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.kubernetes;
 
+import com.atlassian.bamboo.agent.AgentSecurityTokenService;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.persister.AuditLogService;
@@ -62,4 +63,7 @@ public class ComponentImports {
 
     @BambooImport
     public PlanManager planManager;
+
+    @BambooImport
+    public AgentSecurityTokenService agentSecurityTokenService;
 }

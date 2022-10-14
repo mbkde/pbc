@@ -16,6 +16,7 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import com.atlassian.bamboo.agent.AgentSecurityTokenService;
 import com.atlassian.buildeng.isolated.docker.events.DockerAgentFailEvent;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -80,6 +81,8 @@ public class PreBuildQueuedEventListenerTest {
     private AgentsThrottled agentsThrottled;
     @Mock
     private GlobalConfiguration globalConfiguration;
+    @Mock
+    private AgentSecurityTokenService agentSecurityTokenService;
 
     @InjectMocks
     private PreBuildQueuedEventListener listener;
