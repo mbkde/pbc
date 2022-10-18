@@ -38,8 +38,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -145,78 +143,7 @@ public class KubernetesIsolatedDockerImplTest {
         verify(podSpecList).cleanUp(file);
         verify(callback).handle(any(IsolatedDockerAgentResult.class));
     }
-
-    @Test
-    public void testLoadAllowList() {
-        when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("- test123\n" + "- test456");
-
-        HashSet<String> allowList = new HashSet<>();
-        allowList.add("test123");
-        allowList.add("test456");
-
-        assertEquals(kubernetesIsolatedDocker.loadAllowList(), allowList);
-    }
-
-    @Test
-    public void testAddCachePodSpec() {
-        Yaml yaml = new Yaml(new SafeConstructor());
-
-        String ogSpec = "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "spec:\n" +
-                "  volumes:\n" +
-                "    - name: git-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/gitcache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: git-cache\n" +
-                "        mountPath: /pbc/overlay/gitcache";
-        String expectedSpec = "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "spec:\n" +
-                "  volumes:\n" +
-                "    - name: git-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/gitcache\n" +
-                "    - name: m2-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/m2cache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: git-cache\n" +
-                "        mountPath: /pbc/overlay/gitcache\n" +
-                "      - name: m2-cache\n" +
-                "        mountPath: /pbc/overlay/m2cache";
-        when(globalConfiguration.getArtifactoryCachePodSpecAsString()).thenReturn("spec:\n" +
-                "  volumes:\n" +
-                "    - name: m2-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/m2cache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: m2-cache\n" +
-                "        mountPath: /pbc/overlay/m2cache");
-
-        Map<String, Object> ogYaml = (Map<String, Object>) yaml.load(ogSpec);
-        Map<String, Object> newPodSpec = kubernetesIsolatedDocker.addCachePodSpec(ogYaml);
-        Map<String, Object> expected = (Map<String, Object>) yaml.load(expectedSpec);
-
-        assertEquals(newPodSpec, expected);
-    }
-
+    
     // Helper functions
 
     private Pod setupMocksForPodFileDeleted(IsolatedDockerAgentRequest request, String subjectId, File file)

@@ -107,8 +107,8 @@ define('feature/kubernetes-backend-plugin/config', [
             config.useClusterRegistry = $('#setRemoteConfig_useClusterRegistry').is(':checked');
             config.clusterRegistryAvailableSelector = $('#setRemoteConfig_clusterRegistryAvailableSelector').val().trim();
             config.clusterRegistryPrimarySelector = $('#setRemoteConfig_clusterRegistryPrimarySelector').val().trim();
-            config.artifactoryCacheAllowList = AJS.$("#artifactoryCacheAllowList").val().trim();
-            config.artifactoryCachePodSpec = AJS.$("#artifactoryCachePodSpec").val().trim();
+            config.artifactoryCacheAllowList = AJS.$("#setRemoteConfig_artifactoryCacheAllowList").val().trim();
+            config.artifactoryCachePodSpec = AJS.$("#setRemoteConfig_artifactoryCachePodSpec").val().trim();
 
 
             updateStatus('Saving...');

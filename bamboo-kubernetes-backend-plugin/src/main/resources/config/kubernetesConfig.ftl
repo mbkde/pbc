@@ -23,9 +23,46 @@
         [@s.textarea labelKey='kubernetes.backend.config.form.podTemplate' name='podTemplate' rows='20' cssClass='long-field' /]
         [@s.textarea labelKey='kubernetes.backend.config.form.architecturePodConfig' name='architecturePodConfig' rows='20' cssClass='long-field' /]
         <div class="description" id="desc-architecturePodConfig">
+            Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
+            be a name of the architecture, with a
+            sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
+
+            If you require no extra config, use an empty map {}. The architectures specified here
+            <strong>must</strong> exactly match those
+            specified in the PBC General settings.<br>
+
+            You must specify a "default" key at the top level which specifies which architecture is default in the case
+            no architecture is specified. This ensures backwards compatibility; newly created plans will require an
+            architecture.
+            <br><br>
+
+            Example:
+
+            <pre><code>
+default: amd64
+amd64:
+ config: {}
+arm64:
+ config:
+   spec:
+     nodeSelector:
+       nodeGroup: myNode
+                </code></pre>
+
         </div>
         [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCachePodSpec' name='artifactoryCachePodSpec' rows='20' cssClass='long-field' /]
         [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCacheAllowList' name='artifactoryCacheAllowList' rows='20' cssClass='long-field' /]
+        <div class="description" id="desc-artifactoryCacheAllowList">
+            kubernetes.backend.config.form.artifactoryCacheAllowList.description=Allow list for builds which will use a
+            mounted artifactory cache volume, one build key per line as a
+            YAML list.
+            <br><br>
+            Example:
+            <pre><code>
+- SYNTH-PBCSYNTH
+- SYNTH-IDPLUGIN
+            </code></pre>
+        </div>
 
         [@ww.hidden name='showAwsSpecificFields' /]
         [#if action.showAwsSpecificFields]
