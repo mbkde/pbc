@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
 
-import com.opensymphony.xwork2.ActionSupport;
+import com.atlassian.bamboo.configuration.GlobalAdminAction;
 
 /**
  *
  * @author mkleint
  */
-public class DockerConfigurationAction extends ActionSupport {
+public class DockerConfigurationAction extends GlobalAdminAction {
 }

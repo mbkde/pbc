@@ -21,7 +21,7 @@
                 // Both are still needed, as "Deploy" permission only grants the "Create release button" elsewhere in the UI
                 const menuElement = $("#edit-deployment-project").get(0) || $("#create-deployment-version").get(0);
                 var content = $(
-                    '<li><a class="aui-icon-container" href="' +
+                    '<li><a id="subject-id-button" class="aui-icon-container" href="' +
                     hrefPath +
                     '">View AWS IAM Subject ID for PBC</a></li>'
                 );

@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -69,16 +70,19 @@ public class DockerHandlerImpl implements DockerHandler {
     private final EnvironmentRequirementService environmentRequirementService;
     private final GlobalConfiguration globalConfiguration;
     private final Validator validator;
+    private final Boolean providerEnabled;
 
     /**
      * Creates new stateful instance.
      */
 
+    @Inject
     public DockerHandlerImpl(ModuleDescriptor moduleDescriptor, WebResourceManager webResourceManager,
                              TemplateRenderer templateRenderer,
                              EnvironmentCustomConfigService environmentCustomConfigService,
                              EnvironmentRequirementService environmentRequirementService,
-                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration, Validator validator) {
+                             boolean create, Configuration configuration, GlobalConfiguration globalConfiguration,
+                             Validator validator, Boolean providerEnabled) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
@@ -88,9 +92,8 @@ public class DockerHandlerImpl implements DockerHandler {
         this.webResourceManager = webResourceManager;
         this.globalConfiguration = globalConfiguration;
         this.validator = validator;
+        this.providerEnabled = providerEnabled;
     }
-
-    
 
     @Override
     public String getEditHtml() {
@@ -193,7 +196,7 @@ public class DockerHandlerImpl implements DockerHandler {
         removeEnvironmentRequirements(environment, environmentRequirementService);
     }
 
-    static void removeEnvironmentRequirements(Environment environment, 
+    static void removeEnvironmentRequirements(Environment environment,
             EnvironmentRequirementService environmentRequirementService) {
         try {
             environmentRequirementService.getRequirementsForEnvironment(environment.getId()).stream()
@@ -223,20 +226,21 @@ public class DockerHandlerImpl implements DockerHandler {
         hc.setProperty(Configuration.DOCKER_ARCHITECTURE, config.getArchitecture());
         hc.setProperty(Configuration.DOCKER_IMAGE_SIZE, config.getSize().name());
         hc.setProperty(Configuration.DOCKER_AWS_ROLE, config.getAwsRole());
-        hc.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS, 
+        hc.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 (String)webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         buildConfiguration.clearTree(Configuration.PROPERTY_PREFIX);
         ConfigUtils.copyNodes(hc, buildConfiguration.getProjectConfig());
         //we deal with adding the requirement Constants.CAPABILITY_RESULT in BuildCreatedEventListener
         // in here the job doesn't exist yet.
     }
-    
+
     private String render(String name) {
         final ResourceLocation resourceLocation = moduleDescriptor.getResourceLocation("freemarker", name);
         if (resourceLocation != null) {
             final Map<String, Object> context = new HashMap<>();
             context.put(Configuration.DOCKER_IMAGE, configuration.getDockerImage());
             context.put(Configuration.DOCKER_IMAGE_SIZE, configuration.getSize().name());
+            context.put("showAwsVendorFields", GlobalConfiguration.VENDOR_AWS.equals(globalConfiguration.getVendor()));
             context.put(Configuration.DOCKER_AWS_ROLE, configuration.getAwsRole());
             context.put(Configuration.DOCKER_ARCHITECTURE, configuration.getArchitecture());
             context.put("imageSizes", getImageSizes());
@@ -244,7 +248,7 @@ public class DockerHandlerImpl implements DockerHandler {
             context.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
             OgnlStackUtils.putAll(context);
-            
+
             context.put("webResourceManager", webResourceManager);
             Map<String, Object> cc = new HashMap<>();
             cc.put("image", configuration.getDockerImage());
@@ -252,6 +256,7 @@ public class DockerHandlerImpl implements DockerHandler {
             cc.put("awsRole", configuration.getAwsRole());
             cc.put("architecture", configuration.getArchitecture());
             cc.put("extraContainers", ConfigurationPersistence.toJson(configuration.getExtraContainers()).toString());
+            cc.put("templateAccessible", providerEnabled);
             context.put("custom", Collections.singletonMap("isolated", Collections.singletonMap("docker", cc)));
 
             String templatePath = resourceLocation.getLocation();
@@ -260,7 +265,7 @@ public class DockerHandlerImpl implements DockerHandler {
             return StringUtils.EMPTY;
         }
     }
-    
+
     static Configuration createFromWebContext(Map<String, Object> webFragmentsContextMap) {
         String v = (String) webFragmentsContextMap.get(Configuration.DOCKER_EXTRA_CONTAINERS);
         String role = (String) webFragmentsContextMap.get(Configuration.DOCKER_AWS_ROLE);
@@ -300,11 +305,11 @@ public class DockerHandlerImpl implements DockerHandler {
     public static void addResultRequirement(@NotNull RequirementSet requirementSet) {
         requirementSet.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*", true));
     }
-    
+
     static void addEnvironementRequirement(Environment environment,
             EnvironmentRequirementService environmentRequirementService) {
         try {
-            environmentRequirementService.addRequirement(environment.getId(), 
+            environmentRequirementService.addRequirement(environment.getId(),
                     Constants.CAPABILITY_RESULT, ImmutableRequirement.MatchType.MATCHES, ".*");
         } catch (WebValidationException ex) {
             log.error("Failed to add requirement for environment " + environment.getId(), ex);
@@ -360,6 +365,6 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     public Collection<Pair<String, String>> getArchitectures() {
-       return getArchitecturesWithConfiguration(globalConfiguration, configuration.getArchitecture());
+        return getArchitecturesWithConfiguration(globalConfiguration, configuration.getArchitecture());
     }
 }

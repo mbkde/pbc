@@ -27,7 +27,7 @@ public final class IsolatedDockerAgentRequest {
     private final String buildKey;
     private final int retryCount;
     private final boolean isPlan;
-    
+    private final String securityToken;
 
     /**
      * @param configuration plan configuration.
@@ -35,10 +35,11 @@ public final class IsolatedDockerAgentRequest {
      * @param uniqueIdentifier - something to uniquely identifier the request with
      * @param originalQueingTimestamp - timestamp of when the job was originally queued in bamboo.
      * @param isPlan - true: Request for a build plan, false: request for deployment project
+     * @param securityToken - the security token for the Bamboo instance from which the request was received
      */
-    public IsolatedDockerAgentRequest(Configuration configuration, String resultKey, UUID uniqueIdentifier,
-                                      long originalQueingTimestamp, String buildKey,
-                                      int retryCount, boolean isPlan) {
+    public IsolatedDockerAgentRequest(final Configuration configuration, final String resultKey, final UUID uniqueIdentifier,
+                                      final long originalQueingTimestamp, final String buildKey,
+                                      final int retryCount, final boolean isPlan, final String securityToken) {
         this.configuration = configuration;
         this.resultKey = resultKey;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -46,6 +47,20 @@ public final class IsolatedDockerAgentRequest {
         this.buildKey = buildKey;
         this.retryCount = retryCount;
         this.isPlan = isPlan;
+        this.securityToken = securityToken;
+    }
+
+    public IsolatedDockerAgentRequest(final Configuration configuration, final String resultKey, final UUID uniqueIdentifier,
+                                      final long originalQueingTimestamp, final String buildKey,
+                                      final int retryCount, final boolean isPlan) {
+        this.configuration = configuration;
+        this.resultKey = resultKey;
+        this.uniqueIdentifier = uniqueIdentifier;
+        this.queueTimestamp = originalQueingTimestamp;
+        this.buildKey = buildKey;
+        this.retryCount = retryCount;
+        this.isPlan = isPlan;
+        this.securityToken = "";
     }
 
     public Configuration getConfiguration() {
@@ -76,4 +91,7 @@ public final class IsolatedDockerAgentRequest {
         return isPlan;
     }
 
+    public String getSecurityToken() {
+        return securityToken;
+    }
 }

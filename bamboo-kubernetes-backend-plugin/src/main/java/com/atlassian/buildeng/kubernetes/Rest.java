@@ -20,15 +20,15 @@ import com.atlassian.bamboo.deployments.projects.DeploymentProject;
 import com.atlassian.bamboo.deployments.projects.service.DeploymentProjectService;
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
-import com.atlassian.bamboo.plan.PlanManager;
 import com.atlassian.bamboo.plan.cache.CachedPlanManager;
 import com.atlassian.bamboo.plan.cache.ImmutablePlan;
 import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.security.acegi.acls.BambooPermission;
+import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.kubernetes.rest.Config;
-import com.atlassian.sal.api.websudo.WebSudoRequired;
 import com.google.common.base.Throwables;
 import java.io.IOException;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -37,9 +37,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.springframework.beans.factory.annotation.Autowired;
 
-@WebSudoRequired
 @Path("/")
 public class Rest {
 
@@ -48,19 +46,22 @@ public class Rest {
     private final DeploymentProjectService deploymentProjectService;
     private BambooPermissionManager bambooPermissionManager;
     private final CachedPlanManager cachedPlanManager;
+    private final BandanaManager bandanaManager;
 
 
-    @Autowired
+    @Inject
     public Rest(GlobalConfiguration configuration,
                 SubjectIdService subjectIdService,
                 DeploymentProjectService deploymentProjectService,
                 BambooPermissionManager bambooPermissionManager,
-                PlanManager planManager, CachedPlanManager cachedPlanManager) {
+                CachedPlanManager cachedPlanManager,
+                BandanaManager bandanaManager) {
         this.configuration = configuration;
         this.subjectIdService = subjectIdService;
         this.deploymentProjectService = deploymentProjectService;
         this.bambooPermissionManager = bambooPermissionManager;
         this.cachedPlanManager = cachedPlanManager;
+        this.bandanaManager = bandanaManager;
     }
 
     /**
@@ -84,6 +85,8 @@ public class Rest {
         c.setClusterRegistryPrimarySelector(configuration.getClusterRegistryPrimaryClusterSelector());
         c.setArtifactoryCacheAllowList(configuration.getArtifactoryCacheAllowListAsString());
         c.setArtifactoryCachePodSpec(configuration.getArtifactoryCachePodSpecAsString());
+        c.setShowAwsSpecificFields(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS.equals(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getVendorWithBandana(
+                bandanaManager)));
         return Response.ok(c).build();
     }
 
@@ -131,18 +134,19 @@ public class Rest {
             ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
             if (plan == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Can not found build plan with key: " + planKey).build();
+                        .entity("Can not found build plan with key: " + planKey)
+                        .build();
             }
-            if (bambooPermissionManager.hasPlanPermission(BambooPermission.READ, pk)
-                || bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk)
-                || bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk)
-                || bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk)
-                || bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
-                return Response.ok(configuration.getIamSubjectIdPrefix()
-                        + subjectIdService.getSubjectId(plan)).build();
+            if (bambooPermissionManager.hasPlanPermission(BambooPermission.READ, pk) ||
+                    bambooPermissionManager.hasPlanPermission(BambooPermission.BUILD, pk) ||
+                    bambooPermissionManager.hasPlanPermission(BambooPermission.WRITE, pk) ||
+                    bambooPermissionManager.hasPlanPermission(BambooPermission.CLONE, pk) ||
+                    bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
+                return Response.ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(plan)).build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
-                    .entity("You need at least View permission on this plan: " + planKey).build();
+                        .entity("You need at least View permission on this plan: " + planKey)
+                        .build();
             }
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(Throwables.getStackTraceAsString(e)).build();
@@ -157,11 +161,11 @@ public class Rest {
     @Path("/subjectIdForDeployment/{deploymentId}")
     public Response getSubjectIdDeployment(@PathParam("deploymentId") Long deploymentId) {
         try {
-            DeploymentProject deploymentProject =
-                deploymentProjectService.getDeploymentProject(deploymentId);
+            DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(deploymentId);
             if (deploymentProject == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Cannot find deployment project with ID: " + deploymentId).build();
+                        .entity("Cannot find deployment project with ID: " + deploymentId)
+                        .build();
             }
             return getSubjectIdDeploymentProject(deploymentProject, deploymentId);
         } catch (IllegalArgumentException e) {
@@ -181,7 +185,8 @@ public class Rest {
                     deploymentProjectService.getDeploymentProjectForEnvironment(environmentId);
             if (deploymentProject == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("Cannot find deployment project for environment with ID: " + environmentId).build();
+                        .entity("Cannot find deployment project for environment with ID: " + environmentId)
+                        .build();
             }
             return getSubjectIdDeploymentProject(deploymentProject, deploymentProject.getId());
         } catch (IllegalArgumentException e) {
@@ -193,15 +198,16 @@ public class Rest {
      * GET Subject ID used in roles for deployments. Internal method for environment and deployment projects.
      */
     private Response getSubjectIdDeploymentProject(DeploymentProject deploymentProject, Long deploymentProjectId) {
-        if (bambooPermissionManager.hasPermission(BambooPermission.READ, deploymentProject, null)
-                || bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null)
-                || bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null)
-                || bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-            return Response.ok(configuration.getIamSubjectIdPrefix()
-                    + subjectIdService.getSubjectId(deploymentProject)).build();
+        if (bambooPermissionManager.hasPermission(BambooPermission.READ, deploymentProject, null) ||
+                bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null) ||
+                bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null) ||
+                bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
+            return Response.ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(deploymentProject))
+                    .build();
         } else {
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity("You need at least View permission on this project: " + deploymentProjectId).build();
+                    .entity("You need at least View permission on this project: " + deploymentProjectId)
+                    .build();
         }
     }
 

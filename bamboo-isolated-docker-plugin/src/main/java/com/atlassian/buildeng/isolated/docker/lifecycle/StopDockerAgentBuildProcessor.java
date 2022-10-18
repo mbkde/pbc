@@ -28,6 +28,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
     private final BuildLoggerManager buildLoggerManager;
     private BuildContext buildContext;
 
+    @Inject
     private StopDockerAgentBuildProcessor(AgentContext agentContext, BuildLoggerManager buildLoggerManager) {
         this.agentContext = agentContext;
         this.buildLoggerManager = buildLoggerManager;

@@ -31,6 +31,7 @@ import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import javax.inject.Inject;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -51,18 +52,17 @@ public class Reaper implements LifecycleAware {
     private final AgentRemovals agentRemovals;
     private final UnmetRequirements unmetRequirements;
     //BUILDENG-12799 Reap agents if they're older than 40 minutes, see the issue to learn why the number is so high.
-    static long   REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(40).toMillis();
-    static long   REAPER_INTERVAL_MILLIS  =  30000L; //Reap once every 30 seconds
+    static long REAPER_THRESHOLD_MILLIS = Duration.ofMinutes(40).toMillis();
+    static long REAPER_INTERVAL_MILLIS = 30000L; //Reap once every 30 seconds
     static JobKey REAPER_KEY = JobKey.jobKey("isolated-docker-reaper");
     static String REAPER_AGENT_MANAGER_KEY = "reaper-agent-manager";
     static String REAPER_AGENTS_HELPER_KEY = "reaper-agents-helper";
     static String REAPER_REMOVALS_KEY = "reaper-agent-removals";
     static String REAPER_UNMET_KEY = "reaper-unmet-requirements";
-    private Trigger reaperTrigger;
 
-
+    @Inject
     public Reaper(Scheduler scheduler, ExecutableAgentsHelper executableAgentsHelper,
-            AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
+                  AgentManager agentManager, AgentRemovals agentRemovals, UnmetRequirements unmetRequirements) {
         this.scheduler = scheduler;
         this.executableAgentsHelper = executableAgentsHelper;
         this.agentManager = agentManager;
@@ -76,8 +76,6 @@ public class Reaper implements LifecycleAware {
         List<JobKey> previousJobKeys = Collections.singletonList(REAPER_KEY);
         logger.info("PBC Isolated Docker plugin started. Checking that jobs from a prior instance of the plugin are not still running.");
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
-        // Extra deletion due to only unscheduling this in the previous version, see BUILDENG-20439. Should be removed after deploy.
-        schedulerUtils.deleteJobs(previousJobKeys);
 
         JobDataMap data = new JobDataMap();
         data.put(REAPER_AGENT_MANAGER_KEY, agentManager);
@@ -85,12 +83,12 @@ public class Reaper implements LifecycleAware {
         data.put(REAPER_REMOVALS_KEY, agentRemovals);
         data.put(REAPER_UNMET_KEY, unmetRequirements);
 
-        reaperTrigger = newTrigger()
+        Trigger reaperTrigger = newTrigger()
                 .startNow()
-                    .withSchedule(simpleSchedule()
-                            .withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS)
-                            .repeatForever()
-                    )
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS)
+                        .repeatForever()
+                )
                 .build();
         JobDetail reaperJob = newJob(ReaperJob.class)
                 .withIdentity(REAPER_KEY)

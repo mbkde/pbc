@@ -33,13 +33,25 @@ public class Config {
     public String artifactoryCachePodSpec;
 
 
+    public boolean showAwsSpecificFields;
+
     public Config() {
     }
 
-    public Config(String sidekickImage, String currentContext, String podTemplate, String architecturePodConfig,
-                  String iamRequestTemplate, String iamSubjectIdPrefix, String podLogsUrl, String containerSizes,
-                  boolean useClusterRegistry, String clusterRegistryAvailableSelector,
-                  String clusterRegistryPrimarySelector, String artifactoryCacheAllowList, String artifactoryCachePodSpec) {
+    public Config(String sidekickImage,
+                  String currentContext,
+                  String podTemplate,
+                  String architecturePodConfig,
+                  String iamRequestTemplate,
+                  String iamSubjectIdPrefix,
+                  String podLogsUrl,
+                  String containerSizes,
+                  boolean useClusterRegistry,
+                  String clusterRegistryAvailableSelector,
+                  String clusterRegistryPrimarySelector,
+                  boolean showAwsSpecificFields,
+                  String artifactoryCacheAllowList,
+                  String artifactoryCachePodSpec) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -51,6 +63,7 @@ public class Config {
         this.useClusterRegistry = useClusterRegistry;
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
+        this.showAwsSpecificFields = showAwsSpecificFields;
         this.artifactoryCacheAllowList = artifactoryCacheAllowList;
         this.artifactoryCachePodSpec = artifactoryCachePodSpec;
     }
@@ -79,9 +92,13 @@ public class Config {
         this.podTemplate = podTemplate;
     }
 
-    public String getArchitecturePodConfig() { return architecturePodConfig; }
+    public String getArchitecturePodConfig() {
+        return architecturePodConfig;
+    }
 
-    public void setArchitecturePodConfig(String architecturePodConfig) { this.architecturePodConfig = architecturePodConfig; }
+    public void setArchitecturePodConfig(String architecturePodConfig) {
+        this.architecturePodConfig = architecturePodConfig;
+    }
 
     public void setIamRequestTemplate(String iamRequestTemplate) {
         this.iamRequestTemplate = iamRequestTemplate;
@@ -153,5 +170,13 @@ public class Config {
 
     public void setArtifactoryCachePodSpec(String artifactoryCachePodSpec) {
         this.artifactoryCachePodSpec = artifactoryCachePodSpec;
+    }
+
+    public boolean isShowAwsSpecificFields() {
+        return showAwsSpecificFields;
+    }
+
+    public void setShowAwsSpecificFields(boolean showAwsSpecificFields) {
+        this.showAwsSpecificFields = showAwsSpecificFields;
     }
 }

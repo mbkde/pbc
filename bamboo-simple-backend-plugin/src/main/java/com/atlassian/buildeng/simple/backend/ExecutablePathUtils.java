@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
 
 import org.apache.commons.lang3.SystemUtils;

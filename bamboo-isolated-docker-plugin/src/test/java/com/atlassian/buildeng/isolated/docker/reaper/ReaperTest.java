@@ -51,13 +51,10 @@ public class ReaperTest {
     }
 
     @Test
-    public void deleteJobIsCalledOnStart() throws SchedulerException {
-        // We only need to check this is called once as we are updating the code from unscheduling to deleting.
-        // Once this version has been deployed we will no longer need to ensure the job was deleted
-        // as it should be done onStop().
+    public void deleteJobIsNotCalledOnStart() throws SchedulerException {
         reaper.onStart();
 
-        verify(scheduler, times(1)).deleteJob(Reaper.REAPER_KEY);
+        verify(scheduler, times(0)).deleteJob(Reaper.REAPER_KEY);
     }
 
     @Test

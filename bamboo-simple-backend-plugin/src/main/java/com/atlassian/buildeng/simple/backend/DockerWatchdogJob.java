@@ -70,18 +70,18 @@ public class DockerWatchdogJob implements Job {
                         .filter((PsItem t) -> t.isExited() && t.name.equals("bamboo-agent"))
                         .map((PsItem t) -> t.uuid)
                         .forEach((String t) -> {
-                    try {
-                        ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
-                        //yes. docker-compose up can pass -p and -f parameters but all other commands
-                        // rely on env variables to do the same (facepalm)
-                        globalConfiguration.decorateCommands(pb);
-                        rm.environment().put("COMPOSE_PROJECT_NAME", t);
-                        rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
-                        Process p2 = rm.inheritIO().start();
-                    } catch (IOException ex) {
-                        logger.error("Failed to run docker-compose down", ex);
-                    }
-                });
+                            try {
+                                ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
+                                //yes. docker-compose up can pass -p and -f parameters but all other commands
+                                // rely on env variables to do the same (facepalm)
+                                globalConfiguration.decorateCommands(pb);
+                                rm.environment().put("COMPOSE_PROJECT_NAME", t);
+                                rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
+                                Process p2 = rm.inheritIO().start();
+                            } catch (IOException ex) {
+                                logger.error("Failed to run docker-compose down", ex);
+                            }
+                        });
             }        
         } catch (IOException ex) {
             logger.error("Failed to run docker commands", ex);

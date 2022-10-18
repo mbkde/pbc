@@ -16,8 +16,12 @@
 
 package com.atlassian.buildeng.ecs.remote;
 
+import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
+
 import com.atlassian.buildeng.ecs.remote.rest.Config;
 import com.atlassian.sal.api.websudo.WebSudoRequired;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.WebResource;
 import java.net.URISyntaxException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -27,14 +31,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static com.atlassian.buildeng.ecs.remote.ECSIsolatedAgentServiceImpl.createClient;
 
 @WebSudoRequired
 @Path("/")

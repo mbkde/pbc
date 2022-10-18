@@ -37,7 +37,6 @@ import com.atlassian.buildeng.spi.isolated.docker.WatchdogJob;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.plugin.PluginAccessor;
 import com.atlassian.plugin.module.ContainerManagedPlugin;
-import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.IOException;
@@ -70,6 +69,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jkube.kit.common.util.KubernetesHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.quartz.DisallowConcurrentExecution;
@@ -593,8 +593,8 @@ public class KubernetesWatchdog extends WatchdogJob {
             try {
                 // Short circuit AND so that we don't grab the line if unnecessary
                 if (message == null && client.lastLogLinePod(pod).trim().endsWith("exec format error")) {
-                    message = "An 'exec format error' was detected when starting your container. Check that the " +
-                            "architecture of your image matches the architecture your build is configured to run on.";
+                    message = "An 'exec format error' was detected when starting your container. Check that the "
+                            + "architecture of your image matches the architecture your build is configured to run on.";
                 }
             } catch (KubectlException e) {
                 logger.info("Failed to retrieve last line of pod logs from "

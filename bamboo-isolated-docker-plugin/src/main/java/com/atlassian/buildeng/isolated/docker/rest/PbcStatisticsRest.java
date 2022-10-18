@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -46,6 +47,7 @@ public class PbcStatisticsRest {
 
     private final QueueManagerView<CommonContext, CommonContext> queueManagerView;
 
+    @Inject
     public PbcStatisticsRest(@NotNull BuildQueueManager queueManager) {
         this.queueManagerView = QueueManagerView.newView(queueManager,
             (BuildQueueManager.QueueItemView<CommonContext> ctx) -> ctx);

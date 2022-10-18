@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class DockerSoxService {
     static final String BANDANA_SOX_PATTERNS = "com.atlassian.buildeng.pbc.sox.whitelist";
     private List<Pattern> soxPatterns;
 
+    @Inject
     public DockerSoxService(FeatureManager featureManager, AuditLogService auditLogService,
             BandanaManager bandanaManager, BambooAuthenticationContext authenticationContext) {
         this.featureManager = featureManager;
@@ -69,15 +71,14 @@ public class DockerSoxService {
         if (isSoxEnabled()) {
             Stream<String> images = Stream.concat(
                     Stream.of(config.getDockerImage()),
-                    config.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getImage()));
+                    config.getExtraContainers().stream().map(Configuration.ExtraContainer::getImage));
             return images.allMatch(matchesPatterns());
         }
         return true;
     }
 
     private Predicate<String> matchesPatterns() {
-        return (String image) -> getSoxPatterns()
-                .stream().filter((Pattern t) -> t.matcher(image).matches()).findFirst().isPresent();
+        return (String image) -> getSoxPatterns().stream().anyMatch((Pattern t) -> t.matcher(image).matches());
     }
 
     public synchronized void updateConfig(SoxRestConfig config) {

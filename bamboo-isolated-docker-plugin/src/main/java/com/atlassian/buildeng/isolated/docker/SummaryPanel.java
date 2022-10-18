@@ -31,6 +31,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
 public class SummaryPanel implements WebPanel {
@@ -38,6 +39,7 @@ public class SummaryPanel implements WebPanel {
     private final BuildQueueManager buildQueueManager;
     private final IsolatedAgentService detail;
 
+    @Inject
     public SummaryPanel(BuildQueueManager buildQueueManager, IsolatedAgentService detail) {
         this.buildQueueManager = buildQueueManager;
         this.detail = detail;
@@ -95,10 +97,10 @@ public class SummaryPanel implements WebPanel {
                                 ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
                                 ret.append("<dd>").append(entry.getValue()).append("</dd>");
                             }
-                    );
+            );
             ret.append("</dl>");
-//TODO more information
-//ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
+            //TODO more information
+            //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
         }
         return ret.toString();
     }

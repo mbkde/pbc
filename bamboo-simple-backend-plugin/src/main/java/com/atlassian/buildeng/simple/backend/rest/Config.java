@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend.rest;
 
 
@@ -29,7 +30,7 @@ public class Config {
 
     public Config() {
     }
-    
+
     public Config(String api, String certPath, String url, String sidekick, boolean image) {
         this.apiVersion = api;
         this.certPath = certPath;
@@ -37,7 +38,7 @@ public class Config {
         this.sidekick = sidekick;
         this.sidekickImage = image;
     }
-    
+
     public String getApiVersion() {
         return apiVersion;
     }

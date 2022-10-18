@@ -16,9 +16,9 @@
 
 package com.atlassian.buildeng.ecs;
 
-import com.opensymphony.xwork2.ActionSupport;
+import com.atlassian.bamboo.configuration.GlobalAdminAction;
 
-public class DockerUsagesAction extends ActionSupport {
+public class DockerUsagesAction extends GlobalAdminAction {
 
 
 }

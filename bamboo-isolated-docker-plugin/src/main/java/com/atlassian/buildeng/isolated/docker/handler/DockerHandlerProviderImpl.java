@@ -22,6 +22,7 @@ import com.atlassian.bamboo.build.docker.DockerHandlerProvider;
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
+import com.atlassian.bamboo.plugin.descriptor.DockerHandlerModuleDescriptor;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.isolated.docker.Validator;
@@ -32,12 +33,14 @@ import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.opensymphony.xwork2.TextProvider;
 import java.util.Map;
+import javax.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
-public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDescriptor> {
+public class DockerHandlerProviderImpl implements DockerHandlerProvider {
 
     static final String ISOLATION_TYPE = "PBC";
-    
-    private ModuleDescriptor moduleDescriptor;
+
+    private DockerHandlerModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
     private final EnvironmentCustomConfigService environmentCustomConfigService;
     private final EnvironmentRequirementService environmentRequirementService;
@@ -48,6 +51,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
     /**
      * New stateless instance.
      */
+    @Inject
     public DockerHandlerProviderImpl(TemplateRenderer templateRenderer,
                                      EnvironmentCustomConfigService environmentCustomConfigService,
                                      EnvironmentRequirementService environmentRequirementService,
@@ -60,7 +64,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
         this.globalConfiguration = globalConfiguration;
         this.validator = validator;
     }
-    
+
     @Override
     public String getIsolationType() {
         return ISOLATION_TYPE;
@@ -76,7 +80,8 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
             }
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
-                environmentCustomConfigService, environmentRequirementService, create, c, globalConfiguration, validator);
+                environmentCustomConfigService, environmentRequirementService, create, c, globalConfiguration,
+                validator, globalConfiguration.getEnabledProperty());
     }
 
     @Override
@@ -90,26 +95,24 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider<ModuleDe
         }
         return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
                 environmentCustomConfigService, environmentRequirementService,
-                create, c, globalConfiguration, validator);
-    }
-    
-    @Override
-    public DockerHandler getHandler(Map<String, Object> webFragmentsContextMap, boolean create) {
-        Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
-        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer, 
-                environmentCustomConfigService, environmentRequirementService,
-                create, c, globalConfiguration, validator);
+                create, c, globalConfiguration, validator, globalConfiguration.getEnabledProperty());
     }
 
     @Override
-    public void init(ModuleDescriptor moduleDescriptor) {
-        this.moduleDescriptor = moduleDescriptor;
+    public DockerHandler getHandler(Map<String, Object> webFragmentsContextMap, boolean create) {
+        Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
+        return new DockerHandlerImpl(moduleDescriptor, webResourceManager, templateRenderer,
+                environmentCustomConfigService, environmentRequirementService,
+                create, c, globalConfiguration, validator, globalConfiguration.getEnabledProperty());
+    }
+
+    @Override
+    public void init(@NotNull DockerHandlerModuleDescriptor dockerHandlerModuleDescriptor) {
+        this.moduleDescriptor = dockerHandlerModuleDescriptor;
     }
 
     @Override
     public String getIsolationTypeLabel(TextProvider textProvider) {
         return "Per Build Container (PBC) plugin";
     }
-
-    
 }

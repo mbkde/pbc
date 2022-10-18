@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.simple.backend;
 
 import static org.quartz.JobBuilder.newJob;
@@ -62,17 +63,17 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware {
     /**
-     * The environment variable to override on the agent per image
+     * The environment variable to override on the agent per image.
      */
     static String ENV_VAR_IMAGE = "IMAGE_ID";
 
     /**
-     * The environment variable to override on the agent per server
+     * The environment variable to override on the agent per server.
      */
     static String ENV_VAR_SERVER = "BAMBOO_SERVER";
     
     /**
-     * The environment variable to set the result spawning up the agent
+     * The environment variable to set the result spawning up the agent.
      */
     static String ENV_VAR_RESULT_ID = "RESULT_ID";
 

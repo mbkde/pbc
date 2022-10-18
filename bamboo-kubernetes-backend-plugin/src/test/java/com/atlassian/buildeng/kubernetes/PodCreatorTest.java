@@ -68,7 +68,7 @@ public class PodCreatorTest {
         String result = PodCreator.createPodName(
                 new IsolatedDockerAgentRequest(null, 
                         "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455", 
-                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true));
+                        UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true, "someRandomToken"));
         assertEquals("shardspipeline-servicedeskembeddablesservicede-455-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
                 result);
         
@@ -185,7 +185,7 @@ public class PodCreatorTest {
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(config,
             "TEST-PLAN-JOB-1",
             UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-            0, "bk", 0, true);
+            0, "bk", 0, true, "someRandomToken");
 
         Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
@@ -196,6 +196,7 @@ public class PodCreatorTest {
         Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
         assertFalse(envVariables.containsKey("AWS_ROLE_ARN"));
         assertFalse(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
+        assertEquals("someRandomToken", envVariables.get("SECURITY_TOKEN"));
 
         //Test volume mounts
         Map<String, Object> iamTokenVolumeMount = getVolumeMount(mainContainer, "aws-iam-token");
