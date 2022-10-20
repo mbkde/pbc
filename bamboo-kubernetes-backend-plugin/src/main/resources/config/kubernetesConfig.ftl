@@ -51,7 +51,6 @@ arm64:
 
         </div>
         [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCachePodSpec' name='artifactoryCachePodSpec' rows='20' cssClass='long-field' /]
-        [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCacheAllowList' name='artifactoryCacheAllowList' rows='20' cssClass='long-field' /]
         <div class="description" id="desc-artifactoryCacheAllowList">
             kubernetes.backend.config.form.artifactoryCacheAllowList.description=Allow list for builds which will use a
             mounted artifactory cache volume, one build key per line as a
@@ -64,6 +63,7 @@ arm64:
             </code></pre>
         </div>
 
+        [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCacheAllowList' name='artifactoryCacheAllowList' rows='5' cssClass='long-field' /]
         [@ww.hidden name='showAwsSpecificFields' /]
         [#if action.showAwsSpecificFields]
             [@s.textarea labelKey='kubernetes.backend.config.form.iamRequestTemplate' name='iamRequestTemplate' rows='7' cssClass='long-field' /]

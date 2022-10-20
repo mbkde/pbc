@@ -17,41 +17,43 @@
 package com.atlassian.buildeng.spi.isolated.docker;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 public final class ConfigurationBuilder {
-    
+
     public static ConfigurationBuilder create(String dockerImage) {
         return new ConfigurationBuilder(dockerImage);
     }
-    
+
     private final String dockerImage;
     private String awsRole;
     private Configuration.ContainerSize size = Configuration.ContainerSize.REGULAR;
     private boolean enabled = true;
     private final List<Configuration.ExtraContainer> extras = new ArrayList<>();
     private String architecture;
+    private final HashSet<String> featureFlags = new HashSet<>();
 
     private ConfigurationBuilder(String dockerImage) {
         this.dockerImage = dockerImage;
     }
-    
+
     public ConfigurationBuilder withImageSize(Configuration.ContainerSize size) {
         this.size = size;
         return this;
     }
-    
+
     public ConfigurationBuilder withEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
-    
+
     public ConfigurationBuilder withExtraContainer(String name, String image, Configuration.ExtraContainerSize size) {
         this.extras.add(new Configuration.ExtraContainer(name, image, size));
         return this;
     }
-    
+
     public ConfigurationBuilder withExtraContainer(Configuration.ExtraContainer ex) {
         this.extras.add(ex);
         return this;
@@ -73,9 +75,21 @@ public final class ConfigurationBuilder {
         }
         return this;
     }
-    
+
+    public ConfigurationBuilder withFeatureFlag(String featureFlag) {
+        if (StringUtils.isNotBlank(featureFlag)) {
+            this.featureFlags.add(featureFlag);
+        }
+        return this;
+    }
+
+    public ConfigurationBuilder withFeatureFlags(HashSet<String> featureFlags) {
+        this.featureFlags.addAll(featureFlags);
+        return this;
+    }
+
     public Configuration build() {
-        return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras);
+        return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras, featureFlags);
     }
 
 }

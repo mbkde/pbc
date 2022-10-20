@@ -11,6 +11,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class YamlConfigParser {
         String EXTRA_CONTAINER_NAME = "name";
         String EXTRA_CONTAINER_COMMANDS = "commands";
         String EXTRA_CONTAINER_VARIABLES = "variables";
+        String FEATURE_FLAGS = "feature-flags";
     }
 
     private static final String DEFAULT_IMAGE_SIZE = Configuration.ContainerSize.REGULAR.name();
@@ -48,20 +50,16 @@ public class YamlConfigParser {
                 Node pbcNode = mapNode.getNode(YamlTags.YAML_ROOT);
                 if (pbcNode instanceof StringNode) {
                     final String dockerImage = validateDockerImage(((StringNode) pbcNode).get());
-                    return ConfigurationBuilder.create(dockerImage)
-                            .build();
+                    return ConfigurationBuilder.create(dockerImage).build();
                 } else if (pbcNode instanceof MapNode) {
                     MapNode pbcMapNode = (MapNode) pbcNode;
                     final String dockerImage = validateDockerImage(pbcMapNode.getString(YamlTags.IMAGE).get());
-                    final String sizeStr = pbcMapNode.getOptionalString(YamlTags.SIZE)
-                            .map(StringNode::get)
-                            .orElse(DEFAULT_IMAGE_SIZE);
-                    final String awsRole = pbcMapNode.getOptionalString(YamlTags.AWS_ROLE)
-                            .map(StringNode::get)
-                            .orElse(null);
-                    final String architecture = pbcMapNode.getOptionalString(YamlTags.ARCHITECTURE)
-                            .map(StringNode::get)
-                            .orElse(null);
+                    final String sizeStr =
+                            pbcMapNode.getOptionalString(YamlTags.SIZE).map(StringNode::get).orElse(DEFAULT_IMAGE_SIZE);
+                    final String awsRole =
+                            pbcMapNode.getOptionalString(YamlTags.AWS_ROLE).map(StringNode::get).orElse(null);
+                    final String architecture =
+                            pbcMapNode.getOptionalString(YamlTags.ARCHITECTURE).map(StringNode::get).orElse(null);
                     final Configuration.ContainerSize size;
                     try {
                         size = Configuration.ContainerSize.valueOf(sizeStr.toUpperCase());
@@ -69,30 +67,35 @@ public class YamlConfigParser {
                         final Set<String> sizeNames = Arrays.stream(Configuration.ContainerSize.values())
                                 .map(Configuration.ContainerSize::name)
                                 .collect(Collectors.toSet());
-                        throw new PropertiesValidationException("Unsupported image size: " + sizeStr
-                                + ". Supported values: "
-                                + String.join(",", sizeNames));
+                        throw new PropertiesValidationException("Unsupported image size: " +
+                                sizeStr +
+                                ". Supported values: " +
+                                String.join(",", sizeNames));
                     }
 
                     //parse extra containers
                     final List<Configuration.ExtraContainer> extraContainers = new ArrayList<>();
                     pbcMapNode.getOptionalList(YamlTags.EXTRA_CONTAINERS, MapNode.class)
-                            .ifPresent(containerMaps -> containerMaps.asListOf(MapNode.class).stream()
+                            .ifPresent(containerMaps -> containerMaps.asListOf(MapNode.class)
+                                    .stream()
                                     .map(this::parseExtraContainer)
                                     .forEach(extraContainers::add));
+                    final HashSet<String> featureFlags = new HashSet<>();
+                    pbcMapNode.getOptionalList(YamlTags.FEATURE_FLAGS, MapNode.class).ifPresent(flagMaps -> {
+                        flagMaps.asListOf(MapNode.class).stream().map(MapNode::toString).forEach(featureFlags::add);
+                    });
                     return ConfigurationBuilder.create(dockerImage)
                             .withImageSize(size)
                             .withAwsRole(awsRole)
                             .withArchitecture(architecture)
                             .withExtraContainers(extraContainers)
+                            .withFeatureFlags(featureFlags)
                             .build();
                 }
             }
         }
 
-        return ConfigurationBuilder.create("")
-                .withEnabled(false)
-                .build();
+        return ConfigurationBuilder.create("").withEnabled(false).build();
     }
 
     /**
@@ -112,9 +115,14 @@ public class YamlConfigParser {
             config.put(YamlTags.ARCHITECTURE, configuration.getArchitecture());
         }
         if (configuration.getExtraContainers() != null && !configuration.getExtraContainers().isEmpty()) {
-            config.put(YamlTags.EXTRA_CONTAINERS, configuration.getExtraContainers().stream()
-                    .map(this::convertExtraContainer)
-                    .collect(Collectors.toList()));
+            config.put(YamlTags.EXTRA_CONTAINERS,
+                    configuration.getExtraContainers()
+                            .stream()
+                            .map(this::convertExtraContainer)
+                            .collect(Collectors.toList()));
+        }
+        if (configuration.getFeatureFlags() != null && !configuration.getFeatureFlags().isEmpty()) {
+            config.put(YamlTags.FEATURE_FLAGS, configuration.getFeatureFlags());
         }
         final Map<String, Object> result = new LinkedHashMap<>();
         result.put(YamlTags.YAML_ROOT, config);
@@ -132,12 +140,10 @@ public class YamlConfigParser {
         }
         if (extraContainer.getEnvVariables() != null && !extraContainer.getEnvVariables().isEmpty()) {
             container.put(YamlTags.EXTRA_CONTAINER_VARIABLES,
-                    extraContainer.getEnvVariables().stream()
-                            .collect(Collectors.toMap(
-                                    Configuration.EnvVariable::getName,
-                                    Configuration.EnvVariable::getValue)
-                            )
-            );
+                    extraContainer.getEnvVariables()
+                            .stream()
+                            .collect(Collectors.toMap(Configuration.EnvVariable::getName,
+                                    Configuration.EnvVariable::getValue)));
         }
         return container;
     }
@@ -156,8 +162,10 @@ public class YamlConfigParser {
             final Set<String> availableValues = Arrays.stream(Configuration.ExtraContainerSize.values())
                     .map(Configuration.ExtraContainerSize::name)
                     .collect(Collectors.toSet());
-            throw new PropertiesValidationException("Unsupported image size: " + extraImageSizeStr
-                    + ". Supported values: " + String.join(",", availableValues));
+            throw new PropertiesValidationException("Unsupported image size: " +
+                    extraImageSizeStr +
+                    ". Supported values: " +
+                    String.join(",", availableValues));
         }
         Configuration.ExtraContainer container = new Configuration.ExtraContainer(name, image, extraImageSize);
 
@@ -168,7 +176,8 @@ public class YamlConfigParser {
                 .orElse(new ArrayList<>());
         container.setCommands(commands);
         List<Configuration.EnvVariable> variables = containerMap.getOptionalMap(YamlTags.EXTRA_CONTAINER_VARIABLES)
-                .map(map -> map.getProperties().stream()
+                .map(map -> map.getProperties()
+                        .stream()
                         .map(property -> new Configuration.EnvVariable(property, map.getString(property).get()))
                         .collect(Collectors.toList()))
                 .orElse(new ArrayList<>());

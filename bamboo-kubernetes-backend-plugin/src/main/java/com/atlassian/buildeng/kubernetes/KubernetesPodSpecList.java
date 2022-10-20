@@ -77,7 +77,7 @@ public class KubernetesPodSpecList {
         } else {
             finalPod = podWithoutArchOverrides;
         }
-        if (isArtifactoryCacheEnabled(request.getResultKey())) {
+        if (isArtifactoryCacheEnabled(request)) {
             finalPod = addCachePodSpec(finalPod);
         }
 
@@ -125,8 +125,8 @@ public class KubernetesPodSpecList {
         return new HashSet<>((ArrayList<String>) yaml.load(allowList));
     }
 
-    private boolean isArtifactoryCacheEnabled(String resultKey) {
-        String[] resultKeyArray = resultKey.split("-");
+    private boolean isPlanInArtifactoryGlobalAllowList(IsolatedDockerAgentRequest request) {
+        String[] resultKeyArray = request.getResultKey().split("-");
         try {
             String planKey = resultKeyArray[0] + "-" + resultKeyArray[1];
             return loadAllowList().contains(planKey);
@@ -134,6 +134,17 @@ public class KubernetesPodSpecList {
             logger.error("Cannot determine plan key of request: ", e);
             return false;
         }
+    }
+
+    private boolean isArtifactoryCachePlanConfigured(IsolatedDockerAgentRequest request) {
+        logger.info("When checking configuration for plan {} we have these feature flags: {}",
+                request.getResultKey(),
+                String.join(",", request.getConfiguration().getFeatureFlags()));
+        return request.getConfiguration().getFeatureFlags().contains("ARTIFACTORY_CACHE");
+    }
+
+    private boolean isArtifactoryCacheEnabled(IsolatedDockerAgentRequest request) {
+        return isArtifactoryCachePlanConfigured(request) || isPlanInArtifactoryGlobalAllowList(request);
     }
 
     @VisibleForTesting
