@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.kubernetes.metrics;
 
 import com.atlassian.bamboo.build.BuildLoggerManager;
+import com.atlassian.bamboo.build.artifact.ArtifactLinkManager;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
@@ -28,14 +29,22 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 public class ComponentImports {
     @BambooImport
     public BandanaManager bandanaManager;
+
     @BambooImport
     public AuditLogService auditLogService;
+
     @BambooImport
     public BambooAuthenticationContext authenticationContext;
+
     @ComponentImport
     public BuildLoggerManager buildLoggerManager;
+
     @BambooImport
     public ArtifactManager artifactManager;
+
     @BambooImport
     public ResultsSummaryManager resultsSummaryManager;
+
+    @BambooImport
+    public ArtifactLinkManager artifactLinkManager;
 }
