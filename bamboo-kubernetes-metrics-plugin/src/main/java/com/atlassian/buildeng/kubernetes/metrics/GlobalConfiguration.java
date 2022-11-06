@@ -22,10 +22,13 @@ import com.atlassian.bamboo.persister.AuditLogMessage;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.google.common.base.Preconditions;
 import java.util.Date;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
+@BambooComponent
 public class GlobalConfiguration {
 
     static String BANDANA_PROMETHEUS_URL = "com.atlassian.buildeng.pbc.kubernetes.metrics.prometheus";
@@ -34,7 +37,9 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager, AuditLogService auditLogService,
+    @Inject
+    public GlobalConfiguration(BandanaManager bandanaManager,
+                               AuditLogService auditLogService,
                                BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.auditLogService = auditLogService;
@@ -59,10 +64,17 @@ public class GlobalConfiguration {
 
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(), new Date(),
-                null, null, null, null,
-                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+                new Date(),
+                null,
+                null,
+                null,
+                null,
+                AuditLogEntry.TYPE_FIELD_CHANGE,
+                name,
+                oldValue,
+                newValue);
         auditLogService.log(ent);
     }
-    
+
 }
