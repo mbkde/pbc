@@ -28,8 +28,8 @@ limitations under the License.
     <!-- Same web item but in different sections -->
     <web-item key="sub_id" name="Subject ID Generator for PBC" section="chain.actions/chainActions" weight="70">
         <description>Subject Id Generator Menu Item</description>
-        <label key="kubernetes-config-link.generator"/>
-        <link linkd_id="sub_id_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <label key="kubernetes.backend.config.generator.label"/>
+        <link linkId="sub_id_rest">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
         <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
@@ -37,16 +37,16 @@ limitations under the License.
     <web-item key="sub_id_result" name="Subject ID Generator for PBC in Plan Result"
               section="chainResult.actions/chainResultActions" weight="70">
         <description>Subject Id Generator Menu Item in Plan Result</description>
-        <label key="kubernetes-config-link.generator"/>
-        <link linkd_id="sub_id_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <label key="kubernetes.backend.config.generator.label"/>
+        <link linkId="sub_id_result_rest">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
         <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
 
     <web-item key="sub_id_job" name="Subject ID Generator for PBC in Job" section="job.actions/jobActions" weight="70">
         <description>Subject Id Generator Menu Item in Job</description>
-        <label key="kubernetes-config-link.generator"/>
-        <link linkd_id="sub_id_job_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
+        <label key="kubernetes.backend.config.generator.label"/>
+        <link linkId="sub_id_job_rest">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
         <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
@@ -54,9 +54,8 @@ limitations under the License.
     <web-item key="sub_id_job_result" name="Subject ID Generator for PBC in Job Result"
               section="jobResult.actions/jobResultActions" weight="70">
         <description>Subject Id Generator Menu Item in Job Result</description>
-        <label key="kubernetes-config-link.generator"/>
-        <link linkd_id="sub_id_job_result_rest" absolute="false">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}
-        </link>
+        <label key="kubernetes.backend.config.generator.label"/>
+        <link linkId="sub_id_job_result_rest">/rest/pbc-kubernetes/1.0/subjectIdForPlan/${planKey}</link>
         <condition class="com.atlassian.bamboo.plugins.web.conditions.UserExistsCondition"/>
         <condition class="com.atlassian.buildeng.kubernetes.condition.AwsVendorEnabledCondition"/>
     </web-item>
@@ -84,8 +83,8 @@ limitations under the License.
     </web-resource>
 
     <web-item key="kubernetes-config" name="Configure Kubernetes Backend" section="system.admin/plugins" weight="296">
-        <description key="kubernetes-config-link.desc"/>
-        <label key="kubernetes-config-link.label"/>
+        <description key="kubernetes.backend.config.link.desc"/>
+        <label key="kubernetes.backend.config.link.label"/>
         <link linkId="kubernetes-config-link">/admin/viewKubernetesConfiguration.action</link>
     </web-item>
 

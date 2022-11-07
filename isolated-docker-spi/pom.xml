@@ -24,7 +24,7 @@ limitations under the License.
     <artifactId>isolated-docker-spi</artifactId>
     <packaging>atlassian-plugin</packaging>
     <properties>
-        <atlassian.plugin.key>${parent.groupId}.${project.artifactId}</atlassian.plugin.key>
+        <atlassian.plugin.key>${project.parent.groupId}.${project.artifactId}</atlassian.plugin.key>
     </properties>
     <build>
         <plugins>
