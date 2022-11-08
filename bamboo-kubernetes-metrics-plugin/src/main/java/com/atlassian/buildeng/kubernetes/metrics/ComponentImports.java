@@ -19,12 +19,19 @@ package com.atlassian.buildeng.kubernetes.metrics;
 import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkManager;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
+import com.atlassian.bamboo.chains.BuildContextFactory;
+import com.atlassian.bamboo.jsonator.Jsonator;
 import com.atlassian.bamboo.persister.AuditLogService;
+import com.atlassian.bamboo.plan.PlanExecutionManager;
 import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
+import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
+import com.atlassian.bamboo.utils.i18n.DocumentationLinkProvider;
+import com.atlassian.bamboo.vcs.configuration.service.VcsRepositoryConfigurationService;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
+import com.atlassian.plugin.web.WebInterfaceManager;
 
 public class ComponentImports {
     @BambooImport
@@ -47,4 +54,25 @@ public class ComponentImports {
 
     @BambooImport
     public ArtifactLinkManager artifactLinkManager;
+
+    @BambooImport
+    public VcsRepositoryConfigurationService vcsRepositoryConfigurationService;
+
+    @BambooImport
+    public BambooPermissionManager bambooPermissionManager;
+
+    @BambooImport
+    public WebInterfaceManager webInterfaceManager;
+
+    @BambooImport
+    public PlanExecutionManager planExecutionManager;
+
+    @BambooImport
+    public Jsonator jsonator;
+
+    @BambooImport
+    public BuildContextFactory buildContextFactory;
+
+    @BambooImport
+    public DocumentationLinkProvider documentationLinkProvider;
 }
