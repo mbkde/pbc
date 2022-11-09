@@ -46,7 +46,7 @@ public class ComponentImports {
     @ComponentImport
     public BuildLoggerManager buildLoggerManager;
 
-    @BambooImport
+    @ComponentImport
     public ArtifactManager artifactManager;
 
     @BambooImport
