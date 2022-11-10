@@ -1,6 +1,6 @@
-<head xmlns="http://www.w3.org/1999/html" xmlns="">
+<head xmlns="http://www.w3.org/1999/html">
     [@ui.header pageKey="isolated.docker.config.heading" title=true /]
-    <meta name="decorator" content="adminpage">
+    <meta name="decorator" content="adminpage"/>
     ${webResourceManager.requireResourcesForContext("viewIsolatedDockerConfiguration")}
 </head>
 

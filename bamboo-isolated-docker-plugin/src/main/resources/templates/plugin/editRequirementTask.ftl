@@ -1,4 +1,4 @@
-[@ww.textfield cssClass='long-field docker-container-autocomplete' labelKey='docker.task.key' name='dockerImage' descriptionKey='docker.task.description'/]
+[@ww.textfield cssClass='long-field docker-container-autocomplete' labelKey='isolated.docker.task.key' name='dockerImage' descriptionKey='isolated.docker.task.description'/]
 
 [#--  Only show the CPU architecture section if the server has a non-empty config or a job has the property already configured  --]
 [#if architectureConfig?size gt 0]

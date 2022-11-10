@@ -27,7 +27,7 @@ limitations under the License.
         <pbc.kubectl.path>kubectl</pbc.kubectl.path>
         <testGroups>integration-tests</testGroups>
         <maven.test.it.skip>true</maven.test.it.skip> <!--don't execute integration tests by default-->
-        <atlassian.plugin.key>${parent.groupId}.${project.artifactId}</atlassian.plugin.key>
+        <atlassian.plugin.key>${project.parent.groupId}.${project.artifactId}</atlassian.plugin.key>
     </properties>
     <build>
         <plugins>
