@@ -13,8 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container Kubernetes Metrics Plugin"
-                  plugins-version="2">
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="Per-build Container Kubernetes Metrics Plugin" plugins-version="2">
     <plugin-info>
         <description>Adds a tab to job results with PBC container graphs</description>
         <version>${project.version}</version>
@@ -30,7 +29,7 @@ limitations under the License.
     </buildProcessor>
     <preJobAction key="myPreJobAction" class="com.atlassian.buildeng.kubernetes.metrics.KubePreJobActionImpl">
     </preJobAction>
-
+    
     <preBuildAction key="queryContainerStartup" name="PBC: Query Kubernetes environment for Container Agent"
                     class="com.atlassian.buildeng.kubernetes.metrics.QueryPrometheusPreBuildAction"
                     weight="304">
@@ -45,35 +44,37 @@ limitations under the License.
             </action>
         </package>
     </xwork>
-    <web-item key="METRICS:${buildKey}-${buildNumber}" name="Container Metrics" section="results.subMenu/results"
-              weight="67">
+    <web-item key="METRICS:${buildKey}-${buildNumber}" name="Container Metrics" section="results.subMenu/results" weight="67">
         <label key="Container Metrics"/>
         <link linkId="METRICS:${buildKey}-${buildNumber}">/build/result/viewMetrics.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
         <condition class="com.atlassian.buildeng.spi.isolated.docker.IsConfiguredCondition"/>
     </web-item>
     <web-resource key="kubernetes-metrics-resources" name="Kubernetes Metrics Resources">
-        <resource type="download" name="graph.css" location="css/graph.css"/>
-        <resource type="download" name="d3_v3.js" location="js/d3_v3.js"/>
-        <resource type="download" name="rickshaw.js" location="js/rickshaw.js"/>
-        <resource type="download" name="rickshaw.css" location="css/rickshaw.css"/>
+        <resource type="download" name="graph.css" location="css/graph.css" />
+        <resource type="download" name="d3_v3.js" location="js/d3_v3.js" />
+        <resource type="download" name="rickshaw.js" location="js/rickshaw.js" />
+        <resource type="download" name="rickshaw.css" location="css/rickshaw.css" />
     </web-resource>
+    
+    <component key="globalConfiguration" class="com.atlassian.buildeng.kubernetes.metrics.GlobalConfiguration">
+    </component>
 
+    <component-import key="bandanaManager" interface="com.atlassian.bandana.BandanaManager"/>
+    
     <!-- REST resources -->
     <rest key="pbc-kubernetes-metrics" path="/pbc-kubernetes-metrics" version="1.0">
         <description>Provides the REST resource</description>
-    </rest>
-
+    </rest>  
+    
     <web-resource key="aui-stuff">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         <dependency>com.atlassian.plugins.jquery:jquery</dependency>
 
-        <resource type="download" name="viewKubernetesMetricsConfiguration.js"
-                  location="/viewKubernetesMetricsConfiguration.js"/>
+        <resource type="download" name="viewKubernetesMetricsConfiguration.js" location="/viewKubernetesMetricsConfiguration.js"/>
         <context>viewKubernetesMetricsConfiguration</context>
     </web-resource>
 
-    <web-item key="kubernetes-metrics-config" name="Configure Kubernetes Metrics" section="system.admin/plugins"
-              weight="297">
+    <web-item key="kubernetes-metrics-config" name="Configure Kubernetes Metrics" section="system.admin/plugins" weight="297">
         <description key="kubernetes-metrics-config-link.desc"/>
         <label key="kubernetes-metrics-config-link.label"/>
         <link linkId="kubernetes-metrics-config-link">/admin/viewKubernetesMetricsConfiguration.action</link>
@@ -81,11 +82,10 @@ limitations under the License.
 
     <xwork key="kubernetes-metrics-configuration" name="Configure Kubernetes Metrics">
         <package name="kubernetesMetricsConfiguration" extends="admin">
-            <action name="viewKubernetesMetricsConfiguration"
-                    class="com.atlassian.buildeng.kubernetes.metrics.ConfigurationAction">
+            <action name="viewKubernetesMetricsConfiguration" class="com.atlassian.buildeng.kubernetes.metrics.ConfigurationAction">
                 <result name="success" type="freemarker">/kubernetesMetricsConfig.ftl</result>
             </action>
         </package>
     </xwork>
-
+      
 </atlassian-plugin>
