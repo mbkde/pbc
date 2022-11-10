@@ -165,6 +165,10 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         if (architecture != null) {
             cc.put(Configuration.DOCKER_ARCHITECTURE, architecture);
         }
+        String featureFlags = buildConfiguration.getString(Configuration.DOCKER_FEATURE_FLAGS);
+        if (featureFlags != null) {
+            cc.put(Configuration.DOCKER_FEATURE_FLAGS, featureFlags);
+        }
         Configuration c = AccessConfiguration.forMap(cc);
         return new PerBuildContainerForJob().enabled(c.isEnabled())
                 .image(c.getDockerImage())
@@ -224,7 +228,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         buildConfiguration.setProperty(Configuration.DOCKER_ARCHITECTURE, specsProperties.getArchitecture());
         buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 toJsonString(specsProperties.getExtraContainers()));
-        buildConfiguration.setProperty(Configuration.DOCKER_FEATURE_FLAGS, featureFlags);
+        buildConfiguration.setProperty(Configuration.DOCKER_FEATURE_FLAGS, toJsonString(featureFlags));
     }
 
     /**
