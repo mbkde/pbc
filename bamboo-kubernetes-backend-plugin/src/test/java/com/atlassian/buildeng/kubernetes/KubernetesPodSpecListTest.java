@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -218,6 +219,7 @@ public class KubernetesPodSpecListTest {
                     kubernetesPodSpecList.generate(request, stringId);
                     // then pod spec list generated and sent to file
                     assertPodSpecFileCreated(mockFile, mockFileUtils, file);
+                    verify(globalConfiguration, never()).getArtifactoryCachePodSpecAsString();
                 }
             }
         }
@@ -264,6 +266,116 @@ public class KubernetesPodSpecListTest {
         verify(file).delete();
     }
 
+    @Test
+    public void testArtifactoryCacheSpecAddedWhenPlanInAllowList() throws IOException {
+        // given
+        final IsolatedDockerAgentRequest request = mockCallsFromCreate(false);
+        final String stringId = "abc123";
+        final File file = mock(File.class);
+        when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("- PLAN-KEY");
+
+        mockArtifactoryCache(globalConfiguration);
+        try (MockedStatic<File> mockFile = mockStatic(File.class)) {
+            try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
+                try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
+                    mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
+                    mockPodCreator.when(() -> PodCreator.create(request, globalConfiguration))
+                            .thenReturn(Collections.emptyMap());
+                    // when
+                    kubernetesPodSpecList.generate(request, stringId);
+                    // then pod spec list generated and sent to file
+                    assertPodSpecFileCreated(mockFile, mockFileUtils, file);
+                    verify(globalConfiguration).getArtifactoryCachePodSpecAsString();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testArtifactoryCacheWhenConfiguredLocally() throws IOException {
+        // given
+        final IsolatedDockerAgentRequest request = mockCallsFromCreate(true);
+        final String stringId = "abc123";
+        final File file = mock(File.class);
+
+        mockArtifactoryCache(globalConfiguration);
+        try (MockedStatic<File> mockFile = mockStatic(File.class)) {
+            try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
+                try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
+                    mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
+                    mockPodCreator.when(() -> PodCreator.create(request, globalConfiguration))
+                            .thenReturn(Collections.emptyMap());
+                    // when
+                    kubernetesPodSpecList.generate(request, stringId);
+                    // then pod spec list generated and sent to file
+                    assertPodSpecFileCreated(mockFile, mockFileUtils, file);
+                    verify(globalConfiguration).getArtifactoryCachePodSpecAsString();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testAddCachePodSpec() {
+        Yaml yaml = new Yaml(new SafeConstructor());
+
+        String ogSpec = "apiVersion: v1\n" +
+                "kind: Pod\n" +
+                "spec:\n" +
+                "  volumes:\n" +
+                "    - name: git-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/gitcache\n" +
+                "  containers:\n" +
+                "    volumeMounts:\n" +
+                "      - name: git-cache\n" +
+                "        mountPath: /pbc/overlay/gitcache";
+        String expectedSpec = "apiVersion: v1\n" +
+                "kind: Pod\n" +
+                "spec:\n" +
+                "  volumes:\n" +
+                "    - name: git-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/gitcache\n" +
+                "    - name: m2-cache\n" +
+                "      flexVolume:\n" +
+                "        driver: mkleint/cow\n" +
+                "        fsType: cow\n" +
+                "        options:\n" +
+                "          lower: /var/per-build-cache/m2cache\n" +
+                "  containers:\n" +
+                "    volumeMounts:\n" +
+                "      - name: git-cache\n" +
+                "        mountPath: /pbc/overlay/gitcache\n" +
+                "      - name: m2-cache\n" +
+                "        mountPath: /pbc/overlay/m2cache";
+
+        mockArtifactoryCache(globalConfiguration);
+
+        Map<String, Object> ogYaml = (Map<String, Object>) yaml.load(ogSpec);
+        Map<String, Object> newPodSpec = kubernetesPodSpecList.addCachePodSpec(ogYaml);
+        Map<String, Object> expected = (Map<String, Object>) yaml.load(expectedSpec);
+
+        assertEquals(newPodSpec, expected);
+    }
+
+    @Test
+    public void testLoadAllowList() {
+        when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("- test123\n" + "- test456");
+
+        HashSet<String> allowList = new HashSet<>();
+        allowList.add("test123");
+        allowList.add("test456");
+
+        assertEquals(kubernetesPodSpecList.loadAllowList(), allowList);
+    }
+
     // Helper functions
     private String getPodTemplateAsString() {
         return "apiVersion: v1\n" +
@@ -308,11 +420,22 @@ public class KubernetesPodSpecListTest {
     }
 
     private IsolatedDockerAgentRequest mockCallsFromCreate() {
+        return mockCallsFromCreate(false);
+    }
+
+    private IsolatedDockerAgentRequest mockCallsFromCreate(boolean useArtifactoryCache) {
         final IsolatedDockerAgentRequest request = mock(IsolatedDockerAgentRequest.class);
         Configuration requestConfiguration = mock(Configuration.class);
+        HashSet<String> featureFlags = new HashSet<>();
+        if (useArtifactoryCache) {
+            featureFlags.add("ARTIFACTORY_CACHE");
+        }
+        when(requestConfiguration.getFeatureFlags()).thenReturn(featureFlags);
         when(globalConfiguration.getPodTemplateAsString()).thenReturn(getPodTemplateAsString());
         when(request.getConfiguration()).thenReturn(requestConfiguration);
-        when(request.getResultKey()).thenReturn("PLAN-KEY");
+        if (!useArtifactoryCache) {
+            when(request.getResultKey()).thenReturn("PLAN-KEY");
+        }
         when(requestConfiguration.isAwsRoleDefined()).thenReturn(false);
         return request;
     }
@@ -325,57 +448,7 @@ public class KubernetesPodSpecListTest {
                 matches("UTF-8"), eq(false)));
     }
 
-    @Test
-    public void testLoadAllowList() {
-        when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("- test123\n" + "- test456");
-
-        HashSet<String> allowList = new HashSet<>();
-        allowList.add("test123");
-        allowList.add("test456");
-
-        assertEquals(kubernetesPodSpecList.loadAllowList(), allowList);
-    }
-
-    @Test
-    public void testAddCachePodSpec() {
-        Yaml yaml = new Yaml(new SafeConstructor());
-
-        String ogSpec = "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "spec:\n" +
-                "  volumes:\n" +
-                "    - name: git-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/gitcache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: git-cache\n" +
-                "        mountPath: /pbc/overlay/gitcache";
-        String expectedSpec = "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "spec:\n" +
-                "  volumes:\n" +
-                "    - name: git-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/gitcache\n" +
-                "    - name: m2-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/m2cache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: git-cache\n" +
-                "        mountPath: /pbc/overlay/gitcache\n" +
-                "      - name: m2-cache\n" +
-                "        mountPath: /pbc/overlay/m2cache";
+    private void mockArtifactoryCache(GlobalConfiguration globalConfiguration) {
         when(globalConfiguration.getArtifactoryCachePodSpecAsString()).thenReturn("spec:\n" +
                 "  volumes:\n" +
                 "    - name: m2-cache\n" +
@@ -388,13 +461,6 @@ public class KubernetesPodSpecListTest {
                 "    volumeMounts:\n" +
                 "      - name: m2-cache\n" +
                 "        mountPath: /pbc/overlay/m2cache");
-
-        Map<String, Object> ogYaml = (Map<String, Object>) yaml.load(ogSpec);
-        Map<String, Object> newPodSpec = kubernetesPodSpecList.addCachePodSpec(ogYaml);
-        Map<String, Object> expected = (Map<String, Object>) yaml.load(expectedSpec);
-
-        assertEquals(newPodSpec, expected);
     }
-
 
 }
