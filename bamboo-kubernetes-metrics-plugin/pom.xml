@@ -44,7 +44,6 @@ limitations under the License.
                             com.atlassian.bandana,
                             com.atlassian.buildeng.spi.isolated.docker,
                             com.opensymphony.xwork2,
-                            com.sun.jersey.api.client,
                             org.slf4j,
                             *;resolution:=optional
                         </Import-Package>
@@ -146,6 +145,12 @@ limitations under the License.
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>1.19.4</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
