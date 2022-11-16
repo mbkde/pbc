@@ -124,6 +124,14 @@ Running integration tests locally
 ========
 To run integration tests locally, you need to prepare your environment first. Detailed instructions how to do it can be found in: https://hello.atlassian.net/wiki/spaces/BAMBOO/pages/1536591697/Setup+Kubernetes+at+dev+environment.
 In short, to run tests:
+* if you're on macbook, ensure webdriver can resolve local host address:
+  * webdriver tests use the macbook `serial number` for the local host address
+  * click Apple Menu icon in the top left corner, and then click `About this mac`
+  * copy the serial number (e.g. `C02DG123AB1C`)
+  * add following line to the bottom of the `/etc/hosts` file
+  ```
+  127.0.0.1 <your serial number>
+  ```
 * install Docker Desktop & kubectl
 * configure kubectl to use Docker Desktop as the current context:
     ```
@@ -138,6 +146,7 @@ In short, to run tests:
     ```
     atlas-debug
     ```
-* make sure that Bamboo base and broker urls use non-localhost name, so agents will be able to access server from a pod
+* make sure that Bamboo `base` and `broker client` urls are not set to `localhost`, but use address accessible from a docker container (e.g. your local IP), so agents will be able to access server from a pod
+  * you can configure the `base` and `broker client` urls in `Administration` > `System` > `General configuration`
 * uncomment the `imagePullSecrets` property in the `src/test/resources/basePodTemplate.yaml` to use the secret for docker.atl-paas.net
 * run `it.com.atlassian.buildeng.kubernetes.PbcSetupTest`. It will configure PBC automatically for you
