@@ -19,10 +19,13 @@ limitations under the License.
     <parent>
         <groupId>com.atlassian.buildeng</groupId>
         <artifactId>bamboo-isolated-docker</artifactId>
-        <version>2.126-SNAPSHOT</version>
+        <version>2.129-SNAPSHOT</version>
     </parent>
     <artifactId>bamboo-kubernetes-metrics-plugin</artifactId>
     <packaging>atlassian-plugin</packaging>
+    <properties>
+        <atlassian.plugin.key>${parent.groupId}.${project.artifactId}</atlassian.plugin.key>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -30,6 +33,20 @@ limitations under the License.
                 <artifactId>bamboo-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <instructions>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+                        <Spring-Context>*</Spring-Context>
+                        <Export-Package>
+                        </Export-Package>
+                        <Import-Package>
+                            com.atlassian.bamboo.*,
+                            com.atlassian.bandana,
+                            com.atlassian.buildeng.spi.isolated.docker,
+                            com.opensymphony.xwork2,
+                            org.slf4j,
+                            *;resolution:=optional
+                        </Import-Package>
+                    </instructions>
                     <pluginArtifacts>
                         <pluginArtifact>
                             <groupId>${project.groupId}</groupId>
@@ -47,6 +64,22 @@ limitations under the License.
                             <version>${project.version}</version>
                         </pluginArtifact>
                     </pluginArtifacts>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.plugin</groupId>
+                <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
+                <version>${spring.scanner.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>atlassian-spring-scanner</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <verbose>false</verbose>
                 </configuration>
             </plugin>
         </plugins>
@@ -100,6 +133,17 @@ limitations under the License.
             <groupId>com.atlassian.bamboo</groupId>
             <artifactId>atlassian-bamboo-web</artifactId>
             <version>${bamboo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-annotation</artifactId>
+            <version>${spring.scanner.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

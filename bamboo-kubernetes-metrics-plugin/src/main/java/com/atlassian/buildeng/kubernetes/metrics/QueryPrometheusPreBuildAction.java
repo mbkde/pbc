@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import javax.inject.Inject;
 import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -43,6 +44,7 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String STEP_PERIOD = "1000s";
 
+    @Inject
     public QueryPrometheusPreBuildAction(BuildLoggerManager buildLoggerManager) {
         this.buildLoggerManager = buildLoggerManager;
     }
