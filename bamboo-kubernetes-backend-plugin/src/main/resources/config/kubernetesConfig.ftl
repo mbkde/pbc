@@ -1,12 +1,11 @@
-[#-- @ftlvariable name="action" type="ConfigurationAction" --]
 <head xmlns="http://www.w3.org/1999/html">
-    [@ui.header pageKey="isolated.docker.config.heading" title=true /]
-    <meta name="decorator" content="adminpage">
+    [@ui.header pageKey="kubernetes.backend.config.heading" title=true /]
+    <meta name="decorator" content="adminpage"/>
     ${webResourceManager.requireResourcesForContext("viewKubernetesConfiguration")}
 </head>
 
 <body>
-    <h1>[@s.text name='isolated.docker.config.heading' /]</h1>
+    <h1>[@s.text name='kubernetes.backend.config.heading' /]</h1>
 <p>
 [@s.text name='kubernetes.backend.config.heading.description' /]
 </p>

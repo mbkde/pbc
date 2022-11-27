@@ -49,9 +49,10 @@ EOF
 TIMEOUT=6h
 
 # Actually run the agent
+# TODO BDEV-17077: As a part of this task replace `bamboo.agent.ephemeral.approval.turnedoff` with `bamboo.agent.ephemeral.for.key`
 while [ $? -eq 0 ]; do
     timeout -s KILL $TIMEOUT jre/bin/java  \
- -Dbamboo.home=bamboo-agent-home -DDISABLE_AGENT_AUTO_CAPABILITY_DETECTION=true -jar atlassian-bamboo-agent.jar $BAMBOO_SERVER/agentServer/
+ -Dbamboo.home=bamboo-agent-home -Dbamboo.agent.ephemeral.approval.turnedoff=true -DDISABLE_AGENT_AUTO_CAPABILITY_DETECTION=true -jar atlassian-bamboo-agent.jar $BAMBOO_SERVER/agentServer/ $SECURITY_TOKEN
 done
 
 exit 0

@@ -39,6 +39,7 @@ import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import org.codehaus.plexus.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,7 +48,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * After the build extracts metrics by calling Prometheus server and generates the
+ * After the build extracts metrics by calling Prometheus server and generates
  * a metrics file, uploading them as artifacts.
  */
 public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
@@ -70,6 +71,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
     private static final String STEP_PERIOD = "15s";
 
 
+    @Inject
     private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager,
             ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
