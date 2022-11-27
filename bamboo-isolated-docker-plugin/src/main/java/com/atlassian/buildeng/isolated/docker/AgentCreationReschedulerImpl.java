@@ -34,7 +34,6 @@ import com.atlassian.fugue.Iterables;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
-
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,12 +44,12 @@ import org.slf4j.LoggerFactory;
 
 @BambooComponent
 @ExportAsService({AgentCreationReschedulerImpl.class, LifecycleAware.class, AgentCreationRescheduler.class})
-public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreationRescheduler  {
+public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreationRescheduler {
     private final Logger logger = LoggerFactory.getLogger(AgentCreationReschedulerImpl.class);
     private final EventPublisher eventPublisher;
     private final BuildQueueManager buildQueueManager;
-    private final ScheduledExecutorService executor = NamedExecutors.newScheduledThreadPool(1, 
-            "Docker Agent Retry Pool");
+    private final ScheduledExecutorService executor =
+            NamedExecutors.newScheduledThreadPool(1, "Docker Agent Retry Pool");
     private static final int MAX_RETRY_COUNT = 10;
     private static final Duration INITIAL_RETRY_DELAY = Duration.ofSeconds(20);
     private static final Duration MAX_RETRY_DELAY = Duration.ofSeconds(300);
@@ -61,7 +60,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
         this.eventPublisher = eventPublisher;
         this.buildQueueManager = buildQueueManager;
     }
-    
+
     public boolean reschedule(RetryAgentStartupEvent event) {
         int retryCount = event.getRetryCount();
         if (retryCount > MAX_RETRY_COUNT) {
@@ -88,7 +87,7 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
             if (c.isEnabled()) {
                 String wasWaiting = bd.get(KEY);
                 if (wasWaiting != null) {
-                    //we need to restart this guy.
+                    // we need to restart this guy.
                     logger.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
                     eventPublisher.publish(new RetryAgentStartupEvent(c, t.getView()));
                 } else {
@@ -126,6 +125,8 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
     }
 
     /**
+     * Get the delay, including retries.
+     *
      * @param numRetries Number of retries
      * @return The delay in seconds
      */

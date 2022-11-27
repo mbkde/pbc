@@ -42,7 +42,7 @@ public class ConfigurationPersistence {
                     bld.withImageSize(Configuration.ContainerSize.valueOf(size.getAsString()));
                 } catch (IllegalArgumentException x) {
                     logger.error("Wrong size was persisted: {}", size);
-                    //ok to skip and do nothing, the default value is REGULAR
+                    // ok to skip and do nothing, the default value is REGULAR
                 }
             }
             JsonArray arr = jsonobj.getAsJsonArray("extraContainers");
@@ -116,7 +116,7 @@ public class ConfigurationPersistence {
         }
         return toRet;
     }
-    
+
     public static JsonObject toJson(Configuration conf) {
         JsonObject el = new JsonObject();
         el.addProperty("image", conf.getDockerImage());

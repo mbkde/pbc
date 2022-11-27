@@ -45,10 +45,12 @@ public class DefaultModelUpdater implements ModelUpdater {
     // of course somewhat bigger bill ensues
     private static final double SCALE_DOWN_FREE_CAP_MIN = 0.30;
 
-    //under high load there are interminent reports of agents being disconnected
-    //but these recover very fast, only want to actively kill instances
+    // under high load there are interminent reports of agents being disconnected
+    // but these recover very fast, only want to actively kill instances
     // that have disconnected agent for at least the amount given.
-    static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 20; //20 for us to be able to debug what's going on. (5 minutes only for datadog to report the event)
+
+    // 20 for us to be able to debug what's going on. (5 minutes only for datadog to report the event)
+    static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 20;
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
@@ -67,7 +69,7 @@ public class DefaultModelUpdater implements ModelUpdater {
 
     @Override
     public void updateModel(DockerHosts hosts, State req) {
-        //see if we need to scale up or down..
+        // see if we need to scale up or down..
         int currentSize = hosts.getUsableSize();
         int disconnectedSize = hosts.agentDisconnected().size() - terminateDisconnectedInstances(hosts);
         int desiredScaleSize = currentSize;
@@ -76,40 +78,50 @@ public class DefaultModelUpdater implements ModelUpdater {
             long cpuRequirements = 1 + req.getLackingCPU() / computeInstanceCPULimits(hosts.allUsable());
             long memoryRequirements = 1 + req.getLackingMemory() / computeInstanceMemoryLimits(hosts.allUsable());
             logger.info("Scaling w.r.t. this much cpu/memory {} {} ", req.getLackingCPU(), req.getLackingMemory());
-            //if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
-            //by at least one instance.
+            // if there are no unused fresh ones, scale up based on how many requests are pending, but always scale up
+            // by at least one instance.
             long extraRequired = Math.max(cpuRequirements, memoryRequirements);
 
             desiredScaleSize += extraRequired;
         }
-        //TODO only sums up free space, but it could be just unusable tiny pieces on
+        // TODO only sums up free space, but it could be just unusable tiny pieces on
         // many instance, maybe we should ignore pieces that are smaller than SMALL agent size
         long freeMem = computeFreeCapacityMemory(hosts.allUsable());
         long freeCpu = computeFreeCapacityCPU(hosts.allUsable());
         logger.debug("freeMem:" + freeMem + " reservedMem:" + req.getFutureReservationMemory());
         logger.debug("freeCpu:" + freeCpu + " reservedCpu:" + req.getFutureReservationCPU());
         if (freeMem < req.getFutureReservationMemory() || freeCpu < req.getFutureReservationCPU()) {
-            long memoryRequirements = 1 + (req.getFutureReservationMemory() - freeMem) / computeInstanceMemoryLimits(hosts.allUsable());
-            long cpuRequirements = 1 + (req.getFutureReservationCPU() - freeCpu) / computeInstanceCPULimits(hosts.allUsable());
-            logger.info("Scaling w.r.t. this much future CPU/memory {} {}", req.getFutureReservationCPU(), req.getFutureReservationMemory());
+            long memoryRequirements =
+                    1 + (req.getFutureReservationMemory() - freeMem) / computeInstanceMemoryLimits(hosts.allUsable());
+            long cpuRequirements =
+                    1 + (req.getFutureReservationCPU() - freeCpu) / computeInstanceCPULimits(hosts.allUsable());
+            logger.info("Scaling w.r.t. this much future CPU/memory {} {}",
+                    req.getFutureReservationCPU(),
+                    req.getFutureReservationMemory());
             desiredScaleSize += Math.max(cpuRequirements, memoryRequirements);
-            logger.info("desired size: " + desiredScaleSize  + " cpuReq:" + cpuRequirements + " memReq:" + memoryRequirements);
+            logger.info("desired size: " +
+                    desiredScaleSize +
+                    " cpuReq:" +
+                    cpuRequirements +
+                    " memReq:" +
+                    memoryRequirements);
         }
 
-        int terminatedCount = terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
+        int terminatedCount =
+                terminateInstances(selectToTerminate(hosts, req), hosts.getASGName(), true, hosts.getClusterName());
         desiredScaleSize = desiredScaleSize - terminatedCount;
-        //we are reducing the currentSize by the terminated list because that's
-        //what the terminateInstances method should reduce it to.
+        // we are reducing the currentSize by the terminated list because that's
+        // what the terminateInstances method should reduce it to.
         currentSize = currentSize - terminatedCount;
         try {
             // we need to scale up while ignoring any broken containers, eg.
             // if 3 instances are borked and 2 ok, we need to scale to 6 and not 3 as the desiredScaleSize is calculated
             // up to this point.
             desiredScaleSize = desiredScaleSize + disconnectedSize;
-            //never can scale beyond max capacity, will get an error then and not scale
+            // never can scale beyond max capacity, will get an error then and not scale
             desiredScaleSize = Math.min(desiredScaleSize, hosts.getASG().getMaxSize());
             if (desiredScaleSize > currentSize && desiredScaleSize > hosts.getASG().getDesiredCapacity()) {
-                //this is only meant to scale up!
+                // this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, hosts.getASGName());
             }
         } catch (ECSException ex) {
@@ -122,9 +134,9 @@ public class DefaultModelUpdater implements ModelUpdater {
         int oldSize = disconnectedAgentsCache.size();
         final Map<DockerHost, Date> cache = updateDisconnectedCache(disconnectedAgentsCache, hosts);
         if (!cache.isEmpty()) {
-            //debugging block
+            // debugging block
             logger.warn("Hosts with disconnected agent:" + cache.size() + " " + cache.toString());
-            //too chatty and datadog cannot filter it out properly
+            // too chatty and datadog cannot filter it out properly
             /*  if (oldSize != cache.size()) {
                   eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
               } */
@@ -132,9 +144,12 @@ public class DefaultModelUpdater implements ModelUpdater {
         final List<DockerHost> selectedToKill = selectDisconnectedToKill(hosts, cache);
 
         if (!selectedToKill.isEmpty()) {
-            //debugging block
-            logger.warn("Hosts to kill with disconnected agent:" + selectedToKill.size() + " " + selectedToKill.toString());
-            //TODO it's very hard to figure out what tasks were running on the instance.
+            // debugging block
+            logger.warn("Hosts to kill with disconnected agent:" +
+                    selectedToKill.size() +
+                    " " +
+                    selectedToKill.toString());
+            // TODO it's very hard to figure out what tasks were running on the instance.
             // 1. you need to get a list of task arns for (single) instance (aws api call per instance or paged per cluster)
             // 2. describe them (another aws api call)
             // 3. in the task fine container override for bamboo-agent container and in there find the
@@ -151,19 +166,20 @@ public class DefaultModelUpdater implements ModelUpdater {
 
     private List<DockerHost> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {
         return hosts.agentDisconnected().stream()
-                // container without agent still shows like it's running something but it's not true, all the things are doomed.
-                // maybe reevaluate at some point when major ecs changes arrive.
-                //.filter(t -> t.runningNothing())
-                .filter((DockerHost t) -> {
-                    Date date = dates.get(t);
-                    return date != null && (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() >= TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
-                })
-                .collect(Collectors.toList());
+                    // container without agent still shows like it's running something but it's not true, all the things are doomed.
+                    // maybe reevaluate at some point when major ecs changes arrive.
+                    //.filter(t -> t.runningNothing())
+                    .filter((DockerHost t) -> {
+                        Date date = dates.get(t);
+                        return date != null &&
+                                (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() >=
+                                        TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
+                    }).collect(Collectors.toList());
     }
 
     List<DockerHost> selectToTerminate(DockerHosts hosts, State req) {
-        List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
-                .collect(Collectors.toList());
+        List<DockerHost> toTerminate =
+                Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream()).collect(Collectors.toList());
         if (toTerminate.isEmpty()) {
             return toTerminate;
         }
@@ -173,7 +189,7 @@ public class DefaultModelUpdater implements ModelUpdater {
             toTerminate.remove(0);
             return toTerminate;
         }
-        //keep certain overcapacity around
+        // keep certain overcapacity around
         List<DockerHost> notTerminating = new ArrayList<>(hosts.allUsable());
         notTerminating.removeAll(toTerminate);
         long freeMem = computeFreeCapacityMemory(notTerminating) - req.getFutureReservationMemory();
@@ -181,28 +197,32 @@ public class DefaultModelUpdater implements ModelUpdater {
         long freeCpu = computeFreeCapacityCPU(notTerminating) - req.getFutureReservationCPU();
         long capCpu = computeMaxCapacityCPU(notTerminating);
         logger.info("FREECPU:" + freeCpu + " FREEMEM:" + freeMem);
-        double freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
+        double freeRatio = Math.min((double) freeMem / capMem, (double) freeCpu / capCpu);
         while (freeRatio < SCALE_DOWN_FREE_CAP_MIN && !toTerminate.isEmpty()) {
             DockerHost host = toTerminate.remove(0);
             freeMem = freeMem + host.getRegisteredMemory();
             capMem = capMem + host.getRegisteredMemory();
             freeCpu = freeCpu + host.getRegisteredCpu();
             capCpu = capCpu + host.getRegisteredCpu();
-            freeRatio = Math.min((double)freeMem / capMem, (double)freeCpu / capCpu);
+            freeRatio = Math.min((double) freeMem / capMem, (double) freeCpu / capCpu);
         }
         return toTerminate;
     }
 
-    //the return value has 2 possible meanings.
+    // the return value has 2 possible meanings.
     // 1. how many instances we actually killed
     // 2. by how much the ASG size decreaesed
     // the current code is using it in both meanings, the asg drop is not calculated now and in case
     // of errors the return value is a lie as well.
-    private int terminateInstances(List<DockerHost> toTerminate, String asgName, boolean decrementAsgSize, String clusterName) {
+    private int terminateInstances(List<DockerHost> toTerminate,
+            String asgName,
+            boolean decrementAsgSize,
+            String clusterName) {
         if (!toTerminate.isEmpty()) {
             if (toTerminate.size() > 15) {
-                //actual AWS limit is apparently 20
-                logger.info("Too many instances to kill in one go ({}), killing the first 15 only.", toTerminate.size());
+                // actual AWS limit is apparently 20
+                logger.info("Too many instances to kill in one go ({}), killing the first 15 only.",
+                        toTerminate.size());
                 toTerminate = toTerminate.subList(0, 14);
             }
             try {
@@ -222,12 +242,12 @@ public class DefaultModelUpdater implements ModelUpdater {
      * @return number of CPU power available
      */
     private int computeInstanceCPULimits(Collection<DockerHost> hosts) {
-        //we settle on minimum as that's the safer option here, better to scale faster than slower.
-        //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
+        // we settle on minimum as that's the safer option here, better to scale faster than slower.
+        // the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
         OptionalInt minCpu = hosts.stream().mapToInt((DockerHost value) -> value.getRegisteredCpu()).min();
-        //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
-        //current arbitrary values based on "m4.4xlarge"
+        // if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
+        // current arbitrary values based on "m4.4xlarge"
         return minCpu.orElse(ECSInstance.DEFAULT_INSTANCE.getCpu());
     }
 
@@ -239,33 +259,33 @@ public class DefaultModelUpdater implements ModelUpdater {
      * @return number of memory available
      */
     private int computeInstanceMemoryLimits(Collection<DockerHost> hosts) {
-        //we settle on minimum as that's the safer option here, better to scale faster than slower.
-        //the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
+        // we settle on minimum as that's the safer option here, better to scale faster than slower.
+        // the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
         OptionalInt minMemory = hosts.stream().mapToInt((DockerHost value) -> value.getRegisteredMemory()).min();
-        //if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
-        //current arbitrary values based on "m4.4xlarge"
+        // if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
+        // current arbitrary values based on "m4.4xlarge"
         return minMemory.orElse(ECSInstance.DEFAULT_INSTANCE.getMemory());
     }
 
     private long computeMaxCapacityMemory(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredMemory()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRegisteredMemory()).sum();
     }
 
     private long computeFreeCapacityMemory(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingMemory()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRemainingMemory()).sum();
     }
 
     private long computeFreeCapacityCPU(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRemainingCpu()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRemainingCpu()).sum();
     }
 
     private long computeMaxCapacityCPU(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long)value.getRegisteredCpu()).sum();
+        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRegisteredCpu()).sum();
     }
-    
+
     /**
-     *   update the cache with times of first report for disconnected agent. Remove those that recovered
+     * update the cache with times of first report for disconnected agent. Remove those that recovered
      * , add new incidents.
      */
     private Map<DockerHost, Date> updateDisconnectedCache(Map<DockerHost, Date> cache, DockerHosts hosts) {

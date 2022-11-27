@@ -29,7 +29,7 @@ import java.util.List;
 
 public class Scheduler {
 
-    //silly BUT we already (de)serialize Configuration this way
+    // silly BUT we already (de)serialize Configuration this way
     public static Scheduler fromJson(String v) {
         JsonElement obj = JsonParser.parseString(v);
         if (obj.isJsonObject()) {
@@ -55,11 +55,18 @@ public class Scheduler {
                     JsonPrimitive hostPath = o.getAsJsonPrimitive("hostPath");
                     JsonPrimitive containerPath = o.getAsJsonPrimitive("containerPath");
                     if (name != null && hostPath != null && containerPath != null) {
-                        mappings.add(new HostFolderMappingImpl(name.getAsString(), hostPath.getAsString(), containerPath.getAsString()));
+                        mappings.add(new HostFolderMappingImpl(name.getAsString(),
+                                hostPath.getAsString(),
+                                containerPath.getAsString()));
                     }
                 });
             }
-            Scheduler scheduler = new Scheduler(uuid.getAsString(), resultId.getAsString(), server.getAsString(), sidekick.getAsString(), c, mappings);
+            Scheduler scheduler = new Scheduler(uuid.getAsString(),
+                    resultId.getAsString(),
+                    server.getAsString(),
+                    sidekick.getAsString(),
+                    c,
+                    mappings);
 
             JsonPrimitive taskArn = oo.getAsJsonPrimitive("taskARN");
             if (taskArn != null) {
@@ -88,8 +95,12 @@ public class Scheduler {
     private final List<HostFolderMapping> hostFolderMappings;
     private String buildKey = "none";
 
-    public Scheduler(String uuid, String resultId, String server, String sidekick, 
-            Configuration configuration, List<HostFolderMapping> mappings) {
+    public Scheduler(String uuid,
+            String resultId,
+            String server,
+            String sidekick,
+            Configuration configuration,
+            List<HostFolderMapping> mappings) {
         this.uuid = uuid;
         this.resultId = resultId;
         this.configuration = configuration;

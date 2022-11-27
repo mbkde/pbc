@@ -38,6 +38,7 @@ public class AgentCreationLimits {
 
     /**
      * Retrieve the number of agents which can be created per minute based on the global configuration.
+     *
      * @return maximum amount of agents which can be created per minute
      */
     private Integer getMaxAgentCreationPerMinute() {
@@ -46,6 +47,7 @@ public class AgentCreationLimits {
 
     /**
      * Checks whether the number of agents created is at the limit.
+     *
      * @return true if the agent creation queue is full
      */
     private boolean isAgentCreationQueueFull() {
@@ -54,6 +56,7 @@ public class AgentCreationLimits {
 
     /**
      * Inspect the first element in the queue and checks whether it was created over a minute ago.
+     *
      * @return true if the oldest agent in the queue was created more than one minute ago
      */
     private boolean oldestAgentInQueueCreatedOverOneMinuteAgo() {
@@ -72,6 +75,7 @@ public class AgentCreationLimits {
 
     /**
      * Clear the queue then determine whether it is still full.
+     *
      * @return true if agent creation limit over the past minute has been reached
      */
     public boolean creationLimitReached() {
@@ -83,6 +87,7 @@ public class AgentCreationLimits {
 
     /**
      * Add event to the back of the queue along with the current date.
+     *
      * @param event event to add to the agent creation queue
      */
     public void addToCreationQueue(RetryAgentStartupEvent event) {
@@ -91,6 +96,7 @@ public class AgentCreationLimits {
 
     /**
      * Thread safe implementation to remove given event from the queue.
+     *
      * @param event to remove from the agent creation queue
      */
     public void removeEventFromQueue(RetryAgentStartupEvent event) {

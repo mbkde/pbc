@@ -16,8 +16,8 @@
 
 package com.atlassian.buildeng.ecs.scheduling;
 
-//there is a copy of this class in com.atlassian.buildeng.ecs.remote.rest package
-//any change to this class will have consequences to REST serialization/deserialization
+// there is a copy of this class in com.atlassian.buildeng.ecs.remote.rest package
+// any change to this class will have consequences to REST serialization/deserialization
 public class ArnStoppedState {
     String arn;
     String containerArn;

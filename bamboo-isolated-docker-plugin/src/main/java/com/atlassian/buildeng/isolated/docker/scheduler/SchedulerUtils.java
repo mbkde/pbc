@@ -45,7 +45,9 @@ public class SchedulerUtils {
         try {
             boolean waiting = true;
             do {
-                List<String> stillExecutingJobs = scheduler.getCurrentlyExecutingJobs().stream()
+                List<String> stillExecutingJobs = scheduler
+                        .getCurrentlyExecutingJobs()
+                        .stream()
                         .map(JobExecutionContext::getJobDetail)
                         .map(JobDetail::getKey)
                         .filter(previousJobKeys::contains)
@@ -61,8 +63,9 @@ public class SchedulerUtils {
                 }
             } while (waiting);
         } catch (SchedulerException | InterruptedException e) {
-            logger.warn("Was not able to determine if there is a currently running instance of scheduled jobs. "
-                    + "Proceeding as if there are none. Exception thrown:\n" + e);
+            logger.warn("Was not able to determine if there is a currently running instance of scheduled jobs. " +
+                    "Proceeding as if there are none. Exception thrown:\n" +
+                    e);
         }
     }
 
@@ -77,28 +80,26 @@ public class SchedulerUtils {
      * @param previousJobKeys A list of {@link JobKey} which the job data maps should be extracted from
      **/
     public void copyPreviousJobDataAndDeleteJob(JobDataMap config, List<JobKey> previousJobKeys) {
-        previousJobKeys.stream()
-            .map(k -> {
-                try {
-                    return Optional.ofNullable(scheduler.getJobDetail(k));
-                } catch (SchedulerException e) {
-                    logger.warn("Unable to fetch previous job detail for job with key {}, will not merge its map.",
-                            k.getName());
-                    return Optional.<JobDetail>empty();
-                }
-            })
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .forEach(jobDetail -> {
-                logger.debug("Previous map: " + jobDetail.getKey() + "="
-                        + MapUtils.toProperties(jobDetail.getJobDataMap()));
-                config.putAll(jobDetail.getJobDataMap());
-                deleteJob(jobDetail.getKey());
-            });
+        previousJobKeys.stream().map(k -> {
+            try {
+                return Optional.ofNullable(scheduler.getJobDetail(k));
+            } catch (SchedulerException e) {
+                logger.warn("Unable to fetch previous job detail for job with key {}, will not merge its map.",
+                        k.getName());
+                return Optional.<JobDetail>empty();
+            }
+        }).filter(Optional::isPresent).map(Optional::get).forEach(jobDetail -> {
+            logger.debug("Previous map: " +
+                    jobDetail.getKey() +
+                    "=" +
+                    MapUtils.toProperties(jobDetail.getJobDataMap()));
+            config.putAll(jobDetail.getJobDataMap());
+            deleteJob(jobDetail.getKey());
+        });
     }
 
     public void deleteJobs(List<JobKey> jobKeys) {
-        for (JobKey jobKey: jobKeys) {
+        for (JobKey jobKey : jobKeys) {
             deleteJob(jobKey);
         }
     }
@@ -115,8 +116,8 @@ public class SchedulerUtils {
         }
     }
 
-    @VisibleForTesting
     // We don't want to wait around in the tests, so we use a getter that can be mocked
+    @VisibleForTesting
     long getAwaitInterval() {
         return JOB_AWAIT_INTERVAL;
     }

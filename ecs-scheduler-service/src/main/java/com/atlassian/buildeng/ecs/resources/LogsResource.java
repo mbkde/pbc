@@ -37,29 +37,36 @@ public class LogsResource {
     public LogsResource(ECSConfiguration configuration) {
         this.configuration = configuration;
     }
-    
+
     static final String PARAM_CONTAINER = "containerName";
     static final String PARAM_TASK_ARN = "taskArn";
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getAwsLogs(
-            @QueryParam(PARAM_CONTAINER) String containerName,
-            @QueryParam(PARAM_TASK_ARN) String taskArn)
-    {
+    public Response getAwsLogs(@QueryParam(PARAM_CONTAINER) String containerName,
+            @QueryParam(PARAM_TASK_ARN) String taskArn) {
         if (containerName == null || taskArn == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(PARAM_CONTAINER + " and " + PARAM_TASK_ARN + " are mandatory").build();
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(PARAM_CONTAINER + " and " + PARAM_TASK_ARN + " are mandatory")
+                    .build();
         }
         AwsLogs.Driver driver = AwsLogs.getAwsLogsDriver(configuration);
         if (driver != null) {
             if (driver.getRegion() == null || driver.getLogGroupName() == null || driver.getStreamPrefix() == null) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.").build();
+                return Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.")
+                        .build();
             }
-            
+
             StreamingOutput stream = (OutputStream os) -> {
-                AwsLogs.writeTo(os, driver.getLogGroupName(), driver.getRegion(), driver.getStreamPrefix(), containerName, taskArn);
+                AwsLogs.writeTo(os,
+                        driver.getLogGroupName(),
+                        driver.getRegion(),
+                        driver.getStreamPrefix(),
+                        containerName,
+                        taskArn);
             };
             return Response.ok(stream).build();
         }

@@ -38,11 +38,7 @@ public class StubShellExecutor implements ShellExecutor {
             } catch (IOException e) {
                 throw new RuntimeException("Invalid configuration of stubs");
             }
-            throw new ShellException("Non-zero exit code",
-                    stdout,
-                    stderr,
-                    response.getReturnCode(),
-                    args);
+            throw new ShellException("Non-zero exit code", stdout, stderr, response.getReturnCode(), args);
         }
 
         try {

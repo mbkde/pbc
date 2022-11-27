@@ -43,10 +43,10 @@ public class IsConfiguredCondition implements Condition {
     public boolean shouldDisplay(Map<String, Object> context) {
         String jobKey = (String) context.get("buildKey");
         String buildNumber = (String) context.get("buildNumber");
-        if (jobKey != null && buildNumber != null)  {
+        if (jobKey != null && buildNumber != null) {
             int br = Integer.parseInt(buildNumber);
-            ResultsSummary resultsSummary = resultsSummaryManager
-                    .getResultsSummary(PlanKeys.getPlanResultKey(jobKey, br));
+            ResultsSummary resultsSummary =
+                    resultsSummaryManager.getResultsSummary(PlanKeys.getPlanResultKey(jobKey, br));
             Configuration config = AccessConfiguration.forBuildResultSummary(resultsSummary);
             return config.isEnabled();
         }

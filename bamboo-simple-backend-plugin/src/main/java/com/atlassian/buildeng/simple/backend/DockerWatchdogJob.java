@@ -38,8 +38,8 @@ public class DockerWatchdogJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
             executeImpl(context.getJobDetail().getJobDataMap());
-        } catch (Throwable t) { 
-            //this is throwable because of NoClassDefFoundError and alike. 
+        } catch (Throwable t) {
+            // this is throwable because of NoClassDefFoundError and alike.
             // These are not Exception subclasses and actually
             // thowing something here will stop rescheduling the job forever (until next redeploy)
             logger.error("Exception catched and swallowed to preserve rescheduling of the task", t);
@@ -51,45 +51,53 @@ public class DockerWatchdogJob implements Job {
         if (globalConfiguration == null) {
             throw new IllegalStateException();
         }
-        
+
         try {
-            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(), "ps", "-a", "--format",  "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
+            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(),
+                    "ps",
+                    "-a",
+                    "--format",
+                    "{{.ID}}::{{.Status}}::{{.Label \"com.docker.compose.service\"}}::{{.Label \"bamboo.uuid\"}}");
             globalConfiguration.decorateCommands(pb);
             Process p = pb.start();
             p.waitFor();
             try (BufferedReader buffer = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                List<PsItem> all = buffer.lines()
-                        .map((String t) -> {
-                            List<String> splitted = Splitter.on("::").splitToList(t);
-                            if (splitted.size() == 4) {
-                                return new PsItem(splitted.get(0), splitted.get(2), splitted.get(1), splitted.get(3));
-                            }
-                            return null;
-                        }).filter((PsItem t) -> t != null).collect(Collectors.toList());
-                all.stream()
+                List<PsItem> all = buffer.lines().map((String t) -> {
+                    List<String> splitted = Splitter.on("::").splitToList(t);
+                    if (splitted.size() == 4) {
+                        return new PsItem(splitted.get(0), splitted.get(2), splitted.get(1), splitted.get(3));
+                    }
+                    return null;
+                }).filter((PsItem t) -> t != null).collect(Collectors.toList());
+                all
+                        .stream()
                         .filter((PsItem t) -> t.isExited() && t.name.equals("bamboo-agent"))
                         .map((PsItem t) -> t.uuid)
                         .forEach((String t) -> {
                             try {
-                                ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
-                                //yes. docker-compose up can pass -p and -f parameters but all other commands
+                                ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),
+                                        "down",
+                                        "-v");
+                                // yes. docker-compose up can pass -p and -f parameters but all other commands
                                 // rely on env variables to do the same (facepalm)
                                 globalConfiguration.decorateCommands(pb);
                                 rm.environment().put("COMPOSE_PROJECT_NAME", t);
-                                rm.environment().put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
+                                rm
+                                        .environment()
+                                        .put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
                                 Process p2 = rm.inheritIO().start();
                             } catch (IOException ex) {
                                 logger.error("Failed to run docker-compose down", ex);
                             }
                         });
-            }        
+            }
         } catch (IOException ex) {
             logger.error("Failed to run docker commands", ex);
         } catch (InterruptedException ex) {
             logger.error("interrupted", ex);
         }
     }
-    
+
     private class PsItem {
         final String id;
         final String name;
@@ -102,7 +110,7 @@ public class DockerWatchdogJob implements Job {
             this.status = status;
             this.uuid = uuid;
         }
-        
+
         boolean isExited() {
             return status.contains("Exited");
         }

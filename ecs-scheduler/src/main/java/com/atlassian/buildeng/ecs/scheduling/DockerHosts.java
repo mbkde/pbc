@@ -18,9 +18,7 @@ package com.atlassian.buildeng.ecs.scheduling;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ecs.model.ContainerInstanceStatus;
-
 import java.time.Duration;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,9 +41,11 @@ public final class DockerHosts {
 
     DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod, AutoScalingGroup asg, String clusterName) {
         usable = allHosts.stream().filter((DockerHost t) -> t.getAgentConnected()).collect(Collectors.toList());
-        agentDisconnected = allHosts.stream()
+        agentDisconnected = allHosts
+                .stream()
                 .filter((DockerHost t) -> !ContainerInstanceStatus.DRAINING.toString().equals(t.getStatus()))
-                .filter((DockerHost t) -> !t.getAgentConnected()).collect(Collectors.toSet());
+                .filter((DockerHost t) -> !t.getAgentConnected())
+                .collect(Collectors.toSet());
         Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(usable, stalePeriod);
         freshHosts = partitionedHosts.get(true);
         unusedStaleHosts = unusedStaleInstances(partitionedHosts.get(false));
@@ -60,11 +60,11 @@ public final class DockerHosts {
     public int getUsableSize() {
         return usable.size();
     }
-    
+
     public Collection<DockerHost> agentDisconnected() {
         return Collections.unmodifiableCollection(agentDisconnected);
     }
-    
+
     /**
      * all instances that actually have agent connected and have associated ec2 instance.
      */
@@ -98,17 +98,21 @@ public final class DockerHosts {
     }
 
     List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
-        return freshHosts.stream().filter((DockerHost dockerHost) -> !usedCandidates.contains(dockerHost)).filter(DockerHost::runningNothing).filter(DockerHost::reachingEndOfBillingCycle).collect(Collectors.toList());
+        return freshHosts
+                .stream()
+                .filter((DockerHost dockerHost) -> !usedCandidates.contains(dockerHost))
+                .filter(DockerHost::runningNothing)
+                .filter(DockerHost::reachingEndOfBillingCycle)
+                .collect(Collectors.toList());
     }
 
-    private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts, Duration stalePeriod) {
-        return dockerHosts.stream().collect(Collectors.partitioningBy(
-                (DockerHost dockerHost) ->
-                        dockerHost.isPresentInASG()
-                        && dockerHost.ageMillis() < stalePeriod.toMillis()
-                        && !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())
-                )
-        );
+    private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts,
+            Duration stalePeriod) {
+        return dockerHosts
+                .stream()
+                .collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.isPresentInASG() &&
+                        dockerHost.ageMillis() < stalePeriod.toMillis() &&
+                        !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())));
     }
 
     AutoScalingGroup getASG() {

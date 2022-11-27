@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * when build is cancelled on docker agents we want to remove them.
+ *
  * @author mkleint
  */
 public class BuildCancelledEventListener {
@@ -43,7 +44,8 @@ public class BuildCancelledEventListener {
     private final ExecutableAgentsHelper executableAgentsHelper;
 
     @Inject
-    public BuildCancelledEventListener(AgentRemovals agentRemovals, AgentManager agentManager,
+    public BuildCancelledEventListener(AgentRemovals agentRemovals,
+            AgentManager agentManager,
             ExecutableAgentsHelper executableAgentsHelper) {
         this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;
@@ -59,33 +61,36 @@ public class BuildCancelledEventListener {
         if (agentId != null) {
             BuildAgent agent = agentManager.getAgent(agentId);
             if (AgentQueries.isDockerAgent(agent)) {
-                LOG.info("Stopping docker agent for cancelled build {} {}:{}", 
-                        event.getBuildResultKey(), agent.getName(), agentId);
+                LOG.info("Stopping docker agent for cancelled build {} {}:{}",
+                        event.getBuildResultKey(),
+                        agent.getName(),
+                        agentId);
                 agentRemovals.stopAgentRemotely(agent);
             }
         } else {
             RequirementSetImpl reqs = new RequirementSetImpl();
             reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
-            Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
-                    ExecutableAgentsHelper.ExecutorQuery.newQueryWithoutAssignments(reqs)
-            );
-            agents.stream()
-                    .filter((BuildAgent t) -> AgentQueries.isDockerAgentForResult(t, event.getPlanResultKey())
-                            && t.getAgentStatus().isIdle())
+            Collection<BuildAgent> agents =
+                    executableAgentsHelper.getExecutableAgents(ExecutableAgentsHelper.ExecutorQuery.newQueryWithoutAssignments(
+                            reqs));
+            agents
+                    .stream()
+                    .filter((BuildAgent t) -> AgentQueries.isDockerAgentForResult(t, event.getPlanResultKey()) &&
+                            t.getAgentStatus().isIdle())
                     .forEach((BuildAgent t) -> {
                         agentRemovals.stopAgentRemotely(t);
                     });
         }
     }
-    
+
     /**
      * react to agent going offline event. for pbc agents we want them removed from db.
      */
     @EventListener
     public void onOfflineAgent(AgentOfflineEvent event) {
-        //only remove enabled ones, to cater for the capability-requirement mismatch ones
+        // only remove enabled ones, to cater for the capability-requirement mismatch ones
         // that we want to keep. sort of ugly sorting criteria but there are little ways of
-        //adding custom data to agents at runtime.
+        // adding custom data to agents at runtime.
         if (AgentQueries.isEnabledDockerAgent(event.getBuildAgent())) {
             agentRemovals.removeAgent(event.getBuildAgent());
         }

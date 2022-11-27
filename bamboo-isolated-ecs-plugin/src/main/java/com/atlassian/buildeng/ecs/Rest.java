@@ -60,7 +60,9 @@ public class Rest {
 
 
     @Autowired
-    public Rest(GlobalConfiguration configuration, CachedPlanManager cachedPlanManager, TaskDefinitionRegistrations taskDefRegistrations) {
+    public Rest(GlobalConfiguration configuration,
+            CachedPlanManager cachedPlanManager,
+            TaskDefinitionRegistrations taskDefRegistrations) {
         this.configuration = configuration;
         this.cachedPlanManager = cachedPlanManager;
         this.taskDefRegistrations = taskDefRegistrations;
@@ -72,9 +74,14 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
         Map<Configuration, Integer> mappings = configuration.getAllRegistrations();
-        return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream().map(
-                (Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(), entry.getValue())
-        ).collect(Collectors.toList()))).build();
+        return Response
+                .ok(new GetAllImagesResponse(mappings
+                        .entrySet()
+                        .stream()
+                        .map((Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(),
+                                entry.getValue()))
+                        .collect(Collectors.toList())))
+                .build();
     }
 
     @GET
@@ -85,7 +92,7 @@ public class Rest {
         List<String> clusters = configuration.getValidClusters();
         return Response.ok(new GetValidClustersResponse(clusters)).build();
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/config")
@@ -123,28 +130,26 @@ public class Rest {
         configuration.setConfig(config);
         return Response.noContent().build();
     }
-    
+
     @GET
     @Path("/usages/{revision}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUsages(@PathParam("revision") final int revision) {
-        //TODO environments
+        // TODO environments
         List<JobsUsingImageResponse.JobInfo> toRet = new ArrayList<>();
-        cachedPlanManager.getPlans(ImmutableJob.class).stream()
-                .filter(job -> !job.hasMaster())
-                .forEach(job -> {
-                    Configuration config = forJob(job);
-                    if (config.isEnabled()) {
-                        if (revision == taskDefRegistrations.findTaskRegistrationVersion(config, configuration)) {
-                            toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
-                        }
-                    }
-                });
+        cachedPlanManager.getPlans(ImmutableJob.class).stream().filter(job -> !job.hasMaster()).forEach(job -> {
+            Configuration config = forJob(job);
+            if (config.isEnabled()) {
+                if (revision == taskDefRegistrations.findTaskRegistrationVersion(config, configuration)) {
+                    toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
+                }
+            }
+        });
         return Response.ok(new JobsUsingImageResponse(toRet)).build();
     }
 
 
-    //constants for /awslogs query params
+    // constants for /awslogs query params
     static final String PARAM_TASK_ARN = "taskArn";
     static final String PARAM_CONTAINER = "container";
 
@@ -152,39 +157,49 @@ public class Rest {
     @Path("/logs")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getAwsLogs(@QueryParam(PARAM_CONTAINER) String containerName,
-                               @QueryParam(PARAM_TASK_ARN) String taskArn) {
+            @QueryParam(PARAM_TASK_ARN) String taskArn) {
         if (containerName == null || taskArn == null) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
         AwsLogs.Driver driver = AwsLogs.getAwsLogsDriver(configuration);
         if (driver != null) {
             if (driver.getRegion() == null || driver.getLogGroupName() == null || driver.getStreamPrefix() == null) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.").build();
+                return Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.")
+                        .build();
             }
 
             StreamingOutput stream = (OutputStream os) -> {
-                AwsLogs.writeTo(os, driver.getLogGroupName(), driver.getRegion(), driver.getStreamPrefix(), containerName, taskArn);
+                AwsLogs.writeTo(os,
+                        driver.getLogGroupName(),
+                        driver.getRegion(),
+                        driver.getStreamPrefix(),
+                        containerName,
+                        taskArn);
             };
             return Response.ok(stream).build();
         }
         return Response.ok().build();
     }
-    
-    //copy of AccessConfiguration from the other plugin.
-    // it's a copy to make the isolated-docker-spi plugin lightweight without 
+
+    // copy of AccessConfiguration from the other plugin.
+    // it's a copy to make the isolated-docker-spi plugin lightweight without
     // significant refs to bamboo
     public static Configuration forJob(ImmutableJob job) {
         Map<String, String> cc = job.getBuildDefinition().getCustomConfiguration();
         return forMap(cc);
     }
-    
+
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
-                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
-                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
-                    .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
-                    .build();
+        return ConfigurationBuilder
+                .create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
+                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
+                        Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS,
+                        "[]")))
+                .build();
     }
 }

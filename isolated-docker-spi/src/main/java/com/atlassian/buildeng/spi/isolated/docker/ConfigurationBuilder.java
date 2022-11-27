@@ -21,11 +21,11 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 public final class ConfigurationBuilder {
-    
+
     public static ConfigurationBuilder create(String dockerImage) {
         return new ConfigurationBuilder(dockerImage);
     }
-    
+
     private final String dockerImage;
     private String awsRole;
     private Configuration.ContainerSize size = Configuration.ContainerSize.REGULAR;
@@ -36,22 +36,22 @@ public final class ConfigurationBuilder {
     private ConfigurationBuilder(String dockerImage) {
         this.dockerImage = dockerImage;
     }
-    
+
     public ConfigurationBuilder withImageSize(Configuration.ContainerSize size) {
         this.size = size;
         return this;
     }
-    
+
     public ConfigurationBuilder withEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
-    
+
     public ConfigurationBuilder withExtraContainer(String name, String image, Configuration.ExtraContainerSize size) {
         this.extras.add(new Configuration.ExtraContainer(name, image, size));
         return this;
     }
-    
+
     public ConfigurationBuilder withExtraContainer(Configuration.ExtraContainer ex) {
         this.extras.add(ex);
         return this;
@@ -73,7 +73,7 @@ public final class ConfigurationBuilder {
         }
         return this;
     }
-    
+
     public Configuration build() {
         return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras);
     }

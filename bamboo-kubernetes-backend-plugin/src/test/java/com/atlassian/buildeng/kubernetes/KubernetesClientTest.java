@@ -24,7 +24,7 @@ public class KubernetesClientTest {
     @Test
     public void testGetPods() {
         StubShellExecutor shellExecutor = new StubShellExecutor();
-        ResponseStub stub =  new ResponseStub("/fixture/kubectl/get-pods-1.json", "/fixture/kubectl/empty.txt", 0);
+        ResponseStub stub = new ResponseStub("/fixture/kubectl/get-pods-1.json", "/fixture/kubectl/empty.txt", 0);
         shellExecutor.addStub("kubectl --request-timeout=5m -o json get pods --selector label=label_value", stub);
         KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
         List<Pod> list = client.getPodsByLabel("label", "label_value");
@@ -36,8 +36,10 @@ public class KubernetesClientTest {
     public void testCreatePodExceedsQuota() {
         assertThrows(PodLimitQuotaExceededException.class, () -> {
             StubShellExecutor shellExecutor = new StubShellExecutor();
-            ResponseStub stub =  new ResponseStub("/fixture/kubectl/pod-quota-limit.txt", "/fixture/kubectl/empty.txt", 1);
-            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
+            ResponseStub stub =
+                    new ResponseStub("/fixture/kubectl/pod-quota-limit.txt", "/fixture/kubectl/empty.txt", 1);
+            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml",
+                    stub);
             KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
             client.createPod(new File("/tmp/file.yaml"));
         });
@@ -47,8 +49,10 @@ public class KubernetesClientTest {
     public void testConcurrentResourceQuotaModificationException() {
         assertThrows(ConcurrentResourceQuotaModificationException.class, () -> {
             StubShellExecutor shellExecutor = new StubShellExecutor();
-            ResponseStub stub =  new ResponseStub("/fixture/kubectl/resource-quota-concurrent.txt", "/fixture/kubectl/empty.txt", 1);
-            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
+            ResponseStub stub =
+                    new ResponseStub("/fixture/kubectl/resource-quota-concurrent.txt", "/fixture/kubectl/empty.txt", 1);
+            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml",
+                    stub);
             KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
             client.createPod(new File("/tmp/file.yaml"));
         });
@@ -58,8 +62,10 @@ public class KubernetesClientTest {
     public void testConnectionTimeoutException() {
         assertThrows(ConnectionTimeoutException.class, () -> {
             StubShellExecutor shellExecutor = new StubShellExecutor();
-            ResponseStub stub =  new ResponseStub("/fixture/kubectl/tls-connection-timeout.txt", "/fixture/kubectl/empty.txt", 1);
-            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
+            ResponseStub stub =
+                    new ResponseStub("/fixture/kubectl/tls-connection-timeout.txt", "/fixture/kubectl/empty.txt", 1);
+            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml",
+                    stub);
             KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
             client.createPod(new File("/tmp/file.yaml"));
         });

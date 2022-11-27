@@ -21,6 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.
+ *
  * @author mkleint
  */
 public class DockerAgentTimeoutEvent extends DockerAgentEvent {
@@ -37,6 +38,6 @@ public class DockerAgentTimeoutEvent extends DockerAgentEvent {
     public String toString() {
         return "DockerAgentTimeoutEvent{" + "key=" + key + ", retryCount=" + retryCount + '}';
     }
-    
-    
+
+
 }

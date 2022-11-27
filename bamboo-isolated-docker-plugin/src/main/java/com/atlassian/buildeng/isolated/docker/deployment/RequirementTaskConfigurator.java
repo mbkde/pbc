@@ -49,7 +49,9 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     private final Validator validator;
 
     @Inject
-    private RequirementTaskConfigurator(TextProvider textProvider, GlobalConfiguration globalConfiguration, Validator validator) {
+    private RequirementTaskConfigurator(TextProvider textProvider,
+            GlobalConfiguration globalConfiguration,
+            Validator validator) {
         this.textProvider = textProvider;
         this.globalConfiguration = globalConfiguration;
         this.validator = validator;
@@ -57,13 +59,13 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
 
     @NotNull
     @Override
-    public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params, 
+    public Map<String, String> generateTaskConfigMap(@NotNull ActionParametersMap params,
             @Nullable TaskDefinition previousTaskDefinition) {
         Map<String, String> configMap = super.generateTaskConfigMap(params, previousTaskDefinition);
         configMap.put(Configuration.TASK_DOCKER_IMAGE, params.getString(Configuration.TASK_DOCKER_IMAGE));
         configMap.put(Configuration.TASK_DOCKER_ARCHITECTURE, params.getString(Configuration.TASK_DOCKER_ARCHITECTURE));
         configMap.put(Configuration.TASK_DOCKER_IMAGE_SIZE, params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
+        configMap.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS,
                 params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
         return configMap;
     }
@@ -72,15 +74,17 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull TaskDefinition taskDefinition) {
         super.populateContextForEdit(context, taskDefinition);
         context.putAll(taskDefinition.getConfiguration());
-        context.put(Configuration.TASK_DOCKER_IMAGE, 
+        context.put(Configuration.TASK_DOCKER_IMAGE,
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE));
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
-        context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, 
+        context.put(Configuration.TASK_DOCKER_IMAGE_SIZE,
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_IMAGE_SIZE));
-        context.put("architectureConfig", DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration,
-                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE)));
-        context.put(Configuration.TASK_DOCKER_ARCHITECTURE, taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE));
-        context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, 
+        context.put("architectureConfig",
+                DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration,
+                        taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE)));
+        context.put(Configuration.TASK_DOCKER_ARCHITECTURE,
+                taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_ARCHITECTURE));
+        context.put(Configuration.TASK_DOCKER_EXTRA_CONTAINERS,
                 taskDefinition.getConfiguration().get(Configuration.TASK_DOCKER_EXTRA_CONTAINERS));
     }
 
@@ -88,15 +92,15 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
     public void populateContextForCreate(Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.put("imageSizes", DockerHandlerImpl.getImageSizes());
-        context.put("architectureConfig", DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration,
-                null));
+        context.put("architectureConfig",
+                DockerHandlerImpl.getArchitecturesWithConfiguration(globalConfiguration, null));
         context.put(Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR);
     }
 
     @Override
     public void validate(@NotNull ActionParametersMap params, @NotNull ErrorCollection errorCollection) {
         super.validate(params, errorCollection);
-        
+
         String image = params.getString(Configuration.TASK_DOCKER_IMAGE);
         String extraCont = params.getString(Configuration.TASK_DOCKER_EXTRA_CONTAINERS);
         String size = params.getString(Configuration.TASK_DOCKER_IMAGE_SIZE);
@@ -104,7 +108,7 @@ public class RequirementTaskConfigurator extends AbstractTaskConfigurator implem
         String architecture = params.getString(Configuration.TASK_DOCKER_ARCHITECTURE);
         validator.validate(image, size, role, architecture, extraCont, errorCollection, true);
     }
-    
+
 
     // TODO eventually remove once we are sure noone is using the capability anymore.
 

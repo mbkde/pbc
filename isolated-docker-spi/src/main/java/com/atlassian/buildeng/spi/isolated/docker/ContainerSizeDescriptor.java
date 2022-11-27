@@ -23,18 +23,18 @@ public interface ContainerSizeDescriptor {
 
 
     int getCpu(Configuration.ContainerSize size);
-    
+
     int getCpu(Configuration.ExtraContainerSize size);
-    
+
     int getMemory(Configuration.ContainerSize size);
-    
+
     int getMemory(Configuration.ExtraContainerSize size);
-    
+
     int getMemoryLimit(Configuration.ContainerSize size);
-    
+
     int getMemoryLimit(Configuration.ExtraContainerSize size);
-    
+
     String getLabel(Configuration.ContainerSize size);
-    
+
     String getLabel(Configuration.ExtraContainerSize size);
 }

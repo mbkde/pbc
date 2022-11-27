@@ -56,13 +56,14 @@ public class TaskDefinitionRegistrations {
         return image.contains("docker:") && image.endsWith("dind");
     }
 
-    //TODO this should be refactored to no expose the internal structure at all.
+    // TODO this should be refactored to no expose the internal structure at all.
     public interface Backend {
         Map<Configuration, Integer> getAllRegistrations();
 
         Map<String, Integer> getAllECSTaskRegistrations();
 
-        void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings);
+        void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings,
+                Map<String, Integer> taskRequestMappings);
     }
 
     private final Backend backend;
@@ -79,53 +80,64 @@ public class TaskDefinitionRegistrations {
         configuration.getEnvVars().forEach((String key, String val) -> {
             def.withEnvironment(new KeyValuePair().withName(key).withValue(val));
         });
-        return def.withEnvironment(new KeyValuePair().withName(Constants.ECS_CLUSTER_KEY).withValue(configuration.getCurrentCluster()));
+        return def.withEnvironment(new KeyValuePair()
+                .withName(Constants.ECS_CLUSTER_KEY)
+                .withValue(configuration.getCurrentCluster()));
     }
 
     private static ContainerDefinition withLogDriver(ContainerDefinition def, ECSConfiguration configuration) {
         String driver = configuration.getLoggingDriver();
         if (driver != null) {
-            LogConfiguration ld = new LogConfiguration().withLogDriver(driver).withOptions(configuration.getLoggingDriverOpts());
+            LogConfiguration ld =
+                    new LogConfiguration().withLogDriver(driver).withOptions(configuration.getLoggingDriverOpts());
             return def.withLogConfiguration(ld);
         }
         return def;
     }
 
-    private static RegisterTaskDefinitionRequest withHostVolumes(ContainerDefinition agentContainerDef, RegisterTaskDefinitionRequest req, BambooServerEnvironment env) {
+    private static RegisterTaskDefinitionRequest withHostVolumes(ContainerDefinition agentContainerDef,
+            RegisterTaskDefinitionRequest req,
+            BambooServerEnvironment env) {
         env.getHostFolderMappings().forEach((HostFolderMapping t) -> {
-            req.withVolumes(new Volume().withName(t.getVolumeName())
+            req.withVolumes(new Volume()
+                    .withName(t.getVolumeName())
                     .withHost(new HostVolumeProperties().withSourcePath(t.getHostPath())));
-            agentContainerDef.withMountPoints(new MountPoint().withSourceVolume(t.getVolumeName())
+            agentContainerDef.withMountPoints(new MountPoint()
+                    .withSourceVolume(t.getVolumeName())
                     .withContainerPath(t.getContainerPath()));
         });
         return req;
     }
 
     // Constructs a standard build agent task definition request with sidekick and generated task definition family
-    public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration, 
-            ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
+    public static RegisterTaskDefinitionRequest taskDefinitionRequest(Configuration configuration,
+            ECSConfiguration globalConfiguration,
+            BambooServerEnvironment env) {
         ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
-        ContainerDefinition main = withLogDriver(withGlobalEnvVars(
-                new ContainerDefinition()
-                        .withName(Constants.AGENT_CONTAINER_NAME)
-                        .withCpu(sizeDescriptor.getCpu(configuration.getSize()))
-                        .withMemoryReservation(sizeDescriptor.getMemory(configuration.getSize()))
-                        .withMemory(sizeDescriptor.getMemoryLimit(configuration.getSize()))
-                        .withImage(sanitizeImageName(configuration.getDockerImage()))
-                        .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
-                        .withEntryPoint(Constants.RUN_SCRIPT)
-                        .withWorkingDirectory(Constants.WORK_DIR)
-                        .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
-                        .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_SERVER).withValue(env.getBambooBaseUrl()))
-                        .withEnvironment(new KeyValuePair().withName(Constants.ENV_VAR_IMAGE).withValue(configuration.getDockerImage())),
-                globalConfiguration), globalConfiguration);
-        RegisterTaskDefinitionRequest req =
-                withHostVolumes(main,
-                        new RegisterTaskDefinitionRequest()
-                                .withContainerDefinitions(main, Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick())) //, Constants.METADATA_DEFINITION)
-                                .withFamily(globalConfiguration.getTaskDefinitionName())
-                                .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME)),
-                        env);
+        ContainerDefinition main = withLogDriver(withGlobalEnvVars(new ContainerDefinition()
+                .withName(Constants.AGENT_CONTAINER_NAME)
+                .withCpu(sizeDescriptor.getCpu(configuration.getSize()))
+                .withMemoryReservation(sizeDescriptor.getMemory(configuration.getSize()))
+                .withMemory(sizeDescriptor.getMemoryLimit(configuration.getSize()))
+                .withImage(sanitizeImageName(configuration.getDockerImage()))
+                .withVolumesFrom(new VolumeFrom().withSourceContainer(Constants.SIDEKICK_CONTAINER_NAME))
+                .withEntryPoint(Constants.RUN_SCRIPT)
+                .withWorkingDirectory(Constants.WORK_DIR)
+                .withMountPoints(new MountPoint()
+                        .withContainerPath(Constants.BUILD_DIR)
+                        .withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
+                .withEnvironment(new KeyValuePair()
+                        .withName(Constants.ENV_VAR_SERVER)
+                        .withValue(env.getBambooBaseUrl()))
+                .withEnvironment(new KeyValuePair()
+                        .withName(Constants.ENV_VAR_IMAGE)
+                        .withValue(configuration.getDockerImage())), globalConfiguration), globalConfiguration);
+        RegisterTaskDefinitionRequest req = withHostVolumes(main,
+                new RegisterTaskDefinitionRequest().withContainerDefinitions(main,
+                                                           Constants.SIDEKICK_DEFINITION.withImage(env.getCurrentSidekick())) //, Constants.METADATA_DEFINITION)
+                                                   .withFamily(globalConfiguration.getTaskDefinitionName())
+                                                   .withVolumes(new Volume().withName(Constants.BUILD_DIR_VOLUME_NAME)),
+                env);
 
         configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             ContainerDefinition d = withLogDriver(new ContainerDefinition()
@@ -136,10 +148,12 @@ public class TaskDefinitionRegistrations {
                     .withMemory(sizeDescriptor.getMemoryLimit(t.getExtraSize()))
                     .withUlimits(generateUlimitList(t))
                     .withLinks(generateExtraContainerLinks(t))
-                    .withMountPoints(new MountPoint().withContainerPath(Constants.BUILD_DIR).withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
+                    .withMountPoints(new MountPoint()
+                            .withContainerPath(Constants.BUILD_DIR)
+                            .withSourceVolume(Constants.BUILD_DIR_VOLUME_NAME))
                     .withEssential(false), globalConfiguration);
             if (isDockerInDockerImage(t.getImage())) {
-                //https://hub.docker.com/_/docker/
+                // https://hub.docker.com/_/docker/
                 String versions = System.getProperty(Constants.PROPERTY_DIND_OVERRIDE_IMAGES);
                 if (versions != null) {
                     List<String> overrideVersions = Arrays.asList(versions.split(","));
@@ -148,10 +162,12 @@ public class TaskDefinitionRegistrations {
                         d.setImage(image);
                     }
                 }
-                //TODO align storage driver with whatever we are using? (overlay)
-                //default is vfs safest but slowest option.
+                // TODO align storage driver with whatever we are using? (overlay)
+                // default is vfs safest but slowest option.
                 d.setPrivileged(Boolean.TRUE);
-                main.withEnvironment(new KeyValuePair().withName("DOCKER_HOST").withValue("tcp://" + t.getName() + ":2375"));
+                main.withEnvironment(new KeyValuePair()
+                        .withName("DOCKER_HOST")
+                        .withValue("tcp://" + t.getName() + ":2375"));
             }
             req.withContainerDefinitions(d);
             main.withLinks(t.getName());
@@ -164,13 +180,17 @@ public class TaskDefinitionRegistrations {
         return req;
     }
 
-    private static String createRegisterTaskDefinitionString(Configuration configuration, ECSConfiguration globalConfiguration, BambooServerEnvironment env) {
-        RegisterTaskDefinitionRequestProtocolMarshaller rtdm = new RegisterTaskDefinitionRequestProtocolMarshaller(new com.amazonaws.protocol.json.SdkJsonProtocolFactory(
-            new JsonClientMetadata()
-                    .withProtocolVersion("1.1")
-                    .withSupportsCbor(false)
-                    .withSupportsIon(false)));
-        Request<RegisterTaskDefinitionRequest> rr = rtdm.marshall(taskDefinitionRequest(configuration, globalConfiguration, env));
+    private static String createRegisterTaskDefinitionString(Configuration configuration,
+            ECSConfiguration globalConfiguration,
+            BambooServerEnvironment env) {
+        RegisterTaskDefinitionRequestProtocolMarshaller rtdm =
+                new RegisterTaskDefinitionRequestProtocolMarshaller(new com.amazonaws.protocol.json.SdkJsonProtocolFactory(
+                        new JsonClientMetadata()
+                                .withProtocolVersion("1.1")
+                                .withSupportsCbor(false)
+                                .withSupportsIon(false)));
+        Request<RegisterTaskDefinitionRequest> rr =
+                rtdm.marshall(taskDefinitionRequest(configuration, globalConfiguration, env));
         try {
             return Streams.asString(rr.getContent(), "UTF-8");
         } catch (IOException ex) {
@@ -203,10 +223,12 @@ public class TaskDefinitionRegistrations {
             return revision;
         }
     }
-    
-    private Integer registerDockerImageECS(Configuration configuration, BambooServerEnvironment env) throws ECSException {
+
+    private Integer registerDockerImageECS(Configuration configuration, BambooServerEnvironment env)
+            throws ECSException {
         try {
-            RegisterTaskDefinitionRequest req = TaskDefinitionRegistrations.taskDefinitionRequest(configuration, ecsConfiguration, env);
+            RegisterTaskDefinitionRequest req =
+                    TaskDefinitionRegistrations.taskDefinitionRequest(configuration, ecsConfiguration, env);
             RegisterTaskDefinitionResult result = createClient().registerTaskDefinition(req);
             return result.getTaskDefinition().getRevision();
         } catch (Exception e) {
@@ -216,6 +238,7 @@ public class TaskDefinitionRegistrations {
 
     /**
      * find task definition registration for given configuration.
+     *
      * @param configuration conf to use
      * @return either the revision or -1 when not found
      */
@@ -249,12 +272,12 @@ public class TaskDefinitionRegistrations {
             Splitter.on(" ").split(ulimitsTweaks).forEach((String t2) -> {
                 String[] oneLimit = t2.split("=");
                 if (oneLimit.length == 2) {
-                    //name=val
+                    // name=val
                     String name = oneLimit[0];
                     String soft;
                     String hard = null;
                     if (oneLimit[1].contains(":")) {
-                        //name=soft:hard
+                        // name=soft:hard
                         String[] vals = oneLimit[1].split(":");
                         soft = vals[0];
                         hard = vals[1];
@@ -270,10 +293,10 @@ public class TaskDefinitionRegistrations {
                         }
                         toRet.add(limit);
                     } catch (NumberFormatException x) {
-                        //wrong number
+                        // wrong number
                         logger.error("PBC_ULIMIT_OVERRIDE contains wrongly formatted ulimit values: {}", t2);
                     } catch (IllegalArgumentException x) {
-                        //wrong limit name
+                        // wrong limit name
                         logger.error("PBC_ULIMIT_OVERRIDE contains wrongly ulimit names: {}", t2);
                     }
                 }
@@ -287,7 +310,9 @@ public class TaskDefinitionRegistrations {
     }
 
     private static String getEnvVarValue(Configuration.ExtraContainer t, String envVarName) {
-        return t.getEnvVariables().stream()
+        return t
+                .getEnvVariables()
+                .stream()
                 .filter((Configuration.EnvVariable t1) -> envVarName.equals(t1.getName()))
                 .findFirst()
                 .map((Configuration.EnvVariable t1) -> t1.getValue())

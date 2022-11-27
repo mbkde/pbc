@@ -17,10 +17,6 @@
 package com.atlassian.buildeng.simple.backend.rest;
 
 
-/**
- *
- * @author mkleint
- */
 public class Config {
     public String apiVersion;
     public String certPath;
@@ -78,6 +74,6 @@ public class Config {
     public void setSidekick(String sidekick) {
         this.sidekick = sidekick;
     }
-    
-    
+
+
 }

@@ -91,9 +91,9 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
 
     @Inject
     public GlobalConfiguration(BandanaManager bandanaManager,
-                               AuditLogService auditLogService,
-                               AdministrationConfigurationAccessor admConfAccessor,
-                               BambooAuthenticationContext authenticationContext) {
+            AuditLogService auditLogService,
+            AdministrationConfigurationAccessor admConfAccessor,
+            BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.admConfAccessor = admConfAccessor;
         this.auditLogService = auditLogService;
@@ -344,7 +344,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         if (currentContext != null) {
             persistCurrentContext(currentContext);
         } else {
-            //in this case we ignore the value and don't change it.
+            // in this case we ignore the value and don't change it.
         }
     }
 
@@ -364,7 +364,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
                         BANDANA_CURRENT_CONTEXT,
                         currentContext.trim());
             } else {
-                //rely on default context in .kube/config.
+                // rely on default context in .kube/config.
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT);
             }
         }

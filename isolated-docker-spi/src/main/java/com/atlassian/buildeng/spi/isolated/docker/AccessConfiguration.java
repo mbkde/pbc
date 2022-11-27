@@ -28,15 +28,14 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.BuildConfiguration;
-
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 
 public class AccessConfiguration {
-    
-    //XXX interplugin dependency
+
+    // XXX interplugin dependency
     // these things can never ever change value, because they end up as part of export
     private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
     private static final String ENV_MODULE = "pbcEnvironment";
@@ -44,7 +43,7 @@ public class AccessConfiguration {
 
 
     /**
-     * Constructs Configuration object for given key value pair. 
+     * Constructs Configuration object for given key value pair.
      * Assumes the keys relating to jobs/environments, not tasks.
      */
     @Nonnull
@@ -57,16 +56,16 @@ public class AccessConfiguration {
         if (StringUtils.isBlank(architecture)) {
             architecture = null;
         }
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
-                    .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
-                    .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
-                            Configuration.ContainerSize.REGULAR.name())))
-                    .withExtraContainers(
-                            ConfigurationPersistence.fromJsonString(
-                                cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
-                    .withAwsRole(role)
-                    .withArchitecture(architecture)
-                    .build();
+        return ConfigurationBuilder
+                .create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
+                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
+                        Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS,
+                        "[]")))
+                .withAwsRole(role)
+                .withArchitecture(architecture)
+                .build();
     }
 
     /**
@@ -85,13 +84,13 @@ public class AccessConfiguration {
     @Nonnull
     private static Configuration forDeploymentContext(@Nonnull DeploymentContext context) {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
-            Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE);
-            if (!map.isEmpty()) { 
-                //not sure this condition is 100% reliable, when enabling and disabling 
-                //the docker tab data will retain some config.
+            Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ":" + ENV_MODULE);
+            if (!map.isEmpty()) {
+                // not sure this condition is 100% reliable, when enabling and disabling
+                // the docker tab data will retain some config.
                 return forMap(map);
             }
-            //XXX interplugin dependency
+            // XXX interplugin dependency
             if ((IMPL_PLUGIN_KEY + ":" + DOCKERTASK_MODULE).equals(task.getPluginKey())) {
                 return forTaskConfiguration(task);
             }
@@ -104,13 +103,13 @@ public class AccessConfiguration {
      */
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
-        return ConfigurationBuilder.create(config.getString(Configuration.DOCKER_IMAGE))
+        return ConfigurationBuilder
+                .create(config.getString(Configuration.DOCKER_IMAGE))
                 .withEnabled(config.getBoolean(Configuration.ENABLED_FOR_JOB))
                 .withImageSize(Configuration.ContainerSize.valueOf(config.getString(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(
-                        ConfigurationPersistence.fromJsonString(
-                                config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withExtraContainers(ConfigurationPersistence.fromJsonString(config.getString(Configuration.DOCKER_EXTRA_CONTAINERS,
+                        "[]")))
                 .withAwsRole(config.getString(Configuration.DOCKER_AWS_ROLE))
                 .withArchitecture(config.getString(Configuration.DOCKER_ARCHITECTURE))
                 .build();
@@ -143,14 +142,13 @@ public class AccessConfiguration {
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
+        return ConfigurationBuilder
+                .create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
                 .withEnabled(taskDefinition.isEnabled())
-                .withImageSize(Configuration.ContainerSize.valueOf(
-                        cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
-                                Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(
-                        ConfigurationPersistence.fromJsonString(cc.getOrDefault(
-                                Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
+                        Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.TASK_DOCKER_EXTRA_CONTAINERS,
+                        "[]")))
                 .withAwsRole(cc.getOrDefault(Configuration.TASK_DOCKER_AWS_ROLE, null))
                 .withArchitecture(cc.getOrDefault(Configuration.TASK_DOCKER_ARCHITECTURE, null))
                 .build();
@@ -174,10 +172,10 @@ public class AccessConfiguration {
     /**
      * Constructs Configuration object for given Environment.
      */
-    public static Configuration forEnvironment(Environment environment, 
+    public static Configuration forEnvironment(Environment environment,
             EnvironmentCustomConfigService environmentCustomConfigService) {
-        return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(
-                environment.getId()).getOrDefault(IMPL_PLUGIN_KEY + ":" +  ENV_MODULE,
-                        Collections.emptyMap()));
+        return forMap(environmentCustomConfigService
+                .getEnvironmentPluginConfig(environment.getId())
+                .getOrDefault(IMPL_PLUGIN_KEY + ":" + ENV_MODULE, Collections.emptyMap()));
     }
 }

@@ -43,7 +43,6 @@ public abstract class AbstractPbcTest {
     protected Timeouts timeouts;
 
     @Rule
-    public final TestRule ruleChain = RuleChain.outerRule(screenshotRule)
-            .around(pageObjectInjectionRule)
-            .around(injectionRule);
+    public final TestRule ruleChain =
+            RuleChain.outerRule(screenshotRule).around(pageObjectInjectionRule).around(injectionRule);
 }

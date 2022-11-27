@@ -78,8 +78,7 @@ public class ReaperJobTest {
 
     @Test
     public void jobDataShouldPersist() {
-        JobDetail reaperJobDetail = newJob(ReaperJob.class)
-                .build();
+        JobDetail reaperJobDetail = newJob(ReaperJob.class).build();
 
         assertTrue(reaperJobDetail.isPersistJobDataAfterExecution());
     }

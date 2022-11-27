@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.lifecycle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,87 +59,92 @@ public class ReserveFutureCapacityPreStageActionTest {
 
     @Test
     public void testNoResults() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22"});
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey())))).thenReturn(Collections.emptyList());
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22"});
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(Collections.emptyList());
         long ret = action.stageSuccessfulCompletionAvg(stage);
         assertEquals(-1, ret);
     }
 
     @Test
     public void testNotEnoughResults() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22"});
-        final List<ResultsSummary> summaries = summaries(new Summ[] {
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.UNKNOWN),
-            new Summ(500, BuildState.FAILED)
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22"});
+        final List<ResultsSummary> summaries = summaries(new Summ[]{
+                new Summ(1000, BuildState.SUCCESS), new Summ(500, BuildState.UNKNOWN), new Summ(500, BuildState.FAILED)
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
-                .thenReturn(summaries);
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(summaries);
         long ret = action.stageSuccessfulCompletionAvg(stage);
         assertEquals(-1, ret);
     }
 
     @Test
     public void testNotEnoughSuccessfulResults() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22"});
-        final List<ResultsSummary> summaries = summaries(new Summ[] {
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.UNKNOWN),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED)
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22"});
+        final List<ResultsSummary> summaries = summaries(new Summ[]{
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.UNKNOWN),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED)
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
-                .thenReturn(summaries);
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(summaries);
         long ret = action.stageSuccessfulCompletionAvg(stage);
         assertEquals(-1, ret);
     }
 
     @Test
     public void testSuccessfulResults() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22"});
-        final List<ResultsSummary> summaries = summaries(new Summ[] {
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.UNKNOWN),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22"});
+        final List<ResultsSummary> summaries = summaries(new Summ[]{
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.UNKNOWN),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
-                .thenReturn(summaries);
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(summaries);
         long ret = action.stageSuccessfulCompletionAvg(stage);
         assertEquals(1000, ret);
     }
 
     @Test
     public void testSuccessfulResultsMoreJobs() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22", "AAA-BBB-DDD-22"});
-        final List<ResultsSummary> summaries = summaries(new Summ[] {
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.UNKNOWN),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22", "AAA-BBB-DDD-22"});
+        final List<ResultsSummary> summaries = summaries(new Summ[]{
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.UNKNOWN),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
-                .thenReturn(summaries);
-        final List<ResultsSummary> summaries2 = summaries(new Summ[] {
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(summaries);
+        final List<ResultsSummary> summaries2 = summaries(new Summ[]{
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
-                .thenReturn(summaries2);
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-DDD")
+                .getKey())))).thenReturn(summaries2);
 
         long ret = action.stageSuccessfulCompletionAvg(stage);
         assertEquals(2000, ret);
@@ -146,29 +152,31 @@ public class ReserveFutureCapacityPreStageActionTest {
 
     @Test
     public void testFailedResultsMoreJobs() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22", "AAA-BBB-DDD-22"});
-        final List<ResultsSummary> summaries = summaries(new Summ[] {
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.UNKNOWN),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
-            new Summ(500, BuildState.FAILED),
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22", "AAA-BBB-DDD-22"});
+        final List<ResultsSummary> summaries = summaries(new Summ[]{
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.UNKNOWN),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
+                new Summ(500, BuildState.FAILED),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
-                .thenReturn(summaries);
-        final List<ResultsSummary> summaries2 = summaries(new Summ[] {
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
-            new Summ(2000, BuildState.SUCCESS),
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(summaries);
+        final List<ResultsSummary> summaries2 = summaries(new Summ[]{
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
+                new Summ(2000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
-                .thenReturn(summaries2);
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-DDD")
+                .getKey())))).thenReturn(summaries2);
 
         long ret = action.stageSuccessfulCompletionAvg(stage);
         assertEquals(-1, ret);
@@ -176,42 +184,44 @@ public class ReserveFutureCapacityPreStageActionTest {
 
     @Test
     public void testDodgyCase() {
-        StageExecution stage = mockStageExecution(new String[] { "AAA-BBB-CCC-22", "AAA-BBB-DDD-22"});
-        final List<ResultsSummary> summaries = summaries(new Summ[] {
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
+        StageExecution stage = mockStageExecution(new String[]{"AAA-BBB-CCC-22", "AAA-BBB-DDD-22"});
+        final List<ResultsSummary> summaries = summaries(new Summ[]{
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-CCC").getKey()))))
-                .thenReturn(summaries);
-        final List<ResultsSummary> summaries2 = summaries(new Summ[] {
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(500, BuildState.FAILED),
-            new Summ(1000, BuildState.SUCCESS),
-            new Summ(1000, BuildState.SUCCESS),
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-CCC")
+                .getKey())))).thenReturn(summaries);
+        final List<ResultsSummary> summaries2 = summaries(new Summ[]{
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(500, BuildState.FAILED),
+                new Summ(1000, BuildState.SUCCESS),
+                new Summ(1000, BuildState.SUCCESS),
         });
-        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys.getPlanKey("AAA-BBB-DDD").getKey()))))
-                .thenReturn(summaries2);
+        when(resultsSummaryManager.getResultSummaries(eq(new ResultsSummaryCriteria(PlanKeys
+                .getPlanKey("AAA-BBB-DDD")
+                .getKey())))).thenReturn(summaries2);
 
         long ret = action.stageSuccessfulCompletionAvg(stage);
-        //TODO this should actually fail because we are having 1 job failing odd and 1 even results.
-        //so the success ration is like 10%, rather than 50-60% as the current algo thinks.
-//        Assert.assertEquals(-1, ret);
+        // TODO this should actually fail because we are having 1 job failing odd and 1 even results.
+        // so the success ration is like 10%, rather than 50-60% as the current algo thinks.
+        //        Assert.assertEquals(-1, ret);
         assertEquals(1000, ret);
 
     }
@@ -229,9 +239,8 @@ public class ReserveFutureCapacityPreStageActionTest {
 
     private StageExecution mockStageExecution(String[] par) {
         StageExecution stage = mock(StageExecution.class);
-        final List<BuildExecution> collect = Stream.of(par)
-                .map((String t) -> PlanKeys.getPlanResultKey(t))
-                .map((PlanResultKey t) -> {
+        final List<BuildExecution> collect =
+                Stream.of(par).map((String t) -> PlanKeys.getPlanResultKey(t)).map((PlanResultKey t) -> {
                     BuildExecution e = mock(BuildExecution.class);
                     when(e.getPlanResultKey()).thenReturn(t);
                     ImmutablePlan plan = mock(ImmutablePlan.class);

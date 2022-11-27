@@ -33,6 +33,7 @@ public class AgentsThrottled {
 
     /**
      * Add the build key of the event being throttled to keep track of how many agents are being throttled.
+     *
      * @param key Build key of the event being throttled
      */
     public void add(String key) {
@@ -43,6 +44,7 @@ public class AgentsThrottled {
 
     /**
      * Remove the build key from the throttled events if the agent is about to be created.
+     *
      * @param key Build key of the event being throttled
      */
     public void remove(String key) {
@@ -51,6 +53,7 @@ public class AgentsThrottled {
 
     /**
      * Get the total amount of agents which are currently being throttled.
+     *
      * @return the number of agents currently being throttled.
      */
     public long getTotalAgentsThrottled() {
@@ -59,6 +62,7 @@ public class AgentsThrottled {
 
     /**
      * Get the number of agents which have been throttled for at least a specified number of minutes.
+     *
      * @param minutes minimum number of minutes agents have been throttled
      * @return number of agents throttled for longer than the specified number of minutes
      */

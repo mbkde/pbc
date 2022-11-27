@@ -26,7 +26,7 @@ public class DockerAgentNonMatchedRequirementEvent extends DockerAgentEvent {
 
     public DockerAgentNonMatchedRequirementEvent(Key entityKey, List<String> missingReqKeys) {
         this.key = entityKey;
-        this.missingReqKeys =  missingReqKeys;
+        this.missingReqKeys = missingReqKeys;
     }
 
     @Override

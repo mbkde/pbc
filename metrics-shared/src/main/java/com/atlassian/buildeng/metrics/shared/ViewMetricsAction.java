@@ -25,7 +25,6 @@ import com.atlassian.bamboo.util.BambooIterables;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.Iterables;
 import com.opensymphony.xwork2.Preparable;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;

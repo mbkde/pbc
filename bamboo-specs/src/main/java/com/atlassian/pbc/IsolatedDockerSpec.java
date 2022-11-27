@@ -35,44 +35,35 @@ public class IsolatedDockerSpec {
         return new Plan(new Project()
                 .key(new BambooKey("UPGRADE"))
                 .name("Smoke Tests - Bamboo Upgrade Prerequisites")
-                .description("Bamboo Upgrade Prerequisites"),
-                "PBC build against current SBAC",
-                new BambooKey("PBCB"))
+                .description("Bamboo Upgrade Prerequisites"), "PBC build against current SBAC", new BambooKey("PBCB"))
                 .pluginConfigurations(new PlanOwner("mknight"))
-                .stages(new Stage("Default Stage")
-                        .jobs(new Job("Default Job",
-                                new BambooKey("JOB1"))
-                                .pluginConfigurations(
-                                        new PerBuildContainerForJob()
-                                                .image("docker.atl-paas.net/buildeng/agent-baseagent:staging")
-                                                .size(ContainerSize.REGULAR))
-                                .tasks(new VcsCheckoutTask()
-                                                .description("Checkout Default Repository")
-                                                .checkoutItems(new CheckoutItem()
-                                                        .repository(new VcsRepositoryIdentifier()
-                                                                .name("bamboo-isolated-docker"))),
-                                        new ScriptTask()
-                                                .inlineBodyFromPath(Paths.get("src/main/resources/check-bamboo-version.sh")))))
+                .stages(new Stage("Default Stage").jobs(new Job("Default Job", new BambooKey("JOB1"))
+                        .pluginConfigurations(new PerBuildContainerForJob()
+                                .image("docker.atl-paas.net/buildeng/agent-baseagent:staging")
+                                .size(ContainerSize.REGULAR))
+                        .tasks(new VcsCheckoutTask()
+                                        .description("Checkout Default Repository")
+                                        .checkoutItems(new CheckoutItem().repository(new VcsRepositoryIdentifier().name(
+                                                "bamboo-isolated-docker"))),
+                                new ScriptTask().inlineBodyFromPath(Paths.get(
+                                        "src/main/resources/check-bamboo-version.sh")))))
                 .linkedRepositories("bamboo-isolated-docker")
 
                 .planBranchManagement(new PlanBranchManagement()
                         .delete(new BranchCleanup())
                         .notificationForCommitters())
-                .dependencies(new Dependencies()
-                        .configuration(new DependenciesConfiguration()
-                                .enabledForBranches(false)))
+                .dependencies(new Dependencies().configuration(new DependenciesConfiguration().enabledForBranches(false)))
                 .forceStopHungBuilds();
     }
 
     public PlanPermissions planPermission() {
-        return new PlanPermissions(new PlanIdentifier("UPGRADE", "PBCB"))
-                .permissions(new Permissions()
-                        .loggedInUserPermissions(PermissionType.VIEW)
-                        .anonymousUserPermissionView());
+        return new PlanPermissions(new PlanIdentifier("UPGRADE", "PBCB")).permissions(new Permissions()
+                .loggedInUserPermissions(PermissionType.VIEW)
+                .anonymousUserPermissionView());
     }
 
     public static void main(String... argv) {
-        //By default credentials are read from the '.credentials' file.
+        // By default credentials are read from the '.credentials' file.
         BambooServer bambooServer = new BambooServer("https://staging-bamboo.internal.atlassian.com");
         final IsolatedDockerSpec isolatedDockerSpec = new IsolatedDockerSpec();
 

@@ -17,10 +17,9 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
-import java.time.Duration;
 
 public interface Constants {
-    String RESULT_ERROR = "custom.isolated.docker.error"; //copied in ecs-plugin
+    String RESULT_ERROR = "custom.isolated.docker.error"; // copied in ecs-plugin
     /**
      * marker custom data piece key set in StopDockerAgentBuildProcessor
      * when the agent was sentenced to die.
@@ -32,10 +31,11 @@ public interface Constants {
      * prefix for custom data passed from the api implementation.
      * Everything starting with this can end up in the UI.
      */
-    String RESULT_PREFIX = "result.isolated.docker."; //copied in ecs-plugin
+    String RESULT_PREFIX = "result.isolated.docker."; // copied in ecs-plugin
 
     /**
-     * Key of the default architecture in the architecture list {@link com.atlassian.buildeng.isolated.docker.rest.Config#architectureConfig}
+     * Key of the default architecture in the architecture list
+     * {@link com.atlassian.buildeng.isolated.docker.rest.Config#architectureConfig}
      * This is used in determining the architecture a build should be used when unspecified.
      */
     public static final String DEFAULT_ARCHITECTURE = "default";

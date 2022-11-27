@@ -23,8 +23,8 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 public class GlobalConfigurationPersistenceTest {
-     
-    
+
+
     @Test
     public void testVersion1() {
         String persistedValue = "{'image'='aaa'}";
@@ -34,7 +34,7 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals(Configuration.ContainerSize.REGULAR, conf.getSize());
         assertEquals(Collections.emptyList(), conf.getExtraContainers());
     }
-    
+
     @Test
     public void testVersion2() {
         String persistedValue = "{'image'='aaa','size'='SMALL'}";
@@ -44,10 +44,11 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
         assertEquals(Collections.emptyList(), conf.getExtraContainers());
     }
-    
+
     @Test
     public void testVersion3() {
-        String persistedValue = "{'image'='aaa','size'='SMALL','extraContainers':[{'name':'bbb','image':'bbb-image','size':'SMALL'}]}";
+        String persistedValue =
+                "{'image'='aaa','size'='SMALL','extraContainers':[{'name':'bbb','image':'bbb-image','size':'SMALL'}]}";
         Configuration conf = ConfigurationPersistence.toConfiguration(persistedValue);
         assertNotNull(conf);
         assertEquals("aaa", conf.getDockerImage());

@@ -86,7 +86,7 @@ public class GlobalConfigurationTest {
                 GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE)).thenReturn("template");
         when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
-        
+
         try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
                 com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
             globalConfiguration.migrateAwsVendor();

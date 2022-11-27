@@ -5,8 +5,9 @@ import com.atlassian.buildeng.kubernetes.shell.ShellException;
 public class KubernetesExceptionParser {
     /**
      * Parses the process output to determine an appropriate exception.
+     *
      * @param errorMessage error message text
-     * @param exception shell exception that needs parsing
+     * @param exception    shell exception that needs parsing
      * @return appropriate KubectlException for the particular error message
      */
     public KubectlException map(String errorMessage, ShellException exception) {
@@ -18,8 +19,9 @@ public class KubernetesExceptionParser {
             return new KubectlException(errorMessage + " \n ARGS: " + args, exception);
         }
 
-        if (stdout.contains("Operation cannot be fulfilled on resourcequotas \"pod-limit\": the object has been modified")) {
-            //see https://github.com/kubernetes/kubernetes/issues/67761
+        if (stdout.contains(
+                "Operation cannot be fulfilled on resourcequotas \"pod-limit\": the object has been modified")) {
+            // see https://github.com/kubernetes/kubernetes/issues/67761
             return new ConcurrentResourceQuotaModificationException("Too many parallel requests in-flight", exception);
         } else if (stdout.contains("is forbidden: exceeded quota: pod-limit")) {
             return new PodLimitQuotaExceededException("pod-limit reached", exception);
@@ -29,6 +31,7 @@ public class KubernetesExceptionParser {
             return new PodAlreadyExistsException("pod already exists");
         }
 
-        return new KubectlException(errorMessage + " \nARGS: " + args + " \nSTDOUT: " + stdout + " \nSTDERR: " + stderr, exception);
+        return new KubectlException(errorMessage + " \nARGS: " + args + " \nSTDOUT: " + stdout + " \nSTDERR: " + stderr,
+                exception);
     }
 }

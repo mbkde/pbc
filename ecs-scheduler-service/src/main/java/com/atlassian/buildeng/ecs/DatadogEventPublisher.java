@@ -49,7 +49,9 @@ public class DatadogEventPublisher implements EventPublisher {
         httpPost.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         httpPost.setEntity(new StringEntity(createDDEvent(event), "UTF-8"));
         try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-            logger.info("Sent Datadog event, response: {}, api_key:{}", response.getStatusLine().getStatusCode(), token.substring(0, 3) + "???" + token.substring(token.length() - 3));
+            logger.info("Sent Datadog event, response: {}, api_key:{}",
+                    response.getStatusLine().getStatusCode(),
+                    token.substring(0, 3) + "???" + token.substring(token.length() - 3));
         } catch (IOException ex) {
             logger.error("Error while sending datadog event", ex);
         }

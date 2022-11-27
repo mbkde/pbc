@@ -16,6 +16,11 @@
 
 package com.atlassian.buildeng.isolated.docker;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentResult;
@@ -25,12 +30,8 @@ import com.atlassian.event.api.EventPublisher;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class AgentCreationReschedulerImplTest {
 

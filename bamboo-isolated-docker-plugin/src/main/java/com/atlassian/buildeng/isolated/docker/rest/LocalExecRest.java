@@ -76,15 +76,19 @@ public class LocalExecRest {
         }
         Configuration conf = AccessConfiguration.forJob(jb);
         if (conf != null) {
-            return Response.ok(createLocalExecDockerCompose(conf, useDockerInDocker, 
-                    mavenLocalRepo, reservations, jobKey)).build();
+            return Response
+                    .ok(createLocalExecDockerCompose(conf, useDockerInDocker, mavenLocalRepo, reservations, jobKey))
+                    .build();
         }
         return Response.status(Response.Status.NO_CONTENT).build();
 
     }
 
-    private String createLocalExecDockerCompose(Configuration conf, boolean useDockerInDocker,
-            boolean mavenLocalRepo, boolean reservations, String jobKey) {
+    private String createLocalExecDockerCompose(Configuration conf,
+            boolean useDockerInDocker,
+            boolean mavenLocalRepo,
+            boolean reservations,
+            String jobKey) {
         final Map<String, Object> root = new LinkedHashMap<>();
         final Map<String, Object> services = new LinkedHashMap<>();
         root.put("version", "2");
@@ -97,9 +101,9 @@ public class LocalExecRest {
         bambooAgent.put("working_dir", workingDir);
         bambooAgent.put("entrypoint", "/usr/bin/tail");
         bambooAgent.put("command", "-f /dev/null");
-        List<String> bambooAgentVolumes = new ArrayList<>();
-        List<String> bambooAgentEnvVars = new ArrayList<>();
-        List<String> bambooAgentLinks = new ArrayList<>();
+        final List<String> bambooAgentVolumes = new ArrayList<>();
+        final List<String> bambooAgentEnvVars = new ArrayList<>();
+        final List<String> bambooAgentLinks = new ArrayList<>();
         bambooAgent.put("volumes", bambooAgentVolumes);
         bambooAgentVolumes.add(".:" + workingDir);
         if (reservations) {
@@ -134,7 +138,7 @@ public class LocalExecRest {
                 }
             }
             if (reservations) {
-                //is there a point in cpu reservation?
+                // is there a point in cpu reservation?
                 extra.put("mem_limit", "" + sizeDescriptor.getMemory(t.getExtraSize()) + "m");
             }
 
@@ -144,9 +148,12 @@ public class LocalExecRest {
                 extra.put("command", t.getCommands());
             }
             if (!t.getEnvVariables().isEmpty()) {
-                extra.put("environment", t.getEnvVariables().stream()
-                        .map((Configuration.EnvVariable t1) -> t1.getName() + "=" + t1.getValue())
-                        .collect(Collectors.toList()));
+                extra.put("environment",
+                        t
+                                .getEnvVariables()
+                                .stream()
+                                .map((Configuration.EnvVariable t1) -> t1.getName() + "=" + t1.getValue())
+                                .collect(Collectors.toList()));
             }
 
             extra.put("volumes", Collections.singletonList(".:" + workingDir));

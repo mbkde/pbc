@@ -81,17 +81,20 @@ public class Rest {
     @GET
     @Path("/logs")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getAwsLogs(
-            @QueryParam(PARAM_CONTAINER) String containerName,
-            @QueryParam(PARAM_TASK_ARN) String taskArn)
-    {
+    public Response getAwsLogs(@QueryParam(PARAM_CONTAINER) String containerName,
+            @QueryParam(PARAM_TASK_ARN) String taskArn) {
         if (containerName == null || taskArn == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(PARAM_CONTAINER + " and " + PARAM_TASK_ARN + " are mandatory").build();
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(PARAM_CONTAINER + " and " + PARAM_TASK_ARN + " are mandatory")
+                    .build();
         }
         String server = configuration.getCurrentServer();
         if (server == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("remote pbc server not defined in global settings.").build();
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity("remote pbc server not defined in global settings.")
+                    .build();
         }
         Client client = createClient();
         try {
@@ -99,10 +102,13 @@ public class Rest {
                     .addParameter(Rest.PARAM_CONTAINER, containerName)
                     .addParameter(Rest.PARAM_TASK_ARN, taskArn);
             WebResource resource = client.resource(uriBuilder.build());
-            return Response.ok().entity(resource
-                    .accept(MediaType.TEXT_PLAIN_TYPE)
-                    .type(MediaType.TEXT_PLAIN_TYPE)
-                    .get(String.class)).build();
+            return Response
+                    .ok()
+                    .entity(resource
+                            .accept(MediaType.TEXT_PLAIN_TYPE)
+                            .type(MediaType.TEXT_PLAIN_TYPE)
+                            .get(String.class))
+                    .build();
         } catch (URISyntaxException ex) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Error constructing URI to pbc-service").build();
         }

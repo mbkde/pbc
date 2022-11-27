@@ -45,10 +45,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class TheMightyAgentFilterTest {
-    
+
     PlanResultKey resultKey1 = PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1);
     PlanResultKey resultKey2 = PlanKeys.getPlanResultKey("AAA-BBB-JOB2", 2);
-    
+
     /**
      * Test of filter method, of class TheMightyAgentFilter.
      */
@@ -62,13 +62,13 @@ public class TheMightyAgentFilterTest {
         ConfigurationBuilder.create("aaa").build().copyToResult(currResult, new DefaultContainerSizeDescriptor());
         Collection<BuildAgent> agents = mockAgents();
         assertEquals(agents.size(), 5);
-        
+
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
         Collection<BuildAgent> result = instance.filter(context, agents, mock(MinimalRequirementSet.class));
         assertEquals(1, result.size());
-        
+
     }
-    
+
     @Test
     public void testDockerJobMissingAgent() {
         HashMap<String, String> customConfig = new HashMap<>();
@@ -78,12 +78,12 @@ public class TheMightyAgentFilterTest {
         BuildContext context = mockBuildContext(customConfig);
         when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 3));
         Collection<BuildAgent> agents = mockAgents();
-        
+
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
         Collection<BuildAgent> result = instance.filter(context, agents, mock(MinimalRequirementSet.class));
         assertEquals(0, result.size());
-        
-    }    
+
+    }
 
     @Test
     public void testNonDockerJob() {
@@ -92,43 +92,41 @@ public class TheMightyAgentFilterTest {
         when(context.getResultKey()).thenReturn(PlanKeys.getPlanResultKey("AAA-BBB-JOB", 1));
         Collection<BuildAgent> agents = mockAgents();
         MinimalRequirementSet requirements = mock(MinimalRequirementSet.class);
-        
+
         TheMightyAgentFilter instance = new TheMightyAgentFilter();
         Collection<BuildAgent> result = instance.filter(context, agents, requirements);
-        assertEquals(3, result.size()); //local and elastic and 1 remote
-        
+        assertEquals(3, result.size()); // local and elastic and 1 remote
+
     }
-    
-    
+
+
     private Collection<BuildAgent> mockAgents() {
         CapabilitySet cs1 = new CapabilitySetImpl();
         cs1.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, resultKey1.getKey()));
         CapabilitySet cs2 = new CapabilitySetImpl();
         cs2.addCapability(new CapabilityImpl(Constants.CAPABILITY_RESULT, resultKey2.getKey()));
-        return Arrays.asList(
-                mockLocalAgent(),
+        return Arrays.asList(mockLocalAgent(),
                 mockElasticAgent(),
                 mockRemoteAgent(cs1),
                 mockRemoteAgent(cs2),
-                mockRemoteAgent(new CapabilitySetImpl())
-        );
+                mockRemoteAgent(new CapabilitySetImpl()));
     }
-    
-    
+
+
     private BuildAgent mockAgent(AgentType type) {
         BuildAgent toRet = mock(BuildAgent.class);
         Mockito.lenient().when(toRet.getType()).thenReturn(type);
         return toRet;
     }
-    
+
     private BuildAgent mockLocalAgent() {
         return mockAgent(AgentType.LOCAL);
     }
-    
+
     private BuildAgent mockElasticAgent() {
         return mockAgent(AgentType.ELASTIC);
     }
-    
+
     private BuildAgent mockRemoteAgent(CapabilitySet set) {
         BuildAgent agent = mockAgent(AgentType.REMOTE);
         RemoteAgentDefinition d2 = new RemoteAgentDefinitionImpl();
@@ -144,5 +142,5 @@ public class TheMightyAgentFilterTest {
         when(bd.getCustomConfiguration()).thenReturn(customConfig);
         return context;
     }
-    
+
 }

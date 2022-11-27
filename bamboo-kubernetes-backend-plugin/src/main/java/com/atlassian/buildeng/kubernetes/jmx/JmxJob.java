@@ -25,15 +25,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @DisallowConcurrentExecution
-public class JmxJob extends WatchdogJob  {
+public class JmxJob extends WatchdogJob {
     private static final Logger logger = LoggerFactory.getLogger(JmxJob.class);
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
             BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
-            KubeJmxService jmxService = getService(KubeJmxService.class,
-                    "kubeJmxService", context.getJobDetail().getJobDataMap());
+            KubeJmxService jmxService =
+                    getService(KubeJmxService.class, "kubeJmxService", context.getJobDetail().getJobDataMap());
             jmxService.recalculate(buildQueueManager);
         } catch (Throwable t) {
             // this is throwable because of NoClassDefFoundError and alike.

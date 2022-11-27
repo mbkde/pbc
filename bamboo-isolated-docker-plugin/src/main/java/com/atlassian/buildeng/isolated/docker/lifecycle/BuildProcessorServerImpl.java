@@ -44,7 +44,6 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,9 +76,11 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     private BuildExecutionManager buildExecutionManager;
     private Validator validator;
 
-    //setters here for components, otherwise the parent fields don't get injected.
+    // setters here for components, otherwise the parent fields don't get injected.
     @Inject
-    public BuildProcessorServerImpl(AgentRemovals agentRemovals, BuildExecutionManager buildExecutionManager, Validator validator) {
+    public BuildProcessorServerImpl(AgentRemovals agentRemovals,
+            BuildExecutionManager buildExecutionManager,
+            Validator validator) {
         this.agentRemovals = agentRemovals;
         this.buildExecutionManager = buildExecutionManager;
         this.validator = validator;
@@ -97,7 +98,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         CurrentBuildResult buildResult = buildContext.getBuildResult();
 
         // in some cases the agent cannot kill itself (eg. when artifact subscription fails
-        // and our StopDockerAgentBuildProcessor is not executed. absence of the marker property 
+        // and our StopDockerAgentBuildProcessor is not executed. absence of the marker property
         // tells us that we didn't run on agent
         if (conf.isEnabled() && null == buildResult.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF)) {
             CurrentlyBuilding building = buildExecutionManager.getCurrentlyBuildingByBuildResult(buildContext);
@@ -109,7 +110,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 agentRemovals.stopAgentRemotely(agentId);
                 agentRemovals.removeAgent(agentId);
                 LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.",
-                        buildContext.getPlanResultKey().getKey(), agentId);
+                        buildContext.getPlanResultKey().getKey(),
+                        agentId);
             } else {
                 LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getPlanResultKey().getKey());
             }
@@ -130,7 +132,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     }
 
     /**
-     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String
+     * architecture) }
      * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
      * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
      * annotation on the string builder method. However, the usage of this method is mandatory here,
@@ -163,12 +166,15 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             cc.put(Configuration.DOCKER_ARCHITECTURE, architecture);
         }
         Configuration c = AccessConfiguration.forMap(cc);
-        return new PerBuildContainerForJob().enabled(c.isEnabled())
+        return new PerBuildContainerForJob()
+                .enabled(c.isEnabled())
                 .image(c.getDockerImage())
                 .size(c.getSize().name())
                 .awsRole(c.getAwsRole())
                 .architecture(c.getArchitecture())
-                .extraContainers(c.getExtraContainers().stream()
+                .extraContainers(c
+                        .getExtraContainers()
+                        .stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()));
     }
@@ -183,26 +189,34 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 .image(t.getImage())
                 .size(t.getExtraSize().name())
                 .commands(t.getCommands())
-                .envVariables(t.getEnvVariables().stream()
+                .envVariables(t
+                        .getEnvVariables()
+                        .stream()
                         .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
                         .collect(Collectors.toList()));
     }
 
     @Override
     public void addToBuildConfiguration(PerBuildContainerForJobProperties specsProperties,
-                                        @NotNull HierarchicalConfiguration buildConfiguration) {
+            @NotNull HierarchicalConfiguration buildConfiguration) {
         if (specsProperties.isEnabled()) {
-            //apparently unlike in CustomEnvironmentConfigPluginExporter there is no explicit validation callback
+            // apparently unlike in CustomEnvironmentConfigPluginExporter there is no explicit validation callback
             // and the infra is not calling it either. Doing it here for the lack of a better place.
             specsProperties.validate();
             ErrorCollection errorCollection = new SimpleErrorCollection();
-            validator.validate(specsProperties.getImage(), specsProperties.getSize(), specsProperties.getAwsRole(),
-                    specsProperties.getArchitecture(), toJsonString(specsProperties.getExtraContainers()), errorCollection, false);
+            validator.validate(specsProperties.getImage(),
+                    specsProperties.getSize(),
+                    specsProperties.getAwsRole(),
+                    specsProperties.getArchitecture(),
+                    toJsonString(specsProperties.getExtraContainers()),
+                    errorCollection,
+                    false);
             if (errorCollection.hasAnyErrors()) {
-                throw new PropertiesValidationException(
-                        errorCollection.getAllErrorMessages().stream()
-                                .map(ValidationProblem::new)
-                                .collect(Collectors.toList()));
+                throw new PropertiesValidationException(errorCollection
+                        .getAllErrorMessages()
+                        .stream()
+                        .map(ValidationProblem::new)
+                        .collect(Collectors.toList()));
             }
         }
         buildConfiguration.setProperty(Configuration.ENABLED_FOR_JOB, specsProperties.isEnabled());
@@ -215,7 +229,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     }
 
     /**
-     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String
+     * architecture) }
      * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
      * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
      * annotation on the string builder method. However, the usage of this method is mandatory here,
@@ -235,7 +250,9 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
                     .architecture(config.getArchitecture())
-                    .extraContainers(config.getExtraContainers().stream()
+                    .extraContainers(config
+                            .getExtraContainers()
+                            .stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
         }
@@ -252,17 +269,18 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
      * Convert list of ExtraContainerProperties definitions into a json string.
      */
     public static String toJsonString(List<ExtraContainerProperties> extraContainers) {
-        return ConfigurationPersistence.toJson(extraContainers.stream()
-                .map((ExtraContainerProperties t) -> {
-                    Configuration.ExtraContainer ec = new Configuration.ExtraContainer(
-                            t.getName(), t.getImage(), Configuration.ExtraContainerSize.valueOf(t.getSize()));
-                    ec.setCommands(t.getCommands());
-                    ec.setEnvVariables(t.getEnvironments().stream()
-                            .map((EnvProperties e) -> new Configuration.EnvVariable(e.getKey(), e.getValue()))
-                            .collect(Collectors.toList()));
-                    return ec;
-                })
-                .collect(Collectors.toList())).toString();
+        return ConfigurationPersistence.toJson(extraContainers.stream().map((ExtraContainerProperties t) -> {
+            Configuration.ExtraContainer ec = new Configuration.ExtraContainer(t.getName(),
+                    t.getImage(),
+                    Configuration.ExtraContainerSize.valueOf(t.getSize()));
+            ec.setCommands(t.getCommands());
+            ec.setEnvVariables(t
+                    .getEnvironments()
+                    .stream()
+                    .map((EnvProperties e) -> new Configuration.EnvVariable(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList()));
+            return ec;
+        }).collect(Collectors.toList())).toString();
     }
 
     private Configuration toConfig(PerBuildContainerForJobProperties specsProperties) {
