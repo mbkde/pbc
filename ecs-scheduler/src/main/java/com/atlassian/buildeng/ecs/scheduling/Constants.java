@@ -83,7 +83,7 @@ public interface Constants {
      * The environment variable to override on the agent per server.
      */
     String ENV_VAR_SERVER = "BAMBOO_SERVER";
-    
+
     /**
      * The environment variable to set the result spawning up the agent.
      */
@@ -99,7 +99,7 @@ public interface Constants {
     String RUN_SCRIPT = WORK_DIR + "/" + "run-agent.sh";
 
     // AWS info
-    String ECS_CLUSTER_KEY                = "ecs_cluster";
+    String ECS_CLUSTER_KEY = "ecs_cluster";
     String ECS_CONTAINER_INSTANCE_ARN_KEY = "ecs_container_arn";
 
     String RESULT_PART_TASKARN = "TaskARN";
@@ -115,9 +115,8 @@ public interface Constants {
 
     /**
      * a space separated list of container names that the extra container should link to.
-     *  makes no effort to sanitize the values in terms of circular dependencies between
+     * makes no effort to sanitize the values in terms of circular dependencies between
      * the extra containers. Can never point to the main container (that one links to extra containers already)
-     * 
      */
     String ENV_VAR_PBC_EXTRA_LINKS = "PBC_EXTRA_LINKS";
 
@@ -134,18 +133,18 @@ public interface Constants {
     int MINUTES_BEFORE_BILLING_CYCLE = 10;
 
     // The container definition of the sidekick
-    ContainerDefinition SIDEKICK_DEFINITION =
-            new ContainerDefinition()
-                    .withName(SIDEKICK_CONTAINER_NAME)
-                    .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
-                    .withEssential(false);
+    ContainerDefinition SIDEKICK_DEFINITION = new ContainerDefinition()
+            .withName(SIDEKICK_CONTAINER_NAME)
+            .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
+            .withEssential(false);
 
-    ContainerDefinition METADATA_DEFINITION =
-            new ContainerDefinition()
-                    .withName(METADATA_CONTAINER_NAME)
-                    .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
-                    .withImage(METADATA_IMAGE)
-                    .withMountPoints(new MountPoint().withContainerPath(DOCKER_SOCKET).withSourceVolume(DOCKER_SOCKET_VOLUME_NAME),
-                                     new MountPoint().withContainerPath(BUILD_DIR).withSourceVolume(BUILD_DIR_VOLUME_NAME))
-                    .withEssential(false);
+    ContainerDefinition METADATA_DEFINITION = new ContainerDefinition()
+            .withName(METADATA_CONTAINER_NAME)
+            .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
+            .withImage(METADATA_IMAGE)
+            .withMountPoints(new MountPoint()
+                            .withContainerPath(DOCKER_SOCKET)
+                            .withSourceVolume(DOCKER_SOCKET_VOLUME_NAME),
+                    new MountPoint().withContainerPath(BUILD_DIR).withSourceVolume(BUILD_DIR_VOLUME_NAME))
+            .withEssential(false);
 }

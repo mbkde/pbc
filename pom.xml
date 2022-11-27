@@ -43,8 +43,7 @@
         <spring.scanner.version>2.2.3</spring.scanner.version>
         <aws-java.version>1.12.188</aws-java.version>
         <jackson-core.version>2.13.4</jackson-core.version>
-        <checkstyle.version>10.1</checkstyle.version>
-        <atlassian.codestyle>buildeng:1.1.1</atlassian.codestyle>
+        <checkstyle.version>9.3</checkstyle.version>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
@@ -239,6 +238,29 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-checkstyle-plugin</artifactId>
+               <version>3.2.0</version>
+               <configuration>
+                 <configLocation>checkstyle-rules.xml</configLocation>
+                 <encoding>UTF-8</encoding>
+                 <consoleOutput>true</consoleOutput>
+                 <failsOnError>true</failsOnError>
+                 <failOnViolation>true</failOnViolation>
+                 <violationSeverity>warning</violationSeverity>
+                 <linkXRef>false</linkXRef>
+               </configuration>
+               <executions>
+                 <execution>
+                   <id>validate</id>
+                   <phase>validate</phase>
+                   <goals>
+                     <goal>check</goal>
+                   </goals>
+                 </execution>
+               </executions>
+             </plugin>
         </plugins>
         <pluginManagement>
             <plugins>

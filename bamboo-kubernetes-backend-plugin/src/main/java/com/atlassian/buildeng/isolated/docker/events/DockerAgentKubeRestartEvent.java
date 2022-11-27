@@ -23,8 +23,11 @@ import java.util.Map;
 
 public final class DockerAgentKubeRestartEvent extends DockerAgentKubeEvent {
 
-    public DockerAgentKubeRestartEvent(
-            String errorMessage, Key key, String podName, Map<String, URL> markdownLinks, GlobalConfiguration config) {
+    public DockerAgentKubeRestartEvent(String errorMessage,
+            Key key,
+            String podName,
+            Map<String, URL> markdownLinks,
+            GlobalConfiguration config) {
         super(errorMessage, key, podName, markdownLinks, config);
     }
 }

@@ -19,7 +19,6 @@ package com.atlassian.buildeng.ecs;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 
 import com.amazonaws.services.ecs.model.ClientException;
 import com.atlassian.bamboo.Key;
@@ -59,9 +58,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
 
     private final GlobalConfiguration globalConfiguration;
@@ -69,14 +67,17 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final Scheduler scheduler;
     private final SchedulerBackend schedulerBackend;
     private final TaskDefinitionRegistrations taskDefRegistrations;
-    //not used in the class but in the bundled library and apparently in that case for
+    // not used in the class but in the bundled library and apparently in that case for
     // REASONS the class is not found and used at injection time.
-    //so I presume bytecode of bundled libs is not scanned while the sources of the plugin are in some way.
+    // so I presume bytecode of bundled libs is not scanned while the sources of the plugin are in some way.
     // and some spring related metadata is created for them.
     private final EventPublisher eventPublisher;
 
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, ECSScheduler ecsScheduler, 
-            Scheduler scheduler, SchedulerBackend schedulerBackend, TaskDefinitionRegistrations taskDefRegistrations,
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration,
+            ECSScheduler ecsScheduler,
+            Scheduler scheduler,
+            SchedulerBackend schedulerBackend,
+            TaskDefinitionRegistrations taskDefRegistrations,
             EventPublisher eventPublisher) {
         this.globalConfiguration = globalConfiguration;
         this.ecsScheduler = ecsScheduler;
@@ -95,9 +96,15 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
             try {
                 revision = taskDefRegistrations.registerDockerImage(req.getConfiguration(), globalConfiguration);
             } catch (ECSException ex) {
-                logger.info("Failed to receive task definition for {} and {}", globalConfiguration.getTaskDefinitionName(), resultId);
-                //Have to catch some of the exceptions here instead of the callback to use retries.
-                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                logger.info("Failed to receive task definition for {} and {}",
+                        globalConfiguration.getTaskDefinitionName(),
+                        resultId);
+                // Have to catch some of the exceptions here instead of the callback to use retries.
+                if (ex.getCause() instanceof ClientException &&
+                        ex
+                                .getMessage()
+                                .contains(
+                                        "Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     callback.handle(toRet);
@@ -107,11 +114,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 return;
             }
         }
-        logger.info("Spinning up new docker agent from task definition {}:{} {}", 
-                globalConfiguration.getTaskDefinitionName(), revision, resultId);
+        logger.info("Spinning up new docker agent from task definition {}:{} {}",
+                globalConfiguration.getTaskDefinitionName(),
+                revision,
+                resultId);
         ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
-        SchedulingRequest schedulingRequest = new SchedulingRequest(
-                req.getUniqueIdentifier(),
+        SchedulingRequest schedulingRequest = new SchedulingRequest(req.getUniqueIdentifier(),
                 resultId,
                 revision,
                 req.getConfiguration().getCPUTotal(sizeDescriptor),
@@ -121,11 +129,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 req.getBuildKey());
         ecsScheduler.schedule(schedulingRequest, new DefaultSchedulingCallback(callback, resultId));
     }
-    
+
     @Override
     public List<String> getKnownDockerImages() {
-        List<String> toRet = globalConfiguration.getAllRegistrations().keySet().stream()
-                .flatMap((Configuration t) -> getAllImages(t)) 
+        List<String> toRet = globalConfiguration
+                .getAllRegistrations()
+                .keySet()
+                .stream()
+                .flatMap((Configuration t) -> getAllImages(t))
                 .distinct()
                 .collect(Collectors.toList());
         // sort for sake of UI/consistency?
@@ -139,9 +150,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         if (taskArn == null || AwsLogs.getAwsLogsDriver(globalConfiguration) == null) {
             return Collections.emptyMap();
         }
-        Stream<String> s = Stream.concat(
-                Stream.of(Constants.AGENT_CONTAINER_NAME),
-                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
+        Stream<String> s = Stream.concat(Stream.of(Constants.AGENT_CONTAINER_NAME),
+                configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
         return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
                 URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/docker/latest/logs")
@@ -154,18 +164,19 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         }));
     }
 
-    
+
     Stream<String> getAllImages(Configuration c) {
-        return Stream.concat(
-                Stream.of(c.getDockerImage()), 
-                c.getExtraContainers().stream().map(ec -> ec.getImage()));
+        return Stream.concat(Stream.of(c.getDockerImage()), c.getExtraContainers().stream().map(ec -> ec.getImage()));
     }
 
     @Override
     public void reserveCapacity(Key buildKey, List<String> jobResultKeys, long memoryCapacity, long cpuCapacity) {
         if (globalConfiguration.isPreemptiveScaling()) {
             logger.info("Reserving future capacity for {}: mem:{} cpu:{}", buildKey, memoryCapacity, cpuCapacity);
-            ecsScheduler.reserveFutureCapacity(new ReserveRequest(buildKey.getKey(), jobResultKeys, cpuCapacity, memoryCapacity));
+            ecsScheduler.reserveFutureCapacity(new ReserveRequest(buildKey.getKey(),
+                    jobResultKeys,
+                    cpuCapacity,
+                    memoryCapacity));
         } else {
             logger.info("Reserving future capacity is disabled");
         }
@@ -181,13 +192,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 .startNow()
                 .withSchedule(simpleSchedule()
                         .withIntervalInMilliseconds(Constants.PLUGIN_JOB_INTERVAL_MILLIS)
-                        .repeatForever()
-                )
+                        .repeatForever())
                 .build();
-        JobDetail pluginJob = newJob(ECSWatchdogJob.class)
-                .withIdentity(Constants.PLUGIN_JOB_KEY)
-                .usingJobData(config)
-                .build();
+        JobDetail pluginJob =
+                newJob(ECSWatchdogJob.class).withIdentity(Constants.PLUGIN_JOB_KEY).usingJobData(config).build();
         try {
             scheduler.scheduleJob(pluginJob, jobTrigger);
         } catch (SchedulerException e) {

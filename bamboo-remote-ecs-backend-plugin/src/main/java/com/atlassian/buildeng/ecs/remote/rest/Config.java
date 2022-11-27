@@ -63,5 +63,5 @@ public class Config {
     public void setPreemptiveScaling(boolean preemptiveScaling) {
         this.preemptiveScaling = preemptiveScaling;
     }
-    
+
 }

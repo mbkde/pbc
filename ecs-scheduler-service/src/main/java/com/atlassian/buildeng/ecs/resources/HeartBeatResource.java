@@ -17,7 +17,6 @@
 package com.atlassian.buildeng.ecs.resources;
 
 import com.atlassian.buildeng.ecs.api.Heartbeat;
-
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -33,7 +32,7 @@ public class HeartBeatResource {
     }
 
     @GET
-    public Heartbeat returnHeartbeat()  {
+    public Heartbeat returnHeartbeat() {
         return new Heartbeat();
     }
 }

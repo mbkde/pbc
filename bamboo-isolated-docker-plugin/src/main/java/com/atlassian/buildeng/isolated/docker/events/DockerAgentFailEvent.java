@@ -21,6 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.
+ *
  * @author mkleint
  */
 public final class DockerAgentFailEvent extends DockerAgentEvent {

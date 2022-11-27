@@ -22,7 +22,6 @@ import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
 import com.google.common.base.Splitter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,11 +40,11 @@ public class ECSViewMetricsAction extends ViewMetricsAction {
         String artifactNames = resultsSummary.getCustomBuildData().get(ARTIFACT_BUILD_DATA_KEY);
         if (artifactNames != null) {
             Splitter.on(",").splitToList(artifactNames).forEach((String t) -> {
-                Artifact artifact = createArtifact(
-                        t, resultsSummary.getPlanResultKey(),
+                Artifact artifact = createArtifact(t,
+                        resultsSummary.getPlanResultKey(),
                         resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
-                ArtifactLinkDataProvider artifactLinkDataProvider = artifactLinkManager.getArtifactLinkDataProvider(
-                        artifact);
+                ArtifactLinkDataProvider artifactLinkDataProvider =
+                        artifactLinkManager.getArtifactLinkDataProvider(artifact);
                 if (artifactLinkDataProvider == null) {
                     addActionError("Unable to find artifact link data provider for artifact link");
                     return;

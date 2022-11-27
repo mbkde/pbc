@@ -27,7 +27,7 @@ public interface IsolatedAgentService {
     /**
      * Start an isolated docker agent to handle the build request.
      *
-     * @param request - request object
+     * @param request  - request object
      * @param callback callback to process the result
      */
     void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback);
@@ -41,8 +41,9 @@ public interface IsolatedAgentService {
 
     /**
      * provide links to container logs for the configuration and specific run data.
+     *
      * @param configuration config
-     * @param customData implementation specific custom data as returned by IsolatedDockerAgentResult
+     * @param customData    implementation specific custom data as returned by IsolatedDockerAgentResult
      * @return never null, always a map with container name: link key-value pairs
      */
     @NotNull
@@ -53,8 +54,10 @@ public interface IsolatedAgentService {
     /**
      * optional way to announce future requirements.
      */
-    default void reserveCapacity(Key buildKey, List<String> jobResultKeys,
-            long excessMemoryCapacity, long excessCpuCapacity) {
+    default void reserveCapacity(Key buildKey,
+            List<String> jobResultKeys,
+            long excessMemoryCapacity,
+            long excessCpuCapacity) {
     }
 
 }

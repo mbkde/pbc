@@ -25,15 +25,17 @@ public class ConfigurationTest {
     @Test
     public void testDefaultRegistry() {
         String dockerHubImage = "docker:17.07.0-ce-dind";
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap("")));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap("")));
     }
 
     @Test
     public void testReverseDefaultRegistry() {
         String dockerHubImage = "docker:17.07.0-ce-dind";
-        assertEquals(dockerHubImage, ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap("")));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap("")));
     }
 
     @Test
@@ -41,8 +43,9 @@ public class ConfigurationTest {
         String dockerHubImage = "selenium:latest";
         String registryString = "docker.atl-paas.net,bar-foo.com,docker.atlassian.io,foo-bar.com";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -50,8 +53,9 @@ public class ConfigurationTest {
         String dockerHubImage = "selenium:latest";
         String registryString = "docker.atl-paas.net,bar-foo.com,docker.atlassian.io,foo-bar.com";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -73,7 +77,7 @@ public class ConfigurationTest {
                 ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
                         ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
-    
+
     @Test
     public void testOverrideRegistry2() {
         String dockerHubImage = "docker.atlassian.io/docker:latest";
@@ -99,8 +103,9 @@ public class ConfigurationTest {
         String dockerHubImage = "docker.atlassian.io/buildeng/docker:latest";
         String registryString = "docker.atl-paas.net,foo-bar.com";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -108,8 +113,9 @@ public class ConfigurationTest {
         String dockerHubImage = "docker.atlassian.io/buildeng/docker:latest";
         String registryString = "docker.atl-paas.net,foo-bar.com";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.reverseRegistryOverride(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -117,8 +123,9 @@ public class ConfigurationTest {
         String dockerHubImage = "docker.atlassian.io/buildeng/docker:latest";
         String registryString = "docker.atlassian.io,foo-bar.com,foo-foo";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -126,8 +133,9 @@ public class ConfigurationTest {
         String dockerHubImage = "foo-bar.com/buildeng/docker:latest";
         String registryString = "docker.atlassian.io,foo-bar.com,foo-foo";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -135,8 +143,9 @@ public class ConfigurationTest {
         String dockerHubImage = "docker.atlassian.io:90/buildeng/docker:latest";
         String registryString = "docker.atl-paas.net,bar-foo.com,docker.atlassian.io,foo-bar.com";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 
     @Test
@@ -144,7 +153,8 @@ public class ConfigurationTest {
         String dockerHubImage = "bar-foo.com:90/buildeng/docker:latest";
         String registryString = "docker.atl-paas.net,bar-foo.com,docker.atlassian.io,foo-bar.com";
 
-        assertEquals(dockerHubImage, ConfigurationOverride.overrideRegistry(dockerHubImage,
-                ConfigurationOverride.registryOverrideStringToMap(registryString)));
+        assertEquals(dockerHubImage,
+                ConfigurationOverride.overrideRegistry(dockerHubImage,
+                        ConfigurationOverride.registryOverrideStringToMap(registryString)));
     }
 }

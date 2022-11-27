@@ -112,7 +112,8 @@ public class KubernetesPodSpecListTest {
         }
         List<Map<String, Object>> hostAliases = ((List<Map<String, Object>>) spec.get("hostAliases"));
         assertEquals(2,
-                hostAliases.stream()
+                hostAliases
+                        .stream()
                         .filter((Map<String, Object> t) -> "127.0.0.1".equals(t.get("ip")))
                         .mapToLong((Map<String, Object> t) -> ((List<String>) t.get("hostnames")).size())
                         .sum());
@@ -213,7 +214,8 @@ public class KubernetesPodSpecListTest {
             try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
                 try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
                     mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
-                    mockPodCreator.when(() -> PodCreator.create(request, globalConfiguration))
+                    mockPodCreator
+                            .when(() -> PodCreator.create(request, globalConfiguration))
                             .thenReturn(Collections.emptyMap());
                     // when
                     kubernetesPodSpecList.generate(request, stringId);
@@ -279,7 +281,8 @@ public class KubernetesPodSpecListTest {
             try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
                 try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
                     mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
-                    mockPodCreator.when(() -> PodCreator.create(request, globalConfiguration))
+                    mockPodCreator
+                            .when(() -> PodCreator.create(request, globalConfiguration))
                             .thenReturn(Collections.emptyMap());
                     // when
                     kubernetesPodSpecList.generate(request, stringId);
@@ -303,7 +306,8 @@ public class KubernetesPodSpecListTest {
             try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
                 try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
                     mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
-                    mockPodCreator.when(() -> PodCreator.create(request, globalConfiguration))
+                    mockPodCreator
+                            .when(() -> PodCreator.create(request, globalConfiguration))
                             .thenReturn(Collections.emptyMap());
                     // when
                     kubernetesPodSpecList.generate(request, stringId);
@@ -405,8 +409,9 @@ public class KubernetesPodSpecListTest {
     }
 
     private String getArchitecturePodOverridesAsString() throws IOException {
-        return FileUtils.readFileToString(new File(Objects.requireNonNull(this.getClass()
-                .getResource("/architecturePodOverrides.yaml")).getFile()), "UTF-8");
+        return FileUtils.readFileToString(new File(Objects
+                .requireNonNull(this.getClass().getResource("/architecturePodOverrides.yaml"))
+                .getFile()), "UTF-8");
     }
 
     @SuppressWarnings("unchecked")
@@ -441,8 +446,8 @@ public class KubernetesPodSpecListTest {
     }
 
     private void assertPodSpecFileCreated(MockedStatic<File> mockFile,
-                                          MockedStatic<FileUtils> mockFileUtils,
-                                          File file) {
+            MockedStatic<FileUtils> mockFileUtils,
+            File file) {
         mockFile.verify(() -> File.createTempFile("pod", "yaml"));
         mockFileUtils.verify(() -> FileUtils.write(eq(file), any(), // Any way to improve this?
                 matches("UTF-8"), eq(false)));

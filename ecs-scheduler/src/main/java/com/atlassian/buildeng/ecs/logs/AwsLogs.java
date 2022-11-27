@@ -49,7 +49,12 @@ public class AwsLogs {
     }
 
 
-    public static void writeTo(OutputStream os, String logGroupName, String region, String prefix, String containerName, String taskArn) {
+    public static void writeTo(OutputStream os,
+            String logGroupName,
+            String region,
+            String prefix,
+            String containerName,
+            String taskArn) {
         AWSLogs logs = AWSLogsClientBuilder.standard().withRegion(Regions.fromName(region)).build();
         PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)));
         try {
@@ -67,7 +72,8 @@ public class AwsLogs {
                 });
                 // why check the last token in request you ask.
                 // if you don't sometimes aws will keep on sending you the same token and then trhottle you if you keep trying to get it.
-                if (response.getNextForwardToken() != null && !response.getNextForwardToken().equals(request.getNextToken())) {
+                if (response.getNextForwardToken() != null &&
+                        !response.getNextForwardToken().equals(request.getNextToken())) {
                     request = request.withNextToken(response.getNextForwardToken());
                     response = logs.getLogEvents(request);
                 } else {
@@ -106,9 +112,14 @@ public class AwsLogs {
                 // t (ec2 instance id) should be unique within reason
                 final String logStreamName = "pbc-ec2-instance-stale/" + t;
                 logs.createLogStream(new CreateLogStreamRequest(driver.getLogGroupName(), logStreamName));
-                logs.putLogEvents(new PutLogEventsRequest().withLogGroupName(driver.getLogGroupName()).withLogStreamName(logStreamName).withLogEvents(new InputLogEvent().withMessage(result.getDecodedOutput()).withTimestamp(System.currentTimeMillis())));
+                logs.putLogEvents(new PutLogEventsRequest()
+                        .withLogGroupName(driver.getLogGroupName())
+                        .withLogStreamName(logStreamName)
+                        .withLogEvents(new InputLogEvent()
+                                .withMessage(result.getDecodedOutput())
+                                .withTimestamp(System.currentTimeMillis())));
             } catch (Exception th) {
-                //we are fine swallowing any errors, has no direct influence on proper function.
+                // we are fine swallowing any errors, has no direct influence on proper function.
                 logger.error("failed to retrieve ec2 instance logs or send them to cloudwatch", th);
             }
         }

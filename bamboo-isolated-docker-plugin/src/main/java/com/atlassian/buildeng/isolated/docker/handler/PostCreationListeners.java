@@ -48,20 +48,20 @@ import org.slf4j.LoggerFactory;
 /**
  * DockerHandler.appendConfiguration() cannot add requirements, neither do bamboo specs executions.
  * we listen on created/updated plans and deployments and update the requirement accordingly.
- * 
- */ 
+ */
 public class PostCreationListeners {
     @SuppressWarnings("UnusedDeclaration")
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(PostCreationListeners.class);
-    
+
     private final PlanManager pm;
     private final DeploymentProjectService deploymentProjectService;
     private final EnvironmentCustomConfigService environmentCustomConfigService;
     private final EnvironmentRequirementService environmentRequirementService;
 
     @Inject
-    public PostCreationListeners(PlanManager pm, DeploymentProjectService deploymentProjectService, 
-            EnvironmentCustomConfigService environmentCustomConfigService, 
+    public PostCreationListeners(PlanManager pm,
+            DeploymentProjectService deploymentProjectService,
+            EnvironmentCustomConfigService environmentCustomConfigService,
             EnvironmentRequirementService environmentRequirementService) {
         this.pm = pm;
         this.deploymentProjectService = deploymentProjectService;
@@ -69,7 +69,7 @@ public class PostCreationListeners {
         this.environmentRequirementService = environmentRequirementService;
     }
 
-    
+
     @EventListener
     public void onBuildCreatedEvent(BuildCreatedEvent event) {
         patchByPlanKey(event.getPlanKey());
@@ -77,7 +77,10 @@ public class PostCreationListeners {
 
     private boolean patchJob(Job job) {
         if (job != null && !job.hasMaster()) {
-            boolean isPresent = job.getRequirementSet().getRequirements().stream()
+            boolean isPresent = job
+                    .getRequirementSet()
+                    .getRequirements()
+                    .stream()
                     .anyMatch((Requirement t) -> Constants.CAPABILITY_RESULT.equals(t.getKey()));
             Configuration c = AccessConfiguration.forJob(job);
             if (!isPresent && c.isEnabled()) {
@@ -90,13 +93,15 @@ public class PostCreationListeners {
         }
         return false;
     }
-    
+
     private void patchByPlanKey(PlanKey key) {
         try {
             HibernateRunner.runWithHibernateSession(() -> {
                 TopLevelPlan plan = pm.getPlanByKeyIfOfType(key, TopLevelPlan.class);
                 if (plan != null && !plan.hasMaster()) {
-                    boolean changedAny = plan.getAllJobs().stream()
+                    boolean changedAny = plan
+                            .getAllJobs()
+                            .stream()
                             .map(this::patchJob)
                             .filter((Boolean t) -> Boolean.TRUE.equals(t))
                             .count() > 0;
@@ -115,40 +120,41 @@ public class PostCreationListeners {
             log.error("failed to update system requirement for pbc", ex);
         }
     }
-    
-    
-    @EventListener 
+
+
+    @EventListener
     public void onDeploymentProjectCreatedEvent(DeploymentProjectCreatedEvent event) {
         patchEnvironments(event.getDeploymentProjectId());
     }
 
-    
-    @EventListener 
+
+    @EventListener
     public void onDeploymentProjectConfigUpdatedEvent(DeploymentProjectConfigUpdatedEvent event) {
         patchEnvironments(event.getDeploymentProjectId());
     }
-    
+
     @EventListener
     public void onBuildConfigurationUpdatedEvent(BuildConfigurationUpdatedEvent event) {
         patchByPlanKey(event.getPlanKey());
     }
-    
-    @EventListener 
+
+    @EventListener
     public void onChainCreatedEvent(ChainCreatedEvent event) {
         patchByPlanKey(event.getPlanKey());
     }
-    
+
     private void patchEnvironments(long deploymentProjectId) throws AccessDeniedException {
         DeploymentProject dp = deploymentProjectService.getDeploymentProject(deploymentProjectId);
         if (dp == null || dp.getEnvironments() == null) {
             return;
-        } 
+        }
         dp.getEnvironments().forEach((Environment t) -> {
             try {
-                List<? extends ImmutableRequirement> reqs = environmentRequirementService
-                        .getRequirementsForEnvironment(t.getId());
+                List<? extends ImmutableRequirement> reqs =
+                        environmentRequirementService.getRequirementsForEnvironment(t.getId());
                 Configuration c = AccessConfiguration.forEnvironment(t, environmentCustomConfigService);
-                boolean isPresent = reqs.stream()
+                boolean isPresent = reqs
+                        .stream()
                         .anyMatch((ImmutableRequirement r) -> Constants.CAPABILITY_RESULT.equals(r.getKey()));
                 if (!isPresent && c.isEnabled()) {
                     DockerHandlerImpl.addEnvironementRequirement(t, environmentRequirementService);
@@ -160,5 +166,5 @@ public class PostCreationListeners {
             }
         });
     }
-    
+
 }

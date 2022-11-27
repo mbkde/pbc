@@ -58,8 +58,8 @@ public class PostJobActionImpl implements PostJobAction {
 
     @Override
     public void execute(@NotNull StageExecution stageExecution,
-                        @NotNull Job job,
-                        @NotNull BuildResultsSummary buildResultsSummary) {
+            @NotNull Job job,
+            @NotNull BuildResultsSummary buildResultsSummary) {
         execute(stageExecution, (ImmutableJob) job, buildResultsSummary);
     }
 
@@ -67,25 +67,28 @@ public class PostJobActionImpl implements PostJobAction {
      * Remove PBC agent from db once job is finished.
      */
     public void execute(@NotNull StageExecution stageExecution,
-                        @NotNull ImmutableJob job,
-                        @NotNull BuildResultsSummary buildResultsSummary) {
-        //cleanup future reservations in case of failure.
-        //We do it here because we want to reset the reservation as soon as possible.
-        ReserveFutureCapacityPostStageAction.FutureState state = ReserveFutureCapacityPostStageAction
-                .retrieveFutureState(stageExecution);
-        if (ReserveFutureCapacityPostStageAction.FutureState.RESERVED.equals(state)
-                && !buildResultsSummary.isSuccessful()) {
+            @NotNull ImmutableJob job,
+            @NotNull BuildResultsSummary buildResultsSummary) {
+        // cleanup future reservations in case of failure.
+        // We do it here because we want to reset the reservation as soon as possible.
+        ReserveFutureCapacityPostStageAction.FutureState state =
+                ReserveFutureCapacityPostStageAction.retrieveFutureState(stageExecution);
+        if (ReserveFutureCapacityPostStageAction.FutureState.RESERVED.equals(state) &&
+                !buildResultsSummary.isSuccessful()) {
             BuildKey futureBuildKey = ReserveFutureCapacityPreStageAction.findBuildKey(stageExecution);
-            LOG.info("Resetting reservation " + futureBuildKey + " due to failed build result "
-                    + buildResultsSummary.getPlanResultKey());
+            LOG.info("Resetting reservation " +
+                    futureBuildKey +
+                    " due to failed build result " +
+                    buildResultsSummary.getPlanResultKey());
             isoService.reserveCapacity(futureBuildKey,
                     stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
-                    0, 0);
+                    0,
+                    0);
         }
         Configuration config = AccessConfiguration.forBuildResultSummary(buildResultsSummary);
         if (config.isEnabled()) {
             String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
-            //only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
+            // only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
             if (StringUtils.equals("true", properStopped)) {
                 BuildAgent agent = findAgent(job, buildResultsSummary);
                 if (agent != null) {
@@ -98,13 +101,11 @@ public class PostJobActionImpl implements PostJobAction {
     private BuildAgent findAgent(ImmutableJob job, BuildResultsSummary buildResultsSummary) {
         Long agentId = buildResultsSummary.getBuildAgentId();
         if (agentId == null) {
-            //not sure why the build agent id is null sometimes. but because it is,
-            //our offline remote agents keep accumulating
-            Optional<BuildAgent> found = agentManager.getAllRemoteAgents().stream()
-                    .filter((BuildAgent t) -> {
-                        return AgentQueries.isDockerAgentForResult(t, buildResultsSummary.getPlanResultKey());
-                    })
-                    .findFirst();
+            // not sure why the build agent id is null sometimes. but because it is,
+            // our offline remote agents keep accumulating
+            Optional<BuildAgent> found = agentManager.getAllRemoteAgents().stream().filter((BuildAgent t) -> {
+                return AgentQueries.isDockerAgentForResult(t, buildResultsSummary.getPlanResultKey());
+            }).findFirst();
             if (found.isPresent()) {
                 LOG.info("Found missing build agent for job " + job.getPlanKey());
                 return found.get();
@@ -114,17 +115,19 @@ public class PostJobActionImpl implements PostJobAction {
             }
         } else {
             BuildAgent test = agentManager.getAgent(agentId);
-            //BUILDENG-12398 very rare not exactly sure how these can happen
+            // BUILDENG-12398 very rare not exactly sure how these can happen
             // log when that happens again to know for sure.
             if (test == null) {
                 // on a rerun is the buildResultSummary still holding the old agentId sometimes?
                 LOG.error("Agent {} for job {} referenced from buildResultSummary but missing in db.",
-                        agentId, job.getPlanKey());
+                        agentId,
+                        job.getPlanKey());
                 return null;
             } else if (!AgentQueries.isDockerAgent(test)) {
-                //could it be an elastic/remote agent that was running the job while the plan was changed?
+                // could it be an elastic/remote agent that was running the job while the plan was changed?
                 LOG.error("Agent {} for job {} referenced from buildResultSummary wa not PBC agent",
-                        agentId, job.getPlanKey());
+                        agentId,
+                        job.getPlanKey());
                 return null;
             }
             return test;

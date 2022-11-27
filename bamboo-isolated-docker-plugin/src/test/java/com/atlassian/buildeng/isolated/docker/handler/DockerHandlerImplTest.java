@@ -16,6 +16,9 @@
 
 package com.atlassian.buildeng.isolated.docker.handler;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
 import com.atlassian.bamboo.template.TemplateRenderer;
@@ -30,15 +33,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class DockerHandlerImplTest {
+    // LinkedHashMap as we want to preserve the ordering
+    private final LinkedHashMap<String, String> archList = new DefaultArchList();
+
     @Mock
     ModuleDescriptor moduleDescriptor;
     @Mock
@@ -54,20 +58,20 @@ public class DockerHandlerImplTest {
     @Mock
     Validator validator;
 
-    // LinkedHashMap as we want to preserve the ordering
-    private final LinkedHashMap<String, String> archList = new LinkedHashMap<String, String>() {{
-        put("default", "Default");
-        put("amd64", "Intel x86_64");
-        put("arm64", "ARMv8 AArch64");
-    }};
-
     @Test
     public void testGetArchitecturesWithNonEmptyList() {
         Configuration c = ConfigurationBuilder.create("image").build();
 
-        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor, webResourceManager,
-                templateRenderer, environmentCustomConfigService, environmentRequirementService,
-                true, c, globalConfiguration, validator, true);
+        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor,
+                webResourceManager,
+                templateRenderer,
+                environmentCustomConfigService,
+                environmentRequirementService,
+                true,
+                c,
+                globalConfiguration,
+                validator,
+                true);
 
         when(globalConfiguration.getArchitectureConfig()).thenReturn(archList);
 
@@ -84,9 +88,16 @@ public class DockerHandlerImplTest {
     public void testGetArchitecturesWithNonEmptyListAndBuildHasInvalidArchitecture() {
         Configuration c = ConfigurationBuilder.create("image").withArchitecture("fakeArch").build();
 
-        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor, webResourceManager,
-                templateRenderer, environmentCustomConfigService, environmentRequirementService,
-                true, c, globalConfiguration, validator, true);
+        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor,
+                webResourceManager,
+                templateRenderer,
+                environmentCustomConfigService,
+                environmentRequirementService,
+                true,
+                c,
+                globalConfiguration,
+                validator,
+                true);
 
         when(globalConfiguration.getArchitectureConfig()).thenReturn(archList);
 
@@ -104,17 +115,33 @@ public class DockerHandlerImplTest {
     public void testGetArchitecturesWithEmptyListAndBuildHasInvalidArchitecture() {
         Configuration c = ConfigurationBuilder.create("image").withArchitecture("fakeArch").build();
 
-        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor, webResourceManager,
-                templateRenderer, environmentCustomConfigService, environmentRequirementService,
-                true, c, globalConfiguration, validator, true);
+        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor,
+                webResourceManager,
+                templateRenderer,
+                environmentCustomConfigService,
+                environmentRequirementService,
+                true,
+                c,
+                globalConfiguration,
+                validator,
+                true);
 
         when(globalConfiguration.getArchitectureConfig()).thenReturn(new LinkedHashMap<>());
 
         Collection<Pair<String, String>> returnedArchList = dockerHandler.getArchitectures();
 
-        List<Pair<String, String>> expectedArchList = Arrays.asList(Pair.make(null, "<select this option to remove any architecture>"),
-                Pair.make("fakeArch", "fakeArch <not supported on this server>"));
+        List<Pair<String, String>> expectedArchList =
+                Arrays.asList(Pair.make(null, "<select this option to remove any architecture>"),
+                        Pair.make("fakeArch", "fakeArch <not supported on this server>"));
 
         assertEquals(expectedArchList, returnedArchList);
+    }
+
+    private static class DefaultArchList extends LinkedHashMap<String, String> {
+        {
+            put("default", "Default");
+            put("amd64", "Intel x86_64");
+            put("arm64", "ARMv8 AArch64");
+        }
     }
 }

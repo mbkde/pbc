@@ -59,7 +59,10 @@ public class JMXAgentsService implements LifecycleAware {
             logger.info("Successfully registered mbean {}, confirming object is not null: {}",
                     name,
                     agentsCount != null);
-        } catch (MalformedObjectNameException | InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException e) {
+        } catch (MalformedObjectNameException |
+                InstanceAlreadyExistsException |
+                MBeanRegistrationException |
+                NotCompliantMBeanException e) {
             logger.error("Failed to register mbean {}: {}", name, e.getMessage());
         }
 

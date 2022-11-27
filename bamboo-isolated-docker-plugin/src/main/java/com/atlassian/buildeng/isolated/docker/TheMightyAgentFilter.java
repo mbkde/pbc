@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * this beast requires restart on each deployment.
+ *
  * @author mkleint
  */
 public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
@@ -40,7 +41,8 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     private static final Logger log = LoggerFactory.getLogger(TheMightyAgentFilter.class);
 
     @Override
-    public Collection<BuildAgent> filter(CommonContext context, Collection<BuildAgent> agents, 
+    public Collection<BuildAgent> filter(CommonContext context,
+            Collection<BuildAgent> agents,
             MinimalRequirementSet requirements) {
         log.debug("have {} agents for {}", agents.size(), context.getResultKey());
         if (isPBCContext(context)) {
@@ -48,7 +50,8 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
                 if (!AgentType.REMOTE.equals(agent.getType())) {
                     continue;
                 }
-                CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent); //could this be slow??
+                CapabilitySet capabilitySet =
+                        CapabilitySetProvider.getAgentCapabilitySet(agent); // could this be slow??
                 if (capabilitySet != null) {
                     Capability cap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
                     if (cap != null) {
@@ -62,20 +65,20 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
             }
             return Collections.emptyList();
         } else {
-            //make sure the isolated docker agent never picks up non-dockerized job
+            // make sure the isolated docker agent never picks up non-dockerized job
             ArrayList<BuildAgent> toRet = new ArrayList<>(agents.size());
             for (BuildAgent agent : agents) {
                 if (AgentType.REMOTE.equals(agent.getType())) {
-                    //only check remote agents
+                    // only check remote agents
                     CapabilitySet capabilitySet = CapabilitySetProvider.getAgentCapabilitySet(agent);
                     if (capabilitySet != null) {
                         if (capabilitySet.getCapability(Constants.CAPABILITY_RESULT) != null) {
                             continue;
                         }
                     }
-                } 
+                }
                 toRet.add(agent);
-            } 
+            }
             return toRet;
         }
     }
@@ -83,5 +86,5 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     private static boolean isPBCContext(CommonContext context) {
         return AccessConfiguration.forContext(context).isEnabled();
     }
-    
+
 }

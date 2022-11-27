@@ -21,6 +21,7 @@ import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.
+ *
  * @author mkleint
  */
 public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
@@ -40,17 +41,31 @@ public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
     @Override
     public String toString() {
         if (DockerAgentRemoteFailEvent.ddmarkdown) {
-            //http://docs.datadoghq.com/guides/markdown/
-            return "%%% \\n"
-                    + "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n"
-                    + "Container ARN:" + containerArn + "\\n"
-                    + escape(errorMessage) + "\\n"
-                    + "\\n %%%";
+            // http://docs.datadoghq.com/guides/markdown/
+            return "%%% \\n" +
+                    "Key:**" +
+                    key.getKey() +
+                    "** Task ARN:" +
+                    taskArn +
+                    "\\n" +
+                    "Container ARN:" +
+                    containerArn +
+                    "\\n" +
+                    escape(errorMessage) +
+                    "\\n" +
+                    "\\n %%%";
         }
 
-        return "DockerAgentRemoteSilentRetryEvent{"
-                + "errorMessage=" + errorMessage + ", key=" + key + ", task=" + taskArn + ", container=" + containerArn
-                + "}";
+        return "DockerAgentRemoteSilentRetryEvent{" +
+                "errorMessage=" +
+                errorMessage +
+                ", key=" +
+                key +
+                ", task=" +
+                taskArn +
+                ", container=" +
+                containerArn +
+                "}";
     }
-    
+
 }

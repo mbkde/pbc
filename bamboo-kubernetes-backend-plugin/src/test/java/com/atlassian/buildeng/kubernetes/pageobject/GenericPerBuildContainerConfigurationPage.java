@@ -39,7 +39,7 @@ public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPag
     private PageElement errorMessage;
     @ElementBy(cssSelector = ".save-status")
     private PageElement saveStatus;
-    @ElementBy(id="load_complete")
+    @ElementBy(id = "load_complete")
     private PageElement loadComplete;
 
     @Override
@@ -68,7 +68,7 @@ public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPag
     }
 
     public GenericPerBuildContainerConfigurationPage awsVendor(boolean awsVendor) {
-        if(awsVendor) {
+        if (awsVendor) {
             this.awsVendor.check();
         } else {
             this.awsVendor.uncheck();

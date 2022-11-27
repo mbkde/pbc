@@ -47,8 +47,9 @@ public class RemoteWatchdogJobTest {
     public static class RemoteWatchdogJobMock extends RemoteWatchdogJob {
 
         @Override
-        protected List<StoppedState> queryStoppedTasksByArn(
-                GlobalConfiguration globalConfig, Client client, List<String> arns) {
+        protected List<StoppedState> queryStoppedTasksByArn(GlobalConfiguration globalConfig,
+                Client client,
+                List<String> arns) {
             return arns.stream().map(arn -> new StoppedState(arn, "", "")).collect(toList());
         }
     }

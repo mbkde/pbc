@@ -62,18 +62,22 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     @Override
     public EnvironmentPluginConfiguration toSpecsEntity(@NotNull Map<String, String> map) {
         Configuration config = AccessConfiguration.forMap(map);
-        return new PerBuildContainerForEnvironment().enabled(config.isEnabled())
+        return new PerBuildContainerForEnvironment()
+                .enabled(config.isEnabled())
                 .image(config.getDockerImage())
                 .size(config.getSize().name())
                 .awsRole(config.getAwsRole())
                 .architecture(config.getArchitecture())
-                .extraContainers(config.getExtraContainers()
+                .extraContainers(config
+                        .getExtraContainers()
                         .stream()
-                        .map((Configuration.ExtraContainer t) -> new ExtraContainer().name(t.getName())
+                        .map((Configuration.ExtraContainer t) -> new ExtraContainer()
+                                .name(t.getName())
                                 .image(t.getImage())
                                 .size(t.getExtraSize().name())
                                 .commands(t.getCommands())
-                                .envVariables(t.getEnvVariables()
+                                .envVariables(t
+                                        .getEnvVariables()
                                         .stream()
                                         .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
                                         .collect(Collectors.toList())))
@@ -110,7 +114,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     @NotNull
     @Override
     public List<ValidationProblem> validate(@NotNull TaskValidationContext tvc,
-                                            @NotNull EnvironmentPluginConfigurationProperties epcp) {
+            @NotNull EnvironmentPluginConfigurationProperties epcp) {
         final AnyPluginConfigurationProperties any = Narrow.downTo(epcp, AnyPluginConfigurationProperties.class);
         if (any != null) {
             String enabled = any.getConfiguration().get(Configuration.ENABLED_FOR_JOB);
@@ -148,7 +152,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     }
 
     /**
-     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String
+     * architecture) }
      * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
      * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
      * annotation on the string builder method. However, the usage of this method is mandatory here,
@@ -161,12 +166,14 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         if (config == null) {
             return null;
         } else {
-            return new PerBuildContainerForEnvironment().enabled(config.isEnabled())
+            return new PerBuildContainerForEnvironment()
+                    .enabled(config.isEnabled())
                     .image(config.getDockerImage())
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
                     .architecture(config.getArchitecture())
-                    .extraContainers(config.getExtraContainers()
+                    .extraContainers(config
+                            .getExtraContainers()
                             .stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()))
@@ -215,7 +222,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 Configuration.ExtraContainerSize.valueOf(container.getSize()));
         extra.setCommands(container.getCommands());
         if (container.getEnvironments() != null) {
-            extra.setEnvVariables(container.getEnvironments()
+            extra.setEnvVariables(container
+                    .getEnvironments()
                     .stream()
                     .map(var -> new Configuration.EnvVariable(var.getKey(), var.getValue()))
                     .collect(Collectors.toList()));

@@ -117,7 +117,7 @@ public class PodCreator {
     static final Integer KUBE_NAME_MAX_LENGTH = 87;
     static final Integer IRSA_SECRET_MAX_LENGTH = 63;
 
-    //very short suffix as we have a much stricter limit for labels
+    // very short suffix as we have a much stricter limit for labels
     static final String IRSA_SECRET_NAME_SUFFIX = "it";
     static final String IAM_REQUEST_NAME_SUFFIX = "iamrequest";
 
@@ -141,8 +141,8 @@ public class PodCreator {
     }
 
     static Map<String, Object> createIamRequest(IsolatedDockerAgentRequest r,
-                                                GlobalConfiguration globalConfiguration,
-                                                String subjectId) {
+            GlobalConfiguration globalConfiguration,
+            String subjectId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
         iamRequest.put("metadata",
@@ -170,7 +170,7 @@ public class PodCreator {
         Map<String, String> labels = new HashMap<>();
         labels.put(LABEL_PBC_MARKER, "true");
 
-        //TODO remove these two in the future, no need to have them as labels.
+        // TODO remove these two in the future, no need to have them as labels.
         labels.put(ANN_RESULTID, StringUtils.abbreviate(r.getResultKey(), 59) + "Z");
         labels.put(ANN_UUID, r.getUniqueIdentifier().toString());
         labels.put(LABEL_BAMBOO_SERVER, c.getBambooBaseUrlAskKubeLabel());
@@ -183,7 +183,7 @@ public class PodCreator {
     }
 
     private static List<Map<String, Object>> createExtraContainers(Configuration c,
-                                                                   GlobalConfiguration globalConfiguration) {
+            GlobalConfiguration globalConfiguration) {
         return c.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", t.getName());
@@ -224,7 +224,8 @@ public class PodCreator {
 
             // We've run into some edge case where env vars can be duplicated, see BUILDENG-20649. Use .distinct()
             map.put("env",
-                    t.getEnvVariables()
+                    t
+                            .getEnvVariables()
                             .stream()
                             .distinct()
                             .map((Configuration.EnvVariable t1) -> ImmutableMap.of("name",
@@ -264,7 +265,7 @@ public class PodCreator {
         }
         cmds.add("--storage-driver=" + Constants.STORAGE_DRIVER);
         if (StringUtils.isNoneBlank(Constants.DIND_EXTRA_ARGS)) {
-            //do we need to split on space
+            // do we need to split on space
             String[] split = StringUtils.split(Constants.DIND_EXTRA_ARGS, " ");
             cmds.addAll(Arrays.asList(split));
         }
@@ -273,12 +274,14 @@ public class PodCreator {
 
 
     static List<String> containerNames(Configuration config) {
-        return Stream.concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT),
-                config.getExtraContainers().stream().map(t -> t.getName())).collect(Collectors.toList());
+        return Stream
+                .concat(Stream.of(CONTAINER_NAME_BAMBOOAGENT),
+                        config.getExtraContainers().stream().map(t -> t.getName()))
+                .collect(Collectors.toList());
     }
 
     private static Map<String, Object> createMetadata(GlobalConfiguration globalConfiguration,
-                                                      IsolatedDockerAgentRequest r) {
+            IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
         map.put("labels", createLabels(r, globalConfiguration));
@@ -303,7 +306,7 @@ public class PodCreator {
      * while keeping identifying characteristics.
      */
     private static String createName(IsolatedDockerAgentRequest r, String suffix, Integer maxLength) {
-        //50 is magic constant that attempts to limit the overall length of the name.
+        // 50 is magic constant that attempts to limit the overall length of the name.
         String key = r.getResultKey();
         String name = suffix.isEmpty() ? key : key + "-" + suffix;
 
@@ -315,13 +318,13 @@ public class PodCreator {
             if (suffix.isEmpty()) {
                 name = pk.substring(0, Math.min(pk.length(), len)) + "-" + prk.getBuildNumber();
             } else {
-                //Remove the length of the suffix and a '-'
+                // Remove the length of the suffix and a '-'
                 len -= suffix.length() + 1;
                 name = pk.substring(0, Math.min(pk.length(), len)) + "-" + prk.getBuildNumber() + "-" + suffix;
             }
 
         }
-        //together with the identifier we are not at 88 max,in BUILDENG-15619 the failure in CNI plugin network creation
+        // together with the identifier we are not at 88 max,in BUILDENG-15619 the failure in CNI plugin network creation
         // was linked both to pod name and namespace lengths. this way we should accomodate fairly long namespace names.
         return name.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier();
     }
@@ -330,7 +333,7 @@ public class PodCreator {
     private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("restartPolicy", "Never");
-        //63 is max - https://tools.ietf.org/html/rfc2181#section-11
+        // 63 is max - https://tools.ietf.org/html/rfc2181#section-11
         String hostname = StringUtils.left(r.getResultKey().toLowerCase(Locale.ENGLISH), 63);
         if (hostname.length() == 63 && hostname.charAt(62) == '-') {
             hostname = hostname.substring(0, 62);
@@ -352,25 +355,30 @@ public class PodCreator {
         ImmutableList.Builder<Map<String, Object>> bldr = ImmutableList.builder();
         if (GENERATE_SHM_VOLUME) {
             // workaround for low default of 64M in docker daemon.
-            //https://docs.openshift.org/latest/dev_guide/shared_memory.html
+            // https://docs.openshift.org/latest/dev_guide/shared_memory.html
             // since docker daemon 17.06
-            //the default size should be configurable on the docker daemon size and is likely preferable.
+            // the default size should be configurable on the docker daemon size and is likely preferable.
             bldr.add(ImmutableMap.of("name", "shm", "emptyDir", ImmutableMap.of("medium", "Memory")));
         }
-        bldr.add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
+        bldr
+                .add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
                 .add(ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()))
                 .add(ImmutableMap.of("name", "logspool", "emptyDir", new HashMap<>()))
                 .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
         if (r.getConfiguration().isAwsRoleDefined()) {
-            bldr.add(ImmutableMap.<String, Object>builder()
+            bldr.add(ImmutableMap
+                    .<String, Object>builder()
                     .put("name", "aws-iam-token")
                     .put("projected",
-                            ImmutableMap.builder()
+                            ImmutableMap
+                                    .builder()
                                     .put("defaultMode", 420)
                                     .put("sources",
-                                            ImmutableList.<Map<String, Object>>builder()
+                                            ImmutableList
+                                                    .<Map<String, Object>>builder()
                                                     .add(ImmutableMap.of("secret",
-                                                            ImmutableMap.builder()
+                                                            ImmutableMap
+                                                                    .builder()
                                                                     .put("name", createIrsaSecretName(r))
                                                                     .put("items",
                                                                             ImmutableList.of(ImmutableMap.of("key",
@@ -386,7 +394,7 @@ public class PodCreator {
     }
 
     private static List<Map<String, Object>> createContainers(GlobalConfiguration globalConfiguration,
-                                                              IsolatedDockerAgentRequest r) {
+            IsolatedDockerAgentRequest r) {
         ArrayList<Map<String, Object>> toRet = new ArrayList<>();
         toRet.addAll(createExtraContainers(r.getConfiguration(), globalConfiguration));
         toRet.add(createMainContainer(globalConfiguration, r));
@@ -437,7 +445,7 @@ public class PodCreator {
     }
 
     private static Map<String, Object> createMainContainer(GlobalConfiguration globalConfiguration,
-                                                           IsolatedDockerAgentRequest r) {
+            IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", CONTAINER_NAME_BAMBOOAGENT);
         map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
@@ -445,7 +453,8 @@ public class PodCreator {
         map.put("workingDir", WORK_DIR);
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
-        ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
+        ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList
+                .<Map<String, Object>>builder()
                 .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))
                 .addAll(commonVolumeMounts());
         if (GENERATE_SHM_VOLUME) {
@@ -475,9 +484,10 @@ public class PodCreator {
     }
 
     private static Object createMainContainerEnvs(GlobalConfiguration globalConfiguration,
-                                                  IsolatedDockerAgentRequest r) {
+            IsolatedDockerAgentRequest r) {
         List<Map<String, Object>> envs = new ArrayList<>();
-        Optional<Configuration.ExtraContainer> optDind = r.getConfiguration()
+        Optional<Configuration.ExtraContainer> optDind = r
+                .getConfiguration()
                 .getExtraContainers()
                 .stream()
                 .filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage()))

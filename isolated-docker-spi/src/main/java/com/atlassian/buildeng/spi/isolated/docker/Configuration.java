@@ -43,8 +43,7 @@ public final class Configuration {
     public static final String DOCKER_FEATURE_FLAGS = PROPERTY_PREFIX + ".featureFlags";
 
     // task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan
-    // templates
-    // don't like dots in names.
+    // templates don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_ARCHITECTURE = "dockerArchitecture";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
@@ -74,12 +73,12 @@ public final class Configuration {
     private final HashSet<String> featureFlags;
 
     Configuration(boolean enabled,
-                  String dockerImage,
-                  String awsRole,
-                  String architecture,
-                  ContainerSize size,
-                  List<ExtraContainer> extraContainers,
-                  HashSet<String> featureFlags) {
+            String dockerImage,
+            String awsRole,
+            String architecture,
+            ContainerSize size,
+            List<ExtraContainer> extraContainers,
+            HashSet<String> featureFlags) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
         this.awsRole = awsRole;
@@ -136,7 +135,8 @@ public final class Configuration {
      */
     public int getCPUTotal(ContainerSizeDescriptor sizeDescriptor) {
         return sizeDescriptor.getCpu(size) +
-                extraContainers.stream()
+                extraContainers
+                        .stream()
                         .mapToInt((ExtraContainer value) -> sizeDescriptor.getCpu(value.getExtraSize()))
                         .sum();
     }
@@ -149,7 +149,8 @@ public final class Configuration {
     public int getMemoryTotal(ContainerSizeDescriptor sizeDescriptor) {
         return sizeDescriptor.getMemory(size) +
                 DOCKER_MINIMUM_MEMORY +
-                extraContainers.stream()
+                extraContainers
+                        .stream()
                         .mapToInt((ExtraContainer value) -> sizeDescriptor.getMemory(value.getExtraSize()))
                         .sum();
     }

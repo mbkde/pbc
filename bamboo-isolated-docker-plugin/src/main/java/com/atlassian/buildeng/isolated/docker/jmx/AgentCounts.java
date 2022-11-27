@@ -19,7 +19,7 @@ package com.atlassian.buildeng.isolated.docker.jmx;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class AgentCounts implements AgentCountsMBean {
-    
+
     final AtomicLong queued = new AtomicLong(0);
     final AtomicLong scheduled = new AtomicLong(0);
     final AtomicLong active = new AtomicLong(0);

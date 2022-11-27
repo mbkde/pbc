@@ -50,7 +50,6 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ManagedAsync;
 
 
-
 @Path("/rest/scheduler")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -62,7 +61,10 @@ public class SchedulerResource {
     private final ECSConfiguration configuration;
 
     @Inject
-    public SchedulerResource(TaskDefinitionRegistrations taskDefReistrations, ECSScheduler ecsScheduler, SchedulerBackend schedulerBackend, ECSConfiguration configuration) {
+    public SchedulerResource(TaskDefinitionRegistrations taskDefReistrations,
+            ECSScheduler ecsScheduler,
+            SchedulerBackend schedulerBackend,
+            ECSConfiguration configuration) {
         this.taskDefRegistrations = taskDefReistrations;
         this.ecsScheduler = ecsScheduler;
         this.schedulerBackend = schedulerBackend;
@@ -100,8 +102,12 @@ public class SchedulerResource {
             try {
                 revision = taskDefRegistrations.registerDockerImage(s.getConfiguration(), env);
             } catch (ECSException ex) {
-                //Have to catch some of the exceptions here instead of the callback to use retries.
-                if (ex.getCause() instanceof ClientException && ex.getMessage().contains("Too many concurrent attempts to create a new revision of the specified family")) {
+                // Have to catch some of the exceptions here instead of the callback to use retries.
+                if (ex.getCause() instanceof ClientException &&
+                        ex
+                                .getMessage()
+                                .contains(
+                                        "Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
                     toRet.withRetryRecoverable("Hit Api limit for task revisions.");
                     response.resume(toRet);
@@ -111,10 +117,14 @@ public class SchedulerResource {
                 return;
             }
         }
-        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()), s.getResultId(), revision,
+        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()),
+                s.getResultId(),
+                revision,
                 s.getConfiguration().getCPUTotal(configuration.getSizeDescriptor()),
                 s.getConfiguration().getMemoryTotal(configuration.getSizeDescriptor()),
-                s.getConfiguration(), s.getQueueTimestamp(), s.getBuildKey());
+                s.getConfiguration(),
+                s.getQueueTimestamp(),
+                s.getBuildKey());
         DefaultSchedulingCallback dsc = new DefaultSchedulingCallback(new IsolatedDockerRequestCallback() {
             @Override
             public void handle(IsolatedDockerAgentResult result) {
@@ -139,7 +149,10 @@ public class SchedulerResource {
     @Path("future")
     public void postFutureReservations(final String body) {
         final RestReserveFuture f = RestReserveFuture.fromJson(body);
-        ecsScheduler.reserveFutureCapacity(new ReserveRequest(f.getBuildKey(), f.getResultKeys(), f.getCpuReservation(), f.getMemoryReservation()));
+        ecsScheduler.reserveFutureCapacity(new ReserveRequest(f.getBuildKey(),
+                f.getResultKeys(),
+                f.getCpuReservation(),
+                f.getMemoryReservation()));
     }
 
     @GET
@@ -148,7 +161,8 @@ public class SchedulerResource {
         if (arnsList == null || arnsList.isEmpty()) {
             return new ArnStoppedState[0];
         }
-        Collection<ArnStoppedState> tasks = schedulerBackend.checkStoppedTasks(configuration.getCurrentCluster(), arnsList);
+        Collection<ArnStoppedState> tasks =
+                schedulerBackend.checkStoppedTasks(configuration.getCurrentCluster(), arnsList);
         return tasks.toArray(new ArnStoppedState[0]);
     }
 }

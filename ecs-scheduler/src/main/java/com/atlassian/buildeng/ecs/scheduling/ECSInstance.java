@@ -23,7 +23,7 @@ public enum ECSInstance {
     M4_16XLARGE(65536, 257955, "m4.16xlarge"),
     M5_12XLARGE(49152, 185198, "m5.12xlarge"),
     I3_8XLARGE(32768, 245731, "i3.8xlarge"),
-    I3_16XLARGE(65536, 491683,"i3.16xlarge");
+    I3_16XLARGE(65536, 491683, "i3.16xlarge");
 
     private int cpu;
     private int memory;
@@ -37,7 +37,7 @@ public enum ECSInstance {
     }
 
     static ECSInstance fromName(String name) {
-        for (ECSInstance x: ECSInstance.values()) {
+        for (ECSInstance x : ECSInstance.values()) {
             if (x.name.equals(name)) {
                 return x;
             }

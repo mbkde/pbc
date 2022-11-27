@@ -34,5 +34,5 @@ public class CustomEnvironmentConfigPluginImpl implements CustomEnvironmentConfi
     @Override
     public void populateEnvironmentPluginConfig(Map<String, String> pluginConfig, ActionParametersMap parametersMap) {
     }
-    
+
 }

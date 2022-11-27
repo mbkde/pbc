@@ -72,8 +72,7 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
 
 
     @Inject
-    private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager,
-            ArtifactManager artifactManager) {
+    private KubernetesMetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         super(buildLoggerManager, artifactManager);
     }
 
@@ -86,22 +85,22 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             }
             String token = buildContext.getCurrentResult().getCustomBuildData().remove(PreJobActionImpl.SECURE_TOKEN);
             if (token == null) {
-                //TODO eventually remove, it's only here to allow rolling upgrade after renaming the constant.
+                // TODO eventually remove, it's only here to allow rolling upgrade after renaming the constant.
                 token = buildContext.getCurrentResult().getCustomBuildData().remove("secureToken");
                 if (token == null) {
                     buildLogger.addBuildLogEntry("No SecureToken found in custom build data.");
                     return;
                 }
             }
-            String prometheusUrl = buildContext.getBuildResult()
-                    .getCustomBuildData().get(GlobalConfiguration.BANDANA_PROMETHEUS_URL);
+            String prometheusUrl =
+                    buildContext.getBuildResult().getCustomBuildData().get(GlobalConfiguration.BANDANA_PROMETHEUS_URL);
             if (StringUtils.isBlank(prometheusUrl)) {
                 buildLogger.addBuildLogEntry("Prometheus URL not configured on server.");
                 return;
             }
 
-            Path buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext)
-                    .toPath();
+            Path buildWorkingDirectory =
+                    BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext).toPath();
             Path targetDir = buildWorkingDirectory.resolve(METRICS_FOLDER);
             try {
                 Files.createDirectories(targetDir);
@@ -113,86 +112,182 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             final SecureToken secureToken = SecureToken.createFromString(token);
 
             JSONArray artifactsJsonDetails = new JSONArray();
-            List<ReservationSize> containers = Stream.concat(
-                    Stream.of(createReservationSize("bamboo-agent", context)),
-                    config.getExtraContainers().stream().map(
-                        (Configuration.ExtraContainer e) -> createReservationSize(e.getName(), context)))
+            List<ReservationSize> containers = Stream
+                    .concat(Stream.of(createReservationSize("bamboo-agent", context)),
+                            config
+                                    .getExtraContainers()
+                                    .stream()
+                                    .map((Configuration.ExtraContainer e) -> createReservationSize(e.getName(),
+                                            context)))
                     .collect(Collectors.toList());
 
-            //not specific to container
-            collectMetric(PROMETHEUS_NET_WRITE, "net-write",
+            // not specific to container
+            collectMetric(PROMETHEUS_NET_WRITE,
+                    "net-write",
                     "sum(irate(%s{pod=\"%s\"}[1m]))",
-                    "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
-            collectMetric(PROMETHEUS_NET_READ, "net-read",
+                    "",
+                    buildLogger,
+                    secureToken,
+                    prometheusUrl,
+                    buildWorkingDirectory);
+            collectMetric(PROMETHEUS_NET_READ,
+                    "net-read",
                     "sum(irate(%s{pod=\"%s\"}[1m]))",
-                    "", buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
+                    "",
+                    buildLogger,
+                    secureToken,
+                    prometheusUrl,
+                    buildWorkingDirectory);
 
             for (ReservationSize containerPair : containers) {
                 String container = containerPair.name;
 
-                final Datapoint[] memAll = collectMemoryMetric(PROMETHEUS_MEMORY_METRIC, "-memory",
-                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
-                final Datapoint[] memCache = collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC, "-memory-cache",
-                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
-                final Datapoint[] memRss = collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC, "-memory-rss",
-                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
-                final Datapoint[] memSwap = collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC, "-memory-swap",
-                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
+                final Datapoint[] memAll = collectMemoryMetric(PROMETHEUS_MEMORY_METRIC,
+                        "-memory",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                final Datapoint[] memCache = collectMemoryMetric(PROMETHEUS_MEMORY_CACHE_METRIC,
+                        "-memory-cache",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                final Datapoint[] memRss = collectMemoryMetric(PROMETHEUS_MEMORY_RSS_METRIC,
+                        "-memory-rss",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                final Datapoint[] memSwap = collectMemoryMetric(PROMETHEUS_MEMORY_SWAP_METRIC,
+                        "-memory-swap",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
 
-                collectCpuMetric(PROMETHEUS_CPU_METRIC, "-cpu", container, buildLogger,
-                        secureToken, prometheusUrl, buildWorkingDirectory);
-                collectCpuMetric(PROMETHEUS_CPU_USER_METRIC, "-cpu-user", container, buildLogger,
-                        secureToken, prometheusUrl, buildWorkingDirectory);
-                collectCpuMetric(PROMETHEUS_CPU_SYSTEM_METRIC, "-cpu-system", container, buildLogger,
-                        secureToken, prometheusUrl, buildWorkingDirectory);
-                collectMetric(PROMETHEUS_FS_WRITE, "-fs-write",
+                collectCpuMetric(PROMETHEUS_CPU_METRIC,
+                        "-cpu",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                collectCpuMetric(PROMETHEUS_CPU_USER_METRIC,
+                        "-cpu-user",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                collectCpuMetric(PROMETHEUS_CPU_SYSTEM_METRIC,
+                        "-cpu-system",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                collectMetric(PROMETHEUS_FS_WRITE,
+                        "-fs-write",
                         "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
-                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
-                collectMetric(PROMETHEUS_FS_READ, "-fs-read",
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
+                collectMetric(PROMETHEUS_FS_READ,
+                        "-fs-read",
                         "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
-                        container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
+                        container,
+                        buildLogger,
+                        secureToken,
+                        prometheusUrl,
+                        buildWorkingDirectory);
 
                 artifactsJsonDetails.put(generateArtifactDetailsJson(containerPair));
 
                 logValues(memAll, memRss, memCache, memSwap, containerPair, buildLogger);
             }
 
-            buildContext.getCurrentResult().getCustomBuildData()
+            buildContext
+                    .getCurrentResult()
+                    .getCustomBuildData()
                     .put(KubernetesViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, artifactsJsonDetails.toString());
         }
     }
 
-    private void collectCpuMetric(String metricName, String suffix, String container,
-        BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
-        collectMetric(metricName, suffix, "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
-            container, buildLogger, secureToken, prometheusUrl, buildWorkingDirectory);
+    private void collectCpuMetric(String metricName,
+            String suffix,
+            String container,
+            BuildLogger buildLogger,
+            SecureToken secureToken,
+            String prometheusUrl,
+            Path buildWorkingDirectory) {
+        collectMetric(metricName,
+                suffix,
+                "sum(irate(%s{pod=\"%s\",container=\"%s\"}[1m]))",
+                container,
+                buildLogger,
+                secureToken,
+                prometheusUrl,
+                buildWorkingDirectory);
     }
 
-    private void collectMetric(String metricName, String suffix, String query, String container,
-            BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
+    private void collectMetric(String metricName,
+            String suffix,
+            String query,
+            String container,
+            BuildLogger buildLogger,
+            SecureToken secureToken,
+            String prometheusUrl,
+            Path buildWorkingDirectory) {
         String fileName = container + suffix;
-        String queryMemory = String.format(query,
-                metricName, KUBE_POD_NAME, container);
+        String queryMemory = String.format(query, metricName, KUBE_POD_NAME, container);
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
-                queryMemory, container, prometheusUrl, buildLogger);
+                queryMemory,
+                container,
+                prometheusUrl,
+                buildLogger);
 
         if (dp.length != 0) { // Metric file exists
-            publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                    BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+            publishMetrics(fileName,
+                    ".json",
+                    secureToken,
+                    buildLogger,
+                    buildWorkingDirectory.toFile(),
+                    BuildContextHelper.getArtifactHandlerConfiguration(buildContext),
+                    buildContext);
         }
     }
 
 
-    private Datapoint[] collectMemoryMetric(String metricName, String suffix, String container,
-            BuildLogger buildLogger, SecureToken secureToken, String prometheusUrl, Path buildWorkingDirectory) {
+    private Datapoint[] collectMemoryMetric(String metricName,
+            String suffix,
+            String container,
+            BuildLogger buildLogger,
+            SecureToken secureToken,
+            String prometheusUrl,
+            Path buildWorkingDirectory) {
         String fileName = container + suffix;
-        String queryMemory = String.format("%s{pod=\"%s\",container=\"%s\"}",
-                metricName, KUBE_POD_NAME, container);
+        String queryMemory = String.format("%s{pod=\"%s\",container=\"%s\"}", metricName, KUBE_POD_NAME, container);
         Datapoint[] dp = generateMetricsFile(buildWorkingDirectory.resolve(METRICS_FOLDER).resolve(fileName + ".json"),
-                queryMemory, container, prometheusUrl, buildLogger);
+                queryMemory,
+                container,
+                prometheusUrl,
+                buildLogger);
         if (dp.length != 0) { // Metric file exists
-            publishMetrics(fileName, ".json", secureToken, buildLogger, buildWorkingDirectory.toFile(),
-                    BuildContextHelper.getArtifactHandlerConfiguration(buildContext), buildContext);
+            publishMetrics(fileName,
+                    ".json",
+                    secureToken,
+                    buildLogger,
+                    buildWorkingDirectory.toFile(),
+                    BuildContextHelper.getArtifactHandlerConfiguration(buildContext),
+                    buildContext);
         }
         return dp;
     }
@@ -203,18 +298,22 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
      */
 
     @Nonnull
-    private Datapoint[] generateMetricsFile(Path location, String query,
-            String containerName, String prometheusUrl, BuildLogger buildLogger) {
+    private Datapoint[] generateMetricsFile(Path location,
+            String query,
+            String containerName,
+            String prometheusUrl,
+            BuildLogger buildLogger) {
         long submitTimestamp = Long.parseLong(SUBMIT_TIMESTAMP) / 1000;
         try {
-            JSONObject jsonResponse = QueryPrometheus.query(prometheusUrl, query, STEP_PERIOD,
-                submitTimestamp, Instant.now().getEpochSecond());
-            JSONArray result = jsonResponse
-                    .getJSONObject("data")
-                    .getJSONArray("result");
+            JSONObject jsonResponse = QueryPrometheus.query(prometheusUrl,
+                    query,
+                    STEP_PERIOD,
+                    submitTimestamp,
+                    Instant.now().getEpochSecond());
+            JSONArray result = jsonResponse.getJSONObject("data").getJSONArray("result");
             if (result.length() == 0) {
-                buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found."
-                        + " This can occur when the build time is too short for metrics to appear in Prometheus.",
+                buildLogger.addBuildLogEntry(String.format("No metrics found for the container '%s' found." +
+                                " This can occur when the build time is too short for metrics to appear in Prometheus.",
                         containerName));
                 return new Datapoint[0];
             }
@@ -224,52 +323,67 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
                 Files.write(location, createJsonArtifact(toRet).toString().getBytes());
                 return toRet;
             } catch (IOException e) {
-                buildLogger.addBuildLogEntry(
-                        String.format("Error when attempting to write metrics file to %s", location));
+                buildLogger.addBuildLogEntry(String.format("Error when attempting to write metrics file to %s",
+                        location));
                 return new Datapoint[0];
             }
         } catch (URISyntaxException | IOException | RuntimeException ex) {
-            logger.warn(String.format("Error when querying Prometheus server, metric won't be published:"
-                            + " %s. Query: %s Response %s",
-                            prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
+            logger.warn(String.format("Error when querying Prometheus server, metric won't be published:" +
+                            " %s. Query: %s Response %s",
+                    prometheusUrl,
+                    query,
+                    ex.getClass().getName() + " " + ex.getMessage()));
             return new Datapoint[0];
         }
     }
 
-    private void logValues(Datapoint[] memAll, Datapoint[] memRss, Datapoint[] memCache, Datapoint[] memSwap,
-            ReservationSize container, BuildLogger buildLogger) {
+    private void logValues(Datapoint[] memAll,
+            Datapoint[] memRss,
+            Datapoint[] memCache,
+            Datapoint[] memSwap,
+            ReservationSize container,
+            BuildLogger buildLogger) {
         double maxRss = maxValue(memRss).orElse(-1);
         double maxCache = maxValue(memCache).orElse(-1);
         double maxSwap = maxValue(memSwap).orElse(-1);
 
-        logger.info("max_swap:" + (long)maxSwap + " container:" + container.name + " pod:" + KUBE_POD_NAME);
-        logger.info("max_cache:" + (long)maxCache + " container:" + container.name + " pod:" + KUBE_POD_NAME);
-        logger.info("max_rss:" + (long)maxRss + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_swap:" + (long) maxSwap + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_cache:" + (long) maxCache + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+        logger.info("max_rss:" + (long) maxRss + " container:" + container.name + " pod:" + KUBE_POD_NAME);
         Datapoint maxoverall = maxValueKey(memAll);
         if (maxoverall != null) {
-            logger.info("max_total:" + (long)maxoverall.y + " container:" + container.name + " pod:" + KUBE_POD_NAME);
-            double rss = Arrays.stream(memRss)
+            logger.info("max_total:" + (long) maxoverall.y + " container:" + container.name + " pod:" + KUBE_POD_NAME);
+            double rss = Arrays
+                    .stream(memRss)
                     .filter((Datapoint t) -> t.x == maxoverall.x)
-                    .findFirst().orElse(Datapoint.NONE).y;
-            double swap = Arrays.stream(memSwap)
+                    .findFirst()
+                    .orElse(Datapoint.NONE).y;
+            double swap = Arrays
+                    .stream(memSwap)
                     .filter((Datapoint t) -> t.x == maxoverall.x)
-                    .findFirst().orElse(Datapoint.NONE).y;
+                    .findFirst()
+                    .orElse(Datapoint.NONE).y;
             if (maxoverall.y > container.memoryInBytes) {
                 if (rss > container.memoryInBytes) {
-                    buildLogger.addBuildLogEntry("Warning: The container "
-                            + container.name + " is using more memory than it reserved."
-                                    + " Please adjust the size of the container.");
+                    buildLogger.addBuildLogEntry("Warning: The container " +
+                            container.name +
+                            " is using more memory than it reserved." +
+                            " Please adjust the size of the container.");
                 }
             }
             if (maxoverall.y < container.memoryInBytes / 4) {
-                buildLogger.addBuildLogEntry("The container "
-                            + container.name + " is using less than quarter of the memory reserved."
-                                    + " Please adjust the size of the container.");
+                buildLogger.addBuildLogEntry("The container " +
+                        container.name +
+                        " is using less than quarter of the memory reserved." +
+                        " Please adjust the size of the container.");
             }
-            //TODO max of swap at maxoverall or it's own maximum via maxValueKey(memSwap) or both?
+            // TODO max of swap at maxoverall or it's own maximum via maxValueKey(memSwap) or both?
             Datapoint dpSwap = maxValueKey(memSwap);
-            logAdditionalChecks(container.name, container.memoryInBytes, (long)maxoverall.y, (long)rss,
-                    Math.max(dpSwap != null ? (long)dpSwap.y : 0, (long)swap));
+            logAdditionalChecks(container.name,
+                    container.memoryInBytes,
+                    (long) maxoverall.y,
+                    (long) rss,
+                    Math.max(dpSwap != null ? (long) dpSwap.y : 0, (long) swap));
         }
     }
 
@@ -330,9 +444,12 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
         return artifactDetails;
     }
 
-    protected void logAdditionalChecks(String containerName, long reservedMemoryInBytes,
-            long usedMaximum, long usedMaxRss, long usedMaxSwap) {
-        //do nothing intentionally.
+    protected void logAdditionalChecks(String containerName,
+            long reservedMemoryInBytes,
+            long usedMaximum,
+            long usedMaxRss,
+            long usedMaxSwap) {
+        // do nothing intentionally.
         logger.debug("in logAdditonalChecks");
     }
 
@@ -359,9 +476,9 @@ public class KubernetesMetricsBuildProcessor extends MetricsBuildProcessor {
             this.name = name;
             this.cpu = cpu;
             this.memory = memory;
-            this.memoryInBytes = (long)memory * 1000000;
+            this.memoryInBytes = (long) memory * 1000000;
             this.memoryLimit = memoryLimit;
-            this.memoryLimitInBytes = (long)memoryLimit * 1000000;
+            this.memoryLimitInBytes = (long) memoryLimit * 1000000;
         }
 
     }

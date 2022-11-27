@@ -65,5 +65,5 @@ public class KubeAgents implements KubeAgentsMBean {
     public long getQueuedFor30MinutesGauge() {
         return minute30.get();
     }
-    
+
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,18 +32,46 @@ public class DockerHostTest {
 
     @Test
     public void testCompareAgeOnly() {
-        DockerHost h1 = new DockerHost(
-                1000, 1000, 1000, 1000, "ci1", "i1", ContainerInstanceStatus.ACTIVE.toString(),
-                new Date(new Date().getTime() - 10000), true, "m4.xlarge");
-        DockerHost h2 = new DockerHost(
-                1000, 1000, 1000, 1000, "ci2", "i2", ContainerInstanceStatus.ACTIVE.toString(),
-                new Date(new Date().getTime() - 5000), true, "m4.xlarge");
-        DockerHost h3 = new DockerHost(
-                1000, 1000, 1000, 1000, "ci3", "i3", ContainerInstanceStatus.ACTIVE.toString(),
-                new Date(new Date().getTime() - 15000), true, "m4.xlarge");
-        DockerHost h4 = new DockerHost(
-                1000, 1000, 1000, 1000, "ci4", "i4", ContainerInstanceStatus.ACTIVE.toString(),
-                new Date(new Date().getTime()), true, "m4.xlarge");
+        DockerHost h1 = new DockerHost(1000,
+                1000,
+                1000,
+                1000,
+                "ci1",
+                "i1",
+                ContainerInstanceStatus.ACTIVE.toString(),
+                new Date(new Date().getTime() - 10000),
+                true,
+                "m4.xlarge");
+        DockerHost h2 = new DockerHost(1000,
+                1000,
+                1000,
+                1000,
+                "ci2",
+                "i2",
+                ContainerInstanceStatus.ACTIVE.toString(),
+                new Date(new Date().getTime() - 5000),
+                true,
+                "m4.xlarge");
+        DockerHost h3 = new DockerHost(1000,
+                1000,
+                1000,
+                1000,
+                "ci3",
+                "i3",
+                ContainerInstanceStatus.ACTIVE.toString(),
+                new Date(new Date().getTime() - 15000),
+                true,
+                "m4.xlarge");
+        DockerHost h4 = new DockerHost(1000,
+                1000,
+                1000,
+                1000,
+                "ci4",
+                "i4",
+                ContainerInstanceStatus.ACTIVE.toString(),
+                new Date(new Date().getTime()),
+                true,
+                "m4.xlarge");
 
         ArrayList<DockerHost> lst = Lists.newArrayList(h1, h2, h3, h4);
         Optional<DockerHost> first = lst.stream().sorted(DockerHost.compareByResourcesAndAge()).findFirst();

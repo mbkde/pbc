@@ -51,11 +51,11 @@ public class Rest {
 
     @Inject
     public Rest(GlobalConfiguration configuration,
-                SubjectIdService subjectIdService,
-                DeploymentProjectService deploymentProjectService,
-                BambooPermissionManager bambooPermissionManager,
-                CachedPlanManager cachedPlanManager,
-                BandanaManager bandanaManager) {
+            SubjectIdService subjectIdService,
+            DeploymentProjectService deploymentProjectService,
+            BambooPermissionManager bambooPermissionManager,
+            CachedPlanManager cachedPlanManager,
+            BandanaManager bandanaManager) {
         this.configuration = configuration;
         this.subjectIdService = subjectIdService;
         this.deploymentProjectService = deploymentProjectService;
@@ -133,7 +133,8 @@ public class Rest {
             PlanKey pk = PlanKeys.getPlanKey(planKey);
             ImmutablePlan plan = cachedPlanManager.getPlanByKey(pk);
             if (plan == null) {
-                return Response.status(Response.Status.NOT_FOUND)
+                return Response
+                        .status(Response.Status.NOT_FOUND)
                         .entity("Can not found build plan with key: " + planKey)
                         .build();
             }
@@ -144,7 +145,8 @@ public class Rest {
                     bambooPermissionManager.hasPlanPermission(BambooPermission.ADMINISTRATION, pk)) {
                 return Response.ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(plan)).build();
             } else {
-                return Response.status(Response.Status.FORBIDDEN)
+                return Response
+                        .status(Response.Status.FORBIDDEN)
                         .entity("You need at least View permission on this plan: " + planKey)
                         .build();
             }
@@ -163,7 +165,8 @@ public class Rest {
         try {
             DeploymentProject deploymentProject = deploymentProjectService.getDeploymentProject(deploymentId);
             if (deploymentProject == null) {
-                return Response.status(Response.Status.NOT_FOUND)
+                return Response
+                        .status(Response.Status.NOT_FOUND)
                         .entity("Cannot find deployment project with ID: " + deploymentId)
                         .build();
             }
@@ -184,7 +187,8 @@ public class Rest {
             DeploymentProject deploymentProject =
                     deploymentProjectService.getDeploymentProjectForEnvironment(environmentId);
             if (deploymentProject == null) {
-                return Response.status(Response.Status.NOT_FOUND)
+                return Response
+                        .status(Response.Status.NOT_FOUND)
                         .entity("Cannot find deployment project for environment with ID: " + environmentId)
                         .build();
             }
@@ -202,10 +206,12 @@ public class Rest {
                 bambooPermissionManager.hasPermission(BambooPermission.WRITE, deploymentProject, null) ||
                 bambooPermissionManager.hasPermission(BambooPermission.CLONE, deploymentProject, null) ||
                 bambooPermissionManager.hasPermission(BambooPermission.ADMINISTRATION, deploymentProject, null)) {
-            return Response.ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(deploymentProject))
+            return Response
+                    .ok(configuration.getIamSubjectIdPrefix() + subjectIdService.getSubjectId(deploymentProject))
                     .build();
         } else {
-            return Response.status(Response.Status.FORBIDDEN)
+            return Response
+                    .status(Response.Status.FORBIDDEN)
                     .entity("You need at least View permission on this project: " + deploymentProjectId)
                     .build();
         }

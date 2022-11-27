@@ -17,6 +17,6 @@
 package com.atlassian.buildeng.spi.isolated.docker;
 
 public interface AgentCreationRescheduler {
-    
+
     boolean reschedule(RetryAgentStartupEvent event);
 }

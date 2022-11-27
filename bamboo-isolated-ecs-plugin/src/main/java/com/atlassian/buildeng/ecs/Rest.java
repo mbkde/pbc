@@ -61,8 +61,8 @@ public class Rest {
 
     @Autowired
     public Rest(GlobalConfiguration configuration,
-                CachedPlanManager cachedPlanManager,
-                TaskDefinitionRegistrations taskDefRegistrations) {
+            CachedPlanManager cachedPlanManager,
+            TaskDefinitionRegistrations taskDefRegistrations) {
         this.configuration = configuration;
         this.cachedPlanManager = cachedPlanManager;
         this.taskDefRegistrations = taskDefRegistrations;
@@ -74,11 +74,14 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
         Map<Configuration, Integer> mappings = configuration.getAllRegistrations();
-        return Response.ok(new GetAllImagesResponse(mappings.entrySet()
-                .stream()
-                .map((Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(),
-                        entry.getValue()))
-                .collect(Collectors.toList()))).build();
+        return Response
+                .ok(new GetAllImagesResponse(mappings
+                        .entrySet()
+                        .stream()
+                        .map((Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(),
+                                entry.getValue()))
+                        .collect(Collectors.toList())))
+                .build();
     }
 
     @GET
@@ -132,7 +135,7 @@ public class Rest {
     @Path("/usages/{revision}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUsages(@PathParam("revision") final int revision) {
-        //TODO environments
+        // TODO environments
         List<JobsUsingImageResponse.JobInfo> toRet = new ArrayList<>();
         cachedPlanManager.getPlans(ImmutableJob.class).stream().filter(job -> !job.hasMaster()).forEach(job -> {
             Configuration config = forJob(job);
@@ -146,7 +149,7 @@ public class Rest {
     }
 
 
-    //constants for /awslogs query params
+    // constants for /awslogs query params
     static final String PARAM_TASK_ARN = "taskArn";
     static final String PARAM_CONTAINER = "container";
 
@@ -154,14 +157,15 @@ public class Rest {
     @Path("/logs")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getAwsLogs(@QueryParam(PARAM_CONTAINER) String containerName,
-                               @QueryParam(PARAM_TASK_ARN) String taskArn) {
+            @QueryParam(PARAM_TASK_ARN) String taskArn) {
         if (containerName == null || taskArn == null) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
         AwsLogs.Driver driver = AwsLogs.getAwsLogsDriver(configuration);
         if (driver != null) {
             if (driver.getRegion() == null || driver.getLogGroupName() == null || driver.getStreamPrefix() == null) {
-                return Response.status(Response.Status.BAD_REQUEST)
+                return Response
+                        .status(Response.Status.BAD_REQUEST)
                         .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.")
                         .build();
             }
@@ -179,7 +183,7 @@ public class Rest {
         return Response.ok().build();
     }
 
-    //copy of AccessConfiguration from the other plugin.
+    // copy of AccessConfiguration from the other plugin.
     // it's a copy to make the isolated-docker-spi plugin lightweight without
     // significant refs to bamboo
     public static Configuration forJob(ImmutableJob job) {
@@ -189,7 +193,8 @@ public class Rest {
 
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+        return ConfigurationBuilder
+                .create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                 .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
                 .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))

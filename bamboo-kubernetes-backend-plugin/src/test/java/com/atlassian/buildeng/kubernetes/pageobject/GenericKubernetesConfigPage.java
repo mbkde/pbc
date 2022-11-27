@@ -54,7 +54,7 @@ public class GenericKubernetesConfigPage extends AbstractBambooPage {
     private PageElement saveStatus;
     @ElementBy(id = "setRemoteConfig_save")
     private PageElement saveButton;
-    @ElementBy(id="load_complete")
+    @ElementBy(id = "load_complete")
     private PageElement loadComplete;
 
     @Inject
@@ -86,7 +86,7 @@ public class GenericKubernetesConfigPage extends AbstractBambooPage {
     }
 
     public GenericKubernetesConfigPage useClusterRegistry(boolean use) {
-        if(use) {
+        if (use) {
             this.useClusterRegistry.check();
         } else {
             this.useClusterRegistry.uncheck();

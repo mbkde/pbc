@@ -19,14 +19,14 @@ public class QueryPrometheus {
      * Static method to query prometheus.
      */
     public static JSONObject query(String prometheusUrl, String query, String stepPeriod, Long start, Long end)
-        throws URISyntaxException, IOException {
+            throws URISyntaxException, IOException {
         URI uri = new URIBuilder(prometheusUrl)
-            .setPath("api/v1/query_range")
-            .setParameter("query", query)
-            .setParameter("step", stepPeriod)
-            .setParameter("start", Long.toString(start))
-            .setParameter("end", Long.toString(end))
-            .build();
+                .setPath("api/v1/query_range")
+                .setParameter("query", query)
+                .setParameter("step", stepPeriod)
+                .setParameter("start", Long.toString(start))
+                .setParameter("end", Long.toString(end))
+                .build();
 
         String response = "";
         for (int retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
@@ -39,7 +39,7 @@ public class QueryPrometheus {
             try {
                 response = IOUtils.toString(connection.getInputStream(), "UTF-8");
             } catch (IOException e) {
-                //Wait 1s before retrying
+                // Wait 1s before retrying
                 if (retryCount < MAX_RETRIES - 1) {
                     try {
                         TimeUnit.SECONDS.sleep(RETRY_DELAY_SECONDS);
@@ -47,7 +47,7 @@ public class QueryPrometheus {
                         continue;
                     }
                 } else {
-                    //If request fails on the last try, throw the exception
+                    // If request fails on the last try, throw the exception
                     throw e;
                 }
             } finally {

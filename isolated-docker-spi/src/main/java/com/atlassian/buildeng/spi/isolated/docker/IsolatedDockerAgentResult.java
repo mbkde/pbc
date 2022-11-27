@@ -34,13 +34,13 @@ public class IsolatedDockerAgentResult {
         errors.add(error);
         return this;
     }
-    
-    
+
+
     public IsolatedDockerAgentResult withCustomResultData(String key, String value) {
         customData.put(key, value);
         return this;
     }
-    
+
     public IsolatedDockerAgentResult withRetryRecoverable(String errorMessage) {
         retryRecoverable = true;
         withError(errorMessage);
@@ -58,15 +58,16 @@ public class IsolatedDockerAgentResult {
     public Map<String, String> getCustomResultData() {
         return customData;
     }
-    
+
     /**
      * when the request fails, but the state of the docker cloud suggests that
      * later retry might succeed. Eg. when the docker containers are in process
      * of scaling up.
+     *
      * @return whether to retry
      */
     public boolean isRetryRecoverable() {
         return retryRecoverable;
     }
-    
+
 }

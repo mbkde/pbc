@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.isolated.docker.sox;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -50,8 +51,7 @@ public class DockerSoxServiceTest {
 
     @Test
     public void soxDisabledByDefault() {
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
                 eq(DockerSoxService.BANDANA_SOX_ENABLED))).thenReturn(null);
 
         assertTrue(dockerSoxService.checkSoxCompliance(ConfigurationBuilder.create("aaa").build()));
@@ -59,8 +59,7 @@ public class DockerSoxServiceTest {
 
     @Test
     public void soxDisabledViaSettings() {
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
                 eq(DockerSoxService.BANDANA_SOX_ENABLED))).thenReturn(Boolean.FALSE);
 
         assertTrue(dockerSoxService.checkSoxCompliance(ConfigurationBuilder.create("aaa").build()));
@@ -68,36 +67,33 @@ public class DockerSoxServiceTest {
 
     @Test
     public void soxEnabledMainPassing() {
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
                 eq(DockerSoxService.BANDANA_SOX_ENABLED))).thenReturn(Boolean.TRUE);
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(DockerSoxService.BANDANA_SOX_PATTERNS))).thenReturn(new String[] { "^a.*", "^b.*"});
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+                eq(DockerSoxService.BANDANA_SOX_PATTERNS))).thenReturn(new String[]{"^a.*", "^b.*"});
 
         assertTrue(dockerSoxService.checkSoxCompliance(ConfigurationBuilder.create("aaa").build()));
     }
 
     @Test
     public void soxEnabledMainFailing() {
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
                 eq(DockerSoxService.BANDANA_SOX_ENABLED))).thenReturn(Boolean.TRUE);
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(DockerSoxService.BANDANA_SOX_PATTERNS))).thenReturn(new String[] { "^b.*", "^c.*"});
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+                eq(DockerSoxService.BANDANA_SOX_PATTERNS))).thenReturn(new String[]{"^b.*", "^c.*"});
         assertFalse(dockerSoxService.checkSoxCompliance(ConfigurationBuilder.create("aaa").build()));
     }
 
     @Test
     public void soxEnabledExtraFailing() {
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
                 eq(DockerSoxService.BANDANA_SOX_ENABLED))).thenReturn(Boolean.TRUE);
-        when(bandanaManager.getValue(
-                eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(DockerSoxService.BANDANA_SOX_PATTERNS))).thenReturn(new String[] { "^b.*", "^c.*"});
-        assertFalse(dockerSoxService.checkSoxCompliance(ConfigurationBuilder.create("ba").withExtraContainer("extra", "aaa", Configuration.ExtraContainerSize.SMALL).build()));
+        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+                eq(DockerSoxService.BANDANA_SOX_PATTERNS))).thenReturn(new String[]{"^b.*", "^c.*"});
+        assertFalse(dockerSoxService.checkSoxCompliance(ConfigurationBuilder
+                .create("ba")
+                .withExtraContainer("extra", "aaa", Configuration.ExtraContainerSize.SMALL)
+                .build()));
     }
 
 }

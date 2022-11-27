@@ -38,23 +38,21 @@ import org.slf4j.Logger;
 
 
 public abstract class WatchdogJob implements Job {
-    protected final void killBuild(
-            DeploymentExecutionService deploymentExecutionService,
+    protected final void killBuild(DeploymentExecutionService deploymentExecutionService,
             DeploymentResultService deploymentResultService,
             Logger logger,
             BuildQueueManager buildQueueManager,
             CommonContext context,
-            CurrentResult current
-    ) {
+            CurrentResult current) {
         if (context instanceof BuildContext) {
             current.setLifeCycleState(LifeCycleState.NOT_BUILT);
             buildQueueManager.removeBuildFromQueue(context.getResultKey());
         } else if (context instanceof DeploymentContext) {
             DeploymentContext dc = (DeploymentContext) context;
             ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
-                //without runWithSystemAuthority() this call terminates execution with a log entry only
-                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(
-                        dc.getDeploymentResultId());
+                // without runWithSystemAuthority() this call terminates execution with a log entry only
+                DeploymentResult deploymentResult =
+                        deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
                 if (deploymentResult != null) {
                     deploymentExecutionService.stop(deploymentResult, null);
                 }
@@ -65,15 +63,14 @@ public abstract class WatchdogJob implements Job {
     }
 
     protected final <T> T getService(Class<T> type, String serviceKey) {
-        final Object obj = checkNotNull(
-                ContainerManager.getComponent(serviceKey), "Expected value for key '" + serviceKey + "', found nothing."
-        );
+        final Object obj = checkNotNull(ContainerManager.getComponent(serviceKey),
+                "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
     }
-    
+
     protected final <T> T getService(Class<T> type, String serviceKey, Map<String, Object> jobDataMap) {
-        final Object obj = checkNotNull(jobDataMap.get(serviceKey),
-                "Expected value for key '" + serviceKey + "', found nothing.");
+        final Object obj =
+                checkNotNull(jobDataMap.get(serviceKey), "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
     }
 

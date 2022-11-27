@@ -78,15 +78,15 @@ public class DockerHandlerImpl implements DockerHandler {
 
     @Inject
     public DockerHandlerImpl(ModuleDescriptor moduleDescriptor,
-                             WebResourceManager webResourceManager,
-                             TemplateRenderer templateRenderer,
-                             EnvironmentCustomConfigService environmentCustomConfigService,
-                             EnvironmentRequirementService environmentRequirementService,
-                             boolean create,
-                             Configuration configuration,
-                             GlobalConfiguration globalConfiguration,
-                             Validator validator,
-                             Boolean providerEnabled) {
+            WebResourceManager webResourceManager,
+            TemplateRenderer templateRenderer,
+            EnvironmentCustomConfigService environmentCustomConfigService,
+            EnvironmentRequirementService environmentRequirementService,
+            boolean create,
+            Configuration configuration,
+            GlobalConfiguration globalConfiguration,
+            Validator validator,
+            Boolean providerEnabled) {
         this.moduleDescriptor = moduleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
@@ -183,7 +183,7 @@ public class DockerHandlerImpl implements DockerHandler {
         Map<String, String> cc = buildDefinition.getCustomConfiguration();
         cc.put(Configuration.ENABLED_FOR_JOB, "false");
         removeAllRequirements(job.getRequirementSet());
-        //TODO do we remove the other configuration at this point?
+        // TODO do we remove the other configuration at this point?
     }
 
     @Override
@@ -201,11 +201,13 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     static void removeEnvironmentRequirements(Environment environment,
-                                              EnvironmentRequirementService environmentRequirementService) {
+            EnvironmentRequirementService environmentRequirementService) {
         try {
-            environmentRequirementService.getRequirementsForEnvironment(environment.getId())
+            environmentRequirementService
+                    .getRequirementsForEnvironment(environment.getId())
                     .stream()
-                    .filter((ImmutableRequirement input) -> input.getKey()
+                    .filter((ImmutableRequirement input) -> input
+                            .getKey()
                             .equals(BuildProcessorServerImpl.CAPABILITY) ||
                             input.getKey().equals(Constants.CAPABILITY_RESULT))
                     .forEach((ImmutableRequirement t) -> {
@@ -222,8 +224,8 @@ public class DockerHandlerImpl implements DockerHandler {
 
     @Override
     public void appendConfiguration(BuildConfiguration buildConfiguration,
-                                    Map<String, Object> webFragmentsContextMap,
-                                    boolean enabled) {
+            Map<String, Object> webFragmentsContextMap,
+            boolean enabled) {
         Configuration config = createFromWebContext(webFragmentsContextMap);
         final HierarchicalConfiguration hc = new HierarchicalConfiguration();
         hc.setDelimiterParsingDisabled(true);
@@ -236,7 +238,7 @@ public class DockerHandlerImpl implements DockerHandler {
                 (String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
         buildConfiguration.clearTree(Configuration.PROPERTY_PREFIX);
         ConfigUtils.copyNodes(hc, buildConfiguration.getProjectConfig());
-        //we deal with adding the requirement Constants.CAPABILITY_RESULT in BuildCreatedEventListener
+        // we deal with adding the requirement Constants.CAPABILITY_RESULT in BuildCreatedEventListener
         // in here the job doesn't exist yet.
     }
 
@@ -282,19 +284,18 @@ public class DockerHandlerImpl implements DockerHandler {
         if (StringUtils.isBlank(architecture)) {
             architecture = null;
         }
-        Configuration config =
-                ConfigurationBuilder.create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE,
-                                ""))
-                        .withEnabled(true)
-                        .withImageSize(Configuration.ContainerSize.valueOf((String) webFragmentsContextMap.getOrDefault(
-                                Configuration.DOCKER_IMAGE_SIZE,
-                                Configuration.ContainerSize.REGULAR.name())))
-                        .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers((String) webFragmentsContextMap.getOrDefault(
-                                Configuration.DOCKER_EXTRA_CONTAINERS,
-                                "[]")))
-                        .withAwsRole(role)
-                        .withArchitecture(architecture)
-                        .build();
+        Configuration config = ConfigurationBuilder
+                .create((String) webFragmentsContextMap.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+                .withEnabled(true)
+                .withImageSize(Configuration.ContainerSize.valueOf((String) webFragmentsContextMap.getOrDefault(
+                        Configuration.DOCKER_IMAGE_SIZE,
+                        Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers((String) webFragmentsContextMap.getOrDefault(
+                        Configuration.DOCKER_EXTRA_CONTAINERS,
+                        "[]")))
+                .withAwsRole(role)
+                .withArchitecture(architecture)
+                .build();
         return config;
     }
 
@@ -302,7 +303,8 @@ public class DockerHandlerImpl implements DockerHandler {
      * remove pbc requirements from job.
      */
     public static void removeAllRequirements(@NotNull RequirementSet requirementSet) {
-        requirementSet.removeRequirements((Requirement input) -> input.getKey()
+        requirementSet.removeRequirements((Requirement input) -> input
+                .getKey()
                 .equals(BuildProcessorServerImpl.CAPABILITY) || input.getKey().equals(Constants.CAPABILITY_RESULT));
     }
 
@@ -314,7 +316,7 @@ public class DockerHandlerImpl implements DockerHandler {
     }
 
     static void addEnvironementRequirement(Environment environment,
-                                           EnvironmentRequirementService environmentRequirementService) {
+            EnvironmentRequirementService environmentRequirementService) {
         try {
             environmentRequirementService.addRequirement(environment.getId(),
                     Constants.CAPABILITY_RESULT,
@@ -331,8 +333,8 @@ public class DockerHandlerImpl implements DockerHandler {
     @NotNull
     public static Collection<Pair<String, String>> getImageSizes() {
         return Arrays.asList(
-                //this is stupid ordering but we want to keep regular as default for new
-                //config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
+                // this is stupid ordering but we want to keep regular as default for new
+                // config. but somehow unlike with tasks there's no way to get the defaults propagated into UI.
                 Pair.make(Configuration.ContainerSize.REGULAR.name(), "Regular (~8G memory, 2 vCPU)"),
                 Pair.make(Configuration.ContainerSize.XSMALL.name(), "Extra Small (~2G memory, 0.5 vCPU)"),
                 Pair.make(Configuration.ContainerSize.SMALL.name(), "Small (~4G memory, 1 vCPU)"),
@@ -345,16 +347,18 @@ public class DockerHandlerImpl implements DockerHandler {
 
     /**
      * We need a static method to grab the list of architectures since
-     * {@link com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator} does not actually get passed
+     * {@link com.atlassian.buildeng.isolated.docker.deployment.RequirementTaskConfigurator} does not actually get
+     * passed
      * a DockerHandlerImpl instance, but instead a raw config map. Allow manually passing a GlobalConfiguration and the
      * obtained architecture string.
      */
     @NotNull
     public static Collection<Pair<String, String>> getArchitecturesWithConfiguration(GlobalConfiguration globalConfiguration,
-                                                                                     String architecture) {
+            String architecture) {
         Map<String, String> archConfig = globalConfiguration.getArchitectureConfig();
 
-        List<Pair<String, String>> displayedArchList = archConfig.entrySet()
+        List<Pair<String, String>> displayedArchList = archConfig
+                .entrySet()
                 .stream()
                 .map(arch -> Pair.make(arch.getKey(), arch.getValue()))
                 .collect(Collectors.toList());

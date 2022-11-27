@@ -82,21 +82,21 @@ public class PreBuildQueuedEventListener {
 
     @Inject
     private PreBuildQueuedEventListener(IsolatedAgentService isolatedAgentService,
-                                        ErrorUpdateHandler errorUpdateHandler,
-                                        BuildQueueManager buildQueueManager,
-                                        AgentCreationReschedulerImpl rescheduler,
-                                        JMXAgentsService jmx,
-                                        DeploymentResultService deploymentResultService,
-                                        DeploymentExecutionService deploymentExecutionService,
-                                        EventPublisher eventPublisher,
-                                        AgentRemovals agentRemovals,
-                                        AgentLicenseLimits agentLicenseLimits,
-                                        DockerSoxService dockerSoxService,
-                                        ContainerSizeDescriptor sizeDescriptor,
-                                        AgentCreationLimits agentCreationLimits,
-                                        AgentsThrottled agentsThrottled,
-                                        GlobalConfiguration globalConfiguration,
-                                        AgentSecurityTokenService agentSecurityTokenService) {
+            ErrorUpdateHandler errorUpdateHandler,
+            BuildQueueManager buildQueueManager,
+            AgentCreationReschedulerImpl rescheduler,
+            JMXAgentsService jmx,
+            DeploymentResultService deploymentResultService,
+            DeploymentExecutionService deploymentExecutionService,
+            EventPublisher eventPublisher,
+            AgentRemovals agentRemovals,
+            AgentLicenseLimits agentLicenseLimits,
+            DockerSoxService dockerSoxService,
+            ContainerSizeDescriptor sizeDescriptor,
+            AgentCreationLimits agentCreationLimits,
+            AgentsThrottled agentsThrottled,
+            GlobalConfiguration globalConfiguration,
+            AgentSecurityTokenService agentSecurityTokenService) {
         this.isolatedAgentService = isolatedAgentService;
         this.errorUpdateHandler = errorUpdateHandler;
         this.buildQueueManager = buildQueueManager;
@@ -141,7 +141,7 @@ public class PreBuildQueuedEventListener {
             setQueueTimestamp(buildContext);
             retry(new RetryAgentStartupEvent(config, buildContext));
         } else {
-            //when a rerun happens and docker agents were disabled.
+            // when a rerun happens and docker agents were disabled.
             Configuration.removeFromResult(buildContext.getCurrentResult(), sizeDescriptor);
             clearResultCustomData(event.getContext());
             buildContext.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
@@ -152,24 +152,25 @@ public class PreBuildQueuedEventListener {
     public void retry(RetryAgentStartupEvent event) {
         String eventKey = event.getContext().getResultKey().getKey();
         logger.debug("Trying to schedule an agent for {} (event UUID: {}, retry count: {})",
-                eventKey, event.getUniqueIdentifier(), event.getRetryCount());
-        //when we arrive here, user could have cancelled the build.
+                eventKey,
+                event.getUniqueIdentifier(),
+                event.getRetryCount());
+        // when we arrive here, user could have cancelled the build.
         if (!isStillQueued(event.getContext())) {
             logger.info("Retrying but {} was already cancelled, aborting. (state:{})",
                     eventKey,
                     event.getContext().getCurrentResult().getLifeCycleState());
-            //TODO cancel future reservations if any
+            // TODO cancel future reservations if any
             jmx.incrementCancelled();
             agentsThrottled.remove(eventKey);
             return;
         }
         synchronized (this) {
             clearResultCustomData(event.getContext());
-            //done between clear and set to avoid counting the current one.
+            // done between clear and set to avoid counting the current one.
             if (agentLicenseLimits.licenseLimitReached(event)) {
-                logger.info("Limit of existing online agents and those already "
-                                + "started by PBC was reached. Rescheduling {}",
-                        event.getContext().getResultKey());
+                logger.info("Limit of existing online agents and those already " +
+                        "started by PBC was reached. Rescheduling {}", event.getContext().getResultKey());
                 return;
             }
             setBuildkeyCustomData(event.getContext());
@@ -194,7 +195,7 @@ public class PreBuildQueuedEventListener {
             // The event is from a deployment
             isPlan = false;
         } else if (event.getContext() instanceof BuildContext) {
-            //The event is from a plan
+            // The event is from a plan
             isPlan = true;
         } else {
             terminateBuild("Unrecognised Context for " + event.getContext().getBuildKey(), event.getContext());
@@ -215,9 +216,12 @@ public class PreBuildQueuedEventListener {
                     eventPublisher.publish(new DockerAgentTimeoutEvent(event.getRetryCount(),
                             event.getContext().getEntityKey()));
                 }
-                //custom items pushed by the implementation, we give it a unique prefix
+                // custom items pushed by the implementation, we give it a unique prefix
                 result.getCustomResultData().entrySet().stream().forEach(ent -> {
-                    event.getContext().getCurrentResult().getCustomBuildData()
+                    event
+                            .getContext()
+                            .getCurrentResult()
+                            .getCustomBuildData()
                             .put(Constants.RESULT_PREFIX + ent.getKey(), ent.getValue());
                 });
                 if (result.hasErrors()) {
@@ -230,7 +234,8 @@ public class PreBuildQueuedEventListener {
                             "Build was not queued due to error:" + error);
                 } else {
                     jmx.incrementScheduled();
-                    logger.info("Scheduled {} with custom data: {}", event.getContext().getResultKey(),
+                    logger.info("Scheduled {} with custom data: {}",
+                            event.getContext().getResultKey(),
                             result.getCustomResultData());
                 }
             }
@@ -242,7 +247,8 @@ public class PreBuildQueuedEventListener {
                     agentCreationLimits.removeEventFromQueue(event);
                 }
                 errorUpdateHandler.recordError(event.getContext().getEntityKey(),
-                        "Build was not queued due to error", exception);
+                        "Build was not queued due to error",
+                        exception);
             }
         };
 
@@ -253,13 +259,14 @@ public class PreBuildQueuedEventListener {
             return;
         }
 
-        isolatedAgentService.startAgent(
-                new IsolatedDockerAgentRequest(event.getConfiguration(), eventKey,
-                        event.getUniqueIdentifier(),
-                        getQueueTimestamp(event.getContext()), event.getContext().getBuildKey().toString(),
-                        event.getRetryCount(), isPlan, agentSecurityTokenService.getSecurityToken()),
-                requestCallback
-                );
+        isolatedAgentService.startAgent(new IsolatedDockerAgentRequest(event.getConfiguration(),
+                eventKey,
+                event.getUniqueIdentifier(),
+                getQueueTimestamp(event.getContext()),
+                event.getContext().getBuildKey().toString(),
+                event.getRetryCount(),
+                isPlan,
+                agentSecurityTokenService.getSecurityToken()), requestCallback);
 
     }
 
@@ -273,9 +280,9 @@ public class PreBuildQueuedEventListener {
         } else if (context instanceof DeploymentContext) {
             DeploymentContext dc = (DeploymentContext) context;
             ImpersonationHelper.runWithSystemAuthority((BambooRunnables.NotThrowing) () -> {
-                //without runWithSystemAuthority() this call terminates execution with a log entry only
-                DeploymentResult deploymentResult = deploymentResultService.getDeploymentResult(
-                        dc.getDeploymentResultId());
+                // without runWithSystemAuthority() this call terminates execution with a log entry only
+                DeploymentResult deploymentResult =
+                        deploymentResultService.getDeploymentResult(dc.getDeploymentResultId());
                 if (deploymentResult != null) {
                     deploymentExecutionService.stop(deploymentResult, null);
                 }
@@ -284,9 +291,13 @@ public class PreBuildQueuedEventListener {
     }
 
     private void clearResultCustomData(CommonContext context) {
-        //remove any preexisting items when queuing, these are remains of the
-        //previous run and can interfere with further processing and are polluting the ui.
-        context.getCurrentResult().getCustomBuildData().keySet().stream()
+        // remove any preexisting items when queuing, these are remains of the
+        // previous run and can interfere with further processing and are polluting the ui.
+        context
+                .getCurrentResult()
+                .getCustomBuildData()
+                .keySet()
+                .stream()
                 .filter((String t) -> t.startsWith(Constants.RESULT_PREFIX))
                 .forEach((String t) -> {
                     context.getCurrentResult().getCustomBuildData().remove(t);
@@ -300,11 +311,15 @@ public class PreBuildQueuedEventListener {
     }
 
 
-    //2 events related to deployment environments
+    // 2 events related to deployment environments
     @EventListener
     public void deploymentTriggered(DeploymentQueuedEvent event) {
-        logger.debug("deployment triggered event for " + event.getResultKey()
-                + " " + event.getContext().getDeploymentProjectName() + ":" + event.getContext().getEnvironmentName());
+        logger.debug("deployment triggered event for " +
+                event.getResultKey() +
+                " " +
+                event.getContext().getDeploymentProjectName() +
+                ":" +
+                event.getContext().getEnvironmentName());
         DeploymentContext context = event.getContext();
         Configuration config = AccessConfiguration.forContext(context);
         if (config.isEnabled()) {
@@ -328,7 +343,7 @@ public class PreBuildQueuedEventListener {
             setQueueTimestamp(context);
             retry(new RetryAgentStartupEvent(config, context));
         } else {
-            //when a rerun happens and docker agents were disabled.
+            // when a rerun happens and docker agents were disabled.
             Configuration.removeFromResult(context.getCurrentResult(), sizeDescriptor);
             clearResultCustomData(event.getContext());
             context.getCurrentResult().getCustomBuildData().remove(DockerAgentBuildQueue.BUILD_KEY);
@@ -365,7 +380,7 @@ public class PreBuildQueuedEventListener {
         context.getCurrentResult().getCustomBuildData().put(QUEUE_TIMESTAMP, "" + System.currentTimeMillis());
     }
 
-    //BUILDENG-12837 a fairly complicated issue lurking here.
+    // BUILDENG-12837 a fairly complicated issue lurking here.
     // PreBuildQueuedEventListener attempts to clear RESULT_PART_TASKARN value (any custom values)
     // but if the event queue is stuck for long periods of time, the clearing itself is not happening for a long time.
     // that is a problem for reruns and event queue independent code (like AbstractWatchdogJob)
@@ -373,8 +388,10 @@ public class PreBuildQueuedEventListener {
     // BuildKey is unique for each run/rerun and as such we can compare the value in customData and the context itself
     // and if both are equal be sure that we are in correct state.
     private void setBuildkeyCustomData(CommonContext context) {
-        context.getCurrentResult().getCustomBuildData().put(DockerAgentBuildQueue.BUILD_KEY,
-                context.getBuildKey().getKey());
+        context
+                .getCurrentResult()
+                .getCustomBuildData()
+                .put(DockerAgentBuildQueue.BUILD_KEY, context.getBuildKey().getKey());
     }
 
     private String generateFeatureDisabledMessage(final ResultKey key) {

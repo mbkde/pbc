@@ -32,11 +32,13 @@ public class ECSWatchdogJob extends AbstractWatchdogJob {
     private static final Logger logger = LoggerFactory.getLogger(ECSWatchdogJob.class);
 
     @Override
-    protected List<StoppedState> retrieveStoppedTasksByArn(List<String> arns, Map<String, Object> jobDataMap) 
+    protected List<StoppedState> retrieveStoppedTasksByArn(List<String> arns, Map<String, Object> jobDataMap)
             throws Exception {
         GlobalConfiguration globalConfig = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
         SchedulerBackend backend = getService(SchedulerBackend.class, "schedulerBackend", jobDataMap);
-        return backend.checkStoppedTasks(globalConfig.getCurrentCluster(), arns).stream()
+        return backend
+                .checkStoppedTasks(globalConfig.getCurrentCluster(), arns)
+                .stream()
                 .map((ArnStoppedState t) -> new StoppedState((t.getArn()), t.getContainerArn(), t.getReason()))
                 .collect(Collectors.toList());
     }

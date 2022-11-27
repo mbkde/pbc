@@ -40,7 +40,7 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
      * value is comma separated list of env variables to read and use as log options.
      */
     static final String ECS_LOG_OPTIONS = "ECS_LOGOPTIONS";
-    
+
     private final String cluster;
     private final String asg;
     private final String taskDefinitionName;
@@ -52,10 +52,10 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
 
     @Inject
     public ECSConfigurationImpl(@Named(ECS_ASG) String asg,
-                                @Named(ECS_CLUSTER) String cluster,
-                                @Named(ECS_TASK_DEF) String taskDef,
-                                @Named(ECS_LOG_DRIVER) String logDriver,
-                                @Named(ECS_LOG_OPTIONS) String logOptionsList) {
+            @Named(ECS_CLUSTER) String cluster,
+            @Named(ECS_TASK_DEF) String taskDef,
+            @Named(ECS_LOG_DRIVER) String logDriver,
+            @Named(ECS_LOG_OPTIONS) String logOptionsList) {
         this.asg = asg;
         this.cluster = cluster;
         this.taskDefinitionName = taskDef;

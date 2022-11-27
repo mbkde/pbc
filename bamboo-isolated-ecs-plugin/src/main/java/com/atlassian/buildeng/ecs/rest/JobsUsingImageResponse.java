@@ -26,7 +26,7 @@ public final class JobsUsingImageResponse {
     public JobsUsingImageResponse(@NotNull List<JobInfo> jobs) {
         this.jobs = jobs;
     }
-    
+
 
     public static final class JobInfo {
         public final String name;
@@ -36,6 +36,6 @@ public final class JobsUsingImageResponse {
             this.name = name;
             this.key = key;
         }
-        
+
     }
 }

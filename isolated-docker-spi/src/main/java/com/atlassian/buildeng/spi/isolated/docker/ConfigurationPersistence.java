@@ -43,7 +43,7 @@ public class ConfigurationPersistence {
                     bld.withImageSize(Configuration.ContainerSize.valueOf(size.getAsString()));
                 } catch (IllegalArgumentException x) {
                     logger.error("Wrong size was persisted: {}", size);
-                    //ok to skip and do nothing, the default value is REGULAR
+                    // ok to skip and do nothing, the default value is REGULAR
                 }
             }
             JsonArray arr = jsonobj.getAsJsonArray("extraContainers");

@@ -42,6 +42,7 @@ public class OnCancelledBuild {
 
     /**
      * Listener for canceled builds.
+     *
      * @param event build canceled event from Bamboo
      */
     @EventListener
@@ -52,7 +53,8 @@ public class OnCancelledBuild {
             if (result != null) {
                 Configuration config = AccessConfiguration.forBuildResultSummary(result);
                 if (config.isEnabled()) {
-                    String podName = result.getCustomBuildData()
+                    String podName = result
+                            .getCustomBuildData()
                             .get(KubernetesIsolatedDockerImpl.RESULT_PREFIX + KubernetesIsolatedDockerImpl.NAME);
                     if (podName != null) {
                         KubernetesClient client = new KubernetesClient(globalConfiguration, new JavaShellExecutor());
@@ -66,8 +68,8 @@ public class OnCancelledBuild {
                 }
             }
         } else {
-            //this case should be handled by the BuildCancelledEventListener class in generic support
-            //a connected agent is being sent an event to commit suicide.
+            // this case should be handled by the BuildCancelledEventListener class in generic support
+            // a connected agent is being sent an event to commit suicide.
         }
     }
 }

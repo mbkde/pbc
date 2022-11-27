@@ -32,10 +32,10 @@ public class DockerAgentEcsDisconnectedPurgeEvent extends DockerAgentEvent {
 
     @Override
     public String toString() {
-        return "DockerAgentEcsDisconnectedPurgeEvent{"
-                + "selectedToKill="
-                + selectedToKill.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())
-                + '}';
+        return "DockerAgentEcsDisconnectedPurgeEvent{" +
+                "selectedToKill=" +
+                selectedToKill.stream().map(DockerHost::getInstanceId).collect(Collectors.toList()) +
+                '}';
     }
 
 }

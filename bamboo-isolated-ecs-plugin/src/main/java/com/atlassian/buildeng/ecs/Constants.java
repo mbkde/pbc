@@ -24,10 +24,10 @@ public interface Constants extends com.atlassian.buildeng.ecs.scheduling.Constan
     // The default cluster to use
     String DEFAULT_CLUSTER = "default";
 
-    long   PLUGIN_JOB_INTERVAL_MILLIS  =  60000L; //Reap once every 60 seconds
+    long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; // Reap once every 60 seconds
     String PLUGIN_JOB_KEY = "ecs-watchdog";
-    
-    //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
+
+    // these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";
 

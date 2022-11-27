@@ -20,17 +20,17 @@ package com.atlassian.buildeng.kubernetes.jmx;
  * JMX bean to record queue gauges.
  */
 public interface KubeAgentsMBean {
-    
+
     long getQueuedTotalGauge();
-    
+
     long getQueuedFor5MinutesGauge();
-    
+
     long getQueuedFor10MinutesGauge();
-    
+
     long getQueuedFor15MinutesGauge();
-    
+
     long getQueuedFor20MinutesGauge();
-    
+
     long getQueuedFor25MinutesGauge();
 
     long getQueuedFor30MinutesGauge();

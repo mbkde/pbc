@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class AccessConfiguration {
 
-    //XXX interplugin dependency
+    // XXX interplugin dependency
     // these things can never ever change value, because they end up as part of export
     private static final String IMPL_PLUGIN_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin";
     private static final String ENV_MODULE = "pbcEnvironment";
@@ -56,7 +56,8 @@ public class AccessConfiguration {
         if (StringUtils.isBlank(architecture)) {
             architecture = null;
         }
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+        return ConfigurationBuilder
+                .create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                 .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
                 .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
@@ -88,11 +89,11 @@ public class AccessConfiguration {
         for (RuntimeTaskDefinition task : context.getRuntimeTaskDefinitions()) {
             Map<String, String> map = context.getPluginConfigMap(IMPL_PLUGIN_KEY + ":" + ENV_MODULE);
             if (!map.isEmpty()) {
-                //not sure this condition is 100% reliable, when enabling and disabling
-                //the docker tab data will retain some config.
+                // not sure this condition is 100% reliable, when enabling and disabling
+                // the docker tab data will retain some config.
                 return forMap(map);
             }
-            //XXX interplugin dependency
+            // XXX interplugin dependency
             if ((IMPL_PLUGIN_KEY + ":" + DOCKERTASK_MODULE).equals(task.getPluginKey())) {
                 return forTaskConfiguration(task);
             }
@@ -105,7 +106,8 @@ public class AccessConfiguration {
      */
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
-        return ConfigurationBuilder.create(config.getString(Configuration.DOCKER_IMAGE))
+        return ConfigurationBuilder
+                .create(config.getString(Configuration.DOCKER_IMAGE))
                 .withEnabled(config.getBoolean(Configuration.ENABLED_FOR_JOB))
                 .withImageSize(Configuration.ContainerSize.valueOf(config.getString(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
@@ -146,7 +148,8 @@ public class AccessConfiguration {
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
-        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
+        return ConfigurationBuilder
+                .create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
                 .withEnabled(taskDefinition.isEnabled())
                 .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
@@ -179,8 +182,9 @@ public class AccessConfiguration {
      * Constructs Configuration object for given Environment.
      */
     public static Configuration forEnvironment(Environment environment,
-                                               EnvironmentCustomConfigService environmentCustomConfigService) {
-        return forMap(environmentCustomConfigService.getEnvironmentPluginConfig(environment.getId())
+            EnvironmentCustomConfigService environmentCustomConfigService) {
+        return forMap(environmentCustomConfigService
+                .getEnvironmentPluginConfig(environment.getId())
                 .getOrDefault(IMPL_PLUGIN_KEY + ":" + ENV_MODULE, Collections.emptyMap()));
     }
 }

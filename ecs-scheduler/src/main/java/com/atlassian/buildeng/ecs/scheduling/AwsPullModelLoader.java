@@ -48,9 +48,9 @@ public final class AwsPullModelLoader implements ModelLoader {
     private final Duration stalePeriod;
     static final Duration DEFAULT_STALE_PERIOD = Duration.ofDays(7); // One (1) week
 
-    //keep a list of asg instanceids that we reported as sad
+    // keep a list of asg instanceids that we reported as sad
     final List<String> reportedLonelyAsgInstances = new ArrayList<>();
-    //grace period in minutes since launch
+    // grace period in minutes since launch
     // 5 might be too radical, but I haven't found any stats on what this the mean/average or 95percentile time for ec2 instance startup
     // a random poke at a single instance suggests something above one minute for startup on staging-bamboo.
     // but that can be significantly variable based on general state of AWS.
@@ -60,7 +60,9 @@ public final class AwsPullModelLoader implements ModelLoader {
     private static final int ASG_MISSING_IN_CLUSTER_GRACE_PERIOD = 5;
 
     @Inject
-    public AwsPullModelLoader(SchedulerBackend schedulerBackend, EventPublisher eventPublisher, ECSConfiguration globalConfiguration) {
+    public AwsPullModelLoader(SchedulerBackend schedulerBackend,
+            EventPublisher eventPublisher,
+            ECSConfiguration globalConfiguration) {
         this.schedulerBackend = schedulerBackend;
         this.eventPublisher = eventPublisher;
         stalePeriod = DEFAULT_STALE_PERIOD;
@@ -74,23 +76,23 @@ public final class AwsPullModelLoader implements ModelLoader {
         return loadHosts(clusterName, asg);
     }
 
-    //AZRebalance kills running agents, we need to suspend it.
-    //not possible to do via terraform now, let's do explicitly from the plugin.
+    // AZRebalance kills running agents, we need to suspend it.
+    // not possible to do via terraform now, let's do explicitly from the plugin.
     private void checkSuspendedProcesses(AutoScalingGroup asg) throws ECSException {
-        if (asg.getSuspendedProcesses() == null
-                || !asg.getSuspendedProcesses().stream()
-                    .map((SuspendedProcess t) -> t.getProcessName())
-                    //it's a pity aws lib doesn't have these as constants or enums
-                    .filter((String t) -> "AZRebalance".equals(t))
-                    .findAny().isPresent())
-        {
+        if (asg.getSuspendedProcesses() == null ||
+                !asg.getSuspendedProcesses().stream().map((SuspendedProcess t) -> t.getProcessName())
+                    // it's a pity aws lib doesn't have these as constants or enums
+                    .filter((String t) -> "AZRebalance".equals(t)).findAny().isPresent()) {
             schedulerBackend.suspendProcess(asg.getAutoScalingGroupName(), "AZRebalance");
         }
     }
 
     DockerHosts loadHosts(String cluster, AutoScalingGroup asg) throws ECSException {
-        //this can take time (network) and in the meantime other requests can accumulate.
-        Map<String, ContainerInstance> containerInstances = schedulerBackend.getClusterContainerInstances(cluster).stream().collect(Collectors.toMap(ContainerInstance::getEc2InstanceId, Function.identity()));
+        // this can take time (network) and in the meantime other requests can accumulate.
+        Map<String, ContainerInstance> containerInstances = schedulerBackend
+                .getClusterContainerInstances(cluster)
+                .stream()
+                .collect(Collectors.toMap(ContainerInstance::getEc2InstanceId, Function.identity()));
         // We need these as there is potentially a disparity between instances with container instances registered
         // in the cluster and instances which are part of the ASG. Since we detach unneeded instances from the ASG
         // then terminate them, if the cluster still reports the instance as connected we might assign a task to
@@ -100,7 +102,10 @@ public final class AwsPullModelLoader implements ModelLoader {
         Set<String> allIds = new HashSet<>();
         allIds.addAll(asgInstances);
         allIds.addAll(containerInstances.keySet());
-        Map<String, Instance> instances = schedulerBackend.getInstances(allIds).stream().collect(Collectors.toMap(Instance::getInstanceId, Function.identity()));
+        Map<String, Instance> instances = schedulerBackend
+                .getInstances(allIds)
+                .stream()
+                .collect(Collectors.toMap(Instance::getInstanceId, Function.identity()));
 
         Map<String, DockerHost> dockerHosts = new HashMap<>();
         containerInstances.forEach((String t, ContainerInstance u) -> {
@@ -113,35 +118,35 @@ public final class AwsPullModelLoader implements ModelLoader {
                 }
             }
         });
-        //sometimes asg instances get stuck on startup and never reach ecs, report on it.
+        // sometimes asg instances get stuck on startup and never reach ecs, report on it.
         Set<String> lonelyAsgInstances = new HashSet<>(asgInstances);
         lonelyAsgInstances.removeAll(containerInstances.keySet());
         if (!lonelyAsgInstances.isEmpty()) {
-            lonelyAsgInstances.stream()
-                    .filter((String t) -> {
-                        Instance ec2 = instances.get(t);
-                        if (ec2 != null) {
-                            final long lifespan = new Date().getTime() - ec2.getLaunchTime().getTime();
-                            return Duration.ofMinutes(ASG_MISSING_IN_CLUSTER_GRACE_PERIOD).toMillis() < lifespan
-                                    && Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE).toMillis() > lifespan;
-                        }
-                        return false;
-                    })
-                    .filter((String t) -> !reportedLonelyAsgInstances.contains(t))
-                    .forEach((String t) -> {
-                        eventPublisher.publish(new DockerAgentEcsStaleAsgInstanceEvent(t));
-                        reportedLonelyAsgInstances.add(t);
-                        if (reportedLonelyAsgInstances.size() > 50) { //random number to keep the list from growing indefinitely
-                            reportedLonelyAsgInstances.remove(0);
-                        }
-                        AwsLogs.logEC2InstanceOutputToCloudwatch(t, globalConfiguration);
-                        try {
-                            schedulerBackend.terminateInstances(Collections.<String>singletonList(t));
-                        } catch (ECSException e) {
-                            logger.warn("Failed to terminate instance " + t, e);
-                        }
-                    });
-            logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})", asgInstances.size(), containerInstances.size());
+            lonelyAsgInstances.stream().filter((String t) -> {
+                Instance ec2 = instances.get(t);
+                if (ec2 != null) {
+                    final long lifespan = new Date().getTime() - ec2.getLaunchTime().getTime();
+                    return Duration.ofMinutes(ASG_MISSING_IN_CLUSTER_GRACE_PERIOD).toMillis() < lifespan &&
+                            Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE).toMillis() > lifespan;
+                }
+                return false;
+            }).filter((String t) -> !reportedLonelyAsgInstances.contains(t)).forEach((String t) -> {
+                eventPublisher.publish(new DockerAgentEcsStaleAsgInstanceEvent(t));
+                reportedLonelyAsgInstances.add(t);
+                if (reportedLonelyAsgInstances.size() >
+                        50) { // random number to keep the list from growing indefinitely
+                    reportedLonelyAsgInstances.remove(0);
+                }
+                AwsLogs.logEC2InstanceOutputToCloudwatch(t, globalConfiguration);
+                try {
+                    schedulerBackend.terminateInstances(Collections.<String>singletonList(t));
+                } catch (ECSException e) {
+                    logger.warn("Failed to terminate instance " + t, e);
+                }
+            });
+            logger.warn("Scheduler got different lengths for instances ({}) and container instances ({})",
+                    asgInstances.size(),
+                    containerInstances.size());
         }
         return new DockerHosts(dockerHosts.values(), stalePeriod, asg, cluster);
     }

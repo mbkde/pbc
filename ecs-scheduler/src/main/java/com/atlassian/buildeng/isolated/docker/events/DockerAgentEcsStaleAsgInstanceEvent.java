@@ -31,5 +31,5 @@ public class DockerAgentEcsStaleAsgInstanceEvent extends DockerAgentEvent {
         return "DockerAgentEcsStaleAsgInstanceEvent{" + "instance=" + instance + '}';
     }
 
-    
+
 }
