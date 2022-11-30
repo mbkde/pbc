@@ -16,10 +16,6 @@
 
 package com.atlassian.buildeng.ecs.exceptions;
 
-/**
- *
- * @author mkleint
- */
 public class InstancesSmallerThanAgentException extends Exception {
 
     public InstancesSmallerThanAgentException() {

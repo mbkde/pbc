@@ -18,7 +18,7 @@ package com.atlassian.buildeng.ecs.metrics;
 
 import com.atlassian.buildeng.spi.isolated.docker.HostFolderMapping;
 
-//TODO eventually these paths could be configurable in the UI.
+// TODO eventually these paths could be configurable in the UI.
 public class MetricHostFolderMapping implements HostFolderMapping {
 
     static final String CONTAINER_METRICS_PATH = "/buildeng-metrics";

@@ -23,6 +23,7 @@ import java.util.Map;
 
 /**
  * event intended to be sent to datadog via the monitoring plugin.
+ *
  * @author mkleint
  */
 public final class DockerAgentRemoteFailEvent extends DockerAgentEvent {
@@ -33,8 +34,11 @@ public final class DockerAgentRemoteFailEvent extends DockerAgentEvent {
     private final String containerArn;
     private final Map<String, URL> markdownLinks;
 
-    public DockerAgentRemoteFailEvent(
-            String errorMessage, Key key, String taskArn, String containerArn, Map<String, URL> markdownLinks) {
+    public DockerAgentRemoteFailEvent(String errorMessage,
+            Key key,
+            String taskArn,
+            String containerArn,
+            Map<String, URL> markdownLinks) {
         this.errorMessage = errorMessage;
         this.key = key;
         this.taskArn = taskArn;
@@ -45,18 +49,34 @@ public final class DockerAgentRemoteFailEvent extends DockerAgentEvent {
     @Override
     public String toString() {
         if (ddmarkdown) {
-            //http://docs.datadoghq.com/guides/markdown/
-            return "%%% \\n"
-                    + "Key:**" + key.getKey() + "** Task ARN:" + taskArn + "\\n"
-                    + "Container ARN:" + containerArn + "\\n"
-                    + "Container logs: " + generateMarkdownLinks(markdownLinks) + "\\n"
-                    + escape(errorMessage) + "\\n"
-                    + "\\n %%%";
+            // http://docs.datadoghq.com/guides/markdown/
+            return "%%% \\n" +
+                    "Key:**" +
+                    key.getKey() +
+                    "** Task ARN:" +
+                    taskArn +
+                    "\\n" +
+                    "Container ARN:" +
+                    containerArn +
+                    "\\n" +
+                    "Container logs: " +
+                    generateMarkdownLinks(markdownLinks) +
+                    "\\n" +
+                    escape(errorMessage) +
+                    "\\n" +
+                    "\\n %%%";
         }
-        return "DockerAgentRemoteFailEvent{task="
-                + taskArn +  ", container=" + containerArn + ", key=" + key  + ",containerLogs=" + markdownLinks
-                +  ",message=" + errorMessage
-                +  "}";
+        return "DockerAgentRemoteFailEvent{task=" +
+                taskArn +
+                ", container=" +
+                containerArn +
+                ", key=" +
+                key +
+                ",containerLogs=" +
+                markdownLinks +
+                ",message=" +
+                errorMessage +
+                "}";
     }
 
 }

@@ -34,5 +34,5 @@ public class Config {
     public void setPrometheusUrl(String prometheusUrl) {
         this.prometheusUrl = prometheusUrl;
     }
-    
+
 }

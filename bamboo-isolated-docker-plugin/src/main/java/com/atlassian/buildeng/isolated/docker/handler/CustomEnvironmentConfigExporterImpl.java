@@ -52,8 +52,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     private final Validator validator;
 
     // these things can never ever change value, because they end up as part of export
-    static final String ENV_CONFIG_MODULE_KEY =
-            "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
+    static final String ENV_CONFIG_MODULE_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
 
     public CustomEnvironmentConfigExporterImpl(Validator validator) {
         this.validator = validator;
@@ -69,17 +68,19 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 .size(config.getSize().name())
                 .awsRole(config.getAwsRole())
                 .architecture(config.getArchitecture())
-                .extraContainers(config.getExtraContainers().stream()
-                        .map((Configuration.ExtraContainer t) ->
-                                new ExtraContainer()
-                                        .name(t.getName())
-                                        .image(t.getImage())
-                                        .size(t.getExtraSize().name())
-                                        .commands(t.getCommands())
-                                        .envVariables(t.getEnvVariables().stream()
-                                                .map((Configuration.EnvVariable t2)
-                                                        -> new EnvVar(t2.getName(), t2.getValue()))
-                                                .collect(Collectors.toList())))
+                .extraContainers(config
+                        .getExtraContainers()
+                        .stream()
+                        .map((Configuration.ExtraContainer t) -> new ExtraContainer()
+                                .name(t.getName())
+                                .image(t.getImage())
+                                .size(t.getExtraSize().name())
+                                .commands(t.getCommands())
+                                .envVariables(t
+                                        .getEnvVariables()
+                                        .stream()
+                                        .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
+                                        .collect(Collectors.toList())))
                         .collect(Collectors.toList()));
     }
 
@@ -109,7 +110,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     @NotNull
     @Override
     public List<ValidationProblem> validate(@NotNull TaskValidationContext tvc,
-                                            @NotNull EnvironmentPluginConfigurationProperties epcp) {
+            @NotNull EnvironmentPluginConfigurationProperties epcp) {
         final AnyPluginConfigurationProperties any = Narrow.downTo(epcp, AnyPluginConfigurationProperties.class);
         if (any != null) {
             String enabled = any.getConfiguration().get(Configuration.ENABLED_FOR_JOB);
@@ -127,26 +128,28 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
                 validator.validate(image, size, awsRole, architecture, extraCont, coll, false);
-                return coll.getAllErrorMessages().stream()
-                        .map(ValidationProblem::new)
-                        .collect(Collectors.toList());
+                return coll.getAllErrorMessages().stream().map(ValidationProblem::new).collect(Collectors.toList());
             }
         }
         final PerBuildContainerForEnvironmentProperties pbc =
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
-            validator.validate(pbc.getImage(), pbc.getSize(), pbc.getAwsRole(),
-                    pbc.getArchitecture(), BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()), coll, false);
-            return coll.getAllErrorMessages().stream()
-                    .map(ValidationProblem::new)
-                    .collect(Collectors.toList());
+            validator.validate(pbc.getImage(),
+                    pbc.getSize(),
+                    pbc.getAwsRole(),
+                    pbc.getArchitecture(),
+                    BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()),
+                    coll,
+                    false);
+            return coll.getAllErrorMessages().stream().map(ValidationProblem::new).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
 
     /**
-     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String architecture) }
+     * {@link com.atlassian.bamboo.specs.api.builders.pbc.PerBuildContainerForEnvironment#architecture(String
+     * architecture) }
      * The usage of the .architecture(String arch) builder method is discouraged due to it being error prone.
      * Therefore, in the PBC specs extension, we provide an enum to alleviate this and place a deprecated
      * annotation on the string builder method. However, the usage of this method is mandatory here,
@@ -165,7 +168,9 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
                     .architecture(config.getArchitecture())
-                    .extraContainers(config.getExtraContainers().stream()
+                    .extraContainers(config
+                            .getExtraContainers()
+                            .stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()));
         }
@@ -207,11 +212,11 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 Configuration.ExtraContainerSize.valueOf(container.getSize()));
         extra.setCommands(container.getCommands());
         if (container.getEnvironments() != null) {
-            extra.setEnvVariables(
-                    container.getEnvironments().stream()
-                            .map(var -> new Configuration.EnvVariable(var.getKey(), var.getValue()))
-                            .collect(Collectors.toList())
-            );
+            extra.setEnvVariables(container
+                    .getEnvironments()
+                    .stream()
+                    .map(var -> new Configuration.EnvVariable(var.getKey(), var.getValue()))
+                    .collect(Collectors.toList()));
         }
         builder.withExtraContainer(extra);
     }

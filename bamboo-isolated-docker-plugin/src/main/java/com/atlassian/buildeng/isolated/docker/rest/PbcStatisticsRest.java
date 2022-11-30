@@ -30,7 +30,6 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,12 +48,13 @@ public class PbcStatisticsRest {
 
     @Inject
     public PbcStatisticsRest(@NotNull BuildQueueManager queueManager) {
-        this.queueManagerView = QueueManagerView.newView(queueManager,
-            (BuildQueueManager.QueueItemView<CommonContext> ctx) -> ctx);
+        this.queueManagerView =
+                QueueManagerView.newView(queueManager, (BuildQueueManager.QueueItemView<CommonContext> ctx) -> ctx);
     }
 
     /**
      * Return current queued pbc builds/deployments.
+     *
      * @return Current queued pbc builds/deployments
      */
     @Path("/queuedBuilds")
@@ -80,8 +80,14 @@ public class PbcStatisticsRest {
                         long projectId = deploymentContext.getDeploymentProjectId();
                         long environId = deploymentContext.getEnvironmentId();
                         long versionId = deploymentContext.getDeploymentVersion().getId();
-                        deployments.add(ImmutableMap.of("projectId", projectId, "environmentId", environId,
-                                "versionId", versionId, "resultKey", resultKey.toString()));
+                        deployments.add(ImmutableMap.of("projectId",
+                                projectId,
+                                "environmentId",
+                                environId,
+                                "versionId",
+                                versionId,
+                                "resultKey",
+                                resultKey.toString()));
                     }
                 }
             }

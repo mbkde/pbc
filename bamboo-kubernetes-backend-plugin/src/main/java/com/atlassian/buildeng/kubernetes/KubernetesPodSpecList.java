@@ -49,8 +49,7 @@ public class KubernetesPodSpecList {
     private final DarkFeatureManager darkFeatureManager;
 
     @Inject
-    public KubernetesPodSpecList(
-            GlobalConfiguration globalConfiguration,
+    public KubernetesPodSpecList(GlobalConfiguration globalConfiguration,
             BandanaManager bandanaManager,
             DarkFeatureManager darkFeatureManager) {
         this.globalConfiguration = globalConfiguration;
@@ -66,8 +65,7 @@ public class KubernetesPodSpecList {
         this.deletePodFile(podFile);
     }
 
-    private List<Map<String, Object>> createPodSpecList(
-            IsolatedDockerAgentRequest request, String subjectId) {
+    private List<Map<String, Object>> createPodSpecList(IsolatedDockerAgentRequest request, String subjectId) {
         Map<String, Object> template = loadTemplatePod();
         Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
         Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
@@ -102,8 +100,8 @@ public class KubernetesPodSpecList {
     }
 
     @VisibleForTesting
-    Map<String, Object> addArchitectureOverrides(
-            IsolatedDockerAgentRequest request, Map<String, Object> podWithoutArchOverrides) {
+    Map<String, Object> addArchitectureOverrides(IsolatedDockerAgentRequest request,
+            Map<String, Object> podWithoutArchOverrides) {
         Map<String, Object> archConfig = loadArchitectureConfig();
 
         if (archConfig.isEmpty()) {
@@ -111,22 +109,19 @@ public class KubernetesPodSpecList {
         } else {
             if (request.getConfiguration().isArchitectureDefined()) {
                 String architecture = request.getConfiguration().getArchitecture();
-                if (archConfig.containsKey(
-                        architecture)) { // Architecture matches one in the Kubernetes pod overrides
+                if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
                     return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
                 } else {
                     String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
                             .getArchitectureConfigWithBandana(bandanaManager)
                             .keySet()
                             .toString();
-                    throw new IllegalArgumentException(
-                            "Architecture specified in build configuration was not "
-                                    + "found in server's allowed architectures list! Supported architectures are: "
-                                    + supportedArchs);
+                    throw new IllegalArgumentException("Architecture specified in build configuration was not " +
+                            "found in server's allowed architectures list! Supported architectures are: " +
+                            supportedArchs);
                 }
             } else { // Architecture is not specified at all
-                return mergeMap(
-                        podWithoutArchOverrides,
+                return mergeMap(podWithoutArchOverrides,
                         getSpecificArchConfig(archConfig, getDefaultArchitectureName(archConfig)));
             }
         }
@@ -201,57 +196,52 @@ public class KubernetesPodSpecList {
     @SuppressWarnings("unchecked")
     static Map<String, Object> mergeMap(Map<String, Object> template, Map<String, Object> overrides) {
         final Map<String, Object> merged = new HashMap<>(template);
-        overrides.forEach(
-                (String t, Object u) -> {
-                    Object originalEntry = merged.get(t);
-                    if (originalEntry instanceof Map && u instanceof Map) {
-                        merged.put(t, mergeMap((Map<String, Object>) originalEntry, (Map<String, Object>) u));
-                    } else if (originalEntry instanceof Collection && u instanceof Collection) {
-                        ArrayList<Map<String, Object>> lst = new ArrayList<>();
+        overrides.forEach((String t, Object u) -> {
+            Object originalEntry = merged.get(t);
+            if (originalEntry instanceof Map && u instanceof Map) {
+                merged.put(t, mergeMap((Map<String, Object>) originalEntry, (Map<String, Object>) u));
+            } else if (originalEntry instanceof Collection && u instanceof Collection) {
+                ArrayList<Map<String, Object>> lst = new ArrayList<>();
 
-                        if (t.equals("containers")) {
-                            mergeById(
-                                    "name",
-                                    lst,
-                                    (Collection<Map<String, Object>>) originalEntry,
-                                    (Collection<Map<String, Object>>) u);
-                        } else if (t.equals("hostAliases")) {
-                            mergeById(
-                                    "ip",
-                                    lst,
-                                    (Collection<Map<String, Object>>) originalEntry,
-                                    (Collection<Map<String, Object>>) u);
-                        } else {
-                            lst.addAll((Collection<Map<String, Object>>) originalEntry);
-                            lst.addAll((Collection<Map<String, Object>>) u);
-                        }
-                        merged.put(t, lst);
-                    } else {
-                        merged.put(t, u);
-                    }
-                });
+                if (t.equals("containers")) {
+                    mergeById("name",
+                            lst,
+                            (Collection<Map<String, Object>>) originalEntry,
+                            (Collection<Map<String, Object>>) u);
+                } else if (t.equals("hostAliases")) {
+                    mergeById("ip",
+                            lst,
+                            (Collection<Map<String, Object>>) originalEntry,
+                            (Collection<Map<String, Object>>) u);
+                } else {
+                    lst.addAll((Collection<Map<String, Object>>) originalEntry);
+                    lst.addAll((Collection<Map<String, Object>>) u);
+                }
+                merged.put(t, lst);
+            } else {
+                merged.put(t, u);
+            }
+        });
         return merged;
     }
 
-    private static void mergeById(
-            String id,
+    private static void mergeById(String id,
             ArrayList<Map<String, Object>> lst,
             Collection<Map<String, Object>> originalEntry,
             Collection<Map<String, Object>> u) {
-        Map<String, Map<String, Object>> containers1 = originalEntry.stream()
-                .collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
-        Map<String, Map<String, Object>> containers2 = u.stream()
-                .collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
+        Map<String, Map<String, Object>> containers1 =
+                originalEntry.stream().collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
+        Map<String, Map<String, Object>> containers2 =
+                u.stream().collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
 
-        containers1.forEach(
-                (String name, Map<String, Object> container1) -> {
-                    Map<String, Object> container2 = containers2.remove(name);
-                    if (container2 != null) {
-                        lst.add(mergeMap(container1, container2));
-                    } else {
-                        lst.add(container1);
-                    }
-                });
+        containers1.forEach((String name, Map<String, Object> container1) -> {
+            Map<String, Object> container2 = containers2.remove(name);
+            if (container2 != null) {
+                lst.add(mergeMap(container1, container2));
+            } else {
+                lst.add(container1);
+            }
+        });
         lst.addAll(containers2.values());
     }
 

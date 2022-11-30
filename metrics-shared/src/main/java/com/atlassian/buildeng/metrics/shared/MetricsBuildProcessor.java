@@ -28,16 +28,14 @@ import com.atlassian.bamboo.security.SecureToken;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
-
 import java.io.File;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Base metrics build processor.
  */
-public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
+public abstract class MetricsBuildProcessor implements CustomBuildProcessor {
     protected static final String RESULT_PREFIX = "result.isolated.docker.";
     protected static final String METRICS_FOLDER = ".pbc-metrics";
     public static final String ARTIFACT_TYPE_BUILD_DATA_KEY = "metrics_artifacts_type";
@@ -71,29 +69,37 @@ public abstract class MetricsBuildProcessor  implements CustomBuildProcessor {
         return buildContext;
     }
 
-    protected final void publishMetrics(
-            String name, String fileExtension, SecureToken secureToken, BuildLogger buildLogger,
-            File buildWorkingDirectory, final Map<String, String> artifactHandlerConfiguration,
+    protected final void publishMetrics(String name,
+            String fileExtension,
+            SecureToken secureToken,
+            BuildLogger buildLogger,
+            File buildWorkingDirectory,
+            final Map<String, String> artifactHandlerConfiguration,
             BuildContext buildContext) {
-        ArtifactDefinitionContextImpl artifact = new ArtifactDefinitionContextImpl(
-                ARTIFACT_PREFIX + name, false, secureToken);
+        ArtifactDefinitionContextImpl artifact =
+                new ArtifactDefinitionContextImpl(ARTIFACT_PREFIX + name, false, secureToken);
         artifact.setCopyPattern(name + fileExtension);
         artifact.setLocation(METRICS_FOLDER);
-        final ArtifactPublishingResult publishingResult =
-                artifactManager.publish(buildLogger,
-                        buildContext.getPlanResultKey(),
-                        buildWorkingDirectory,
-                        artifact,
-                        artifactHandlerConfiguration,
-                        0);
-        buildContext.getCurrentResult().getCustomBuildData()
-                .put(ARTIFACT_TYPE_BUILD_DATA_KEY, publishingResult.getSuccessfulPublishingResults()
-                        .stream()
-                        .findAny()
-                        .map(ArtifactHandlerPublishingResult::getArtifactHandlerKey).orElse(Artifact.SYSTEM_LINK_TYPE));
+        final ArtifactPublishingResult publishingResult = artifactManager.publish(buildLogger,
+                buildContext.getPlanResultKey(),
+                buildWorkingDirectory,
+                artifact,
+                artifactHandlerConfiguration,
+                0);
+        buildContext
+                .getCurrentResult()
+                .getCustomBuildData()
+                .put(ARTIFACT_TYPE_BUILD_DATA_KEY,
+                        publishingResult
+                                .getSuccessfulPublishingResults()
+                                .stream()
+                                .findAny()
+                                .map(ArtifactHandlerPublishingResult::getArtifactHandlerKey)
+                                .orElse(Artifact.SYSTEM_LINK_TYPE));
     }
 
-    protected abstract void generateMetricsGraphs(BuildLogger buildLogger, 
-            Configuration config, BuildContext buildContext);
+    protected abstract void generateMetricsGraphs(BuildLogger buildLogger,
+            Configuration config,
+            BuildContext buildContext);
 
 }

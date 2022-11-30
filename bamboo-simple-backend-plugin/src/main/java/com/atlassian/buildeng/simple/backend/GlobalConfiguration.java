@@ -33,18 +33,19 @@ public class GlobalConfiguration {
     private static final String BANDANA_API_VERSION = "com.atlassian.buildeng.simple.backend.apiVersion";
     private static final String BANDANA_SIDEKICK = "com.atlassian.buildeng.simple.backend.sidekick";
     private static final String BANDANA_SIDEKICK_IMAGE = "com.atlassian.buildeng.simple.backend.sidekickImage";
- 
+
     private final BandanaManager bandanaManager;
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager,AuditLogService auditLogService,
+    public GlobalConfiguration(BandanaManager bandanaManager,
+            AuditLogService auditLogService,
             BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;
     }
-    
+
     public void setDockerConfig(Config config) {
         if (!StringUtils.equals(config.url, getDockerConfig().getUrl())) {
             auditLogEntry("PBC Docker Daemon URL", getDockerConfig().getUrl(), config.url);
@@ -64,21 +65,24 @@ public class GlobalConfiguration {
         }
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE, config.sidekickImage);
     }
-    
+
     public Config getDockerConfig() {
-        String api = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+        String api = StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_API_VERSION), "");
-        String url = StringUtils.defaultString((String)bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, 
+        String url = StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_URL), "");
-        String certPath = StringUtils.defaultString((String)bandanaManager.getValue(
-                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
-        String sidekick = StringUtils.defaultString((String)bandanaManager.getValue(
-                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
-        boolean image = BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(
-                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE), true);
+        String certPath =
+                StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_CERTPATH), "");
+        String sidekick =
+                StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_SIDEKICK), "");
+        boolean image =
+                BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        BANDANA_SIDEKICK_IMAGE), true);
         return new Config(api, certPath, url, sidekick, image);
     }
-    
+
     public ProcessBuilder decorateCommands(ProcessBuilder pb) {
         Config config = getDockerConfig();
         if (StringUtils.isNotBlank(config.getUrl())) {
@@ -93,12 +97,19 @@ public class GlobalConfiguration {
         }
         return pb;
     }
-    
+
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new  AuditLogMessage(authenticationContext.getUserName(), new Date(),
-                null, null, null, null,
-                AuditLogEntry.TYPE_FIELD_CHANGE, name, oldValue, newValue);
+        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+                new Date(),
+                null,
+                null,
+                null,
+                null,
+                AuditLogEntry.TYPE_FIELD_CHANGE,
+                name,
+                oldValue,
+                newValue);
         auditLogService.log(ent);
     }
-    
+
 }

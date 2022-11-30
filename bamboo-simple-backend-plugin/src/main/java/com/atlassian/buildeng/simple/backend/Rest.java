@@ -26,20 +26,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-/**
- *
- * @author mkleint
- */
 @WebSudoRequired
 @Path("/")
 public class Rest {
- 
+
     private final GlobalConfiguration globalConfiguration;
 
     public Rest(GlobalConfiguration globalConfiguration) {
         this.globalConfiguration = globalConfiguration;
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/config")

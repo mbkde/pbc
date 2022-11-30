@@ -19,7 +19,6 @@ package com.atlassian.buildeng.ecs.remote;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 
 import com.atlassian.bamboo.Key;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
@@ -68,9 +67,9 @@ import org.slf4j.LoggerFactory;
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     static String PLUGIN_JOB_KEY = "ecs-remote-watchdog";
-    static long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; //Reap once every 60 seconds
-    
-    //these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
+    static long PLUGIN_JOB_INTERVAL_MILLIS = 60000L; // Reap once every 60 seconds
+
+    // these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     static final String RESULT_PREFIX = "result.isolated.docker.";
     static final String RESULT_PART_TASKARN = "TaskARN";
     // The name of the agent container
@@ -80,13 +79,13 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final Scheduler scheduler;
     private final PluginAccessor pluginAccessor;
 
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration, 
-            Scheduler scheduler, PluginAccessor pluginAccessor) {
+    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration,
+            Scheduler scheduler,
+            PluginAccessor pluginAccessor) {
         this.globalConfiguration = globalConfiguration;
         this.scheduler = scheduler;
         this.pluginAccessor = pluginAccessor;
     }
-
 
 
     @Override
@@ -97,12 +96,16 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         // resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
         try {
-            IsolatedDockerAgentResult result =
-                    resource
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
-                        .type(MediaType.APPLICATION_JSON_TYPE)
-                        .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
-            logger.info("result:" + result.isRetryRecoverable() + " " + result.getErrors() + " " + result.getCustomResultData());
+            IsolatedDockerAgentResult result = resource
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
+            logger.info("result:" +
+                    result.isRetryRecoverable() +
+                    " " +
+                    result.getErrors() +
+                    " " +
+                    result.getCustomResultData());
             callback.handle(result);
         } catch (UniformInterfaceException e) {
             int code = e.getResponse().getStatusInfo().getStatusCode();
@@ -111,7 +114,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
                 s = e.getResponse().getEntity(String.class);
             }
             logger.error("Error contacting ECS:" + code + " " + s, e);
-            if (code == 504 || code == 503) { //gateway timeout/Service Unavailable
+            if (code == 504 || code == 503) { // gateway timeout/Service Unavailable
                 callback.handle(new IsolatedDockerAgentResult().withRetryRecoverable(s));
             } else {
                 callback.handle(new IsolatedDockerAgentException(e));
@@ -129,10 +132,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
 
         final ClientConfig clientConfig = new DefaultClientConfig();
         clientConfig.getClasses().add(JacksonJsonProvider.class);
-        clientConfig.getProperties().put(
-                ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
-        clientConfig.getProperties().put(
-                JSONConfiguration.FEATURE_POJO_MAPPING, true);
+        clientConfig.getProperties().put(ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
+        clientConfig.getProperties().put(JSONConfiguration.FEATURE_POJO_MAPPING, true);
         Client client = Client.create(clientConfig);
         return client;
     }
@@ -143,14 +144,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         if (taskArn == null) {
             return Collections.emptyMap();
         }
-        Stream<String> s = Stream.concat(
-                Stream.of(AGENT_CONTAINER_NAME),
-                          configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
+        Stream<String> s = Stream.concat(Stream.of(AGENT_CONTAINER_NAME),
+                configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
         return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
-                URIBuilder bb = new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
-                        .addParameter(Rest.PARAM_CONTAINER, t)
-                        .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+                URIBuilder bb =
+                        new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
+                                .addParameter(Rest.PARAM_CONTAINER, t)
+                                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
                 return bb.build().toURL();
             } catch (URISyntaxException | MalformedURLException ex) {
                 return null; //??
@@ -164,14 +165,18 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public void reserveCapacity(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+    public void reserveCapacity(Key buildKey,
+            List<String> jobResultKeys,
+            long excessMemoryCapacity,
+            long excessCpuCapacity) {
         if (globalConfiguration.isPreemptiveScaling()) {
             Client client = createClient();
-            final WebResource resource = client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
+            final WebResource resource =
+                    client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
             try {
                 resource
-                    .type(MediaType.APPLICATION_JSON_TYPE)
-                    .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
+                        .type(MediaType.APPLICATION_JSON_TYPE)
+                        .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
             } catch (UniformInterfaceException e) {
                 int code = e.getResponse().getStatusInfo().getStatusCode();
                 String s = "";
@@ -194,15 +199,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         config.put("isolatedAgentService", this);
         Trigger jobTrigger = newTrigger()
                 .startNow()
-                .withSchedule(simpleSchedule()
-                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
-                        .repeatForever()
-                )
+                .withSchedule(simpleSchedule().withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS).repeatForever())
                 .build();
-        JobDetail pluginJob = newJob(RemoteWatchdogJob.class)
-                .withIdentity(PLUGIN_JOB_KEY)
-                .usingJobData(config)
-                .build();
+        JobDetail pluginJob = newJob(RemoteWatchdogJob.class).withIdentity(PLUGIN_JOB_KEY).usingJobData(config).build();
         try {
             scheduler.scheduleJob(pluginJob, jobTrigger);
         } catch (SchedulerException e) {
@@ -236,7 +235,10 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         return root.toString();
     }
 
-    private String createFutureReqBody(Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
+    private String createFutureReqBody(Key buildKey,
+            List<String> jobResultKeys,
+            long excessMemoryCapacity,
+            long excessCpuCapacity) {
         JsonObject root = new JsonObject();
         root.addProperty("buildKey", buildKey.getKey());
         JsonArray arr = new JsonArray();
@@ -262,7 +264,9 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     public List<HostFolderMapping> getHostFolderMappings() {
-        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
+        return pluginAccessor
+                .getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class)
+                .stream()
                 .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
                 .collect(Collectors.toList());
     }

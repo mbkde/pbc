@@ -98,8 +98,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final KubernetesPodSpecList podSpecList;
 
     @Inject
-    public KubernetesIsolatedDockerImpl(
-            GlobalConfiguration globalConfiguration,
+    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
             Scheduler scheduler,
             KubeJmxService kubeJmxService,
             SubjectIdService subjectIdService,
@@ -116,8 +115,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
-    public void startAgent(
-            IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
+    public void startAgent(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback) {
         logger.debug("Kubernetes received request for " + request.getResultKey());
         String subjectId = getSubjectId(request);
         executor.submit(() -> exec(request, callback, subjectId));
@@ -128,17 +126,13 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     private void handleCallback(IsolatedDockerRequestCallback callback, Pod pod, String name) {
-        callback.handle(
-                new IsolatedDockerAgentResult()
-                        .withCustomResultData(NAME, name)
-                        .withCustomResultData(UID, pod.getMetadata().getUid()));
+        callback.handle(new IsolatedDockerAgentResult()
+                .withCustomResultData(NAME, name)
+                .withCustomResultData(UID, pod.getMetadata().getUid()));
     }
 
     @VisibleForTesting
-    void exec(
-            IsolatedDockerAgentRequest request,
-            final IsolatedDockerRequestCallback callback,
-            String subjectId) {
+    void exec(IsolatedDockerAgentRequest request, final IsolatedDockerRequestCallback callback, String subjectId) {
         logger.debug("Kubernetes processing request for " + request.getResultKey());
         try {
             File podFile = this.podSpecList.generate(request, subjectId);
@@ -146,8 +140,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
             String name = KubernetesHelper.getName(pod);
-            logger.info(
-                    "Kubernetes successfully processed request for {} in {}, pod name: {}",
+            logger.info("Kubernetes successfully processed request for {} in {}, pod name: {}",
                     request.getResultKey(),
                     servedIn,
                     name);
@@ -172,8 +165,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             if (e.getClass().getSimpleName().equals("ServiceProxyDestroyedException")) {
                 IsolatedDockerAgentResult result = new IsolatedDockerAgentResult();
                 logger.warn("OSGi plugin system binding error:" + e.getMessage());
-                callback.handle(
-                        result.withRetryRecoverable("PBC plugin was reloading/upgrading: " + e.getMessage()));
+                callback.handle(result.withRetryRecoverable("PBC plugin was reloading/upgrading: " + e.getMessage()));
             } else {
                 logger.error("unknown error", e);
                 callback.handle(new IsolatedDockerAgentException(e));
@@ -218,9 +210,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @Override
     public void onStart() {
         SchedulerUtils schedulerUtils = new SchedulerUtils(scheduler, logger);
-        logger.info(
-                "PBC Kubernetes Backend plugin started. Checking that jobs from a prior instance of the"
-                        + " plugin are not still running.");
+        logger.info("PBC Kubernetes Backend plugin started. Checking that jobs from a prior instance of the" +
+                " plugin are not still running.");
         List<JobKey> previousJobKeys = Arrays.asList(PLUGIN_JOB_KEY, PLUGIN_JOB_JMX_KEY);
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
 
@@ -254,10 +245,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     private JobDetail jobDetail(Class<? extends org.quartz.Job> c, JobKey jobKey, JobDataMap jobDataMap) {
-        return newJob(c)
-                .withIdentity(jobKey)
-                .usingJobData(jobDataMap)
-                .build();
+        return newJob(c).withIdentity(jobKey).usingJobData(jobDataMap).build();
     }
 
     @Override
@@ -284,24 +272,27 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     }
 
     @Override
-    public @NotNull Map<String, URL> getContainerLogs(
-            Configuration configuration, Map<String, String> customData) {
+    public @NotNull Map<String, URL> getContainerLogs(Configuration configuration, Map<String, String> customData) {
         String url = globalConfiguration.getPodLogsUrl();
         String podName = customData.get(RESULT_PREFIX + NAME);
         if (StringUtils.isBlank(url) || StringUtils.isBlank(podName)) {
             return Collections.emptyMap();
         }
-        return PodCreator.containerNames(configuration).stream().map((String t) -> {
-            String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
-            try {
-                URIBuilder bb = new URIBuilder(resolvedUrl);
-                return Pair.make(t, bb.build().toURL());
-            } catch (URISyntaxException | MalformedURLException ex) {
-                logger.error("Kubernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
-                return Pair.make(t, (URL) null);
-            }
-        }).filter((Pair<String, URL> t) -> t.getSecond() != null)
-        .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+        return PodCreator
+                .containerNames(configuration)
+                .stream()
+                .map((String t) -> {
+                    String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
+                    try {
+                        URIBuilder bb = new URIBuilder(resolvedUrl);
+                        return Pair.make(t, bb.build().toURL());
+                    } catch (URISyntaxException | MalformedURLException ex) {
+                        logger.error("Kubernetes logs URL cannot be constructed from template:" + resolvedUrl, ex);
+                        return Pair.make(t, (URL) null);
+                    }
+                })
+                .filter((Pair<String, URL> t) -> t.getSecond() != null)
+                .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
 }

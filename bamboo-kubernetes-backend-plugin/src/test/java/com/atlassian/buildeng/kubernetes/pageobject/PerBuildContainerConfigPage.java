@@ -59,8 +59,8 @@ public class PerBuildContainerConfigPage extends ConfigureJobDockerPage {
     }
 
     public boolean eitherDockerImageVisibleOrWarning() {
-        return (isDockerImagePresent() && isDockerImageVisible())
-                || !pageElementFinder.findAll(By.className("aui-message-warning")).isEmpty();
+        return (isDockerImagePresent() && isDockerImageVisible()) ||
+                !pageElementFinder.findAll(By.className("aui-message-warning")).isEmpty();
     }
 
     public boolean isAwsIamRoleVisible() {
@@ -69,7 +69,8 @@ public class PerBuildContainerConfigPage extends ConfigureJobDockerPage {
 
     public PerBuildContainerConfigPage choosePerBuildContainerPlugin() {
         choosePbc.click();
-        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD), this::eitherDockerImageVisibleOrWarning));
+        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD),
+                this::eitherDockerImageVisibleOrWarning));
         return this;
     }
 
@@ -80,9 +81,7 @@ public class PerBuildContainerConfigPage extends ConfigureJobDockerPage {
 
     public PerBuildContainerConfigPage selectAgentSize(final String sizeName) {
         Optional<Option> agentSizeOption =
-                agentSizeSelect.getAllOptions().stream()
-                        .filter(size -> size.text().startsWith(sizeName))
-                        .findFirst();
+                agentSizeSelect.getAllOptions().stream().filter(size -> size.text().startsWith(sizeName)).findFirst();
         assertTrue(agentSizeOption.isPresent());
         agentSizeSelect.select(agentSizeOption.get());
 

@@ -32,14 +32,12 @@ public class PreJobActionImpl implements PreJobAction {
 
     @Override
     public void execute(StageExecution stageExecution, BuildContext buildContext) {
-        // secureTokenService not available for plugins via injection 
+        // secureTokenService not available for plugins via injection
         // but still used by ArtifactDownloaderRuntimeDataProvider in plugin.
-        SecureTokenService secureTokenService = ContainerManager.getComponent("secureTokenService", 
-                SecureTokenService.class);
+        SecureTokenService secureTokenService =
+                ContainerManager.getComponent("secureTokenService", SecureTokenService.class);
         String token = secureTokenService.generate(buildContext.getBuildKey()).getToken();
-        buildContext.getBuildResult().getCustomBuildData().put(
-                SECURE_TOKEN, token
-        );
+        buildContext.getBuildResult().getCustomBuildData().put(SECURE_TOKEN, token);
     }
 
 }

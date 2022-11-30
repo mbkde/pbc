@@ -23,32 +23,32 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 import java.util.Collection;
 import java.util.List;
 
-/**
- *
- * @author mkleint
- */
 public interface SchedulerBackend {
 
     /**
      * Get all owned container instances on a cluster.
      */
     List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException;
-    
+
     /**
      * get EC2 Instances for the passed ids.
      */
     List<Instance> getInstances(Collection<String> instanceIds) throws ECSException;
-    
+
     /**
      * scale the ASG to desired capacity.
      */
     void scaleTo(int desiredCapacity, String autoScalingGroup) throws ECSException;
-    
+
     /**
      * terminate the listed EC2 instances and reduce the size of ASG by the given amount.
+     *
      * @param decrementSize should we decrease size of ASG or not? if not, new instance is started eventually.
      */
-    void terminateAndDetachInstances(List<DockerHost> dockerHosts, String autoScalingGroup, boolean decrementSize, String ecsClusterName) throws ECSException;
+    void terminateAndDetachInstances(List<DockerHost> dockerHosts,
+            String autoScalingGroup,
+            boolean decrementSize,
+            String ecsClusterName) throws ECSException;
 
     /**
      * terminate listed EC2 instances.
@@ -60,10 +60,12 @@ public interface SchedulerBackend {
      */
     void drainInstances(List<DockerHost> hosts, String clusterName);
 
-    SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest req, String taskDefinition) throws ECSException;
-    
+    SchedulingResult schedule(DockerHost dockerHost, String cluster, SchedulingRequest req, String taskDefinition)
+            throws ECSException;
+
     /**
      * describe autoscaling group of given name.
+     *
      * @return get AutoscalingGroup
      */
     AutoScalingGroup describeAutoScalingGroup(String autoScalingGroup) throws ECSException;

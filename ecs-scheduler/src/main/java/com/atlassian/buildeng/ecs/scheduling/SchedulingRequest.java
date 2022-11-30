@@ -29,8 +29,14 @@ public class SchedulingRequest {
     private final long queueTimestamp;
     private final String buildKey;
 
-    public SchedulingRequest(UUID identifier, String resultId, int revision, 
-            int cpu, int memory, Configuration configuration, long queueTimestamp, String buildKey) {
+    public SchedulingRequest(UUID identifier,
+            String resultId,
+            int revision,
+            int cpu,
+            int memory,
+            Configuration configuration,
+            long queueTimestamp,
+            String buildKey) {
         this.identifier = identifier;
         this.resultId = resultId;
         this.revision = revision;

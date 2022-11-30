@@ -17,16 +17,16 @@
 package com.atlassian.buildeng.kubernetes;
 
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 import static org.quartz.JobBuilder.newJob;
+
+import org.junit.Test;
 import org.quartz.JobDetail;
 
 public class KubernetesWatchdogTest {
 
     @Test
     public void jobDataShouldPersist() {
-        JobDetail jobDetail = newJob(KubernetesWatchdog.class)
-                .build();
+        JobDetail jobDetail = newJob(KubernetesWatchdog.class).build();
 
         assertTrue(jobDetail.isPersistJobDataAfterExecution());
     }

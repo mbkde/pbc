@@ -35,11 +35,18 @@ public class Config {
     public Config() {
     }
 
-    public Config(String sidekickImage, String currentContext, String podTemplate, String architecturePodConfig,
-                  String iamRequestTemplate, String iamSubjectIdPrefix, String podLogsUrl, String containerSizes,
-                  boolean useClusterRegistry, String clusterRegistryAvailableSelector,
-                  String clusterRegistryPrimarySelector,
-                  boolean showAwsSpecificFields) {
+    public Config(String sidekickImage,
+            String currentContext,
+            String podTemplate,
+            String architecturePodConfig,
+            String iamRequestTemplate,
+            String iamSubjectIdPrefix,
+            String podLogsUrl,
+            String containerSizes,
+            boolean useClusterRegistry,
+            String clusterRegistryAvailableSelector,
+            String clusterRegistryPrimarySelector,
+            boolean showAwsSpecificFields) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;

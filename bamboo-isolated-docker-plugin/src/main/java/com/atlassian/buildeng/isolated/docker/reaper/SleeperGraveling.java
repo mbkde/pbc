@@ -47,8 +47,9 @@ public class SleeperGraveling implements BuildAgentVisitor {
         buildAgent.getDefinition().accept(new PipelineDefinitionVisitor() {
             @Override
             public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
-                LOG.error("Wrong agent picked up. Type:{} Idle:{} Name:{}", 
-                        buildAgent.getType(), buildAgent.getAgentStatus().isIdle(),
+                LOG.error("Wrong agent picked up. Type:{} Idle:{} Name:{}",
+                        buildAgent.getType(),
+                        buildAgent.getAgentStatus().isIdle(),
                         buildAgent.getName());
             }
 
@@ -67,5 +68,5 @@ public class SleeperGraveling implements BuildAgentVisitor {
             }
         });
     }
-    
+
 }

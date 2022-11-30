@@ -74,8 +74,8 @@ public class GlobalConfiguration implements LifecycleAware {
 
     @Inject
     public GlobalConfiguration(BandanaManager bandanaManager,
-                               AuditLogService auditLogService,
-                               BambooAuthenticationContext authenticationContext) {
+            AuditLogService auditLogService,
+            BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;
@@ -159,9 +159,13 @@ public class GlobalConfiguration implements LifecycleAware {
     }
 
     /**
-     * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
-     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     * Get the architecture config.
+     *
+     * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the
+     *         actual
+     *         map where the data is stored and can be modified! Any changes to the original map will be reflected
+     *         globally.
+     *         Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     @NotNull
     public Map<String, String> getArchitectureConfig() {
@@ -174,9 +178,11 @@ public class GlobalConfiguration implements LifecycleAware {
      * instance of this GlobalConfiguration class.
      *
      * @param bandanaManager An instance of {@link BandanaManager} that should be wired from Bamboo
-     * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the actual
-     * map where the data is stored and can be modified! Any changes to the original map will be reflected globally.
-     * Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
+     * @return An unmodifiable view of the architecture config, since the reference that Bandana will provide is the
+     *         actual
+     *         map where the data is stored and can be modified! Any changes to the original map will be reflected
+     *         globally.
+     *         Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     public static Map<String, String> getArchitectureConfigWithBandana(BandanaManager bandanaManager) {
         LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>) bandanaManager.getValue(
@@ -308,9 +314,9 @@ public class GlobalConfiguration implements LifecycleAware {
     void migrateEnabled() {
         Boolean enabled = getEnabledRaw();
         if (enabled == null) {
-            boolean optionsNotNull = Stream.of(getDefaultImageRaw(),
-                    getMaxAgentCreationPerMinuteRaw(),
-                    getArchitectureConfigAsStringRaw()).anyMatch(Objects::nonNull);
+            boolean optionsNotNull = Stream
+                    .of(getDefaultImageRaw(), getMaxAgentCreationPerMinuteRaw(), getArchitectureConfigAsStringRaw())
+                    .anyMatch(Objects::nonNull);
 
             if (optionsNotNull) {
                 logger.info("Detected non-null PBC settings but PBC enable status was null! Now enabling PBC.");

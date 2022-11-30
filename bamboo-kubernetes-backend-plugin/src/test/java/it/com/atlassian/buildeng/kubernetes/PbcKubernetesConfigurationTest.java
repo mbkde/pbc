@@ -22,8 +22,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import com.atlassian.bamboo.testutils.user.TestUser;
-import com.atlassian.pageobjects.elements.timeout.TimeoutType;
 import com.atlassian.buildeng.kubernetes.pageobject.GenericKubernetesConfigPage;
+import com.atlassian.pageobjects.elements.timeout.TimeoutType;
 import org.junit.Test;
 
 public class PbcKubernetesConfigurationTest extends AbstractPbcTest {

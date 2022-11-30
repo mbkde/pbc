@@ -41,8 +41,8 @@ public class RemoteWatchdogJob extends AbstractWatchdogJob {
     private static int MAXIMUM_ARNS_TO_QUERY = 40;
 
     @Override
-    protected List<StoppedState> retrieveStoppedTasksByArn(
-            List<String> arns, Map<String, Object> jobDataMap) throws Exception {
+    protected List<StoppedState> retrieveStoppedTasksByArn(List<String> arns, Map<String, Object> jobDataMap)
+            throws Exception {
         GlobalConfiguration globalConfig = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
         Client client = createClient();
 
@@ -53,15 +53,16 @@ public class RemoteWatchdogJob extends AbstractWatchdogJob {
             tasks.addAll(queryStoppedTasksByArn(globalConfig, client, nextNArns));
         }
 
-        List<String> lastNArns = arns.subList(
-                MAXIMUM_ARNS_TO_QUERY * (arns.size() / MAXIMUM_ARNS_TO_QUERY), arns.size());
+        List<String> lastNArns =
+                arns.subList(MAXIMUM_ARNS_TO_QUERY * (arns.size() / MAXIMUM_ARNS_TO_QUERY), arns.size());
         tasks.addAll(queryStoppedTasksByArn(globalConfig, client, lastNArns));
 
         return tasks;
     }
 
-    protected List<StoppedState> queryStoppedTasksByArn(
-            GlobalConfiguration globalConfig, Client client, List<String> arns) {
+    protected List<StoppedState> queryStoppedTasksByArn(GlobalConfiguration globalConfig,
+            Client client,
+            List<String> arns) {
         WebResource resource = client.resource(globalConfig.getCurrentServer() + "/rest/scheduler/stopped");
         for (String arn : arns) {
             //!! each call to resource returning WebResource is returning new instance
@@ -70,8 +71,10 @@ public class RemoteWatchdogJob extends AbstractWatchdogJob {
         List<ArnStoppedState> result = resource
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .get(new GenericType<List<ArnStoppedState>>(){});
-        return result.stream()
+                .get(new GenericType<List<ArnStoppedState>>() {
+                });
+        return result
+                .stream()
                 .map((ArnStoppedState t) -> new StoppedState(t.getArn(), t.getContainerArn(), t.getReason()))
                 .collect(Collectors.toList());
     }

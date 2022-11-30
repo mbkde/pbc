@@ -17,17 +17,17 @@
 package com.atlassian.buildeng.isolated.docker.jmx;
 
 public interface AgentCountsMBean {
-    
+
     long getQueuedAgentsCount();
-    
+
     long getScheduledAgentsCount();
-    
+
     long getActiveAgentsCount();
-    
+
     long getCancelledAgentsCount();
-    
+
     long getTimedOutAgentsCount();
-    
+
     long getFailedAgentsCount();
 
     long getAgentsThrottledTotalGauge();

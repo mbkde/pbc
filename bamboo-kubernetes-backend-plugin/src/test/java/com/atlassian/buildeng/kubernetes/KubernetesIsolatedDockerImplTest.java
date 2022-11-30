@@ -91,8 +91,7 @@ public class KubernetesIsolatedDockerImplTest {
 
     @Test
     public void testSubjectIdForPlan() {
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
-                null,
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
                 "TEST-PLAN-JOB1",
                 UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
                 0,
@@ -108,8 +107,7 @@ public class KubernetesIsolatedDockerImplTest {
 
     @Test
     public void testSubjectIdForDeployment() {
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
-                null,
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
                 "111-222-333",
                 UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
                 0,

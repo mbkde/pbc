@@ -57,14 +57,14 @@ public class AgentRemovals {
 
     public void removeAgent(BuildAgent agent) {
         if (agent != null) {
-            //we intentionally call the Long paramed method here.
+            // we intentionally call the Long paramed method here.
             removeAgent(agent.getId());
         }
     }
 
-    //synchronized because we have different things that could step on each other's toes
+    // synchronized because we have different things that could step on each other's toes
     public synchronized void removeAgent(long agentId) {
-        BuildAgent ba = agentManager.getAgent(agentId); //double check the agent still exists.
+        BuildAgent ba = agentManager.getAgent(agentId); // double check the agent still exists.
         if (ba != null) {
             String agentName = ba.getName();
             try {

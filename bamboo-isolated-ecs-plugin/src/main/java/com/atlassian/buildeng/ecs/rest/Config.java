@@ -29,7 +29,7 @@ public class Config {
 
     public Config() {
     }
-    
+
     public Config(String ecsClusterName, String autoScalingGroupName, String sidekickImage) {
         this.ecsClusterName = ecsClusterName;
         this.autoScalingGroupName = autoScalingGroupName;
@@ -83,7 +83,7 @@ public class Config {
     public void setPreemptiveScaling(boolean preemptiveScaling) {
         this.preemptiveScaling = preemptiveScaling;
     }
-    
+
     public static class LogConfiguration {
         public String driver;
         public Map<String, String> options;
@@ -112,6 +112,6 @@ public class Config {
             this.options = options;
         }
 
-        
+
     }
 }

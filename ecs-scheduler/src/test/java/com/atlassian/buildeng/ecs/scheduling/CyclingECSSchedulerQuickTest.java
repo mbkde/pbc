@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.atlassian.buildeng.ecs.scheduling;
 
 import static com.atlassian.buildeng.ecs.scheduling.CyclingECSScheduler.selectHost;
@@ -50,33 +51,38 @@ public class CyclingECSSchedulerQuickTest {
 
     }
 
-    @Property public void percentageUtilizedValidBounds(LinkedList<@From(DockerHostGenerator.class)DockerHost> testHosts) {
+    @Property
+    public void percentageUtilizedValidBounds(LinkedList<@From(DockerHostGenerator.class) DockerHost> testHosts) {
         double result = percentageUtilized(testHosts);
-        assertThat(result, is(both( greaterThanOrEqualTo(0.0)).and(lessThanOrEqualTo(1.0))));
+        assertThat(result, is(both(greaterThanOrEqualTo(0.0)).and(lessThanOrEqualTo(1.0))));
         // empty lists -> the cluster is fully utilized
         if (testHosts.isEmpty()) {
             assertEquals(1, result, 0.01d);
         }
     }
 
-    @Property public void selectHostTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> candidates, Integer requiredMemory, Integer requiredCpu) {
+    @Property
+    public void selectHostTest(LinkedList<@From(DockerHostGenerator.class) DockerHost> candidates,
+            Integer requiredMemory,
+            Integer requiredCpu) {
         assumeThat(requiredMemory, greaterThan(0));
         assumeThat(requiredCpu, greaterThan(0));
         Optional<DockerHost> result = selectHost(candidates, requiredMemory, requiredCpu, false);
         if (result.isPresent()) {
             DockerHost candidate = result.get();
             assertTrue(candidate.canRun(requiredMemory, requiredCpu));
-            for (DockerHost dockerHost: candidates) {
+            for (DockerHost dockerHost : candidates) {
                 assertTrue(candidate.getRemainingMemory() <= dockerHost.getRemainingMemory());
             }
         } else {
-            for (DockerHost dockerHost: candidates) {
+            for (DockerHost dockerHost : candidates) {
                 assertFalse(dockerHost.canRun(requiredMemory, requiredCpu));
             }
         }
     }
 
-    @Property public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class)DockerHost> allHosts) {
+    @Property
+    public void selectToTerminateTest(LinkedList<@From(DockerHostGenerator.class) DockerHost> allHosts) {
         final AWSSchedulerBackend awsSchedulerBackend = new AWSSchedulerBackend();
         final EventPublisher eventPublisher = new EventPublisher() {
             @Override

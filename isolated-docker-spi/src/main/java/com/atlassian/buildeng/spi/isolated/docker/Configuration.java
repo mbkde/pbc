@@ -25,21 +25,21 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 
 public final class Configuration {
-    
-    //message to future me:
+
+    // message to future me:
     // never ever attempt nested values here. eg.
-    //custom.isolated.docker.image and custom.isolated.docker.image.size 
+    // custom.isolated.docker.image and custom.isolated.docker.image.size
     // the way bamboo serializes these will cause the parent to get additional trailing whitespace
     // and you get mad trying to figure out why.
     public static final String PROPERTY_PREFIX = "custom.isolated.docker";
-    public static final String ENABLED_FOR_JOB = PROPERTY_PREFIX + ".enabled"; 
-    public static final String DOCKER_IMAGE = PROPERTY_PREFIX + ".image"; 
-    public static final String DOCKER_IMAGE_SIZE = PROPERTY_PREFIX + ".imageSize"; 
+    public static final String ENABLED_FOR_JOB = PROPERTY_PREFIX + ".enabled";
+    public static final String DOCKER_IMAGE = PROPERTY_PREFIX + ".image";
+    public static final String DOCKER_IMAGE_SIZE = PROPERTY_PREFIX + ".imageSize";
     public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers";
     public static final String DOCKER_AWS_ROLE = PROPERTY_PREFIX + ".awsRole";
     public static final String DOCKER_ARCHITECTURE = PROPERTY_PREFIX + ".architecture";
 
-    //task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
+    // task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
     // don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_ARCHITECTURE = "dockerArchitecture";
@@ -49,7 +49,7 @@ public final class Configuration {
     public static final String TASK_DOCKER_ENABLE = "enabled";
 
     /**
-     * properties with this prefix are stored in build result custom data 
+     * properties with this prefix are stored in build result custom data
      * detailing the sizes of main and extra containers.
      * The available suffixes are .[container_name].memory and .[container_name].memoryLimit
      * The main container's name is 'bamboo-agent', for extra containers the name equals the one configured by user.
@@ -58,7 +58,7 @@ public final class Configuration {
 
     public static int DOCKER_MINIMUM_MEMORY = 4;
 
-    //when storing using bandana/xstream transient means it's not to be serialized
+    // when storing using bandana/xstream transient means it's not to be serialized
     private final transient boolean enabled;
     private String dockerImage;
     private String awsRole;
@@ -66,8 +66,12 @@ public final class Configuration {
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
 
-    Configuration(boolean enabled, String dockerImage, String awsRole,
-                  String architecture, ContainerSize size, List<ExtraContainer> extraContainers) {
+    Configuration(boolean enabled,
+            String dockerImage,
+            String awsRole,
+            String architecture,
+            ContainerSize size,
+            List<ExtraContainer> extraContainers) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
         this.awsRole = awsRole;
@@ -115,22 +119,29 @@ public final class Configuration {
 
     /**
      * calculate cpu requirements for entire configuration.
+     *
      * @param sizeDescriptor component able to resolve the symbolic size to numbers
      */
     public int getCPUTotal(ContainerSizeDescriptor sizeDescriptor) {
-        return sizeDescriptor.getCpu(size)
-                + extraContainers.stream()
-                        .mapToInt((ExtraContainer value) -> sizeDescriptor.getCpu(value.getExtraSize())).sum();
+        return sizeDescriptor.getCpu(size) +
+                extraContainers
+                        .stream()
+                        .mapToInt((ExtraContainer value) -> sizeDescriptor.getCpu(value.getExtraSize()))
+                        .sum();
     }
-    
+
     /**
      * calculate memory requirements for entire configuration.
+     *
      * @param sizeDescriptor component able to resolve the symbolic size to numbers
      */
     public int getMemoryTotal(ContainerSizeDescriptor sizeDescriptor) {
-        return sizeDescriptor.getMemory(size) + DOCKER_MINIMUM_MEMORY
-                + extraContainers.stream()
-                        .mapToInt((ExtraContainer value) -> sizeDescriptor.getMemory(value.getExtraSize())).sum();
+        return sizeDescriptor.getMemory(size) +
+                DOCKER_MINIMUM_MEMORY +
+                extraContainers
+                        .stream()
+                        .mapToInt((ExtraContainer value) -> sizeDescriptor.getMemory(value.getExtraSize()))
+                        .sum();
     }
 
     public List<ExtraContainer> getExtraContainers() {
@@ -179,13 +190,12 @@ public final class Configuration {
         }
         storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
-        //write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
-        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memory", 
+        // write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memory",
                 "" + sizeDescriptor.getMemory(getSize()));
-        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit", 
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit",
                 "" + sizeDescriptor.getMemoryLimit(getSize()));
-        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu",
-                "" + sizeDescriptor.getCpu(getSize()));
+        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu", "" + sizeDescriptor.getCpu(getSize()));
         getExtraContainers().forEach((ExtraContainer t) -> {
             storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memory",
                     "" + sizeDescriptor.getMemory(t.getExtraSize()));
@@ -195,7 +205,7 @@ public final class Configuration {
                     "" + sizeDescriptor.getCpu(t.getExtraSize()));
         });
     }
-    
+
     /**
      * Clear configuration from result data structures.
      */
@@ -210,16 +220,9 @@ public final class Configuration {
         storageMap.entrySet().removeIf(ent -> ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL));
     }
 
-    
+
     public enum ContainerSize {
-        LARGE_8X,
-        LARGE_4X,
-        XXLARGE,
-        XLARGE,
-        LARGE,
-        REGULAR,
-        SMALL,
-        XSMALL
+        LARGE_8X, LARGE_4X, XXLARGE, XLARGE, LARGE, REGULAR, SMALL, XSMALL
     }
 
     public static class ExtraContainer {
@@ -299,15 +302,9 @@ public final class Configuration {
             return Objects.equals(this.envVariables, other.envVariables);
         }
     }
-    
+
     public enum ExtraContainerSize {
-        LARGE_8X,
-        LARGE_4X,
-        XXLARGE,
-        XLARGE,
-        LARGE,
-        REGULAR,
-        SMALL
+        LARGE_8X, LARGE_4X, XXLARGE, XLARGE, LARGE, REGULAR, SMALL
     }
 
     public static final class EnvVariable {
@@ -350,6 +347,6 @@ public final class Configuration {
             }
             return Objects.equals(this.value, other.value);
         }
-        
+
     }
 }

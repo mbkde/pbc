@@ -17,8 +17,8 @@
 package com.atlassian.buildeng.spi.isolated.docker;
 
 public interface IsolatedDockerRequestCallback {
-    
+
     void handle(IsolatedDockerAgentResult result);
-    
+
     void handle(IsolatedDockerAgentException exception);
 }

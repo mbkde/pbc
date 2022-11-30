@@ -16,14 +16,13 @@
 
 package com.atlassian.buildeng.spi.isolated.docker;
 
-import com.atlassian.bamboo.Bamboo;
-import com.atlassian.bamboo.core.BambooEntityOid;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.event.api.AsynchronousPreferred;
 import java.util.UUID;
 
 /**
  * Event to schedule docker agent creation.
+ *
  * @author mkleint
  */
 @AsynchronousPreferred
@@ -34,8 +33,10 @@ public final class RetryAgentStartupEvent {
     private final Configuration configuration;
     private final UUID uniqueIdentifier;
 
-    public RetryAgentStartupEvent(Configuration configuration, CommonContext context,
-            int retryCount, UUID existingUuid) {
+    public RetryAgentStartupEvent(Configuration configuration,
+            CommonContext context,
+            int retryCount,
+            UUID existingUuid) {
         this.configuration = configuration;
         this.context = context;
         this.retryCount = retryCount;
@@ -47,8 +48,10 @@ public final class RetryAgentStartupEvent {
     }
 
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
-        this(previousEvent.getConfiguration(), previousEvent.getContext(), 
-                previousEvent.getRetryCount() + 1, previousEvent.uniqueIdentifier);
+        this(previousEvent.getConfiguration(),
+                previousEvent.getContext(),
+                previousEvent.getRetryCount() + 1,
+                previousEvent.uniqueIdentifier);
     }
 
     public int getRetryCount() {

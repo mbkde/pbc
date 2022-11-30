@@ -25,7 +25,6 @@ import com.atlassian.bandana.BandanaManager;
 import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.google.common.base.Preconditions;
 import java.util.Date;
-import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
 @BambooComponent
@@ -37,10 +36,9 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
-    @Inject
     public GlobalConfiguration(BandanaManager bandanaManager,
-                               AuditLogService auditLogService,
-                               BambooAuthenticationContext authenticationContext) {
+            AuditLogService auditLogService,
+            BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
         this.auditLogService = auditLogService;
         this.authenticationContext = authenticationContext;

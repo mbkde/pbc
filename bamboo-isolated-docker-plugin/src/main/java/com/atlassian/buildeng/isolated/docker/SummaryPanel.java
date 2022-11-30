@@ -24,7 +24,6 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
@@ -51,12 +50,14 @@ public class SummaryPanel implements WebPanel {
         Map<PlanResultKey, BuildContext> map = PlanSummaryPanel.mapKeyToBuildContext(buildQueueManager);
         BuildContext buildcontext = map.get(summary.getPlanResultKey());
 
-        //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-        Configuration configuration = buildcontext != null ? AccessConfiguration.forContext(buildcontext)
+        // when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
+        Configuration configuration = buildcontext != null
+                ? AccessConfiguration.forContext(buildcontext)
                 : AccessConfiguration.forBuildResultSummary(summary);
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
-            ret.append("<h2>Built with Per-build Container Agent</h2>")
+            ret
+                    .append("<h2>Built with Per-build Container Agent</h2>")
                     .append("<dl class=\"details-list\"><dt>Image(s) used:</dt><dd>")
                     .append(ConfigurationOverride.reverseRegistryOverride(configuration.getDockerImage()));
             configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
@@ -72,45 +73,50 @@ public class SummaryPanel implements WebPanel {
                 ret.append("<dt>AWS IAM Role:</dt><dd>").append(configuration.getAwsRole()).append("</dd>");
             }
 
-            Map<String, String> customData =
-                    createCustomDataMap(buildcontext, summary);
+            Map<String, String> customData = createCustomDataMap(buildcontext, summary);
 
             Map<String, URL> containerLogs = detail.getContainerLogs(configuration, customData);
             if (!containerLogs.isEmpty()) {
                 ret.append("<dt>Container logs:</dt><dd>");
-                ret.append(containerLogs.entrySet().stream().map((Map.Entry e) ->
-                        "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>"
-                ).collect(Collectors.joining(",&nbsp;&nbsp;")));
+                ret.append(containerLogs
+                        .entrySet()
+                        .stream()
+                        .map((Map.Entry e) -> "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>")
+                        .collect(Collectors.joining(",&nbsp;&nbsp;")));
                 ret.append("</dd>");
             }
-            String error = buildcontext != null
-                    ? buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR)
-                    : summary.getCustomBuildData().get(Constants.RESULT_ERROR);
+            String error = buildcontext != null ? buildcontext
+                    .getCurrentResult()
+                    .getCustomBuildData()
+                    .get(Constants.RESULT_ERROR) : summary.getCustomBuildData().get(Constants.RESULT_ERROR);
             if (error != null) {
-                ret.append("<dt>Error:</dt><dd class=\"errorText\">")
-                        .append(error)
-                        .append("</dd>");
+                ret.append("<dt>Error:</dt><dd class=\"errorText\">").append(error).append("</dd>");
             }
-            customData.entrySet().stream()
+            customData
+                    .entrySet()
+                    .stream()
                     .filter((Map.Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
                     .forEach((Map.Entry<String, String> entry) -> {
-                                ret.append("<dt>").append(entry.getKey().substring(Constants.RESULT_PREFIX.length())).append("</dt>");
-                                ret.append("<dd>").append(entry.getValue()).append("</dd>");
-                            }
-            );
+                        ret
+                                .append("<dt>")
+                                .append(entry.getKey().substring(Constants.RESULT_PREFIX.length()))
+                                .append("</dt>");
+                        ret.append("<dd>").append(entry.getValue()).append("</dd>");
+                    });
             ret.append("</dl>");
-            //TODO more information
-            //ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
+            // TODO more information
+            // ret.append("Queuing time:").append(summary.getQueueDuration() / 1000).append (" seconds<br>");
         }
         return ret.toString();
     }
 
     static Map<String, String> createCustomDataMap(BuildContext buildcontext, BuildResultsSummary summary) {
-        Map<String, String> customData =
-                new HashMap<>(buildcontext != null
-                        ? buildcontext.getCurrentResult().getCustomBuildData()
-                        : summary.getCustomBuildData());
-        customData.entrySet().removeIf((Map.Entry<String, String> t) -> !t.getKey().startsWith(Constants.RESULT_PREFIX));
+        Map<String, String> customData = new HashMap<>(buildcontext != null
+                ? buildcontext.getCurrentResult().getCustomBuildData()
+                : summary.getCustomBuildData());
+        customData
+                .entrySet()
+                .removeIf((Map.Entry<String, String> t) -> !t.getKey().startsWith(Constants.RESULT_PREFIX));
         return customData;
     }
 

@@ -28,7 +28,6 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.DockerAgentBuildQueue;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.plugin.web.model.WebPanel;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
@@ -55,17 +54,20 @@ public class PlanSummaryPanel implements WebPanel {
         StringBuilder ret = new StringBuilder();
         for (ResultsSummary brs : summary.getOrderedJobResultSummaries()) {
             BuildContext buildcontext = map.get(brs.getPlanResultKey());
-            //when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
-            Configuration config = buildcontext != null ? AccessConfiguration.forContext(buildcontext) :
-                    AccessConfiguration.forBuildResultSummary((BuildResultsSummary) brs);
+            // when a build is queued, we derive data from the CurrentResult, not the persisted value (reruns)
+            Configuration config = buildcontext != null
+                    ? AccessConfiguration.forContext(buildcontext)
+                    : AccessConfiguration.forBuildResultSummary((BuildResultsSummary) brs);
             if (config.isEnabled()) {
                 String error = brs.getCustomBuildData().get(Constants.RESULT_ERROR);
                 if (buildcontext != null) {
                     error = buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR);
                 }
                 final String planName = brs.getPlanIfExists().isPresent()
-                        ? brs.getPlanIfExists().get().getBuildName() : brs.getPlanName();
-                ret.append("<dt>")
+                        ? brs.getPlanIfExists().get().getBuildName()
+                        : brs.getPlanName();
+                ret
+                        .append("<dt>")
                         .append(planName)
                         .append("</dt><dd>")
                         .append(ConfigurationOverride.reverseRegistryOverride(config.getDockerImage()));
@@ -73,15 +75,15 @@ public class PlanSummaryPanel implements WebPanel {
                 Map<String, URL> containerLogs = detail.getContainerLogs(config, custom);
                 if (!containerLogs.isEmpty()) {
                     ret.append("<br/>");
-                    ret.append(containerLogs.entrySet().stream().map((Map.Entry e) ->
-                            "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>"
-                    ).collect(Collectors.joining(",&nbsp;&nbsp;")));
+                    ret.append(containerLogs
+                            .entrySet()
+                            .stream()
+                            .map((Map.Entry e) -> "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>")
+                            .collect(Collectors.joining(",&nbsp;&nbsp;")));
                     ret.append("</dd>");
                 }
                 if (error != null) {
-                    ret.append("<br/><span class=\"errorText\">")
-                            .append(error)
-                            .append("</span>");
+                    ret.append("<br/><span class=\"errorText\">").append(error).append("</span>");
                 }
                 ret.append("</dd>");
             }

@@ -74,15 +74,15 @@ public class KubernetesClient {
         clusterFactory = new ClusterFactory(this, globalContextSupplier);
     }
 
-    private Object executeKubectlAsObject(ContextSupplier contextHandler, String... args)
-            throws KubectlException {
-        return executeKubectlWithResponseMapper(contextHandler, jsonResponseMapper,
+    private Object executeKubectlAsObject(ContextSupplier contextHandler, String... args) throws KubectlException {
+        return executeKubectlWithResponseMapper(contextHandler,
+                jsonResponseMapper,
                 Lists.asList("-o", "json", args).toArray(new String[0]));
     }
 
     private <T> T executeKubectlWithResponseMapper(ContextSupplier contextSupplier,
-                                                   ResponseMapper<T> responseMapper,
-                                                   String... args) throws KubectlException {
+            ResponseMapper<T> responseMapper,
+            String... args) throws KubectlException {
         List<String> kubectlArgs = new ArrayList<>(Arrays.asList(args));
         kubectlArgs.add(0, Constants.KUBECTL_GLOBAL_OPTIONS);
         kubectlArgs.add(0, Constants.KUBECTL_EXECUTABLE);
@@ -103,8 +103,7 @@ public class KubernetesClient {
     }
 
     @SuppressWarnings("unchecked")
-    List<Pod> getPodsByLabel(String labelName, String labelValue)
-            throws KubectlException {
+    List<Pod> getPodsByLabel(String labelName, String labelValue) throws KubectlException {
         String selector = labelName + '=' + labelValue;
         if (globalConfiguration.isUseClusterRegistry()) {
             List<String> available = availableClusterRegistryContexts();
@@ -117,8 +116,8 @@ public class KubernetesClient {
                     collectedPods.addAll(clusterPods);
                 } catch (KubectlException e) {
                     if (swallow) {
-                        logger.error("Failed to load pods with Cluster Registry turned on with context:"
-                                + clusterContext, e);
+                        logger.error("Failed to load pods with Cluster Registry turned on with context:" +
+                                clusterContext, e);
                         continue;
                     } else {
                         throw e;
@@ -155,8 +154,7 @@ public class KubernetesClient {
     }
 
     @SuppressWarnings("unchecked")
-    Pod createPod(File podFile)
-            throws KubectlException {
+    Pod createPod(File podFile) throws KubectlException {
         Pod pod;
         ContextSupplier supplier;
         if (globalConfiguration.isUseClusterRegistry()) {
@@ -184,7 +182,7 @@ public class KubernetesClient {
                 String body = FileUtils.readFileToString(podFile, Charsets.UTF_8);
                 logger.error("Invalid kubectl request. File at fault: \n" + body, e);
             } catch (IOException ioException) {
-                //We don't log the file content in case of error
+                // We don't log the file content in case of error
             }
             throw e;
         }
@@ -192,21 +190,30 @@ public class KubernetesClient {
         return pod;
     }
 
-    String describePod(Pod pod)
-            throws KubectlException {
+    String describePod(Pod pod) throws KubectlException {
         return executeKubectl(new PodContextSupplier(pod), "describe", "pod", KubernetesHelper.getName(pod));
     }
 
     String lastLogLinePod(Pod pod) throws KubectlException {
-        return executeKubectl(new PodContextSupplier(pod), "logs", "-c", "bamboo-agent", "--tail", "1", KubernetesHelper.getName(pod));
+        return executeKubectl(new PodContextSupplier(pod),
+                "logs",
+                "-c",
+                "bamboo-agent",
+                "--tail",
+                "1",
+                KubernetesHelper.getName(pod));
     }
 
-    void deletePod(Pod pod)
-            throws KubectlException {
+    void deletePod(Pod pod) throws KubectlException {
         long startTime = System.currentTimeMillis();
         executeKubectl(new PodContextSupplier(pod),
-                "delete", "pod", "--grace-period=0", "--force", "--wait=false",
-                "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, KubernetesHelper.getName(pod));
+                "delete",
+                "pod",
+                "--grace-period=0",
+                "--force",
+                "--wait=false",
+                "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT,
+                KubernetesHelper.getName(pod));
         long podDeletionEnd = System.currentTimeMillis();
         deletePodLogger.log(String.format("pod deletion took %d ms", podDeletionEnd - startTime));
         if (pod.getMetadata().getAnnotations().containsKey(PodCreator.ANN_IAM_REQUEST_NAME)) {
@@ -218,14 +225,16 @@ public class KubernetesClient {
     }
 
 
-    void deletePod(String podName)
-            throws InterruptedException, IOException, KubectlException {
+    void deletePod(String podName) throws InterruptedException, IOException, KubectlException {
         ContextSupplier supplier;
         if (globalConfiguration.isUseClusterRegistry()) {
             availableClusterRegistryContexts().forEach((String t) -> {
                 try {
                     executeKubectl(new SimpleContextSupplier(t),
-                            "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
+                            "delete",
+                            "pod",
+                            "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT,
+                            podName);
                     deleteIamRequest(new SimpleContextSupplier(t), podName);
                 } catch (KubectlException x) {
                     if (x.getMessage() != null && x.getMessage().startsWith(ERROR_MESSAGE_PREFIX)) {
@@ -237,23 +246,28 @@ public class KubernetesClient {
             });
         } else {
             supplier = globalContextSupplier;
-            executeKubectl(supplier,
-                    "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
+            executeKubectl(supplier, "delete", "pod", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT, podName);
             deleteIamRequest(supplier, podName);
         }
     }
 
     void deleteIamRequest(Pod pod) throws KubectlException {
         executeKubectl(new PodContextSupplier(pod),
-                "delete", "iam", "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT,
+                "delete",
+                "iam",
+                "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT,
                 pod.getMetadata().getAnnotations().get(PodCreator.ANN_IAM_REQUEST_NAME));
     }
 
-    //The problem with only having the String is that we can't tell if the IAMRequest is meant to exist.
-    //So we just blindly delete and ignore failures if it can't find the iamRequest
+    // The problem with only having the String is that we can't tell if the IAMRequest is meant to exist.
+    // So we just blindly delete and ignore failures if it can't find the iamRequest
     void deleteIamRequest(ContextSupplier contextSupplier, String podName) throws KubectlException {
         try {
-            executeKubectl(contextSupplier, "delete", "iam", "-l", PodCreator.ANN_POD_NAME + "=" + podName,
+            executeKubectl(contextSupplier,
+                    "delete",
+                    "iam",
+                    "-l",
+                    PodCreator.ANN_POD_NAME + "=" + podName,
                     "--timeout=" + Constants.KUBECTL_DELETE_TIMEOUT);
         } catch (KubectlException e) {
             if (e.getMessage() != null && e.getMessage().startsWith(ERROR_MESSAGE_PREFIX)) {
@@ -269,19 +283,22 @@ public class KubernetesClient {
         return registryContexts(label);
     }
 
-    private List<String> registryContexts(Supplier<String> filter)
-            throws ClusterRegistryKubectlException {
+    private List<String> registryContexts(Supplier<String> filter) throws ClusterRegistryKubectlException {
         List<ClusterRegistryItem> clusters = clusterFactory.getClusters();
-        return clusters.stream()
-                .filter((ClusterRegistryItem t) -> t.getLabels().stream()
+        return clusters
+                .stream()
+                .filter((ClusterRegistryItem t) -> t
+                        .getLabels()
+                        .stream()
                         .anyMatch((Pair<String, String> t1) -> StringUtils.equals(t1.getKey(), filter.get())))
-                .map((ClusterRegistryItem t) ->
-                        t.getLabels().stream()
-                                .filter((Pair<String, String> t1) ->
-                                        StringUtils.equals(t1.getKey(),
-                                                globalConfiguration.getClusterRegistryAvailableClusterSelector()))
-                                .map((Pair<String, String> t1) -> t1.getValue())
-                                .findFirst().orElse(null))
+                .map((ClusterRegistryItem t) -> t
+                        .getLabels()
+                        .stream()
+                        .filter((Pair<String, String> t1) -> StringUtils.equals(t1.getKey(),
+                                globalConfiguration.getClusterRegistryAvailableClusterSelector()))
+                        .map((Pair<String, String> t1) -> t1.getValue())
+                        .findFirst()
+                        .orElse(null))
 
                 .filter((String t) -> t != null)
                 .collect(Collectors.toList());

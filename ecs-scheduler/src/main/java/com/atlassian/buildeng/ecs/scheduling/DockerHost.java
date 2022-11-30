@@ -48,16 +48,15 @@ public class DockerHost {
 
     @TestOnly
     DockerHost(int remainingMemory,
-               int remainingCpu,
-               int registeredMemory,
-               int registeredCpu,
-               String containerInstanceArn,
-               String instanceId,
-               String status,
-               Date launchTime,
-               boolean agentConnected,
-               String instanceType
-    ) {
+            int remainingCpu,
+            int registeredMemory,
+            int registeredCpu,
+            String containerInstanceArn,
+            String instanceId,
+            String status,
+            Date launchTime,
+            boolean agentConnected,
+            String instanceType) {
         this.remainingMemory = remainingMemory;
         this.remainingCpu = remainingCpu;
         this.registeredMemory = registeredMemory;
@@ -71,10 +70,10 @@ public class DockerHost {
     }
 
     public DockerHost(ContainerInstance containerInstance, Instance instance, boolean inASG) throws ECSException {
-        remainingMemory  = getIntegralResource(containerInstance, true,  "MEMORY");
-        remainingCpu     = getIntegralResource(containerInstance, true,  "CPU");
+        remainingMemory = getIntegralResource(containerInstance, true, "MEMORY");
+        remainingCpu = getIntegralResource(containerInstance, true, "CPU");
         registeredMemory = getIntegralResource(containerInstance, false, "MEMORY");
-        registeredCpu    = getIntegralResource(containerInstance, false, "CPU");
+        registeredCpu = getIntegralResource(containerInstance, false, "CPU");
         containerInstanceArn = containerInstance.getContainerInstanceArn();
         instanceId = containerInstance.getEc2InstanceId();
         status = containerInstance.getStatus();
@@ -84,16 +83,19 @@ public class DockerHost {
         attributes = containerInstance.getAttributes();
     }
 
-    private static int getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name) throws ECSException {
-        List<Resource> resources = isRemaining ? containerInstance.getRemainingResources() : containerInstance.getRegisteredResources();
-        return resources.stream()
+    private static int getIntegralResource(ContainerInstance containerInstance, Boolean isRemaining, String name)
+            throws ECSException {
+        List<Resource> resources =
+                isRemaining ? containerInstance.getRemainingResources() : containerInstance.getRegisteredResources();
+        return resources
+                .stream()
                 .filter(resource -> resource.getName().equals(name))
                 .map(Resource::getIntegerValue)
                 .filter(Objects::nonNull) // Apparently Resource::getIntegerValue can be null? but we want an int only.
                 .findFirst()
-                .orElseThrow(() -> new ECSException(String.format(
-                        "Container Instance %s missing '%s' resource", containerInstance.getContainerInstanceArn(), name
-                )));
+                .orElseThrow(() -> new ECSException(String.format("Container Instance %s missing '%s' resource",
+                        containerInstance.getContainerInstanceArn(),
+                        name)));
     }
 
     public boolean canRun(int requiredMemory, int requiredCpu) {
@@ -119,7 +121,7 @@ public class DockerHost {
         return (o1, o2) -> {
             if (o1.remainingMemory == o2.remainingMemory) {
                 if (o1.remainingCpu == o2.remainingCpu) {
-                    //for equals utilization we value older instances higher due to existing caches.
+                    // for equals utilization we value older instances higher due to existing caches.
                     // we want it to come first
                     return o1.launchTime.compareTo(o2.launchTime);
                 } else {
@@ -138,11 +140,11 @@ public class DockerHost {
     public int getRemainingCpu() {
         return remainingCpu;
     }
-    
+
     public void reduceAvailableCpuBy(int cpu) {
         remainingCpu = remainingCpu - cpu;
     }
-    
+
     public void reduceAvailableMemoryBy(int memory) {
         remainingMemory = remainingMemory - memory;
     }
@@ -168,7 +170,7 @@ public class DockerHost {
     public boolean isPresentInASG() {
         return presentInASG;
     }
-    
+
     public boolean getAgentConnected() {
         return agentConnected;
     }
@@ -192,7 +194,9 @@ public class DockerHost {
 
         DockerHost that = (DockerHost) o;
 
-        if (containerInstanceArn != null ? !containerInstanceArn.equals(that.containerInstanceArn) : that.containerInstanceArn != null) {
+        if (containerInstanceArn != null
+                ? !containerInstanceArn.equals(that.containerInstanceArn)
+                : that.containerInstanceArn != null) {
             return false;
         }
         if (instanceId != null ? !instanceId.equals(that.instanceId) : that.instanceId != null) {
@@ -210,24 +214,36 @@ public class DockerHost {
     }
 
     public String getContainerAttribute(String name) {
-        return attributes.stream()
+        return attributes
+                .stream()
                 .filter((Attribute t) -> name.equals(t.getName()))
-                .map((Attribute t) ->  t.getValue())
-                .findFirst().orElse(null);
+                .map((Attribute t) -> t.getValue())
+                .findFirst()
+                .orElse(null);
     }
 
 
     @Override
     public String toString() {
-        return "DockerHost{"
-                + "remainingMemory=" + remainingMemory
-                + ", remainingCpu=" + remainingCpu
-                + ", registeredMemory=" + registeredMemory
-                + ", registeredCpu=" + registeredCpu
-                + ", containerInstanceArn='" + containerInstanceArn + '\''
-                + ", instanceId='" + instanceId + '\''
-                + ", launchTime=" + launchTime
-                + ", agentConnected=" + agentConnected
-                + '}';
+        return "DockerHost{" +
+                "remainingMemory=" +
+                remainingMemory +
+                ", remainingCpu=" +
+                remainingCpu +
+                ", registeredMemory=" +
+                registeredMemory +
+                ", registeredCpu=" +
+                registeredCpu +
+                ", containerInstanceArn='" +
+                containerInstanceArn +
+                '\'' +
+                ", instanceId='" +
+                instanceId +
+                '\'' +
+                ", launchTime=" +
+                launchTime +
+                ", agentConnected=" +
+                agentConnected +
+                '}';
     }
 }

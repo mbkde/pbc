@@ -30,8 +30,7 @@ public class AgentRegisteredListener {
     private final UnmetRequirements unmetRequirements;
     private final JMXAgentsService jmx;
 
-    public AgentRegisteredListener(UnmetRequirements unmetRequirements, 
-            JMXAgentsService jmx) {
+    public AgentRegisteredListener(UnmetRequirements unmetRequirements, JMXAgentsService jmx) {
         this.unmetRequirements = unmetRequirements;
         this.jmx = jmx;
     }

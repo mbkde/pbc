@@ -45,10 +45,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.component.LifeCycle;
 
-/**
- * Created by ojongerius on 09/05/2016.
- */
-
 public class SchedulerApplication extends io.dropwizard.Application<Configuration> {
 
     public SchedulerApplication() {
@@ -56,17 +52,20 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
 
     public static void main(String[] args) throws Exception {
         validateEnvironment();
-        new SchedulerApplication().run(new String[] {"server"});
+        new SchedulerApplication().run(new String[]{"server"});
     }
 
     private static void validateEnvironment() {
-        if (StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_ASG))
-            || StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_CLUSTER))
-            || StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_TASK_DEF))) {
-            throw new IllegalStateException("Environment variables "
-                    + ECSConfigurationImpl.ECS_ASG + ", "
-                    + ECSConfigurationImpl.ECS_CLUSTER + ", "
-                    + ECSConfigurationImpl.ECS_TASK_DEF +  " are mandatory.");
+        if (StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_ASG)) ||
+                StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_CLUSTER)) ||
+                StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_TASK_DEF))) {
+            throw new IllegalStateException("Environment variables " +
+                    ECSConfigurationImpl.ECS_ASG +
+                    ", " +
+                    ECSConfigurationImpl.ECS_CLUSTER +
+                    ", " +
+                    ECSConfigurationImpl.ECS_TASK_DEF +
+                    " are mandatory.");
         }
     }
 
@@ -76,12 +75,11 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
     }
 
     @Override
-    public void run(Configuration configuration,
-                    Environment environment) {
+    public void run(Configuration configuration, Environment environment) {
         Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                //system environment mapped to @Named, sort of shortcut
+                // system environment mapped to @Named, sort of shortcut
                 Map<String, String> props = new HashMap<>(System.getenv());
                 if (!props.containsKey(ECSConfigurationImpl.ECS_LOG_DRIVER)) {
                     props.put(ECSConfigurationImpl.ECS_LOG_DRIVER, "");
@@ -106,7 +104,7 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
                 Names.bindProperties(binder(), props);
             }
         });
-        //make sure to close datadog before stopping.
+        // make sure to close datadog before stopping.
         environment.lifecycle().addLifeCycleListener(new AbstractLifeCycle.AbstractLifeCycleListener() {
             @Override
             public void lifeCycleStopping(LifeCycle event) {
@@ -115,6 +113,7 @@ public class SchedulerApplication extends io.dropwizard.Application<Configuratio
                     try {
                         ((Closeable) ep).close();
                     } catch (IOException ex) {
+                        // do nothing
                     }
                 }
             }

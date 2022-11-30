@@ -22,8 +22,9 @@ package com.atlassian.buildeng.spi.isolated.docker;
  * Implementations to be registered in atlassian-plugin.xml file, eg.
  * <code>
  * &lt;hostFolderMapping key="metrics" class="com.atlassian.buildeng.ecs.metrics.MetricHostFolderMapping"&gt;
-   &lt;/hostFolderMapping&gt;
+ * &lt;/hostFolderMapping&gt;
  * </code>
+ *
  * @author mkleint
  */
 public interface HostFolderMapping {
@@ -31,7 +32,7 @@ public interface HostFolderMapping {
     String getVolumeName();
 
     String getHostPath();
-    
+
     String getContainerPath();
-    
+
 }

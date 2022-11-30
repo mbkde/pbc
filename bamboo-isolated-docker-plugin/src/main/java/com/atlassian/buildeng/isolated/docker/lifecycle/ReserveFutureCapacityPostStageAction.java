@@ -35,13 +35,14 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
     }
 
     @Override
-    public void execute(ChainResultsSummary chainResultsSummary, ChainStageResult chainStageResult,
+    public void execute(ChainResultsSummary chainResultsSummary,
+            ChainStageResult chainStageResult,
             StageExecution stageExecution) throws InterruptedException, Exception {
-        //cleanup future reservations in case of failure.
+        // cleanup future reservations in case of failure.
         FutureState state = retrieveFutureState(stageExecution);
         boolean successful = chainStageResult.isSuccessful();
         switch (state) {
-            case RESERVED :
+            case RESERVED:
                 if (successful) {
                     logger.info("True-Positive prescheduling for {}", chainResultsSummary.getPlanResultKey().getKey());
                 } else {
@@ -66,7 +67,9 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
 
     static void storeFutureState(StageExecution stageExecution,
             ReserveFutureCapacityPostStageAction.FutureState state) {
-        stageExecution.getBuilds().stream()
+        stageExecution
+                .getBuilds()
+                .stream()
                 .map(BuildExecution::getBuildContext)
                 .map(BuildContext::getBuildResult)
                 .forEach((CurrentBuildResult t) -> {
@@ -76,7 +79,9 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
 
 
     static FutureState retrieveFutureState(StageExecution stageExecution) {
-        return stageExecution.getBuilds().stream()
+        return stageExecution
+                .getBuilds()
+                .stream()
                 .map(BuildExecution::getBuildContext)
                 .map(BuildContext::getBuildResult)
                 .map((CurrentBuildResult t) -> {
@@ -89,7 +94,7 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
 
 
     public static enum FutureState {
-        RESERVED, //we have some future PBC jobs and we reserved space
+        RESERVED, // we have some future PBC jobs and we reserved space
         NOT_RESERVED, // we have some future PBC jobs but didn't reserve space
         NOT_APPLICABLE // we don't have future PBC jobs at all.
     }

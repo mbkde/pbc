@@ -70,29 +70,40 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                 buildLogger.addErrorLogEntry("No SecureToken found in custom build data.");
                 return;
             }
-            //arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
+            // arn:aws:ecs:us-east-1:960714566901:task/c15f4e79-6eb9-4051-9951-018916920a9a
             String taskId = taskArn.substring(taskArn.indexOf("/"));
-            File rootFolder = new File(MetricHostFolderMapping.CONTAINER_METRICS_PATH  + "/tasks");
+            File rootFolder = new File(MetricHostFolderMapping.CONTAINER_METRICS_PATH + "/tasks");
             File taskFolder = new File(rootFolder, taskId);
             if (taskFolder.isDirectory()) {
 
-                final Map<String, String> artifactHandlerConfiguration = BuildContextHelper.getArtifactHandlerConfiguration(buildContext);
-                File buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext)buildContext);
+                final Map<String, String> artifactHandlerConfiguration =
+                        BuildContextHelper.getArtifactHandlerConfiguration(buildContext);
+                File buildWorkingDirectory = BuildContextHelper.getBuildWorkingDirectory((CommonContext) buildContext);
                 final SecureToken secureToken = SecureToken.createFromString(token);
 
                 List<String> names = new ArrayList<>();
-                for (File containerFolder : taskFolder.listFiles((File pathname) -> pathname.isDirectory() && !"~internal~ecs-emptyvolume-source".equals(pathname.getName()) &&  !"bamboo-agent-sidekick".equals(pathname.getName()))) {
+                for (File containerFolder : taskFolder.listFiles((File pathname) -> pathname.isDirectory() &&
+                        !"~internal~ecs-emptyvolume-source".equals(pathname.getName()) &&
+                        !"bamboo-agent-sidekick".equals(pathname.getName()))) {
                     long startTime;
                     long endTime;
                     try {
                         new File(containerFolder, "stop").createNewFile();
-                        Thread.sleep(100); //sleep a bit to make sure the provider is no longer writing there.
-                        startTime = Long.parseLong(FileUtils.readFileToString(new File(containerFolder, "start.txt"), Charset.defaultCharset()).trim());
-                        endTime = Long.parseLong(FileUtils.readFileToString(new File(containerFolder, "end.txt"), Charset.defaultCharset()).trim());
-                        //rrd4j has it's own format, we need to convert from rrd first
-                        RrdDb rrd = new RrdDb(new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "rrdtool:/" + new File(containerFolder, "cpu.usage.rrd").getAbsolutePath(), new RrdSafeFileBackendFactory());
+                        Thread.sleep(100); // sleep a bit to make sure the provider is no longer writing there.
+                        startTime = Long.parseLong(FileUtils
+                                .readFileToString(new File(containerFolder, "start.txt"), Charset.defaultCharset())
+                                .trim());
+                        endTime = Long.parseLong(FileUtils
+                                .readFileToString(new File(containerFolder, "end.txt"), Charset.defaultCharset())
+                                .trim());
+                        // rrd4j has it's own format, we need to convert from rrd first
+                        RrdDb rrd = new RrdDb(new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
+                                "rrdtool:/" + new File(containerFolder, "cpu.usage.rrd").getAbsolutePath(),
+                                new RrdSafeFileBackendFactory());
                         rrd.close();
-                        RrdDb rrd2 = new RrdDb(new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "rrdtool:/" + new File(containerFolder, "memory.usage.rrd").getAbsolutePath(), new RrdSafeFileBackendFactory());
+                        RrdDb rrd2 = new RrdDb(new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                                "rrdtool:/" + new File(containerFolder, "memory.usage.rrd").getAbsolutePath(),
+                                new RrdSafeFileBackendFactory());
                         rrd2.close();
 
                     } catch (IOException | InterruptedException | NumberFormatException ex) {
@@ -104,15 +115,39 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                     targetDir.mkdirs();
                     String cpuName = containerFolder.getName() + "-cpu";
                     String memoryName = containerFolder.getName() + "-memory";
-                    generateCpuPng(createGraphDef(startTime, endTime, containerFolder.getName() + " CPU Usage", "CPU Cores", targetDir, cpuName + ".png"), containerFolder, buildLogger);
-                    generateMemoryPng(createGraphDef(startTime, endTime, containerFolder.getName() + " Memory Usage", "Memory Usage", targetDir, memoryName + ".png"), containerFolder, buildLogger);
-                    publishMetrics(cpuName, ".png", secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
-                    publishMetrics(memoryName, ".png", secureToken, buildLogger, buildWorkingDirectory, artifactHandlerConfiguration, buildContext);
+                    generateCpuPng(createGraphDef(startTime,
+                            endTime,
+                            containerFolder.getName() + " CPU Usage",
+                            "CPU Cores",
+                            targetDir,
+                            cpuName + ".png"), containerFolder, buildLogger);
+                    generateMemoryPng(createGraphDef(startTime,
+                            endTime,
+                            containerFolder.getName() + " Memory Usage",
+                            "Memory Usage",
+                            targetDir,
+                            memoryName + ".png"), containerFolder, buildLogger);
+                    publishMetrics(cpuName,
+                            ".png",
+                            secureToken,
+                            buildLogger,
+                            buildWorkingDirectory,
+                            artifactHandlerConfiguration,
+                            buildContext);
+                    publishMetrics(memoryName,
+                            ".png",
+                            secureToken,
+                            buildLogger,
+                            buildWorkingDirectory,
+                            artifactHandlerConfiguration,
+                            buildContext);
                     names.add(ARTIFACT_PREFIX + cpuName);
                     names.add(ARTIFACT_PREFIX + memoryName);
                 }
-                buildContext.getCurrentResult().getCustomBuildData().put(
-                        ECSViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
+                buildContext
+                        .getCurrentResult()
+                        .getCustomBuildData()
+                        .put(ECSViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
             } else {
                 buildLogger.addBuildLogEntry("Folder with metrics data not mounted");
             }
@@ -120,10 +155,19 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
     }
 
     private void generateCpuPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {
-        gDef.datasource("user", new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "user", ConsolFun.AVERAGE);
-        gDef.datasource("system", new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "system", ConsolFun.AVERAGE);
-        gDef.datasource("throttled", new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "throttled", ConsolFun.AVERAGE);
-        gDef.datasource("user_sec", "user,100,/"); //10-millisecond --> seconds
+        gDef.datasource("user",
+                new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
+                "user",
+                ConsolFun.AVERAGE);
+        gDef.datasource("system",
+                new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
+                "system",
+                ConsolFun.AVERAGE);
+        gDef.datasource("throttled",
+                new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
+                "throttled",
+                ConsolFun.AVERAGE);
+        gDef.datasource("user_sec", "user,100,/"); // 10-millisecond --> seconds
         gDef.datasource("system_sec", "system,100,/");
         gDef.datasource("throttled_sec", "throttled,100,/");
         gDef.datasource("user_min", "user_sec", ConsolFun.MIN.getVariable());
@@ -155,7 +199,12 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
         }
     }
 
-    private RrdGraphDef createGraphDef(long startTime, long endTime, String title, String vertLabel, File targetFolder, String targetName) {
+    private RrdGraphDef createGraphDef(long startTime,
+            long endTime,
+            String title,
+            String vertLabel,
+            File targetFolder,
+            String targetName) {
         RrdGraphDef gDef = new RrdGraphDef();
         gDef.setImageFormat("png");
         gDef.setWidth(800);
@@ -170,11 +219,26 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
     }
 
     private void generateMemoryPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {
-        gDef.datasource("cache", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "cache", ConsolFun.AVERAGE);
-        gDef.datasource("rss", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "rss", ConsolFun.AVERAGE);
-        gDef.datasource("swap", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "swap", ConsolFun.AVERAGE);
-        gDef.datasource("total", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "total", ConsolFun.AVERAGE);
-        gDef.datasource("limit", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "limit", ConsolFun.AVERAGE);
+        gDef.datasource("cache",
+                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                "cache",
+                ConsolFun.AVERAGE);
+        gDef.datasource("rss",
+                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                "rss",
+                ConsolFun.AVERAGE);
+        gDef.datasource("swap",
+                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                "swap",
+                ConsolFun.AVERAGE);
+        gDef.datasource("total",
+                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                "total",
+                ConsolFun.AVERAGE);
+        gDef.datasource("limit",
+                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                "limit",
+                ConsolFun.AVERAGE);
 
         gDef.datasource("cache_min", "cache", ConsolFun.MIN.getVariable());
         gDef.datasource("cache_avg", "cache", ConsolFun.AVERAGE.getVariable());

@@ -29,7 +29,6 @@ public final class StoppedState {
     }
 
 
-
     public String getArn() {
         return arn;
     }

@@ -19,8 +19,8 @@ package it.com.atlassian.buildeng.kubernetes;
 import static com.atlassian.pageobjects.elements.query.Conditions.forSupplier;
 import static com.atlassian.pageobjects.elements.query.Poller.waitUntilTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.atlassian.bamboo.plan.PlanKey;
 import com.atlassian.bamboo.plan.PlanKeys;
@@ -45,14 +45,14 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 /**
- * Tests UI elements are visible or hidden depending on vendor choice
+ * Tests UI elements are visible or hidden depending on vendor choice.
  */
 public class AwsVendorTest extends AbstractPbcTest {
     @Test
     public void awsVendorMakesUIElementsVisible() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
-        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME); //dismiss H2 warning
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME); // dismiss H2 warning
         updateGenericPerBuildContainerConfigurationPage(true, true);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
@@ -71,12 +71,12 @@ public class AwsVendorTest extends AbstractPbcTest {
     public void someElementsAreNotVisibleWhenNonAwsVendorIsChosen() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
-        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  //dismiss H2 warning
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  // dismiss H2 warning
         updateGenericPerBuildContainerConfigurationPage(false, true);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
         k8sGenericConfigPage.setSidekickImage("docker.atl-paas.net/sox/buildeng/bamboo-agent-sidekick:latest");
-        //confirm some elements are hidden when AWS vendor is not chosen
+        // confirm some elements are hidden when AWS vendor is not chosen
         assertFalse(k8sGenericConfigPage.isIamRequestTemplateVisible());
         assertFalse(k8sGenericConfigPage.isIamSubjectIdPrefixVisible());
         k8sGenericConfigPage.save();
@@ -89,7 +89,7 @@ public class AwsVendorTest extends AbstractPbcTest {
     public void allElementsNotVisibleWhenPluginDisabled() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
-        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  //dismiss H2 warning
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  // dismiss H2 warning
         updateGenericPerBuildContainerConfigurationPage(false, false);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
@@ -123,8 +123,8 @@ public class AwsVendorTest extends AbstractPbcTest {
 
     private void assertDeploymentSpecificAwsControlsVisible(PlanKey planKey, boolean isVisible) throws Exception {
         Deployment deployment = new Deployment(new PlanIdentifier(PlanKeys.getProjectKeyPart(planKey),
-                PlanKeys.getPlanKeyPart(planKey)),
-                UniqueNameHelper.makeUniqueName("DEPL")).releaseNaming(new ReleaseNaming("version-1"))
+                PlanKeys.getPlanKeyPart(planKey)), UniqueNameHelper.makeUniqueName("DEPL"))
+                .releaseNaming(new ReleaseNaming("version-1"))
                 .environments(new Environment(UniqueNameHelper.makeUniqueName("ENV")));
         long deploymentId = backdoor.deployments().createOrUpdateDeploymentProject(deployment);
 

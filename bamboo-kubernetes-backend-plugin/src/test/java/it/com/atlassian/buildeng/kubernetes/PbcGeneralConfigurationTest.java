@@ -23,8 +23,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import com.atlassian.bamboo.testutils.user.TestUser;
-import com.atlassian.pageobjects.elements.timeout.TimeoutType;
 import com.atlassian.buildeng.kubernetes.pageobject.GenericPerBuildContainerConfigurationPage;
+import com.atlassian.pageobjects.elements.timeout.TimeoutType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 

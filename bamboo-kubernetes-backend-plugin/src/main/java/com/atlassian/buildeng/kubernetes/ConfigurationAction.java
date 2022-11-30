@@ -29,8 +29,8 @@ public class ConfigurationAction extends GlobalAdminAction {
 
     @Inject
     public ConfigurationAction(BandanaManager bandanaManager,
-                               AuditLogService auditLogService,
-                               BambooAuthenticationContext authenticationContext) {
+            AuditLogService auditLogService,
+            BambooAuthenticationContext authenticationContext) {
         this.globalConfiguration = new GlobalConfiguration(bandanaManager, auditLogService, authenticationContext);
     }
 
