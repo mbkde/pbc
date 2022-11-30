@@ -141,42 +141,42 @@ To run integration tests locally, you need to prepare your environment first. De
 found in: https://hello.atlassian.net/wiki/spaces/BAMBOO/pages/1536591697/Setup+Kubernetes+at+dev+environment.
 In short, to run tests:
 
-* if you're on macbook, ensure webdriver can resolve local host address:
-    * webdriver tests use the macbook `serial number` for the local host address
-    * click Apple Menu icon in the top left corner, and then click `About this mac`
-    * copy the serial number (e.g. `C02DG123AB1C`)
-    * add following line to the bottom of the `/etc/hosts` file
+* If you're on macbook, ensure webdriver can resolve local host address:
+    * Webdriver tests use the macbook `serial number` for the local host address
+    * Click Apple Menu icon in the top left corner, and then click `About this mac`
+    * Copy the serial number (e.g. `C02DG123AB1C`)
+    * Add following line to the bottom of the `/etc/hosts` file
   ```
   127.0.0.1 <your serial number>
   ```
-* install Docker Desktop & kubectl
-* if you are a user of the KITT CLI, you will need to reset your `$KUBECONFIG`, as the CLI will point this to a
-  different place
-   ```shell
+* Install Docker Desktop & `kubectl`
+* If you are a user of the KITT CLI, you will need to reset your `$KUBECONFIG` in each new shell you open, as the CLI
+  will point this to a different place
+  ```shell
   # Prefix each command
   KUBECONFIG=$HOME/.kube/config kubectl your command here 
   
   # or export it once before running any commands
   export KUBECONFIG=$HOME/.kube/config
   ```
-* configure kubectl to use Docker Desktop as the current context:
-    ```shell
-    kubectl config use-context docker-desktop
-    ```
-* create secret to pull images from docker.atl-paas.net:
-    ```shell
-    kubectl create secret docker-registry docker-atl-paas-registry --docker-server=docker.atl-paas.net --docker-username=<user> --docker-password=<API_KEY> --docker-email=<user@atlassian.com> --context docker-desktop
-    ```
-    * Get API key from https://packages.atlassian.com/ui/admin/artifactory/user_profile
-* start bamboo:
-    ```shell
-    atlas-debug
-    ```
-* make sure that Bamboo `base` and `broker client` urls are not set to `localhost`, but use address accessible from a
+* Configure kubectl to use Docker Desktop as the current context:
+  ```shell
+  kubectl config use-context docker-desktop
+  ```
+* Create secret to pull images from docker.atl-paas.net:
+  ```shell
+  kubectl create secret docker-registry docker-atl-paas-registry --docker-server=docker.atl-paas.net --docker-username=<user> --docker-password=<API_KEY> --docker-email=<user@atlassian.com> --context docker-desktop
+  ```
+* Get API key from https://packages.atlassian.com/ui/admin/artifactory/user_profile
+* Start Bamboo:
+  ```shell
+  atlas-debug
+  ```
+* Make sure that Bamboo `base` and `broker client` urls are not set to `localhost`, but use address accessible from a
   docker container (e.g. your local IP), so agents will be able to access server from a pod
-    * you can configure the `base` and `broker client` urls in `Administration` > `System` > `General configuration`
-* uncomment the `imagePullSecrets` property in the `src/test/resources/basePodTemplate.yaml` to use the secret for
+    * You can configure the `base` and `broker client` urls in `Administration` > `System` > `General configuration`
+* Uncomment the `imagePullSecrets` property in the `src/test/resources/basePodTemplate.yaml` to use the secret for
   docker.atl-paas.net
-* run `it.com.atlassian.buildeng.kubernetes.PbcSetupTest` (e.g. through Maven or your IDE, not through the wired test
+* Run `it.com.atlassian.buildeng.kubernetes.PbcSetupTest` (e.g. through Maven or your IDE, not through the wired test
   console in the Bamboo dev toolbox). It will configure PBC
   automatically for you
