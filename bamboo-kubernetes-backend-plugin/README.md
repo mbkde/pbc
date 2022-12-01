@@ -126,7 +126,7 @@ Advanced and Miscellaneous
 ========
 
 If you are running Prometheus in the cluster, you can make use of
-the [PBC Kubernetes Metrics plugin](../bamboo-kubernetes-metrics-plugin/)
+the [PBC Kubernetes Metrics plugin](../bamboo-kubernetes-metrics-plugin)
 and collect per agent metrics via Prometheus.
 
 To access AWS resources, we are running a combination of Kube secrets and https://github.com/jtblin/kube2iam as service
@@ -178,5 +178,4 @@ In short, to run tests:
 * Uncomment the `imagePullSecrets` property in the `src/test/resources/basePodTemplate.yaml` to use the secret for
   docker.atl-paas.net
 * Run `it.com.atlassian.buildeng.kubernetes.PbcSetupTest` (e.g. through Maven or your IDE, not through the wired test
-  console in the Bamboo dev toolbox). It will configure PBC
-  automatically for you
+  console in the Bamboo dev toolbox). It will configure PBC automatically for you
