@@ -18,6 +18,7 @@ package com.atlassian.buildeng.kubernetes;
 
 import com.atlassian.bamboo.plan.PlanKeys;
 import com.atlassian.bamboo.plan.PlanResultKey;
+import com.atlassian.bamboo.utils.SystemProperty;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
@@ -130,6 +131,8 @@ public class PodCreator {
     private static final boolean GENERATE_SHM_VOLUME =
             Boolean.parseBoolean(System.getProperty("pbc.kube.shm.generate", "true"));
 
+    private static final String IMAGE_PULL_POLICY =
+            new SystemProperty(false, "atlassian.bamboo.pbc.image.pull.policy").getValue("Always");
 
     static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
         Map<String, Object> root = new HashMap<>();
@@ -188,7 +191,7 @@ public class PodCreator {
             Map<String, Object> map = new HashMap<>();
             map.put("name", t.getName());
             map.put("image", sanitizeImageName(t.getImage()));
-            map.put("imagePullPolicy", "Always");
+            map.put("imagePullPolicy", IMAGE_PULL_POLICY);
             ContainerSizeDescriptor sizeDescriptor = globalConfiguration.getSizeDescriptor();
             map.put("resources",
                     createResources(sizeDescriptor.getMemory(t.getExtraSize()),
@@ -405,7 +408,7 @@ public class PodCreator {
         Map<String, Object> map = new HashMap<>();
         map.put("name", "bamboo-agent-sidekick");
         map.put("image", sanitizeImageName(currentSidekick));
-        map.put("imagePullPolicy", "Always");
+        map.put("imagePullPolicy", IMAGE_PULL_POLICY);
         map.put("command",
                 ImmutableList.of("sh",
                         "-c",
@@ -449,7 +452,7 @@ public class PodCreator {
         Map<String, Object> map = new HashMap<>();
         map.put("name", CONTAINER_NAME_BAMBOOAGENT);
         map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
-        map.put("imagePullPolicy", "Always");
+        map.put("imagePullPolicy", IMAGE_PULL_POLICY);
         map.put("workingDir", WORK_DIR);
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
         map.put("env", createMainContainerEnvs(globalConfiguration, r));
