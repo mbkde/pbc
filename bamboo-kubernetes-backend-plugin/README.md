@@ -2,8 +2,7 @@ What is this?
 =====
 
 This is an Atlassian Bamboo plugin that provides per-build container Docker clustering backend based on existing
-Kubernetes
-cluster.
+Kubernetes cluster.
 The plugin will schedule tasks on the cluster only, assumes the kube cluster itself handles scaling up and down.
 
 See the parent [README.md](../README.md) for general description of the functionality.
@@ -50,11 +49,9 @@ users:
   The Bamboo plugin will only add relevant annotations (iam.amazonaws.com/role + iam.amazonaws.com/external-id) to the
   Kubernetes pod (https://github.com/jtblin/kube2iam#kubernetes-annotation)
   While role is configurable by user, external-id is generated per plan/deployment to uniquely identify the plan in
-  question. That way only certain builds
-  can be whitelisted to be able to assume given role.
+  question. That way only certain builds can be whitelisted to be able to assume given role.
   If a default fallback IAM role or plain one role per Bamboo server is required, it has to be defined as part of the
-  Pod template global
-  configuration. See below for example.
+  Pod template global  configuration. See below for example.
 
 Usage
 =====
@@ -116,8 +113,7 @@ spec:
 ```
 
 Optionally, if your kubernetes cluster is configured to send container logs to Splunk or similar log management
-solutions,
-you can define an URL template to link the container logs from the build result page.
+solutions, you can define an URL template to link the container logs from the build result page.
 
 ![PBC Kubernetes Backend](../images/kube-configuration.png)
 
