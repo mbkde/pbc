@@ -45,6 +45,9 @@ limitations under the License.
                         <bamboo.context.batching.disable>true</bamboo.context.batching.disable>
                         <plugin.webresource.batching.off>true</plugin.webresource.batching.off>
                     </systemProperties>
+                    <systemPropertyVariables>
+                        <atlassian.bamboo.pbc.image.pull.policy>IfNotPresent</atlassian.bamboo.pbc.image.pull.policy>
+                    </systemPropertyVariables>
                     <products>
                         <product>
                             <id>bamboo</id>
@@ -62,17 +65,31 @@ limitations under the License.
                                     <artifactId>bamboo-isolated-docker-plugin</artifactId>
                                     <version>${project.version}</version>
                                 </pluginArtifact>
+                                <pluginArtifact>
+                                    <groupId>com.atlassian.bamboo.plugins</groupId>
+                                    <artifactId>atlassian-bamboo-plugin-test-utils</artifactId>
+                                    <version>${bamboo.version}</version>
+                                </pluginArtifact>
                             </pluginArtifacts>
                         </product>
                     </products>
                     <testGroups>
                         <testGroup>
-                            <id>integration-tests</id>
+                            <id>pbc-integration-tests-ui</id>
                             <productIds>
                                 <productId>bamboo</productId>
                             </productIds>
                             <includes>
-                                <include>it/**/*Test.java</include>
+                                <include>it/com/atlassian/buildeng/kubernetes/PbcIntegrationTestUi.java</include>
+                            </includes>
+                        </testGroup>
+                        <testGroup>
+                            <id>pbc-integration-tests-kubernetes</id>
+                            <productIds>
+                                <productId>bamboo</productId>
+                            </productIds>
+                            <includes>
+                                <include>it/com/atlassian/buildeng/kubernetes/PbcIntegrationTestKubernetes.java</include>
                             </includes>
                         </testGroup>
                     </testGroups>
@@ -110,6 +127,7 @@ limitations under the License.
             </plugin>
         </plugins>
     </build>
+
     <dependencies>
         <dependency>
             <groupId>com.atlassian.bamboo</groupId>
@@ -289,9 +307,10 @@ limitations under the License.
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
     <profiles>
         <profile>
-            <id>integration-tests</id>
+            <id>integration-tests-ui</id>
             <activation>
                 <property>
                     <name>server</name>
@@ -300,7 +319,22 @@ limitations under the License.
             </activation>
             <properties>
                 <maven.test.it.skip>false</maven.test.it.skip>
+                <testGroups>pbc-integration-tests-ui</testGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-tests-full</id>
+            <activation>
+                <property>
+                    <name>server</name>
+                    <value>localhost</value>
+                </property>
+            </activation>
+            <properties>
+                <maven.test.it.skip>false</maven.test.it.skip>
+                <testGroups>pbc-integration-tests-ui,pbc-integration-tests-kubernetes</testGroups>
             </properties>
         </profile>
     </profiles>
+
 </project>
