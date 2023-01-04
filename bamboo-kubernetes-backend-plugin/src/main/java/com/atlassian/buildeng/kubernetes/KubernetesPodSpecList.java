@@ -51,8 +51,8 @@ public class KubernetesPodSpecList {
 
     @Inject
     public KubernetesPodSpecList(GlobalConfiguration globalConfiguration,
-                                 BandanaManager bandanaManager,
-                                 DarkFeatureManager darkFeatureManager) {
+            BandanaManager bandanaManager,
+            DarkFeatureManager darkFeatureManager) {
         this.globalConfiguration = globalConfiguration;
         this.bandanaManager = bandanaManager;
         this.darkFeatureManager = darkFeatureManager;
@@ -97,10 +97,9 @@ public class KubernetesPodSpecList {
         return podSpecList;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadTemplatePod() {
         Yaml yaml = new Yaml(new SafeConstructor());
-        return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
+        return yaml.load(globalConfiguration.getPodTemplateAsString());
     }
 
     @VisibleForTesting
@@ -110,11 +109,10 @@ public class KubernetesPodSpecList {
             return finalPod;
         }
         Yaml yaml = new Yaml(new SafeConstructor());
-        Map<String, Object> cachePodSpec = (Map<String, Object>) yaml.load(podSpec);
+        Map<String, Object> cachePodSpec = yaml.load(podSpec);
         return mergeMap(finalPod, cachePodSpec);
     }
 
-    @SuppressWarnings("unchecked")
     @VisibleForTesting
     HashSet<String> loadAllowList() {
         String allowList = globalConfiguration.getArtifactoryCacheAllowListAsString();
@@ -122,7 +120,7 @@ public class KubernetesPodSpecList {
             return new HashSet<>();
         }
         Yaml yaml = new Yaml(new SafeConstructor());
-        return new HashSet<>((ArrayList<String>) yaml.load(allowList));
+        return new HashSet<>(yaml.load(allowList));
     }
 
     private boolean isPlanInArtifactoryGlobalAllowList(IsolatedDockerAgentRequest request) {
@@ -149,7 +147,7 @@ public class KubernetesPodSpecList {
 
     @VisibleForTesting
     Map<String, Object> addArchitectureOverrides(IsolatedDockerAgentRequest request,
-                                                 Map<String, Object> podWithoutArchOverrides) {
+            Map<String, Object> podWithoutArchOverrides) {
         Map<String, Object> archConfig = loadArchitectureConfig();
 
         if (archConfig.isEmpty()) {
@@ -160,9 +158,10 @@ public class KubernetesPodSpecList {
                 if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
                     return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
                 } else {
-                    String supportedArchs =
-                            com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getArchitectureConfigWithBandana(
-                                    bandanaManager).keySet().toString();
+                    String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
+                            .getArchitectureConfigWithBandana(bandanaManager)
+                            .keySet()
+                            .toString();
                     throw new IllegalArgumentException("Architecture specified in build configuration was not " +
                             "found in server's allowed architectures list! Supported architectures are: " +
                             supportedArchs);
@@ -174,7 +173,6 @@ public class KubernetesPodSpecList {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadArchitectureConfig() {
         String archConfig = globalConfiguration.getBandanaArchitecturePodConfig();
 
@@ -182,14 +180,13 @@ public class KubernetesPodSpecList {
             return Collections.emptyMap();
         } else {
             Yaml yaml = new Yaml(new SafeConstructor());
-            return (Map<String, Object>) yaml.load(archConfig);
+            return yaml.load(archConfig);
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadTemplateIamRequest() {
         Yaml yaml = new Yaml(new SafeConstructor());
-        return (Map<String, Object>) yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
+        return yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
     }
 
     private File createPodFile(List<Map<String, Object>> podSpecList) throws IOException {
@@ -273,9 +270,9 @@ public class KubernetesPodSpecList {
     }
 
     private static void mergeById(String id,
-                                  ArrayList<Map<String, Object>> lst,
-                                  Collection<Map<String, Object>> originalEntry,
-                                  Collection<Map<String, Object>> u) {
+            ArrayList<Map<String, Object>> lst,
+            Collection<Map<String, Object>> originalEntry,
+            Collection<Map<String, Object>> u) {
         Map<String, Map<String, Object>> containers1 =
                 originalEntry.stream().collect(Collectors.toMap(x -> (String) x.get(id), x -> x));
         Map<String, Map<String, Object>> containers2 =

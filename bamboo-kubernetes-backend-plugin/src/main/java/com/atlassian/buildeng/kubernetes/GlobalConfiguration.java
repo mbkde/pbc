@@ -73,7 +73,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     static String BANDANA_USE_CLUSTER_REGISTRY = "com.atlassian.buildeng.pbc.kubernetes.useClusterRegistry";
     static String BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.available";
     static String BANDANA_CR_PRIMARY_CLUSTER_SELECTOR = "com.atlassian.buildeng.pbc.kubernetes.CR.primary";
-    static String BANDANA_ARTIFACTORY_CACHE_ALLOWLIST = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCacheAllowList";
+    static String BANDANA_ARTIFACTORY_CACHE_ALLOWLIST =
+            "com.atlassian.buildeng.pbc.kubernetes.artifactoryCacheAllowList";
     static String BANDANA_ARTIFACTORY_CACHE_PODSPEC = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCachePodSpec";
 
     private static final String MAIN_PREFIX = "main-";
@@ -360,24 +361,26 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         }
         if (!StringUtils.equals(artifactoryCacheAllowList, getArtifactoryCacheAllowListAsString())) {
             auditLogEntry("PBC Kubernetes Artifactory Cache Allow List",
-                    getArtifactoryCacheAllowListAsString(), artifactoryCacheAllowList);
+                    getArtifactoryCacheAllowListAsString(),
+                    artifactoryCacheAllowList);
             if (StringUtils.isBlank(artifactoryCacheAllowList)) {
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
             } else {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST, artifactoryCacheAllowList);
+                        BANDANA_ARTIFACTORY_CACHE_ALLOWLIST,
+                        artifactoryCacheAllowList);
             }
         }
         if (!StringUtils.equals(artifactoryCachePodSpec, getArtifactoryCachePodSpecAsString())) {
             auditLogEntry("PBC Kubernetes Artifactory Cache Pod Spec",
-                    getArtifactoryCachePodSpecAsString(), artifactoryCachePodSpec);
+                    getArtifactoryCachePodSpecAsString(),
+                    artifactoryCachePodSpec);
             if (StringUtils.isBlank(artifactoryCachePodSpec)) {
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_ARTIFACTORY_CACHE_PODSPEC);
+                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARTIFACTORY_CACHE_PODSPEC);
             } else {
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_ARTIFACTORY_CACHE_PODSPEC, artifactoryCachePodSpec);
+                        BANDANA_ARTIFACTORY_CACHE_PODSPEC,
+                        artifactoryCachePodSpec);
             }
         }
         if (currentContext != null) {
@@ -589,11 +592,14 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
                 Object uncastYaml = rawYaml.load(artifactoryCacheSpec);
                 if (uncastYaml instanceof Map) {
                     yaml = (Map<String, Object>) uncastYaml;
+                    // We don't use this variable, just check that the cast does not cause an exception.
+                    // If we have reached this point, then we are fine.
                 } else {
                     throw new IllegalArgumentException("Artifactory cache spec is not a map!");
                 }
             } catch (YAMLException e) {
-                throw new IllegalArgumentException("Artifactory cache spec is not valid YAML! Error: " + e.getMessage());
+                throw new IllegalArgumentException("Artifactory cache spec is not valid YAML! Error: " +
+                        e.getMessage());
             }
         }
     }
