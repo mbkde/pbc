@@ -18,9 +18,11 @@ package com.atlassian.buildeng.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
@@ -28,6 +30,8 @@ import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.buildeng.kubernetes.rest.Config;
+import java.io.IOException;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,8 +100,41 @@ public class GlobalConfigurationTest {
         }
     }
 
+    private Config mockConfigDefaults() {
+        Config config = mock(Config.class);
+        when(config.getSidekickImage()).thenReturn("sidekick-image");
+        when(config.getCurrentContext()).thenReturn("");
+        when(config.getPodTemplate()).thenReturn("pod-template");
+        when(config.getArchitecturePodConfig()).thenReturn("");
+        when(config.getIamRequestTemplate()).thenReturn("");
+        when(config.getIamSubjectIdPrefix()).thenReturn("");
+        when(config.getPodLogsUrl()).thenReturn("");
+        when(config.getContainerSizes()).thenReturn("{'main':[],'extra':[]}");
+        when(config.isUseClusterRegistry()).thenReturn(false);
+        when(config.getClusterRegistryAvailableSelector()).thenReturn("");
+        when(config.getClusterRegistryPrimarySelector()).thenReturn("");
+        when(config.getArtifactoryCacheAllowList()).thenReturn("");
+        return config;
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testYamlThrowsExceptionIfInvalid() throws IOException {
+        Config config = mockConfigDefaults();
+        when(config.getArtifactoryCachePodSpec()).thenReturn("not a valid yaml string");
+
+        globalConfiguration.persist(config);
+    }
+
     @Test
-    @SuppressWarnings("unchecked")
+    public void testYamlSetCorrectlyWhenValid() throws IOException {
+        Config config = mockConfigDefaults();
+        when(config.getArtifactoryCachePodSpec()).thenReturn("heading:\n  - item");
+
+        globalConfiguration.persist(config);
+        verify(bandanaManager).setValue(any(), eq(GlobalConfiguration.BANDANA_ARTIFACTORY_CACHE_PODSPEC), any());
+    }
+
+    @Test
     public void testContainersMergedByName() {
         assertEquals("httplocalhost6990bamboo", GlobalConfiguration.stripLabelValue("http://localhost:6990/bamboo"));
         assertEquals("httpsstaging-bamboo.internal.atlassian.com",
