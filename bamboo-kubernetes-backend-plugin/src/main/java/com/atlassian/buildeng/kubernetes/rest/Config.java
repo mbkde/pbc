@@ -39,19 +39,19 @@ public class Config {
     }
 
     public Config(String sidekickImage,
-                  String currentContext,
-                  String podTemplate,
-                  String architecturePodConfig,
-                  String iamRequestTemplate,
-                  String iamSubjectIdPrefix,
-                  String podLogsUrl,
-                  String containerSizes,
-                  boolean useClusterRegistry,
-                  String clusterRegistryAvailableSelector,
-                  String clusterRegistryPrimarySelector,
-                  boolean showAwsSpecificFields,
-                  String artifactoryCacheAllowList,
-                  String artifactoryCachePodSpec) {
+            String currentContext,
+            String podTemplate,
+            String architecturePodConfig,
+            String iamRequestTemplate,
+            String iamSubjectIdPrefix,
+            String podLogsUrl,
+            String containerSizes,
+            boolean useClusterRegistry,
+            String clusterRegistryAvailableSelector,
+            String clusterRegistryPrimarySelector,
+            boolean showAwsSpecificFields,
+            String artifactoryCacheAllowList,
+            String artifactoryCachePodSpec) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;

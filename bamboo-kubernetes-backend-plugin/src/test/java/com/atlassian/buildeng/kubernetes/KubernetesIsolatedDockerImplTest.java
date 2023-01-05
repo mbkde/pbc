@@ -143,7 +143,7 @@ public class KubernetesIsolatedDockerImplTest {
         verify(podSpecList).cleanUp(file);
         verify(callback).handle(any(IsolatedDockerAgentResult.class));
     }
-    
+
     // Helper functions
 
     private Pod setupMocksForPodFileDeleted(IsolatedDockerAgentRequest request, String subjectId, File file)

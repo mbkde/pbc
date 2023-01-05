@@ -99,7 +99,8 @@ class BuildProcessorServerImplTest {
     }
 
     private PerBuildContainerForJob createPBCJob() {
-        return new PerBuildContainerForJob().enabled(true)
+        return new PerBuildContainerForJob()
+                .enabled(true)
                 .image("abc123")
                 .size("LARGE_4X")
                 .awsRole("arn:aws:iam::0:role/aws_role")
