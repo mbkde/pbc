@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class JMXAgentsService implements LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(JMXAgentsService.class);
 
-    private AgentCounts agentsCount;
+    private final AgentCounts agentsCount = new AgentCounts();
     private ObjectName name;
 
     @Override
@@ -52,20 +52,16 @@ public class JMXAgentsService implements LifecycleAware {
     @Override
     public void onStart() {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        agentsCount = new AgentCounts();
         try {
             name = new ObjectName("com.atlassian.buildeng.isolated.docker:type=AgentCounts");
             mbs.registerMBean(agentsCount, name);
-            logger.info("Successfully registered mbean {}, confirming object is not null: {}",
-                    name,
-                    agentsCount != null);
+            logger.info("Successfully registered mbean {}", name);
         } catch (MalformedObjectNameException |
                 InstanceAlreadyExistsException |
                 MBeanRegistrationException |
                 NotCompliantMBeanException e) {
             logger.error("Failed to register mbean {}: {}", name, e.getMessage());
         }
-
     }
 
     public void incrementQueued() {
@@ -106,5 +102,4 @@ public class JMXAgentsService implements LifecycleAware {
         agentsCount.throttled25Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(25));
         agentsCount.throttled30Minutes.set(agentsThrottled.numAgentsThrottledLongerThanMinutes(30));
     }
-
 }
