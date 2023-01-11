@@ -198,7 +198,8 @@ public class Rest {
                 .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
                 .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS,
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(cc.getOrDefault(
+                        Configuration.DOCKER_EXTRA_CONTAINERS,
                         "[]")))
                 .build();
     }

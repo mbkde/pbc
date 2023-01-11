@@ -52,7 +52,8 @@ public class SimplePbcBuildTest extends AbstractPbcTest {
         final PlanProperties planProperties = backdoor.plans().createPlan(plan);
 
         final PlanKey defaultJobKey = TestPlanSpecsHelper.getDefaultJobKey(planProperties);
-        bamboo.visit(PerBuildContainerConfigPage.class, defaultJobKey)
+        bamboo
+                .visit(PerBuildContainerConfigPage.class, defaultJobKey)
                 .choosePerBuildContainerPlugin()
                 .setDockerImage(PYTHON_DOCKER_IMAGE)
                 .selectAgentSize("Extra Small")
@@ -62,7 +63,8 @@ public class SimplePbcBuildTest extends AbstractPbcTest {
     }
 
     private void triggerBuildAndAwaitSuccess(PlanKey planKey) {
-        final RestQueuedBuild queuedBuildResponse = backdoor.plans().triggerBuildWithResponse(planKey, Collections.emptyMap());
+        final RestQueuedBuild queuedBuildResponse =
+                backdoor.plans().triggerBuildWithResponse(planKey, Collections.emptyMap());
         final PlanResultKey planResultKey = PlanKeys.getPlanResultKey(queuedBuildResponse.getBuildResultKey());
         backdoor.plans().waitForSuccessfulBuild(planResultKey, PBC_BUILD_WAIT_TIMEOUT);
     }

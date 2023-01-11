@@ -144,7 +144,7 @@ public class KubernetesIsolatedDockerImplTest {
         verify(callback).handle(any(IsolatedDockerAgentResult.class));
     }
 
-    // helper functions
+    // Helper functions
 
     private Pod setupMocksForPodFileDeleted(IsolatedDockerAgentRequest request, String subjectId, File file)
             throws IOException {

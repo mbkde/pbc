@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.spi.isolated.docker;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
@@ -32,6 +33,7 @@ public final class ConfigurationBuilder {
     private boolean enabled = true;
     private final List<Configuration.ExtraContainer> extras = new ArrayList<>();
     private String architecture;
+    private final HashSet<String> featureFlags = new HashSet<>();
 
     private ConfigurationBuilder(String dockerImage) {
         this.dockerImage = dockerImage;
@@ -74,8 +76,20 @@ public final class ConfigurationBuilder {
         return this;
     }
 
+    public ConfigurationBuilder withFeatureFlag(String featureFlag) {
+        if (StringUtils.isNotBlank(featureFlag)) {
+            this.featureFlags.add(featureFlag);
+        }
+        return this;
+    }
+
+    public ConfigurationBuilder withFeatureFlags(HashSet<String> featureFlags) {
+        this.featureFlags.addAll(featureFlags);
+        return this;
+    }
+
     public Configuration build() {
-        return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras);
+        return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras, featureFlags);
     }
 
 }

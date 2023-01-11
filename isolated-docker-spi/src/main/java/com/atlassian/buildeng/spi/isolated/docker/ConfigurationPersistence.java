@@ -23,6 +23,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,17 @@ public class ConfigurationPersistence {
                         Configuration.ExtraContainer extra = ConfigurationPersistence.from(t.getAsJsonObject());
                         if (extra != null) {
                             bld.withExtraContainer(extra);
+                        }
+                    }
+                });
+            }
+            JsonArray flags = jsonobj.getAsJsonArray("featureFlags");
+            if (flags != null) {
+                flags.forEach((JsonElement t) -> {
+                    if (t.isJsonPrimitive()) {
+                        String featureFlag = t.getAsString();
+                        if (featureFlag != null) {
+                            bld.withFeatureFlag(featureFlag);
                         }
                     }
                 });
@@ -96,7 +108,7 @@ public class ConfigurationPersistence {
         return null;
     }
 
-    public static List<Configuration.ExtraContainer> fromJsonString(String source) {
+    public static List<Configuration.ExtraContainer> fromJsonStringToExtraContainers(String source) {
         List<Configuration.ExtraContainer> toRet = new ArrayList<>();
         try {
             JsonElement obj = JsonParser.parseString(source);
@@ -117,12 +129,41 @@ public class ConfigurationPersistence {
         return toRet;
     }
 
+    public static HashSet<String> fromJsonStringToFeatureFlags(String source) {
+        HashSet<String> toRet = new HashSet<String>();
+        try {
+            JsonElement obj = JsonParser.parseString(source);
+            if (obj.isJsonArray()) {
+                JsonArray arr = obj.getAsJsonArray();
+                arr.forEach((JsonElement t) -> {
+                    if (t.isJsonPrimitive()) {
+                        String flag = t.getAsString();
+                        if (flag != null) {
+                            toRet.add(flag);
+                        }
+                    }
+                });
+            }
+        } catch (JsonParseException ex) {
+            logger.debug("failed to parse json", ex);
+        }
+        return toRet;
+    }
+
     public static JsonObject toJson(Configuration conf) {
         JsonObject el = new JsonObject();
         el.addProperty("image", conf.getDockerImage());
         el.addProperty("size", conf.getSize().name());
         el.add("extraContainers", ConfigurationPersistence.toJson(conf.getExtraContainers()));
         return el;
+    }
+
+    public static JsonArray toJson(HashSet<String> featureFlags) {
+        JsonArray arr = new JsonArray();
+        if (featureFlags != null) {
+            featureFlags.forEach(arr::add);
+        }
+        return arr;
     }
 
     public static JsonArray toJson(List<Configuration.ExtraContainer> extraContainers) {

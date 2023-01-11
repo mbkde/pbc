@@ -20,12 +20,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses(
-        {
-                // this needs to be run first
-                PbcSetupTest.class,
+@Suite.SuiteClasses({
+        // this needs to be run first
+        PbcSetupTest.class,
 
-                SimplePbcBuildTest.class
-        })
+        SimplePbcBuildTest.class
+})
 public class PbcIntegrationTestKubernetes {
 }

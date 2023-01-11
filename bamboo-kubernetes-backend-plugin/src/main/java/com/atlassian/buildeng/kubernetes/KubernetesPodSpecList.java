@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -76,6 +77,9 @@ public class KubernetesPodSpecList {
         } else {
             finalPod = podWithoutArchOverrides;
         }
+        if (isArtifactoryCacheEnabled(request)) {
+            finalPod = addCachePodSpec(finalPod);
+        }
 
         List<Map<String, Object>> podSpecList = new ArrayList<>();
         podSpecList.add(finalPod);
@@ -93,10 +97,52 @@ public class KubernetesPodSpecList {
         return podSpecList;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadTemplatePod() {
         Yaml yaml = new Yaml(new SafeConstructor());
-        return (Map<String, Object>) yaml.load(globalConfiguration.getPodTemplateAsString());
+        return yaml.load(globalConfiguration.getPodTemplateAsString());
+    }
+
+    @VisibleForTesting
+    Map<String, Object> addCachePodSpec(Map<String, Object> finalPod) {
+        String podSpec = globalConfiguration.getArtifactoryCachePodSpecAsString();
+        if (podSpec.isEmpty()) {
+            return finalPod;
+        }
+        Yaml yaml = new Yaml(new SafeConstructor());
+        Map<String, Object> cachePodSpec = yaml.load(podSpec);
+        return mergeMap(finalPod, cachePodSpec);
+    }
+
+    @VisibleForTesting
+    HashSet<String> loadAllowList() {
+        String allowList = globalConfiguration.getArtifactoryCacheAllowListAsString();
+        if (allowList.isEmpty()) {
+            return new HashSet<>();
+        }
+        Yaml yaml = new Yaml(new SafeConstructor());
+        return new HashSet<>(yaml.load(allowList));
+    }
+
+    private boolean isPlanInArtifactoryGlobalAllowList(IsolatedDockerAgentRequest request) {
+        String[] resultKeyArray = request.getResultKey().split("-");
+        try {
+            String planKey = resultKeyArray[0] + "-" + resultKeyArray[1];
+            return loadAllowList().contains(planKey);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            logger.error("Cannot determine plan key of request: ", e);
+            return false;
+        }
+    }
+
+    private boolean isArtifactoryCachePlanConfigured(IsolatedDockerAgentRequest request) {
+        logger.info("When checking configuration for plan {} we have these feature flags: {}",
+                request.getResultKey(),
+                String.join(",", request.getConfiguration().getFeatureFlags()));
+        return request.getConfiguration().getFeatureFlags().contains("ARTIFACTORY_CACHE");
+    }
+
+    private boolean isArtifactoryCacheEnabled(IsolatedDockerAgentRequest request) {
+        return isArtifactoryCachePlanConfigured(request) || isPlanInArtifactoryGlobalAllowList(request);
     }
 
     @VisibleForTesting
@@ -127,7 +173,6 @@ public class KubernetesPodSpecList {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadArchitectureConfig() {
         String archConfig = globalConfiguration.getBandanaArchitecturePodConfig();
 
@@ -135,14 +180,13 @@ public class KubernetesPodSpecList {
             return Collections.emptyMap();
         } else {
             Yaml yaml = new Yaml(new SafeConstructor());
-            return (Map<String, Object>) yaml.load(archConfig);
+            return yaml.load(archConfig);
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadTemplateIamRequest() {
         Yaml yaml = new Yaml(new SafeConstructor());
-        return (Map<String, Object>) yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
+        return yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
     }
 
     private File createPodFile(List<Map<String, Object>> podSpecList) throws IOException {

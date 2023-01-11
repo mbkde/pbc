@@ -18,6 +18,7 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.REGULAR, conf.getSize());
         assertEquals(Collections.emptyList(), conf.getExtraContainers());
+        assertEquals(Collections.emptySet(), conf.getFeatureFlags());
     }
 
     @Test
@@ -43,6 +45,7 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals("aaa", conf.getDockerImage());
         assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
         assertEquals(Collections.emptyList(), conf.getExtraContainers());
+        assertEquals(Collections.emptySet(), conf.getFeatureFlags());
     }
 
     @Test
@@ -58,5 +61,25 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals("bbb", extra.getName());
         assertEquals("bbb-image", extra.getImage());
         assertEquals(Configuration.ExtraContainerSize.SMALL, extra.getExtraSize());
+        assertEquals(Collections.emptySet(), conf.getFeatureFlags());
+    }
+
+    @Test
+    public void testVersion4() {
+        String persistedValue =
+                "{'image'='aaa','size'='SMALL','extraContainers':[{'name':'bbb','image':'bbb-image','size':'SMALL'}],'featureFlags':['ccc', 'ddd']}";
+        Configuration conf = ConfigurationPersistence.toConfiguration(persistedValue);
+        assertNotNull(conf);
+        assertEquals("aaa", conf.getDockerImage());
+        assertEquals(Configuration.ContainerSize.SMALL, conf.getSize());
+        assertEquals(1, conf.getExtraContainers().size());
+        Configuration.ExtraContainer extra = conf.getExtraContainers().get(0);
+        assertEquals("bbb", extra.getName());
+        assertEquals("bbb-image", extra.getImage());
+        assertEquals(Configuration.ExtraContainerSize.SMALL, extra.getExtraSize());
+        assertTrue(conf.getFeatureFlags().contains("ccc"),
+                "ccc not found in feature flags: [" + String.join(", ", conf.getFeatureFlags()) + "]");
+        assertTrue(conf.getFeatureFlags().contains("ddd"),
+                "ddd not found in feature flags: [" + String.join(", ", conf.getFeatureFlags()) + "]");
     }
 }

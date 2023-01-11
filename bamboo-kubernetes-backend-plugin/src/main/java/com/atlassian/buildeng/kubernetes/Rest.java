@@ -83,6 +83,8 @@ public class Rest {
         c.setUseClusterRegistry(configuration.isUseClusterRegistry());
         c.setClusterRegistryAvailableSelector(configuration.getClusterRegistryAvailableClusterSelector());
         c.setClusterRegistryPrimarySelector(configuration.getClusterRegistryPrimaryClusterSelector());
+        c.setArtifactoryCacheAllowList(configuration.getArtifactoryCacheAllowListAsString());
+        c.setArtifactoryCachePodSpec(configuration.getArtifactoryCachePodSpecAsString());
         c.setShowAwsSpecificFields(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS.equals(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getVendorWithBandana(
                 bandanaManager)));
         return Response.ok(c).build();

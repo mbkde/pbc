@@ -1,13 +1,13 @@
 <head xmlns="http://www.w3.org/1999/html">
-    [@ui.header pageKey="kubernetes.backend.config.heading" title=true /]
-    <meta name="decorator" content="adminpage"/>
+    [@ui.header pageKey="isolated.docker.config.heading" title=true /]
+    <meta name="decorator" content="adminpage">
     ${webResourceManager.requireResourcesForContext("viewKubernetesConfiguration")}
 </head>
 
 <body>
-    <h1>[@s.text name='kubernetes.backend.config.heading' /]</h1>
+<h1>[@s.text name='kubernetes.backend.config.heading' /]</h1>
 <p>
-[@s.text name='kubernetes.backend.config.heading.description' /]
+    [@s.text name='kubernetes.backend.config.heading.description' /]
 </p>
 
 [@s.form submitLabelKey='global.buttons.update' cancelUri="${currentUrl}" id="setRemoteConfig" class="aui"]
@@ -23,27 +23,46 @@
         [@s.textarea labelKey='kubernetes.backend.config.form.architecturePodConfig' name='architecturePodConfig' rows='20' cssClass='long-field' /]
         <div class="description" id="desc-architecturePodConfig">
             Add your config for architecture-dependent sections of the pod template in YAML. Each top-level key should
-            be a name of the architecture, with a sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
+            be a name of the architecture, with a
+            sub-key "config" with its value being the YAML to be merged into the full pod spec.<br>
 
-            If you require no extra config, use an empty map {}. The architectures specified here <strong>must</strong> exactly match those
+            If you require no extra config, use an empty map {}. The architectures specified here
+            <strong>must</strong> exactly match those
             specified in the PBC General settings.<br>
 
             You must specify a "default" key at the top level which specifies which architecture is default in the case
-            no architecture is specified. This ensures backwards compatibility; newly created plans will require an architecture.<br><br>
+            no architecture is specified. This ensures backwards compatibility; newly created plans will require an
+            architecture.
+            <br><br>
 
             Example:
+
             <pre><code>
 default: amd64
 amd64:
-  config: {}
+ config: {}
 arm64:
-  config:
-    spec:
-      nodeSelector:
-        nodeGroup: myNode
+ config:
+   spec:
+     nodeSelector:
+       nodeGroup: myNode
                 </code></pre>
 
         </div>
+        [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCachePodSpec' name='artifactoryCachePodSpec' rows='20' cssClass='long-field' /]
+        <div class="description" id="desc-artifactoryCacheAllowList">
+            kubernetes.backend.config.form.artifactoryCacheAllowList.description=Allow list for builds which will use a
+            mounted artifactory cache volume, one build key per line as a
+            YAML list.
+            <br><br>
+            Example:
+            <pre><code>
+- SYNTH-PBCSYNTH
+- SYNTH-IDPLUGIN
+            </code></pre>
+        </div>
+
+        [@s.textarea labelKey='kubernetes.backend.config.form.artifactoryCacheAllowList' name='artifactoryCacheAllowList' rows='5' cssClass='long-field' /]
         [@ww.hidden name='showAwsSpecificFields' /]
         [#if action.showAwsSpecificFields]
             [@s.textarea labelKey='kubernetes.backend.config.form.iamRequestTemplate' name='iamRequestTemplate' rows='7' cssClass='long-field' /]
@@ -60,9 +79,9 @@ arm64:
         <input type="hidden" id="load_complete" value="false"/>
     </fieldset>
 [/@s.form]
-    <script lang="text/javascript">
-        require(['feature/kubernetes-backend-plugin/config'], function(Config) {
-            Config.onInit();
-        })
-    </script>
+<script lang="text/javascript">
+    require(['feature/kubernetes-backend-plugin/config'], function (Config) {
+        Config.onInit();
+    })
+</script>
 </body>

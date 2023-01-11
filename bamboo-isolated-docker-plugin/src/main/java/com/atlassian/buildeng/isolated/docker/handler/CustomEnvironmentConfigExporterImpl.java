@@ -81,7 +81,9 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                                         .stream()
                                         .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
                                         .collect(Collectors.toList())))
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .withFeatureFlags(config.getFeatureFlags());
+
     }
 
     @NotNull
@@ -102,6 +104,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             toRet.put(Configuration.DOCKER_ARCHITECTURE, custom.getArchitecture());
             toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                     BuildProcessorServerImpl.toJsonString(custom.getExtraContainers()));
+            toRet.put(Configuration.DOCKER_FEATURE_FLAGS,
+                    BuildProcessorServerImpl.toJsonString(custom.getFeatureFlags()));
             return toRet;
         }
         throw new IllegalStateException("Don't know how to import configuration of type: " + epcp.getClass().getName());
@@ -172,7 +176,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                             .getExtraContainers()
                             .stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
-                            .collect(Collectors.toList()));
+                            .collect(Collectors.toList()))
+                    .withFeatureFlags(config.getFeatureFlags());
         }
     }
 
@@ -195,6 +200,11 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         if (specsProperties.getExtraContainers() != null) {
             specsProperties.getExtraContainers().forEach(container -> {
                 convertExtraContainer(builder, container);
+            });
+        }
+        if (specsProperties.getFeatureFlags() != null) {
+            specsProperties.getFeatureFlags().forEach(featureFlag -> {
+                addFeatureFlag(builder, featureFlag);
             });
         }
         return builder.build();
@@ -220,4 +230,9 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         }
         builder.withExtraContainer(extra);
     }
+
+    public static void addFeatureFlag(ConfigurationBuilder builder, String featureFlag) {
+        builder.withFeatureFlag(featureFlag);
+    }
 }
+

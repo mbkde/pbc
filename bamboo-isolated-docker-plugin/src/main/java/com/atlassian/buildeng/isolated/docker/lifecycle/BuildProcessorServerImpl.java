@@ -128,7 +128,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 Configuration.DOCKER_IMAGE_SIZE,
                 Configuration.DOCKER_AWS_ROLE,
                 Configuration.DOCKER_EXTRA_CONTAINERS,
-                Configuration.DOCKER_ARCHITECTURE));
+                Configuration.DOCKER_ARCHITECTURE,
+                Configuration.DOCKER_FEATURE_FLAGS));
     }
 
     /**
@@ -165,6 +166,10 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         if (architecture != null) {
             cc.put(Configuration.DOCKER_ARCHITECTURE, architecture);
         }
+        String featureFlags = buildConfiguration.getString(Configuration.DOCKER_FEATURE_FLAGS);
+        if (featureFlags != null) {
+            cc.put(Configuration.DOCKER_FEATURE_FLAGS, featureFlags);
+        }
         Configuration c = AccessConfiguration.forMap(cc);
         return new PerBuildContainerForJob()
                 .enabled(c.isEnabled())
@@ -176,7 +181,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                         .getExtraContainers()
                         .stream()
                         .map(getExtraContainerExtraContainerFunction())
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .withFeatureFlags(c.getFeatureFlags());
     }
 
     /**
@@ -219,6 +225,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                         .collect(Collectors.toList()));
             }
         }
+        HashSet<String> featureFlags =
+                specsProperties.getFeatureFlags() != null ? specsProperties.getFeatureFlags() : new HashSet<>();
         buildConfiguration.setProperty(Configuration.ENABLED_FOR_JOB, specsProperties.isEnabled());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE, specsProperties.getImage());
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
@@ -226,6 +234,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         buildConfiguration.setProperty(Configuration.DOCKER_ARCHITECTURE, specsProperties.getArchitecture());
         buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
                 toJsonString(specsProperties.getExtraContainers()));
+        buildConfiguration.setProperty(Configuration.DOCKER_FEATURE_FLAGS, toJsonString(featureFlags));
     }
 
     /**
@@ -254,7 +263,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                             .getExtraContainers()
                             .stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
-                            .collect(Collectors.toList()));
+                            .collect(Collectors.toList()))
+                    .withFeatureFlags(config.getFeatureFlags());
         }
     }
 
@@ -283,6 +293,10 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         }).collect(Collectors.toList())).toString();
     }
 
+    public static String toJsonString(HashSet<String> featureFlags) {
+        return ConfigurationPersistence.toJson(featureFlags).toString();
+    }
+
     private Configuration toConfig(PerBuildContainerForJobProperties specsProperties) {
         ConfigurationBuilder builder = ConfigurationBuilder.create(specsProperties.getImage());
         builder.withImageSize(Configuration.ContainerSize.valueOf(specsProperties.getSize()));
@@ -295,6 +309,11 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         if (specsProperties.getExtraContainers() != null) {
             specsProperties.getExtraContainers().forEach(container -> {
                 CustomEnvironmentConfigExporterImpl.convertExtraContainer(builder, container);
+            });
+        }
+        if (specsProperties.getFeatureFlags() != null) {
+            specsProperties.getFeatureFlags().forEach(featureFlag -> {
+                CustomEnvironmentConfigExporterImpl.addFeatureFlag(builder, featureFlag);
             });
         }
         return builder.build();

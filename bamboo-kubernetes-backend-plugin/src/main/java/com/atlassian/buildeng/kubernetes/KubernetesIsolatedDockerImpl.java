@@ -173,6 +173,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         }
     }
 
+
     @VisibleForTesting
     String getSubjectId(IsolatedDockerAgentRequest request) {
         String subjectId;

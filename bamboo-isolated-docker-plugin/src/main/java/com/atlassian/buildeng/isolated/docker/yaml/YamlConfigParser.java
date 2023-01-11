@@ -11,6 +11,7 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class YamlConfigParser {
         String EXTRA_CONTAINER_NAME = "name";
         String EXTRA_CONTAINER_COMMANDS = "commands";
         String EXTRA_CONTAINER_VARIABLES = "variables";
+        String FEATURE_FLAGS = "feature-flags";
     }
 
     private static final String DEFAULT_IMAGE_SIZE = Configuration.ContainerSize.REGULAR.name();
@@ -81,12 +83,17 @@ public class YamlConfigParser {
                                     .stream()
                                     .map(this::parseExtraContainer)
                                     .forEach(extraContainers::add));
+                    final HashSet<String> featureFlags = new HashSet<>();
+                    pbcMapNode.getOptionalList(YamlTags.FEATURE_FLAGS, MapNode.class).ifPresent(flagMaps -> {
+                        flagMaps.asListOf(MapNode.class).stream().map(MapNode::toString).forEach(featureFlags::add);
+                    });
                     return ConfigurationBuilder
                             .create(dockerImage)
                             .withImageSize(size)
                             .withAwsRole(awsRole)
                             .withArchitecture(architecture)
                             .withExtraContainers(extraContainers)
+                            .withFeatureFlags(featureFlags)
                             .build();
                 }
             }
@@ -118,6 +125,9 @@ public class YamlConfigParser {
                             .stream()
                             .map(this::convertExtraContainer)
                             .collect(Collectors.toList()));
+        }
+        if (configuration.getFeatureFlags() != null && !configuration.getFeatureFlags().isEmpty()) {
+            config.put(YamlTags.FEATURE_FLAGS, configuration.getFeatureFlags());
         }
         final Map<String, Object> result = new LinkedHashMap<>();
         result.put(YamlTags.YAML_ROOT, config);

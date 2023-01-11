@@ -290,7 +290,7 @@ public class DockerHandlerImpl implements DockerHandler {
                 .withImageSize(Configuration.ContainerSize.valueOf((String) webFragmentsContextMap.getOrDefault(
                         Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString((String) webFragmentsContextMap.getOrDefault(
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers((String) webFragmentsContextMap.getOrDefault(
                         Configuration.DOCKER_EXTRA_CONTAINERS,
                         "[]")))
                 .withAwsRole(role)

@@ -61,7 +61,10 @@ public class AccessConfiguration {
                 .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
                 .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS,
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(cc.getOrDefault(
+                        Configuration.DOCKER_EXTRA_CONTAINERS,
+                        "[]")))
+                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(cc.getOrDefault(Configuration.DOCKER_FEATURE_FLAGS,
                         "[]")))
                 .withAwsRole(role)
                 .withArchitecture(architecture)
@@ -108,10 +111,13 @@ public class AccessConfiguration {
                 .withEnabled(config.getBoolean(Configuration.ENABLED_FOR_JOB))
                 .withImageSize(Configuration.ContainerSize.valueOf(config.getString(Configuration.DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(config.getString(Configuration.DOCKER_EXTRA_CONTAINERS,
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(config.getString(
+                        Configuration.DOCKER_EXTRA_CONTAINERS,
                         "[]")))
                 .withAwsRole(config.getString(Configuration.DOCKER_AWS_ROLE))
                 .withArchitecture(config.getString(Configuration.DOCKER_ARCHITECTURE))
+                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(config.getString(Configuration.DOCKER_FEATURE_FLAGS,
+                        "[]")))
                 .build();
     }
 
@@ -147,10 +153,13 @@ public class AccessConfiguration {
                 .withEnabled(taskDefinition.isEnabled())
                 .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
                         Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonString(cc.getOrDefault(Configuration.TASK_DOCKER_EXTRA_CONTAINERS,
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(cc.getOrDefault(
+                        Configuration.TASK_DOCKER_EXTRA_CONTAINERS,
                         "[]")))
                 .withAwsRole(cc.getOrDefault(Configuration.TASK_DOCKER_AWS_ROLE, null))
                 .withArchitecture(cc.getOrDefault(Configuration.TASK_DOCKER_ARCHITECTURE, null))
+                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(cc.getOrDefault(Configuration.DOCKER_FEATURE_FLAGS,
+                        "[]")))
                 .build();
     }
 

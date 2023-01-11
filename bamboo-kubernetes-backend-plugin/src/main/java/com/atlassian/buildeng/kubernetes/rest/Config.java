@@ -29,6 +29,9 @@ public class Config {
     public boolean useClusterRegistry;
     public String clusterRegistryAvailableSelector;
     public String clusterRegistryPrimarySelector;
+    public String artifactoryCacheAllowList;
+    public String artifactoryCachePodSpec;
+
 
     public boolean showAwsSpecificFields;
 
@@ -46,7 +49,9 @@ public class Config {
             boolean useClusterRegistry,
             String clusterRegistryAvailableSelector,
             String clusterRegistryPrimarySelector,
-            boolean showAwsSpecificFields) {
+            boolean showAwsSpecificFields,
+            String artifactoryCacheAllowList,
+            String artifactoryCachePodSpec) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -59,6 +64,8 @@ public class Config {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
         this.clusterRegistryAvailableSelector = clusterRegistryAvailableSelector;
         this.showAwsSpecificFields = showAwsSpecificFields;
+        this.artifactoryCacheAllowList = artifactoryCacheAllowList;
+        this.artifactoryCachePodSpec = artifactoryCachePodSpec;
     }
 
     public String getSidekickImage() {
@@ -147,6 +154,22 @@ public class Config {
 
     public void setClusterRegistryPrimarySelector(String clusterRegistryPrimarySelector) {
         this.clusterRegistryPrimarySelector = clusterRegistryPrimarySelector;
+    }
+
+    public String getArtifactoryCacheAllowList() {
+        return artifactoryCacheAllowList;
+    }
+
+    public void setArtifactoryCacheAllowList(String artifactoryCacheAllowList) {
+        this.artifactoryCacheAllowList = artifactoryCacheAllowList;
+    }
+
+    public String getArtifactoryCachePodSpec() {
+        return artifactoryCachePodSpec;
+    }
+
+    public void setArtifactoryCachePodSpec(String artifactoryCachePodSpec) {
+        this.artifactoryCachePodSpec = artifactoryCachePodSpec;
     }
 
     public boolean isShowAwsSpecificFields() {

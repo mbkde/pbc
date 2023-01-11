@@ -18,6 +18,7 @@ package com.atlassian.buildeng.spi.isolated.docker;
 
 import com.atlassian.bamboo.v2.build.CurrentResult;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,7 +30,8 @@ public final class Configuration {
     // message to future me:
     // never ever attempt nested values here. eg.
     // custom.isolated.docker.image and custom.isolated.docker.image.size
-    // the way bamboo serializes these will cause the parent to get additional trailing whitespace
+    // the way bamboo serializes these will cause the parent to get additional
+    // trailing whitespace
     // and you get mad trying to figure out why.
     public static final String PROPERTY_PREFIX = "custom.isolated.docker";
     public static final String ENABLED_FOR_JOB = PROPERTY_PREFIX + ".enabled";
@@ -38,9 +40,10 @@ public final class Configuration {
     public static final String DOCKER_EXTRA_CONTAINERS = PROPERTY_PREFIX + ".extraContainers";
     public static final String DOCKER_AWS_ROLE = PROPERTY_PREFIX + ".awsRole";
     public static final String DOCKER_ARCHITECTURE = PROPERTY_PREFIX + ".architecture";
+    public static final String DOCKER_FEATURE_FLAGS = PROPERTY_PREFIX + ".featureFlags";
 
-    // task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan templates
-    // don't like dots in names.
+    // task related equivalents of DOCKER_IMAGE and ENABLED_FOR_DOCKER but plan
+    // templates don't like dots in names.
     public static final String TASK_DOCKER_IMAGE = "dockerImage";
     public static final String TASK_DOCKER_ARCHITECTURE = "dockerArchitecture";
     public static final String TASK_DOCKER_IMAGE_SIZE = "dockerImageSize";
@@ -51,8 +54,10 @@ public final class Configuration {
     /**
      * properties with this prefix are stored in build result custom data
      * detailing the sizes of main and extra containers.
-     * The available suffixes are .[container_name].memory and .[container_name].memoryLimit
-     * The main container's name is 'bamboo-agent', for extra containers the name equals the one configured by user.
+     * The available suffixes are .[container_name].memory and
+     * .[container_name].memoryLimit
+     * The main container's name is 'bamboo-agent', for extra containers the name
+     * equals the one configured by user.
      */
     public static final String DOCKER_IMAGE_DETAIL = PROPERTY_PREFIX + ".imageDetail";
 
@@ -65,19 +70,22 @@ public final class Configuration {
     private String architecture;
     private final ContainerSize size;
     private final List<ExtraContainer> extraContainers;
+    private final HashSet<String> featureFlags;
 
     Configuration(boolean enabled,
             String dockerImage,
             String awsRole,
             String architecture,
             ContainerSize size,
-            List<ExtraContainer> extraContainers) {
+            List<ExtraContainer> extraContainers,
+            HashSet<String> featureFlags) {
         this.enabled = enabled;
         this.dockerImage = dockerImage;
         this.awsRole = awsRole;
         this.architecture = architecture;
         this.size = size;
         this.extraContainers = extraContainers;
+        this.featureFlags = featureFlags;
     }
 
     public boolean isEnabled() {
@@ -105,9 +113,12 @@ public final class Configuration {
     }
 
     /**
-     * Getter for the architecture of a build/deployment. It shouldn't be possible to receive an empty or blank string
-     * here, since the only constructor of the Configuration class guards against this, but always use
-     * {@link #isArchitectureDefined()} to check whether it is defined before trying to fetch the architecture
+     * Getter for the architecture of a build/deployment. It shouldn't be possible
+     * to receive an empty or blank string
+     * here, since the only constructor of the Configuration class guards against
+     * this, but always use
+     * {@link #isArchitectureDefined()} to check whether it is defined before trying
+     * to fetch the architecture
      */
     public String getArchitecture() {
         return architecture;
@@ -148,10 +159,15 @@ public final class Configuration {
         return extraContainers;
     }
 
+    public HashSet<String> getFeatureFlags() {
+        return featureFlags;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(dockerImage, size, extraContainers);
+        return Objects.hash(dockerImage, size, extraContainers, featureFlags);
     }
+
 
     @Override
     public boolean equals(Object obj) {
@@ -171,7 +187,8 @@ public final class Configuration {
         if (this.size != other.size) {
             return false;
         }
-        return Objects.equals(this.extraContainers, other.extraContainers);
+        return Objects.equals(this.extraContainers, other.extraContainers) &&
+                Objects.equals(this.featureFlags, other.featureFlags);
     }
 
     /**
@@ -190,7 +207,10 @@ public final class Configuration {
         }
         storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
-        // write down memory limits into result, as agent components don't have access to ContainerSizeDescriptor
+        storageMap.put(Configuration.DOCKER_FEATURE_FLAGS,
+                ConfigurationPersistence.toJson(getFeatureFlags()).toString());
+        // write down memory limits into result, as agent components don't have access
+        // to ContainerSizeDescriptor
         storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memory",
                 "" + sizeDescriptor.getMemory(getSize()));
         storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit",
@@ -217,9 +237,9 @@ public final class Configuration {
         storageMap.remove(Configuration.DOCKER_IMAGE_SIZE);
         storageMap.remove(Configuration.DOCKER_AWS_ROLE);
         storageMap.remove(Configuration.DOCKER_EXTRA_CONTAINERS);
+        storageMap.remove(Configuration.DOCKER_FEATURE_FLAGS);
         storageMap.entrySet().removeIf(ent -> ent.getKey().startsWith(Configuration.DOCKER_IMAGE_DETAIL));
     }
-
 
     public enum ContainerSize {
         LARGE_8X, LARGE_4X, XXLARGE, XLARGE, LARGE, REGULAR, SMALL, XSMALL
