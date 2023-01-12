@@ -25,20 +25,28 @@ import com.atlassian.pageobjects.elements.query.TimedCondition;
 public class GenericPerBuildContainerConfigurationPage extends AbstractBambooPage {
     @ElementBy(id = "enableSwitch")
     private PageElement enableSwitch;
+
     @ElementBy(id = "setRemoteConfig_awsVendor")
     private AuiCheckbox awsVendor;
+
     @ElementBy(id = "setRemoteConfig_defaultImage")
     private PageElement defaultImage;
+
     @ElementBy(id = "setRemoteConfig_maxAgentCreationPerMinute")
     private PageElement maxAgentCreationPerMinute;
+
     @ElementBy(id = "setRemoteConfig_architectureConfig")
     private PageElement architectureConfig;
+
     @ElementBy(id = "setRemoteConfig_save")
     private PageElement saveButton;
+
     @ElementBy(id = "errorMessage")
     private PageElement errorMessage;
+
     @ElementBy(cssSelector = ".save-status")
     private PageElement saveStatus;
+
     @ElementBy(id = "load_complete")
     private PageElement loadComplete;
 

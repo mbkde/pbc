@@ -60,21 +60,17 @@ public class RemoteWatchdogJob extends AbstractWatchdogJob {
         return tasks;
     }
 
-    protected List<StoppedState> queryStoppedTasksByArn(GlobalConfiguration globalConfig,
-            Client client,
-            List<String> arns) {
+    protected List<StoppedState> queryStoppedTasksByArn(
+            GlobalConfiguration globalConfig, Client client, List<String> arns) {
         WebResource resource = client.resource(globalConfig.getCurrentServer() + "/rest/scheduler/stopped");
         for (String arn : arns) {
-            //!! each call to resource returning WebResource is returning new instance
+            // !! each call to resource returning WebResource is returning new instance
             resource = resource.queryParam("arn", arn);
         }
-        List<ArnStoppedState> result = resource
-                .accept(MediaType.APPLICATION_JSON_TYPE)
+        List<ArnStoppedState> result = resource.accept(MediaType.APPLICATION_JSON_TYPE)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .get(new GenericType<List<ArnStoppedState>>() {
-                });
-        return result
-                .stream()
+                .get(new GenericType<List<ArnStoppedState>>() {});
+        return result.stream()
                 .map((ArnStoppedState t) -> new StoppedState(t.getArn(), t.getContainerArn(), t.getReason()))
                 .collect(Collectors.toList());
     }

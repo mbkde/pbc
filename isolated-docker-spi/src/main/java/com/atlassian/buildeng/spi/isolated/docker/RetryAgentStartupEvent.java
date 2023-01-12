@@ -33,10 +33,8 @@ public final class RetryAgentStartupEvent {
     private final Configuration configuration;
     private final UUID uniqueIdentifier;
 
-    public RetryAgentStartupEvent(Configuration configuration,
-            CommonContext context,
-            int retryCount,
-            UUID existingUuid) {
+    public RetryAgentStartupEvent(
+            Configuration configuration, CommonContext context, int retryCount, UUID existingUuid) {
         this.configuration = configuration;
         this.context = context;
         this.retryCount = retryCount;
@@ -48,7 +46,8 @@ public final class RetryAgentStartupEvent {
     }
 
     public RetryAgentStartupEvent(RetryAgentStartupEvent previousEvent) {
-        this(previousEvent.getConfiguration(),
+        this(
+                previousEvent.getConfiguration(),
                 previousEvent.getContext(),
                 previousEvent.getRetryCount() + 1,
                 previousEvent.uniqueIdentifier);

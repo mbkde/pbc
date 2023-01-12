@@ -27,5 +27,4 @@ public class HostModuleMappingMDImpl extends AbstractBambooModuleDescriptor<Host
     public HostModuleMappingMDImpl(ModuleFactory moduleFactory) {
         super(moduleFactory);
     }
-
 }

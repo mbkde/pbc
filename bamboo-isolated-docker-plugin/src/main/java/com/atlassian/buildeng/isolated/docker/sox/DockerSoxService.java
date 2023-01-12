@@ -53,7 +53,8 @@ public class DockerSoxService {
     private List<Pattern> soxPatterns;
 
     @Inject
-    public DockerSoxService(FeatureManager featureManager,
+    public DockerSoxService(
+            FeatureManager featureManager,
             AuditLogService auditLogService,
             BandanaManager bandanaManager,
             BambooAuthenticationContext authenticationContext) {
@@ -63,15 +64,14 @@ public class DockerSoxService {
         this.authenticationContext = authenticationContext;
     }
 
-
     public boolean isSoxEnabled() {
         return getConfig().isEnabled(); // featureManager.isSoxComplianceModeConfigurable()
     }
 
-
     public boolean checkSoxCompliance(Configuration config) {
         if (isSoxEnabled()) {
-            Stream<String> images = Stream.concat(Stream.of(config.getDockerImage()),
+            Stream<String> images = Stream.concat(
+                    Stream.of(config.getDockerImage()),
                     config.getExtraContainers().stream().map(Configuration.ExtraContainer::getImage));
             return images.allMatch(matchesPatterns());
         }
@@ -79,7 +79,8 @@ public class DockerSoxService {
     }
 
     private Predicate<String> matchesPatterns() {
-        return (String image) -> getSoxPatterns().stream().anyMatch((Pattern t) -> t.matcher(image).matches());
+        return (String image) -> getSoxPatterns().stream()
+                .anyMatch((Pattern t) -> t.matcher(image).matches());
     }
 
     public synchronized void updateConfig(SoxRestConfig config) {
@@ -87,7 +88,8 @@ public class DockerSoxService {
 
         SoxRestConfig old = getConfig();
         if (old.isEnabled() != config.isEnabled()) {
-            AuditLogEntry ent = new AuditLogMessage(this.authenticationContext.getUserName(),
+            AuditLogEntry ent = new AuditLogMessage(
+                    this.authenticationContext.getUserName(),
                     new Date(),
                     null,
                     null,
@@ -101,7 +103,8 @@ public class DockerSoxService {
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_ENABLED, config.isEnabled());
         }
         if (!Arrays.equals(old.getWhitelistPatterns(), config.getWhitelistPatterns())) {
-            AuditLogEntry ent = new AuditLogMessage(this.authenticationContext.getUserName(),
+            AuditLogEntry ent = new AuditLogMessage(
+                    this.authenticationContext.getUserName(),
                     new Date(),
                     null,
                     null,
@@ -112,9 +115,8 @@ public class DockerSoxService {
                     Arrays.toString(old.getWhitelistPatterns()),
                     Arrays.toString(config.getWhitelistPatterns()));
             auditLogService.log(ent);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_SOX_PATTERNS,
-                    config.getWhitelistPatterns());
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SOX_PATTERNS, config.getWhitelistPatterns());
             soxPatterns = null;
         }
     }
@@ -134,14 +136,16 @@ public class DockerSoxService {
             SoxRestConfig config = getConfig();
             String[] patts = config.getWhitelistPatterns();
             if (patts != null) {
-                soxPatterns = Arrays.asList(patts).stream().map((String t) -> {
-                    try {
-                        return Pattern.compile(t);
-                    } catch (PatternSyntaxException ex) {
-                        logger.error("Cannot compile SOX whitelist pattern for - {}", t);
-                        return Pattern.compile("X");
-                    }
-                }).collect(Collectors.toList());
+                soxPatterns = Arrays.asList(patts).stream()
+                        .map((String t) -> {
+                            try {
+                                return Pattern.compile(t);
+                            } catch (PatternSyntaxException ex) {
+                                logger.error("Cannot compile SOX whitelist pattern for - {}", t);
+                                return Pattern.compile("X");
+                            }
+                        })
+                        .collect(Collectors.toList());
             } else {
                 soxPatterns = Collections.emptyList();
             }
@@ -161,5 +165,4 @@ public class DockerSoxService {
             }
         }
     }
-
 }

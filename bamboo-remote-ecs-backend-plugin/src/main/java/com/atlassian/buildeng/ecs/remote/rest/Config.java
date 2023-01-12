@@ -23,8 +23,7 @@ public class Config {
     public String awsRole;
     public boolean preemptiveScaling = false;
 
-    public Config() {
-    }
+    public Config() {}
 
     public Config(String sidekickImage, String serverUrl, String awsRole) {
         this.sidekickImage = sidekickImage;
@@ -63,5 +62,4 @@ public class Config {
     public void setPreemptiveScaling(boolean preemptiveScaling) {
         this.preemptiveScaling = preemptiveScaling;
     }
-
 }

@@ -36,8 +36,7 @@ public class IsConfiguredCondition implements Condition {
     }
 
     @Override
-    public void init(Map<String, String> params) throws PluginParseException {
-    }
+    public void init(Map<String, String> params) throws PluginParseException {}
 
     @Override
     public boolean shouldDisplay(Map<String, Object> context) {
@@ -52,5 +51,4 @@ public class IsConfiguredCondition implements Condition {
         }
         return false;
     }
-
 }

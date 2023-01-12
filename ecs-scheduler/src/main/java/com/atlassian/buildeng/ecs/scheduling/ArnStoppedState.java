@@ -40,5 +40,4 @@ public class ArnStoppedState {
     public String getContainerArn() {
         return containerArn;
     }
-
 }

@@ -72,7 +72,8 @@ public final class Configuration {
     private final List<ExtraContainer> extraContainers;
     private final HashSet<String> featureFlags;
 
-    Configuration(boolean enabled,
+    Configuration(
+            boolean enabled,
             String dockerImage,
             String awsRole,
             String architecture,
@@ -134,9 +135,8 @@ public final class Configuration {
      * @param sizeDescriptor component able to resolve the symbolic size to numbers
      */
     public int getCPUTotal(ContainerSizeDescriptor sizeDescriptor) {
-        return sizeDescriptor.getCpu(size) +
-                extraContainers
-                        .stream()
+        return sizeDescriptor.getCpu(size)
+                + extraContainers.stream()
                         .mapToInt((ExtraContainer value) -> sizeDescriptor.getCpu(value.getExtraSize()))
                         .sum();
     }
@@ -147,10 +147,9 @@ public final class Configuration {
      * @param sizeDescriptor component able to resolve the symbolic size to numbers
      */
     public int getMemoryTotal(ContainerSizeDescriptor sizeDescriptor) {
-        return sizeDescriptor.getMemory(size) +
-                DOCKER_MINIMUM_MEMORY +
-                extraContainers
-                        .stream()
+        return sizeDescriptor.getMemory(size)
+                + DOCKER_MINIMUM_MEMORY
+                + extraContainers.stream()
                         .mapToInt((ExtraContainer value) -> sizeDescriptor.getMemory(value.getExtraSize()))
                         .sum();
     }
@@ -167,7 +166,6 @@ public final class Configuration {
     public int hashCode() {
         return Objects.hash(dockerImage, size, extraContainers, featureFlags);
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -187,8 +185,8 @@ public final class Configuration {
         if (this.size != other.size) {
             return false;
         }
-        return Objects.equals(this.extraContainers, other.extraContainers) &&
-                Objects.equals(this.featureFlags, other.featureFlags);
+        return Objects.equals(this.extraContainers, other.extraContainers)
+                && Objects.equals(this.featureFlags, other.featureFlags);
     }
 
     /**
@@ -205,23 +203,29 @@ public final class Configuration {
         if (getAwsRole() != null) {
             storageMap.put(Configuration.DOCKER_AWS_ROLE, getAwsRole());
         }
-        storageMap.put(Configuration.DOCKER_EXTRA_CONTAINERS,
+        storageMap.put(
+                Configuration.DOCKER_EXTRA_CONTAINERS,
                 ConfigurationPersistence.toJson(getExtraContainers()).toString());
-        storageMap.put(Configuration.DOCKER_FEATURE_FLAGS,
+        storageMap.put(
+                Configuration.DOCKER_FEATURE_FLAGS,
                 ConfigurationPersistence.toJson(getFeatureFlags()).toString());
         // write down memory limits into result, as agent components don't have access
         // to ContainerSizeDescriptor
-        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memory",
-                "" + sizeDescriptor.getMemory(getSize()));
-        storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit",
+        storageMap.put(
+                Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memory", "" + sizeDescriptor.getMemory(getSize()));
+        storageMap.put(
+                Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.memoryLimit",
                 "" + sizeDescriptor.getMemoryLimit(getSize()));
         storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + ".bamboo-agent.cpu", "" + sizeDescriptor.getCpu(getSize()));
         getExtraContainers().forEach((ExtraContainer t) -> {
-            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memory",
+            storageMap.put(
+                    Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memory",
                     "" + sizeDescriptor.getMemory(t.getExtraSize()));
-            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memoryLimit",
+            storageMap.put(
+                    Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".memoryLimit",
                     "" + sizeDescriptor.getMemoryLimit(t.getExtraSize()));
-            storageMap.put(Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".cpu",
+            storageMap.put(
+                    Configuration.DOCKER_IMAGE_DETAIL + "." + t.getName() + ".cpu",
                     "" + sizeDescriptor.getCpu(t.getExtraSize()));
         });
     }
@@ -242,7 +246,14 @@ public final class Configuration {
     }
 
     public enum ContainerSize {
-        LARGE_8X, LARGE_4X, XXLARGE, XLARGE, LARGE, REGULAR, SMALL, XSMALL
+        LARGE_8X,
+        LARGE_4X,
+        XXLARGE,
+        XLARGE,
+        LARGE,
+        REGULAR,
+        SMALL,
+        XSMALL
     }
 
     public static class ExtraContainer {
@@ -324,7 +335,13 @@ public final class Configuration {
     }
 
     public enum ExtraContainerSize {
-        LARGE_8X, LARGE_4X, XXLARGE, XLARGE, LARGE, REGULAR, SMALL
+        LARGE_8X,
+        LARGE_4X,
+        XXLARGE,
+        XLARGE,
+        LARGE,
+        REGULAR,
+        SMALL
     }
 
     public static final class EnvVariable {
@@ -367,6 +384,5 @@ public final class Configuration {
             }
             return Objects.equals(this.value, other.value);
         }
-
     }
 }

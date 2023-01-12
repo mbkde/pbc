@@ -11,5 +11,4 @@ public class ECSException extends RestableIsolatedDockerException {
     public ECSException(String message) {
         super(Status.INTERNAL_SERVER_ERROR, message);
     }
-
 }

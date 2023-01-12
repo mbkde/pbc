@@ -45,8 +45,7 @@ public abstract class DockerAgentEvent {
     }
 
     protected final String escape(String text) {
-        return text
-                .replace("\\", "\\\\")
+        return text.replace("\\", "\\\\")
                 .replace("`", "\\`")
                 .replace("*", "\\*")
                 .replace("_", "\\_")

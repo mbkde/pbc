@@ -58,33 +58,40 @@ public class LocalExecRest {
     @GET
     @Path("{jobKey}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getDockerCompose(@PathParam("jobKey") String jobKey,
+    public Response getDockerCompose(
+            @PathParam("jobKey") String jobKey,
             @DefaultValue("false") @QueryParam("dind") boolean useDockerInDocker,
             @DefaultValue("false") @QueryParam("mavenLocal") boolean mavenLocalRepo,
             @DefaultValue("false") @QueryParam("reservations") boolean reservations) {
         if (jobKey == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("jobKey query parameter not defined").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("jobKey query parameter not defined")
+                    .build();
         }
         PlanKey key = PlanKeys.getPlanKey(jobKey);
         ImmutablePlan job = cpm.getPlanByKey(key);
         if (job == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Job not found").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Job not found")
+                    .build();
         }
         ImmutableJob jb = Narrow.downTo(job, ImmutableJob.class);
         if (jb == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Not a Job Key").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Not a Job Key")
+                    .build();
         }
         Configuration conf = AccessConfiguration.forJob(jb);
         if (conf != null) {
-            return Response
-                    .ok(createLocalExecDockerCompose(conf, useDockerInDocker, mavenLocalRepo, reservations, jobKey))
+            return Response.ok(
+                            createLocalExecDockerCompose(conf, useDockerInDocker, mavenLocalRepo, reservations, jobKey))
                     .build();
         }
         return Response.status(Response.Status.NO_CONTENT).build();
-
     }
 
-    private String createLocalExecDockerCompose(Configuration conf,
+    private String createLocalExecDockerCompose(
+            Configuration conf,
             boolean useDockerInDocker,
             boolean mavenLocalRepo,
             boolean reservations,
@@ -124,7 +131,6 @@ public class LocalExecRest {
 
         bambooAgent.put("labels", Collections.singletonMap("bamboo.job", jobKey));
 
-
         conf.getExtraContainers().stream().forEach((Configuration.ExtraContainer t) -> {
             Map<String, Object> extra = new LinkedHashMap<>();
             extra.put("image", t.getImage());
@@ -148,17 +154,15 @@ public class LocalExecRest {
                 extra.put("command", t.getCommands());
             }
             if (!t.getEnvVariables().isEmpty()) {
-                extra.put("environment",
-                        t
-                                .getEnvVariables()
-                                .stream()
+                extra.put(
+                        "environment",
+                        t.getEnvVariables().stream()
                                 .map((Configuration.EnvVariable t1) -> t1.getName() + "=" + t1.getValue())
                                 .collect(Collectors.toList()));
             }
 
             extra.put("volumes", Collections.singletonList(".:" + workingDir));
             extra.put("labels", Collections.singletonMap("bamboo.job", jobKey));
-
         });
         if (!bambooAgentLinks.isEmpty()) {
             bambooAgent.put("links", bambooAgentLinks);
@@ -178,5 +182,4 @@ public class LocalExecRest {
     public static boolean isDockerInDockerImage(String image) {
         return image.contains("docker:") && image.endsWith("dind");
     }
-
 }

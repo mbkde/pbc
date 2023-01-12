@@ -66,8 +66,9 @@ import org.slf4j.LoggerFactory;
  * The one use case we know about is BUILDENG-10514 where the agent fails to run any
  * pre or post actions on the agent if artifact download fails.
  */
-public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements CustomBuildProcessorServer,
-        ImportExportAwarePlugin<PerBuildContainerForJob, PerBuildContainerForJobProperties> {
+public class BuildProcessorServerImpl extends BaseConfigurablePlugin
+        implements CustomBuildProcessorServer,
+                ImportExportAwarePlugin<PerBuildContainerForJob, PerBuildContainerForJobProperties> {
     private static final Logger LOG = LoggerFactory.getLogger(BuildProcessorServerImpl.class);
     public static final String CAPABILITY = Capability.SYSTEM_PREFIX + ".isolated.docker";
 
@@ -78,9 +79,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
 
     // setters here for components, otherwise the parent fields don't get injected.
     @Inject
-    public BuildProcessorServerImpl(AgentRemovals agentRemovals,
-            BuildExecutionManager buildExecutionManager,
-            Validator validator) {
+    public BuildProcessorServerImpl(
+            AgentRemovals agentRemovals, BuildExecutionManager buildExecutionManager, Validator validator) {
         this.agentRemovals = agentRemovals;
         this.buildExecutionManager = buildExecutionManager;
         this.validator = validator;
@@ -109,13 +109,15 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
             if (building != null && agentId != null) {
                 agentRemovals.stopAgentRemotely(agentId);
                 agentRemovals.removeAgent(agentId);
-                LOG.info("Build result {} not shutting down normally, killing agent {} explicitly.",
+                LOG.info(
+                        "Build result {} not shutting down normally, killing agent {} explicitly.",
                         buildContext.getPlanResultKey().getKey(),
                         agentId);
             } else {
-                LOG.warn("Agent for {} not found. Cannot stop the agent.", buildContext.getPlanResultKey().getKey());
+                LOG.warn(
+                        "Agent for {} not found. Cannot stop the agent.",
+                        buildContext.getPlanResultKey().getKey());
             }
-
         }
         return buildContext;
     }
@@ -123,7 +125,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
     @NotNull
     @Override
     public Set<String> getConfigurationKeys() {
-        return new HashSet<>(Arrays.asList(Configuration.ENABLED_FOR_JOB,
+        return new HashSet<>(Arrays.asList(
+                Configuration.ENABLED_FOR_JOB,
                 Configuration.DOCKER_IMAGE,
                 Configuration.DOCKER_IMAGE_SIZE,
                 Configuration.DOCKER_AWS_ROLE,
@@ -177,9 +180,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 .size(c.getSize().name())
                 .awsRole(c.getAwsRole())
                 .architecture(c.getArchitecture())
-                .extraContainers(c
-                        .getExtraContainers()
-                        .stream()
+                .extraContainers(c.getExtraContainers().stream()
                         .map(getExtraContainerExtraContainerFunction())
                         .collect(Collectors.toList()))
                 .withFeatureFlags(c.getFeatureFlags());
@@ -195,22 +196,21 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                 .image(t.getImage())
                 .size(t.getExtraSize().name())
                 .commands(t.getCommands())
-                .envVariables(t
-                        .getEnvVariables()
-                        .stream()
+                .envVariables(t.getEnvVariables().stream()
                         .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
                         .collect(Collectors.toList()));
     }
 
     @Override
-    public void addToBuildConfiguration(PerBuildContainerForJobProperties specsProperties,
-            @NotNull HierarchicalConfiguration buildConfiguration) {
+    public void addToBuildConfiguration(
+            PerBuildContainerForJobProperties specsProperties, @NotNull HierarchicalConfiguration buildConfiguration) {
         if (specsProperties.isEnabled()) {
             // apparently unlike in CustomEnvironmentConfigPluginExporter there is no explicit validation callback
             // and the infra is not calling it either. Doing it here for the lack of a better place.
             specsProperties.validate();
             ErrorCollection errorCollection = new SimpleErrorCollection();
-            validator.validate(specsProperties.getImage(),
+            validator.validate(
+                    specsProperties.getImage(),
                     specsProperties.getSize(),
                     specsProperties.getAwsRole(),
                     specsProperties.getArchitecture(),
@@ -218,9 +218,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     errorCollection,
                     false);
             if (errorCollection.hasAnyErrors()) {
-                throw new PropertiesValidationException(errorCollection
-                        .getAllErrorMessages()
-                        .stream()
+                throw new PropertiesValidationException(errorCollection.getAllErrorMessages().stream()
                         .map(ValidationProblem::new)
                         .collect(Collectors.toList()));
             }
@@ -232,8 +230,8 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
         buildConfiguration.setProperty(Configuration.DOCKER_IMAGE_SIZE, specsProperties.getSize());
         buildConfiguration.setProperty(Configuration.DOCKER_AWS_ROLE, specsProperties.getAwsRole());
         buildConfiguration.setProperty(Configuration.DOCKER_ARCHITECTURE, specsProperties.getArchitecture());
-        buildConfiguration.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
-                toJsonString(specsProperties.getExtraContainers()));
+        buildConfiguration.setProperty(
+                Configuration.DOCKER_EXTRA_CONTAINERS, toJsonString(specsProperties.getExtraContainers()));
         buildConfiguration.setProperty(Configuration.DOCKER_FEATURE_FLAGS, toJsonString(featureFlags));
     }
 
@@ -259,9 +257,7 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
                     .architecture(config.getArchitecture())
-                    .extraContainers(config
-                            .getExtraContainers()
-                            .stream()
+                    .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()))
                     .withFeatureFlags(config.getFeatureFlags());
@@ -279,18 +275,18 @@ public class BuildProcessorServerImpl extends BaseConfigurablePlugin implements 
      * Convert list of ExtraContainerProperties definitions into a json string.
      */
     public static String toJsonString(List<ExtraContainerProperties> extraContainers) {
-        return ConfigurationPersistence.toJson(extraContainers.stream().map((ExtraContainerProperties t) -> {
-            Configuration.ExtraContainer ec = new Configuration.ExtraContainer(t.getName(),
-                    t.getImage(),
-                    Configuration.ExtraContainerSize.valueOf(t.getSize()));
-            ec.setCommands(t.getCommands());
-            ec.setEnvVariables(t
-                    .getEnvironments()
-                    .stream()
-                    .map((EnvProperties e) -> new Configuration.EnvVariable(e.getKey(), e.getValue()))
-                    .collect(Collectors.toList()));
-            return ec;
-        }).collect(Collectors.toList())).toString();
+        return ConfigurationPersistence.toJson(extraContainers.stream()
+                        .map((ExtraContainerProperties t) -> {
+                            Configuration.ExtraContainer ec = new Configuration.ExtraContainer(
+                                    t.getName(), t.getImage(), Configuration.ExtraContainerSize.valueOf(t.getSize()));
+                            ec.setCommands(t.getCommands());
+                            ec.setEnvVariables(t.getEnvironments().stream()
+                                    .map((EnvProperties e) -> new Configuration.EnvVariable(e.getKey(), e.getValue()))
+                                    .collect(Collectors.toList()));
+                            return ec;
+                        })
+                        .collect(Collectors.toList()))
+                .toString();
     }
 
     public static String toJsonString(HashSet<String> featureFlags) {

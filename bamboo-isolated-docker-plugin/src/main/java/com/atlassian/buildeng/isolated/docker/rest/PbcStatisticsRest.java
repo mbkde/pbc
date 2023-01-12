@@ -79,8 +79,10 @@ public class PbcStatisticsRest {
                         ResultKey resultKey = deploymentContext.getResultKey();
                         long projectId = deploymentContext.getDeploymentProjectId();
                         long environId = deploymentContext.getEnvironmentId();
-                        long versionId = deploymentContext.getDeploymentVersion().getId();
-                        deployments.add(ImmutableMap.of("projectId",
+                        long versionId =
+                                deploymentContext.getDeploymentVersion().getId();
+                        deployments.add(ImmutableMap.of(
+                                "projectId",
                                 projectId,
                                 "environmentId",
                                 environId,
@@ -93,6 +95,8 @@ public class PbcStatisticsRest {
             }
         });
 
-        return Response.ok().entity(ImmutableMap.of("plans", plans, "deployments", deployments)).build();
+        return Response.ok()
+                .entity(ImmutableMap.of("plans", plans, "deployments", deployments))
+                .build();
     }
 }

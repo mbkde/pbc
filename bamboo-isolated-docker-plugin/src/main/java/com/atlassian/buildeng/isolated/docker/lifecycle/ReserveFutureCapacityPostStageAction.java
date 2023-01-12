@@ -31,45 +31,51 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
 
     private static final String FUTURE_RESERVE_STATE = "pbc.futureState";
 
-    public ReserveFutureCapacityPostStageAction() {
-    }
+    public ReserveFutureCapacityPostStageAction() {}
 
     @Override
-    public void execute(ChainResultsSummary chainResultsSummary,
-            ChainStageResult chainStageResult,
-            StageExecution stageExecution) throws InterruptedException, Exception {
+    public void execute(
+            ChainResultsSummary chainResultsSummary, ChainStageResult chainStageResult, StageExecution stageExecution)
+            throws InterruptedException, Exception {
         // cleanup future reservations in case of failure.
         FutureState state = retrieveFutureState(stageExecution);
         boolean successful = chainStageResult.isSuccessful();
         switch (state) {
             case RESERVED:
                 if (successful) {
-                    logger.info("True-Positive prescheduling for {}", chainResultsSummary.getPlanResultKey().getKey());
+                    logger.info(
+                            "True-Positive prescheduling for {}",
+                            chainResultsSummary.getPlanResultKey().getKey());
                 } else {
-                    logger.warn("False-Positive prescheduling for {}", chainResultsSummary.getPlanResultKey().getKey());
+                    logger.warn(
+                            "False-Positive prescheduling for {}",
+                            chainResultsSummary.getPlanResultKey().getKey());
                 }
                 break;
             case NOT_RESERVED:
                 if (successful) {
-                    logger.info("False-Negative prescheduling for {}", chainResultsSummary.getPlanResultKey().getKey());
+                    logger.info(
+                            "False-Negative prescheduling for {}",
+                            chainResultsSummary.getPlanResultKey().getKey());
                 } else {
-                    logger.warn("True-Negative prescheduling for {}", chainResultsSummary.getPlanResultKey().getKey());
+                    logger.warn(
+                            "True-Negative prescheduling for {}",
+                            chainResultsSummary.getPlanResultKey().getKey());
                 }
                 break;
             case NOT_APPLICABLE:
                 break;
             default:
-                logger.error("unknown state for {}", chainResultsSummary.getPlanResultKey().getKey());
+                logger.error(
+                        "unknown state for {}",
+                        chainResultsSummary.getPlanResultKey().getKey());
                 break;
         }
-
     }
 
-    static void storeFutureState(StageExecution stageExecution,
-            ReserveFutureCapacityPostStageAction.FutureState state) {
-        stageExecution
-                .getBuilds()
-                .stream()
+    static void storeFutureState(
+            StageExecution stageExecution, ReserveFutureCapacityPostStageAction.FutureState state) {
+        stageExecution.getBuilds().stream()
                 .map(BuildExecution::getBuildContext)
                 .map(BuildContext::getBuildResult)
                 .forEach((CurrentBuildResult t) -> {
@@ -77,11 +83,8 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
                 });
     }
 
-
     static FutureState retrieveFutureState(StageExecution stageExecution) {
-        return stageExecution
-                .getBuilds()
-                .stream()
+        return stageExecution.getBuilds().stream()
                 .map(BuildExecution::getBuildContext)
                 .map(BuildContext::getBuildResult)
                 .map((CurrentBuildResult t) -> {
@@ -91,7 +94,6 @@ public class ReserveFutureCapacityPostStageAction implements PostStageAction {
                 .findFirst()
                 .get();
     }
-
 
     public static enum FutureState {
         RESERVED, // we have some future PBC jobs and we reserved space

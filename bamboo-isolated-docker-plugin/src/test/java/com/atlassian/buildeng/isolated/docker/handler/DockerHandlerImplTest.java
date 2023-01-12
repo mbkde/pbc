@@ -45,16 +45,22 @@ public class DockerHandlerImplTest {
 
     @Mock
     ModuleDescriptor moduleDescriptor;
+
     @Mock
     TemplateRenderer templateRenderer;
+
     @Mock
     EnvironmentCustomConfigService environmentCustomConfigService;
+
     @Mock
     WebResourceManager webResourceManager;
+
     @Mock
     EnvironmentRequirementService environmentRequirementService;
+
     @Mock
     GlobalConfiguration globalConfiguration;
+
     @Mock
     Validator validator;
 
@@ -62,7 +68,8 @@ public class DockerHandlerImplTest {
     public void testGetArchitecturesWithNonEmptyList() {
         Configuration c = ConfigurationBuilder.create("image").build();
 
-        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor,
+        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(
+                moduleDescriptor,
                 webResourceManager,
                 templateRenderer,
                 environmentCustomConfigService,
@@ -77,7 +84,8 @@ public class DockerHandlerImplTest {
 
         Collection<Pair<String, String>> returnedArchList = dockerHandler.getArchitectures();
 
-        List<Pair<String, String>> expectedArchList = Arrays.asList(Pair.make("default", "Default"),
+        List<Pair<String, String>> expectedArchList = Arrays.asList(
+                Pair.make("default", "Default"),
                 Pair.make("amd64", "Intel x86_64"),
                 Pair.make("arm64", "ARMv8 AArch64"));
 
@@ -86,9 +94,12 @@ public class DockerHandlerImplTest {
 
     @Test
     public void testGetArchitecturesWithNonEmptyListAndBuildHasInvalidArchitecture() {
-        Configuration c = ConfigurationBuilder.create("image").withArchitecture("fakeArch").build();
+        Configuration c = ConfigurationBuilder.create("image")
+                .withArchitecture("fakeArch")
+                .build();
 
-        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor,
+        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(
+                moduleDescriptor,
                 webResourceManager,
                 templateRenderer,
                 environmentCustomConfigService,
@@ -103,7 +114,8 @@ public class DockerHandlerImplTest {
 
         Collection<Pair<String, String>> returnedArchList = dockerHandler.getArchitectures();
 
-        List<Pair<String, String>> expectedArchList = Arrays.asList(Pair.make("default", "Default"),
+        List<Pair<String, String>> expectedArchList = Arrays.asList(
+                Pair.make("default", "Default"),
                 Pair.make("amd64", "Intel x86_64"),
                 Pair.make("arm64", "ARMv8 AArch64"),
                 Pair.make("fakeArch", "fakeArch <not supported on this server>"));
@@ -113,9 +125,12 @@ public class DockerHandlerImplTest {
 
     @Test
     public void testGetArchitecturesWithEmptyListAndBuildHasInvalidArchitecture() {
-        Configuration c = ConfigurationBuilder.create("image").withArchitecture("fakeArch").build();
+        Configuration c = ConfigurationBuilder.create("image")
+                .withArchitecture("fakeArch")
+                .build();
 
-        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(moduleDescriptor,
+        DockerHandlerImpl dockerHandler = new DockerHandlerImpl(
+                moduleDescriptor,
                 webResourceManager,
                 templateRenderer,
                 environmentCustomConfigService,
@@ -130,9 +145,9 @@ public class DockerHandlerImplTest {
 
         Collection<Pair<String, String>> returnedArchList = dockerHandler.getArchitectures();
 
-        List<Pair<String, String>> expectedArchList =
-                Arrays.asList(Pair.make(null, "<select this option to remove any architecture>"),
-                        Pair.make("fakeArch", "fakeArch <not supported on this server>"));
+        List<Pair<String, String>> expectedArchList = Arrays.asList(
+                Pair.make(null, "<select this option to remove any architecture>"),
+                Pair.make("fakeArch", "fakeArch <not supported on this server>"));
 
         assertEquals(expectedArchList, returnedArchList);
     }

@@ -27,8 +27,7 @@ public class PreJobActionImpl implements PreJobAction {
     private static final Logger log = Logger.getLogger(PreJobActionImpl.class);
     public static final String SECURE_TOKEN = "pbc.kube.metrics.secureToken.password";
 
-    public PreJobActionImpl() {
-    }
+    public PreJobActionImpl() {}
 
     @Override
     public void execute(StageExecution stageExecution, BuildContext buildContext) {
@@ -39,5 +38,4 @@ public class PreJobActionImpl implements PreJobAction {
         String token = secureTokenService.generate(buildContext.getBuildKey()).getToken();
         buildContext.getBuildResult().getCustomBuildData().put(SECURE_TOKEN, token);
     }
-
 }

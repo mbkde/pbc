@@ -18,5 +18,4 @@ package com.atlassian.buildeng.ecs.remote;
 
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
 
-public class ConfigurationAction extends GlobalAdminAction {
-}
+public class ConfigurationAction extends GlobalAdminAction {}

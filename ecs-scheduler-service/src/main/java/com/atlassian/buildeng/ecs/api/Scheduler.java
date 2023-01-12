@@ -55,13 +55,13 @@ public class Scheduler {
                     JsonPrimitive hostPath = o.getAsJsonPrimitive("hostPath");
                     JsonPrimitive containerPath = o.getAsJsonPrimitive("containerPath");
                     if (name != null && hostPath != null && containerPath != null) {
-                        mappings.add(new HostFolderMappingImpl(name.getAsString(),
-                                hostPath.getAsString(),
-                                containerPath.getAsString()));
+                        mappings.add(new HostFolderMappingImpl(
+                                name.getAsString(), hostPath.getAsString(), containerPath.getAsString()));
                     }
                 });
             }
-            Scheduler scheduler = new Scheduler(uuid.getAsString(),
+            Scheduler scheduler = new Scheduler(
+                    uuid.getAsString(),
                     resultId.getAsString(),
                     server.getAsString(),
                     sidekick.getAsString(),
@@ -95,7 +95,8 @@ public class Scheduler {
     private final List<HostFolderMapping> hostFolderMappings;
     private String buildKey = "none";
 
-    public Scheduler(String uuid,
+    public Scheduler(
+            String uuid,
             String resultId,
             String server,
             String sidekick,
@@ -124,7 +125,6 @@ public class Scheduler {
     public String getSidekick() {
         return sidekick;
     }
-
 
     public Configuration getConfiguration() {
         return configuration;

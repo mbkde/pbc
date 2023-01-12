@@ -35,8 +35,7 @@ public class ClusterFactory {
     public ClusterFactory(KubernetesClient kubectl, ContextSupplier globalContextSupplier) {
         this.kubectl = kubectl;
         this.globalContextSupplier = globalContextSupplier;
-        this.cache = CacheBuilder
-                .newBuilder()
+        this.cache = CacheBuilder.newBuilder()
                 .expireAfterWrite(10, TimeUnit.SECONDS)
                 .build(new CacheLoader<String, List<ClusterRegistryItem>>() {
                     @Override
@@ -81,20 +80,24 @@ public class ClusterFactory {
                 if (array != null) {
                     for (Iterator iterator = array.iterator(); iterator.hasNext(); ) {
                         JsonElement next = (JsonElement) iterator.next();
-                        if (next != null &&
-                                next.isJsonObject() &&
-                                next.getAsJsonObject().has("kind") &&
-                                "Cluster".equals(next.getAsJsonObject().getAsJsonPrimitive("kind").getAsString())) {
+                        if (next != null
+                                && next.isJsonObject()
+                                && next.getAsJsonObject().has("kind")
+                                && "Cluster"
+                                        .equals(next.getAsJsonObject()
+                                                .getAsJsonPrimitive("kind")
+                                                .getAsString())) {
                             JsonObject metadata = next.getAsJsonObject().getAsJsonObject("metadata");
                             String name = metadata.getAsJsonPrimitive("name").getAsString();
                             JsonObject labels = metadata.getAsJsonObject("labels");
                             List<Pair<String, String>> labelList = labels == null
                                     ? Collections.emptyList()
-                                    : labels
-                                            .entrySet()
-                                            .stream()
-                                            .map((Map.Entry<String, JsonElement> t) -> new ImmutablePair<>(t.getKey(),
-                                                    t.getValue().getAsJsonPrimitive().getAsString()))
+                                    : labels.entrySet().stream()
+                                            .map((Map.Entry<String, JsonElement> t) -> new ImmutablePair<>(
+                                                    t.getKey(),
+                                                    t.getValue()
+                                                            .getAsJsonPrimitive()
+                                                            .getAsString()))
                                             .collect(Collectors.toList());
                             items.add(new ClusterRegistryItem(name, labelList));
                         }

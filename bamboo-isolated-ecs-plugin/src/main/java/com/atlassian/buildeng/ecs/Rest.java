@@ -58,9 +58,9 @@ public class Rest {
     private final CachedPlanManager cachedPlanManager;
     private final TaskDefinitionRegistrations taskDefRegistrations;
 
-
     @Autowired
-    public Rest(GlobalConfiguration configuration,
+    public Rest(
+            GlobalConfiguration configuration,
             CachedPlanManager cachedPlanManager,
             TaskDefinitionRegistrations taskDefRegistrations) {
         this.configuration = configuration;
@@ -74,12 +74,9 @@ public class Rest {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllDockerMappings() {
         Map<Configuration, Integer> mappings = configuration.getAllRegistrations();
-        return Response
-                .ok(new GetAllImagesResponse(mappings
-                        .entrySet()
-                        .stream()
-                        .map((Entry<Configuration, Integer> entry) -> new DockerMapping(entry.getKey().getDockerImage(),
-                                entry.getValue()))
+        return Response.ok(new GetAllImagesResponse(mappings.entrySet().stream()
+                        .map((Entry<Configuration, Integer> entry) ->
+                                new DockerMapping(entry.getKey().getDockerImage(), entry.getValue()))
                         .collect(Collectors.toList())))
                 .build();
     }
@@ -119,13 +116,19 @@ public class Rest {
     @Path("/config")
     public Response setConfig(Config config) {
         if (StringUtils.isBlank(config.getAutoScalingGroupName())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("autoScalingGroupName is mandatory").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("autoScalingGroupName is mandatory")
+                    .build();
         }
         if (StringUtils.isBlank(config.getEcsClusterName())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("ecsClusterName is mandatory").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("ecsClusterName is mandatory")
+                    .build();
         }
         if (StringUtils.isBlank(config.getSidekickImage())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("sidekickImage is mandatory").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("sidekickImage is mandatory")
+                    .build();
         }
         configuration.setConfig(config);
         return Response.noContent().build();
@@ -137,17 +140,18 @@ public class Rest {
     public Response getUsages(@PathParam("revision") final int revision) {
         // TODO environments
         List<JobsUsingImageResponse.JobInfo> toRet = new ArrayList<>();
-        cachedPlanManager.getPlans(ImmutableJob.class).stream().filter(job -> !job.hasMaster()).forEach(job -> {
-            Configuration config = forJob(job);
-            if (config.isEnabled()) {
-                if (revision == taskDefRegistrations.findTaskRegistrationVersion(config, configuration)) {
-                    toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
-                }
-            }
-        });
+        cachedPlanManager.getPlans(ImmutableJob.class).stream()
+                .filter(job -> !job.hasMaster())
+                .forEach(job -> {
+                    Configuration config = forJob(job);
+                    if (config.isEnabled()) {
+                        if (revision == taskDefRegistrations.findTaskRegistrationVersion(config, configuration)) {
+                            toRet.add(new JobsUsingImageResponse.JobInfo(job.getName(), job.getKey()));
+                        }
+                    }
+                });
         return Response.ok(new JobsUsingImageResponse(toRet)).build();
     }
-
 
     // constants for /awslogs query params
     static final String PARAM_TASK_ARN = "taskArn";
@@ -156,22 +160,23 @@ public class Rest {
     @GET
     @Path("/logs")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getAwsLogs(@QueryParam(PARAM_CONTAINER) String containerName,
-            @QueryParam(PARAM_TASK_ARN) String taskArn) {
+    public Response getAwsLogs(
+            @QueryParam(PARAM_CONTAINER) String containerName, @QueryParam(PARAM_TASK_ARN) String taskArn) {
         if (containerName == null || taskArn == null) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
         AwsLogs.Driver driver = AwsLogs.getAwsLogsDriver(configuration);
         if (driver != null) {
             if (driver.getRegion() == null || driver.getLogGroupName() == null || driver.getStreamPrefix() == null) {
-                return Response
-                        .status(Response.Status.BAD_REQUEST)
-                        .entity("For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.")
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(
+                                "For awslogs docker log driver, all of 'awslogs-region', 'awslogs-group' and 'awslogs-stream-prefix' have to be defined.")
                         .build();
             }
 
             StreamingOutput stream = (OutputStream os) -> {
-                AwsLogs.writeTo(os,
+                AwsLogs.writeTo(
+                        os,
                         driver.getLogGroupName(),
                         driver.getRegion(),
                         driver.getStreamPrefix(),
@@ -193,14 +198,12 @@ public class Rest {
 
     @Nonnull
     private static Configuration forMap(@Nonnull Map<String, String> cc) {
-        return ConfigurationBuilder
-                .create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                 .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
-                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
-                        Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(cc.getOrDefault(
-                        Configuration.DOCKER_EXTRA_CONTAINERS,
-                        "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(
+                        cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(
+                        cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                 .build();
     }
 }

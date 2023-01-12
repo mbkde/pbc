@@ -47,7 +47,8 @@ public class DockerHost {
     private final List<Attribute> attributes;
 
     @TestOnly
-    DockerHost(int remainingMemory,
+    DockerHost(
+            int remainingMemory,
             int remainingCpu,
             int registeredMemory,
             int registeredCpu,
@@ -87,15 +88,14 @@ public class DockerHost {
             throws ECSException {
         List<Resource> resources =
                 isRemaining ? containerInstance.getRemainingResources() : containerInstance.getRegisteredResources();
-        return resources
-                .stream()
+        return resources.stream()
                 .filter(resource -> resource.getName().equals(name))
                 .map(Resource::getIntegerValue)
                 .filter(Objects::nonNull) // Apparently Resource::getIntegerValue can be null? but we want an int only.
                 .findFirst()
-                .orElseThrow(() -> new ECSException(String.format("Container Instance %s missing '%s' resource",
-                        containerInstance.getContainerInstanceArn(),
-                        name)));
+                .orElseThrow(() -> new ECSException(String.format(
+                        "Container Instance %s missing '%s' resource",
+                        containerInstance.getContainerInstanceArn(), name)));
     }
 
     public boolean canRun(int requiredMemory, int requiredCpu) {
@@ -114,7 +114,9 @@ public class DockerHost {
         // Mod by hour
         long millisSinceStartOfCycle = ageMillis() % Duration.ofMinutes(60).toMillis();
         // Are we at the end of an hourly cycle?
-        return millisSinceStartOfCycle >= Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE).toMillis();
+        return millisSinceStartOfCycle
+                >= Duration.ofMinutes(60 - Constants.MINUTES_BEFORE_BILLING_CYCLE)
+                        .toMillis();
     }
 
     static Comparator<DockerHost> compareByResourcesAndAge() {
@@ -214,36 +216,33 @@ public class DockerHost {
     }
 
     public String getContainerAttribute(String name) {
-        return attributes
-                .stream()
+        return attributes.stream()
                 .filter((Attribute t) -> name.equals(t.getName()))
                 .map((Attribute t) -> t.getValue())
                 .findFirst()
                 .orElse(null);
     }
 
-
     @Override
     public String toString() {
-        return "DockerHost{" +
-                "remainingMemory=" +
-                remainingMemory +
-                ", remainingCpu=" +
-                remainingCpu +
-                ", registeredMemory=" +
-                registeredMemory +
-                ", registeredCpu=" +
-                registeredCpu +
-                ", containerInstanceArn='" +
-                containerInstanceArn +
-                '\'' +
-                ", instanceId='" +
-                instanceId +
-                '\'' +
-                ", launchTime=" +
-                launchTime +
-                ", agentConnected=" +
-                agentConnected +
-                '}';
+        return "DockerHost{" + "remainingMemory="
+                + remainingMemory
+                + ", remainingCpu="
+                + remainingCpu
+                + ", registeredMemory="
+                + registeredMemory
+                + ", registeredCpu="
+                + registeredCpu
+                + ", containerInstanceArn='"
+                + containerInstanceArn
+                + '\''
+                + ", instanceId='"
+                + instanceId
+                + '\''
+                + ", launchTime="
+                + launchTime
+                + ", agentConnected="
+                + agentConnected
+                + '}';
     }
 }

@@ -45,7 +45,6 @@ public abstract class MetricsBuildProcessor implements CustomBuildProcessor {
     protected BuildContext buildContext;
     protected final ArtifactManager artifactManager;
 
-
     protected MetricsBuildProcessor(BuildLoggerManager buildLoggerManager, ArtifactManager artifactManager) {
         this.buildLoggerManager = buildLoggerManager;
         this.artifactManager = artifactManager;
@@ -69,7 +68,8 @@ public abstract class MetricsBuildProcessor implements CustomBuildProcessor {
         return buildContext;
     }
 
-    protected final void publishMetrics(String name,
+    protected final void publishMetrics(
+            String name,
             String fileExtension,
             SecureToken secureToken,
             BuildLogger buildLogger,
@@ -80,7 +80,8 @@ public abstract class MetricsBuildProcessor implements CustomBuildProcessor {
                 new ArtifactDefinitionContextImpl(ARTIFACT_PREFIX + name, false, secureToken);
         artifact.setCopyPattern(name + fileExtension);
         artifact.setLocation(METRICS_FOLDER);
-        final ArtifactPublishingResult publishingResult = artifactManager.publish(buildLogger,
+        final ArtifactPublishingResult publishingResult = artifactManager.publish(
+                buildLogger,
                 buildContext.getPlanResultKey(),
                 buildWorkingDirectory,
                 artifact,
@@ -89,17 +90,14 @@ public abstract class MetricsBuildProcessor implements CustomBuildProcessor {
         buildContext
                 .getCurrentResult()
                 .getCustomBuildData()
-                .put(ARTIFACT_TYPE_BUILD_DATA_KEY,
-                        publishingResult
-                                .getSuccessfulPublishingResults()
-                                .stream()
+                .put(
+                        ARTIFACT_TYPE_BUILD_DATA_KEY,
+                        publishingResult.getSuccessfulPublishingResults().stream()
                                 .findAny()
                                 .map(ArtifactHandlerPublishingResult::getArtifactHandlerKey)
                                 .orElse(Artifact.SYSTEM_LINK_TYPE));
     }
 
-    protected abstract void generateMetricsGraphs(BuildLogger buildLogger,
-            Configuration config,
-            BuildContext buildContext);
-
+    protected abstract void generateMetricsGraphs(
+            BuildLogger buildLogger, Configuration config, BuildContext buildContext);
 }

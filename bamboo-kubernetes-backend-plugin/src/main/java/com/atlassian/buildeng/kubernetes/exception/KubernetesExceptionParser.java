@@ -31,7 +31,7 @@ public class KubernetesExceptionParser {
             return new PodAlreadyExistsException("pod already exists");
         }
 
-        return new KubectlException(errorMessage + " \nARGS: " + args + " \nSTDOUT: " + stdout + " \nSTDERR: " + stderr,
-                exception);
+        return new KubectlException(
+                errorMessage + " \nARGS: " + args + " \nSTDOUT: " + stdout + " \nSTDERR: " + stderr, exception);
     }
 }

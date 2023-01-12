@@ -36,9 +36,9 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 
-
 public abstract class WatchdogJob implements Job {
-    protected final void killBuild(DeploymentExecutionService deploymentExecutionService,
+    protected final void killBuild(
+            DeploymentExecutionService deploymentExecutionService,
             DeploymentResultService deploymentResultService,
             Logger logger,
             BuildQueueManager buildQueueManager,
@@ -63,7 +63,8 @@ public abstract class WatchdogJob implements Job {
     }
 
     protected final <T> T getService(Class<T> type, String serviceKey) {
-        final Object obj = checkNotNull(ContainerManager.getComponent(serviceKey),
+        final Object obj = checkNotNull(
+                ContainerManager.getComponent(serviceKey),
                 "Expected value for key '" + serviceKey + "', found nothing.");
         return type.cast(obj);
     }

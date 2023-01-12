@@ -22,7 +22,8 @@ public class SubjectIdServiceImpl implements SubjectIdService {
     private static final Integer IAM_REQUEST_LIMIT = 63;
 
     @Inject
-    public SubjectIdServiceImpl(AdministrationConfigurationAccessor admConfAccessor,
+    public SubjectIdServiceImpl(
+            AdministrationConfigurationAccessor admConfAccessor,
             CachedPlanManager cachedPlanManager,
             DeploymentProjectService deploymentProjectService) {
         this.admConfAccessor = admConfAccessor;
@@ -68,9 +69,11 @@ public class SubjectIdServiceImpl implements SubjectIdService {
             String toBeTruncated = getInstanceName() + "/" + deploymentProject.getPlanKey();
 
             // Truncate the instance-name to fit a '/D/<ID>' at the end.
-            //-3 as we need to fit '/D/'
+            // -3 as we need to fit '/D/'
 
-            int endIndex = IAM_REQUEST_LIMIT - String.valueOf(deploymentProject.getId()).length() - 3;
+            int endIndex = IAM_REQUEST_LIMIT
+                    - String.valueOf(deploymentProject.getId()).length()
+                    - 3;
 
             subjectId = toBeTruncated.substring(0, endIndex) + "/D/" + deploymentProject.getId();
         }
@@ -97,6 +100,10 @@ public class SubjectIdServiceImpl implements SubjectIdService {
     }
 
     private String getInstanceName() {
-        return admConfAccessor.getAdministrationConfiguration().getInstanceName().toLowerCase().replaceAll("\\s", "-");
+        return admConfAccessor
+                .getAdministrationConfiguration()
+                .getInstanceName()
+                .toLowerCase()
+                .replaceAll("\\s", "-");
     }
 }

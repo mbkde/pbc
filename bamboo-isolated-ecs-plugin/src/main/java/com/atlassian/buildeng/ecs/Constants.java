@@ -30,5 +30,4 @@ public interface Constants extends com.atlassian.buildeng.ecs.scheduling.Constan
     // these 2 copied from bamboo-isolated-docker-plugin to avoid dependency
     String RESULT_PREFIX = "result.isolated.docker.";
     String RESULT_ERROR = "custom.isolated.docker.error";
-
 }

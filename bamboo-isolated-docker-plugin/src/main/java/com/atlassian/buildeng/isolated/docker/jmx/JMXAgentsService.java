@@ -56,10 +56,10 @@ public class JMXAgentsService implements LifecycleAware {
             name = new ObjectName("com.atlassian.buildeng.isolated.docker:type=AgentCounts");
             mbs.registerMBean(agentsCount, name);
             logger.info("Successfully registered mbean {}", name);
-        } catch (MalformedObjectNameException |
-                InstanceAlreadyExistsException |
-                MBeanRegistrationException |
-                NotCompliantMBeanException e) {
+        } catch (MalformedObjectNameException
+                | InstanceAlreadyExistsException
+                | MBeanRegistrationException
+                | NotCompliantMBeanException e) {
             logger.error("Failed to register mbean {}: {}", name, e.getMessage());
         }
     }

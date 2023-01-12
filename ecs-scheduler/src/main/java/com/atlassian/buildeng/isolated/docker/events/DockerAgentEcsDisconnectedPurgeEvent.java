@@ -21,7 +21,6 @@ import com.atlassian.buildeng.spi.isolated.docker.events.DockerAgentEvent;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 public class DockerAgentEcsDisconnectedPurgeEvent extends DockerAgentEvent {
 
     private final List<DockerHost> selectedToKill;
@@ -32,10 +31,8 @@ public class DockerAgentEcsDisconnectedPurgeEvent extends DockerAgentEvent {
 
     @Override
     public String toString() {
-        return "DockerAgentEcsDisconnectedPurgeEvent{" +
-                "selectedToKill=" +
-                selectedToKill.stream().map(DockerHost::getInstanceId).collect(Collectors.toList()) +
-                '}';
+        return "DockerAgentEcsDisconnectedPurgeEvent{" + "selectedToKill="
+                + selectedToKill.stream().map(DockerHost::getInstanceId).collect(Collectors.toList())
+                + '}';
     }
-
 }

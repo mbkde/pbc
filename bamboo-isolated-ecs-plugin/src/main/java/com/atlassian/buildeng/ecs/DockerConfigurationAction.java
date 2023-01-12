@@ -18,5 +18,4 @@ package com.atlassian.buildeng.ecs;
 
 import com.atlassian.bamboo.configuration.GlobalAdminAction;
 
-public class DockerConfigurationAction extends GlobalAdminAction {
-}
+public class DockerConfigurationAction extends GlobalAdminAction {}

@@ -32,8 +32,10 @@ public class JmxJob extends WatchdogJob {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
             BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
-            KubeJmxService jmxService =
-                    getService(KubeJmxService.class, "kubeJmxService", context.getJobDetail().getJobDataMap());
+            KubeJmxService jmxService = getService(
+                    KubeJmxService.class,
+                    "kubeJmxService",
+                    context.getJobDetail().getJobDataMap());
             jmxService.recalculate(buildQueueManager);
         } catch (Throwable t) {
             // this is throwable because of NoClassDefFoundError and alike.

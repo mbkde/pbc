@@ -82,26 +82,28 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                 final SecureToken secureToken = SecureToken.createFromString(token);
 
                 List<String> names = new ArrayList<>();
-                for (File containerFolder : taskFolder.listFiles((File pathname) -> pathname.isDirectory() &&
-                        !"~internal~ecs-emptyvolume-source".equals(pathname.getName()) &&
-                        !"bamboo-agent-sidekick".equals(pathname.getName()))) {
+                for (File containerFolder : taskFolder.listFiles((File pathname) -> pathname.isDirectory()
+                        && !"~internal~ecs-emptyvolume-source".equals(pathname.getName())
+                        && !"bamboo-agent-sidekick".equals(pathname.getName()))) {
                     long startTime;
                     long endTime;
                     try {
                         new File(containerFolder, "stop").createNewFile();
                         Thread.sleep(100); // sleep a bit to make sure the provider is no longer writing there.
-                        startTime = Long.parseLong(FileUtils
-                                .readFileToString(new File(containerFolder, "start.txt"), Charset.defaultCharset())
+                        startTime = Long.parseLong(FileUtils.readFileToString(
+                                        new File(containerFolder, "start.txt"), Charset.defaultCharset())
                                 .trim());
-                        endTime = Long.parseLong(FileUtils
-                                .readFileToString(new File(containerFolder, "end.txt"), Charset.defaultCharset())
+                        endTime = Long.parseLong(FileUtils.readFileToString(
+                                        new File(containerFolder, "end.txt"), Charset.defaultCharset())
                                 .trim());
                         // rrd4j has it's own format, we need to convert from rrd first
-                        RrdDb rrd = new RrdDb(new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
+                        RrdDb rrd = new RrdDb(
+                                new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
                                 "rrdtool:/" + new File(containerFolder, "cpu.usage.rrd").getAbsolutePath(),
                                 new RrdSafeFileBackendFactory());
                         rrd.close();
-                        RrdDb rrd2 = new RrdDb(new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
+                        RrdDb rrd2 = new RrdDb(
+                                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
                                 "rrdtool:/" + new File(containerFolder, "memory.usage.rrd").getAbsolutePath(),
                                 new RrdSafeFileBackendFactory());
                         rrd2.close();
@@ -115,26 +117,36 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                     targetDir.mkdirs();
                     String cpuName = containerFolder.getName() + "-cpu";
                     String memoryName = containerFolder.getName() + "-memory";
-                    generateCpuPng(createGraphDef(startTime,
-                            endTime,
-                            containerFolder.getName() + " CPU Usage",
-                            "CPU Cores",
-                            targetDir,
-                            cpuName + ".png"), containerFolder, buildLogger);
-                    generateMemoryPng(createGraphDef(startTime,
-                            endTime,
-                            containerFolder.getName() + " Memory Usage",
-                            "Memory Usage",
-                            targetDir,
-                            memoryName + ".png"), containerFolder, buildLogger);
-                    publishMetrics(cpuName,
+                    generateCpuPng(
+                            createGraphDef(
+                                    startTime,
+                                    endTime,
+                                    containerFolder.getName() + " CPU Usage",
+                                    "CPU Cores",
+                                    targetDir,
+                                    cpuName + ".png"),
+                            containerFolder,
+                            buildLogger);
+                    generateMemoryPng(
+                            createGraphDef(
+                                    startTime,
+                                    endTime,
+                                    containerFolder.getName() + " Memory Usage",
+                                    "Memory Usage",
+                                    targetDir,
+                                    memoryName + ".png"),
+                            containerFolder,
+                            buildLogger);
+                    publishMetrics(
+                            cpuName,
                             ".png",
                             secureToken,
                             buildLogger,
                             buildWorkingDirectory,
                             artifactHandlerConfiguration,
                             buildContext);
-                    publishMetrics(memoryName,
+                    publishMetrics(
+                            memoryName,
                             ".png",
                             secureToken,
                             buildLogger,
@@ -147,7 +159,9 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
                 buildContext
                         .getCurrentResult()
                         .getCustomBuildData()
-                        .put(ECSViewMetricsAction.ARTIFACT_BUILD_DATA_KEY, Joiner.on(",").join(names));
+                        .put(
+                                ECSViewMetricsAction.ARTIFACT_BUILD_DATA_KEY,
+                                Joiner.on(",").join(names));
             } else {
                 buildLogger.addBuildLogEntry("Folder with metrics data not mounted");
             }
@@ -155,15 +169,12 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
     }
 
     private void generateCpuPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {
-        gDef.datasource("user",
-                new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
-                "user",
-                ConsolFun.AVERAGE);
-        gDef.datasource("system",
-                new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
-                "system",
-                ConsolFun.AVERAGE);
-        gDef.datasource("throttled",
+        gDef.datasource(
+                "user", new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "user", ConsolFun.AVERAGE);
+        gDef.datasource(
+                "system", new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(), "system", ConsolFun.AVERAGE);
+        gDef.datasource(
+                "throttled",
                 new File(containerFolder, "cpu.usage.rrd4j").getAbsolutePath(),
                 "throttled",
                 ConsolFun.AVERAGE);
@@ -199,12 +210,8 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
         }
     }
 
-    private RrdGraphDef createGraphDef(long startTime,
-            long endTime,
-            String title,
-            String vertLabel,
-            File targetFolder,
-            String targetName) {
+    private RrdGraphDef createGraphDef(
+            long startTime, long endTime, String title, String vertLabel, File targetFolder, String targetName) {
         RrdGraphDef gDef = new RrdGraphDef();
         gDef.setImageFormat("png");
         gDef.setWidth(800);
@@ -219,26 +226,16 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
     }
 
     private void generateMemoryPng(RrdGraphDef gDef, File containerFolder, BuildLogger buildLogger) {
-        gDef.datasource("cache",
-                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
-                "cache",
-                ConsolFun.AVERAGE);
-        gDef.datasource("rss",
-                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
-                "rss",
-                ConsolFun.AVERAGE);
-        gDef.datasource("swap",
-                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
-                "swap",
-                ConsolFun.AVERAGE);
-        gDef.datasource("total",
-                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
-                "total",
-                ConsolFun.AVERAGE);
-        gDef.datasource("limit",
-                new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(),
-                "limit",
-                ConsolFun.AVERAGE);
+        gDef.datasource(
+                "cache", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "cache", ConsolFun.AVERAGE);
+        gDef.datasource(
+                "rss", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "rss", ConsolFun.AVERAGE);
+        gDef.datasource(
+                "swap", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "swap", ConsolFun.AVERAGE);
+        gDef.datasource(
+                "total", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "total", ConsolFun.AVERAGE);
+        gDef.datasource(
+                "limit", new File(containerFolder, "memory.usage.rrd4j").getAbsolutePath(), "limit", ConsolFun.AVERAGE);
 
         gDef.datasource("cache_min", "cache", ConsolFun.MIN.getVariable());
         gDef.datasource("cache_avg", "cache", ConsolFun.AVERAGE.getVariable());
@@ -279,7 +276,5 @@ public class ECSMetricsBuildProcessor extends MetricsBuildProcessor {
         } catch (IOException e) {
             buildLogger.addErrorLogEntry("Error while generating rrd graph", e);
         }
-
     }
-
 }

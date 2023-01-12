@@ -22,8 +22,7 @@ import org.slf4j.LoggerFactory;
 public class DeletePodLogger {
     private static final Logger logger = LoggerFactory.getLogger(DeletePodLogger.class);
 
-    public DeletePodLogger() {
-    }
+    public DeletePodLogger() {}
 
     void log(String msg) {
         logger.debug(msg);

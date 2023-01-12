@@ -10,7 +10,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 
-
 public class QueryPrometheus {
     private static final Integer MAX_RETRIES = 3;
     private static final Integer RETRY_DELAY_SECONDS = 1;
@@ -55,6 +54,5 @@ public class QueryPrometheus {
             }
         }
         return new JSONObject(response);
-
     }
 }

@@ -51,5 +51,4 @@ public class Rest {
         globalConfiguration.setDockerConfig(config);
         return Response.noContent().build();
     }
-
 }

@@ -39,7 +39,8 @@ public final class IsolatedDockerAgentRequest {
      * @param isPlan                  - true: Request for a build plan, false: request for deployment project
      * @param securityToken           - the security token for the Bamboo instance from which the request was received
      */
-    public IsolatedDockerAgentRequest(final Configuration configuration,
+    public IsolatedDockerAgentRequest(
+            final Configuration configuration,
             final String resultKey,
             final UUID uniqueIdentifier,
             final long originalQueingTimestamp,
@@ -57,7 +58,8 @@ public final class IsolatedDockerAgentRequest {
         this.securityToken = securityToken;
     }
 
-    public IsolatedDockerAgentRequest(final Configuration configuration,
+    public IsolatedDockerAgentRequest(
+            final Configuration configuration,
             final String resultKey,
             final UUID uniqueIdentifier,
             final long originalQueingTimestamp,

@@ -71,7 +71,7 @@ public class AwsVendorTest extends AbstractPbcTest {
     public void someElementsAreNotVisibleWhenNonAwsVendorIsChosen() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
-        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  // dismiss H2 warning
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME); // dismiss H2 warning
         updateGenericPerBuildContainerConfigurationPage(false, true);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
@@ -89,7 +89,7 @@ public class AwsVendorTest extends AbstractPbcTest {
     public void allElementsNotVisibleWhenPluginDisabled() throws Exception {
         bamboo.fastLogin(TestUser.ADMIN);
         backdoor.troubleshooting().dismissLocalAgentNotification();
-        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME);  // dismiss H2 warning
+        backdoor.troubleshooting().dismissNotification(2, TestUser.ADMIN_NAME); // dismiss H2 warning
         updateGenericPerBuildContainerConfigurationPage(false, false);
 
         GenericKubernetesConfigPage k8sGenericConfigPage = bamboo.visit(GenericKubernetesConfigPage.class);
@@ -106,8 +106,8 @@ public class AwsVendorTest extends AbstractPbcTest {
         String planKeyStr = UniqueNameHelper.makeUniqueName("PLAN");
         String jobKey = "JOB1";
 
-        Plan plan = new Plan(new Project().key(projectKey).name(projectKey), planKeyStr, planKeyStr).stages(new Stage(
-                "Default stage").jobs(new Job("Default job", jobKey)));
+        Plan plan = new Plan(new Project().key(projectKey).name(projectKey), planKeyStr, planKeyStr)
+                .stages(new Stage("Default stage").jobs(new Job("Default job", jobKey)));
         final PlanKey planKey = TestPlanSpecsHelper.getPlanKey(plan);
         backdoor.plans().createPlan(plan);
         PerBuildContainerConfigPage dockerConfigPage =
@@ -122,8 +122,9 @@ public class AwsVendorTest extends AbstractPbcTest {
     }
 
     private void assertDeploymentSpecificAwsControlsVisible(PlanKey planKey, boolean isVisible) throws Exception {
-        Deployment deployment = new Deployment(new PlanIdentifier(PlanKeys.getProjectKeyPart(planKey),
-                PlanKeys.getPlanKeyPart(planKey)), UniqueNameHelper.makeUniqueName("DEPL"))
+        Deployment deployment = new Deployment(
+                        new PlanIdentifier(PlanKeys.getProjectKeyPart(planKey), PlanKeys.getPlanKeyPart(planKey)),
+                        UniqueNameHelper.makeUniqueName("DEPL"))
                 .releaseNaming(new ReleaseNaming("version-1"))
                 .environments(new Environment(UniqueNameHelper.makeUniqueName("ENV")));
         long deploymentId = backdoor.deployments().createOrUpdateDeploymentProject(deployment);
@@ -138,8 +139,8 @@ public class AwsVendorTest extends AbstractPbcTest {
         String planKeyStr = UniqueNameHelper.makeUniqueName("PLAN");
         String jobKey = "JOB1";
 
-        Plan plan = new Plan(new Project().key(projectKey).name(projectKey), planKeyStr, planKeyStr).stages(new Stage(
-                "Default stage").jobs(new Job("Default job", jobKey)));
+        Plan plan = new Plan(new Project().key(projectKey).name(projectKey), planKeyStr, planKeyStr)
+                .stages(new Stage("Default stage").jobs(new Job("Default job", jobKey)));
         final PlanKey planKey = TestPlanSpecsHelper.getPlanKey(plan);
         backdoor.plans().createPlan(plan);
         PerBuildContainerConfigPage dockerConfigPage =

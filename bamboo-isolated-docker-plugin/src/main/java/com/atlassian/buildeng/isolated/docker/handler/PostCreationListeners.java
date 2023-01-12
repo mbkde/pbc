@@ -59,7 +59,8 @@ public class PostCreationListeners {
     private final EnvironmentRequirementService environmentRequirementService;
 
     @Inject
-    public PostCreationListeners(PlanManager pm,
+    public PostCreationListeners(
+            PlanManager pm,
             DeploymentProjectService deploymentProjectService,
             EnvironmentCustomConfigService environmentCustomConfigService,
             EnvironmentRequirementService environmentRequirementService) {
@@ -69,7 +70,6 @@ public class PostCreationListeners {
         this.environmentRequirementService = environmentRequirementService;
     }
 
-
     @EventListener
     public void onBuildCreatedEvent(BuildCreatedEvent event) {
         patchByPlanKey(event.getPlanKey());
@@ -77,10 +77,7 @@ public class PostCreationListeners {
 
     private boolean patchJob(Job job) {
         if (job != null && !job.hasMaster()) {
-            boolean isPresent = job
-                    .getRequirementSet()
-                    .getRequirements()
-                    .stream()
+            boolean isPresent = job.getRequirementSet().getRequirements().stream()
                     .anyMatch((Requirement t) -> Constants.CAPABILITY_RESULT.equals(t.getKey()));
             Configuration c = AccessConfiguration.forJob(job);
             if (!isPresent && c.isEnabled()) {
@@ -99,12 +96,11 @@ public class PostCreationListeners {
             HibernateRunner.runWithHibernateSession(() -> {
                 TopLevelPlan plan = pm.getPlanByKeyIfOfType(key, TopLevelPlan.class);
                 if (plan != null && !plan.hasMaster()) {
-                    boolean changedAny = plan
-                            .getAllJobs()
-                            .stream()
-                            .map(this::patchJob)
-                            .filter((Boolean t) -> Boolean.TRUE.equals(t))
-                            .count() > 0;
+                    boolean changedAny = plan.getAllJobs().stream()
+                                    .map(this::patchJob)
+                                    .filter((Boolean t) -> Boolean.TRUE.equals(t))
+                                    .count()
+                            > 0;
                     if (changedAny) {
                         pm.savePlan(plan);
                     }
@@ -121,12 +117,10 @@ public class PostCreationListeners {
         }
     }
 
-
     @EventListener
     public void onDeploymentProjectCreatedEvent(DeploymentProjectCreatedEvent event) {
         patchEnvironments(event.getDeploymentProjectId());
     }
-
 
     @EventListener
     public void onDeploymentProjectConfigUpdatedEvent(DeploymentProjectConfigUpdatedEvent event) {
@@ -153,8 +147,7 @@ public class PostCreationListeners {
                 List<? extends ImmutableRequirement> reqs =
                         environmentRequirementService.getRequirementsForEnvironment(t.getId());
                 Configuration c = AccessConfiguration.forEnvironment(t, environmentCustomConfigService);
-                boolean isPresent = reqs
-                        .stream()
+                boolean isPresent = reqs.stream()
                         .anyMatch((ImmutableRequirement r) -> Constants.CAPABILITY_RESULT.equals(r.getKey()));
                 if (!isPresent && c.isEnabled()) {
                     DockerHandlerImpl.addEnvironementRequirement(t, environmentRequirementService);
@@ -166,5 +159,4 @@ public class PostCreationListeners {
             }
         });
     }
-
 }

@@ -27,14 +27,12 @@ public class IsolatedDockerAgentResult {
     private Map<String, String> customData = new HashMap<>();
     private boolean retryRecoverable = false;
 
-    public IsolatedDockerAgentResult() {
-    }
+    public IsolatedDockerAgentResult() {}
 
     public IsolatedDockerAgentResult withError(String error) {
         errors.add(error);
         return this;
     }
-
 
     public IsolatedDockerAgentResult withCustomResultData(String key, String value) {
         customData.put(key, value);
@@ -69,5 +67,4 @@ public class IsolatedDockerAgentResult {
     public boolean isRetryRecoverable() {
         return retryRecoverable;
     }
-
 }

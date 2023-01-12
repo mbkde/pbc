@@ -39,12 +39,10 @@ public class AgentRegisteredListener {
     public void agentRegistered(AgentRegisteredEvent event) {
         event.getAgent().accept(new PipelineDefinitionVisitor() {
             @Override
-            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
-            }
+            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {}
 
             @Override
-            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
-            }
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {

@@ -45,10 +45,11 @@ import org.junit.runner.RunWith;
 @RunWith(JUnitQuickcheck.class)
 public class CyclingECSSchedulerQuickTest {
     static double percentageUtilized(List<DockerHost> freshHosts) {
-        double clusterRegisteredCPU = freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
-        double clusterRemainingCPU = freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
+        double clusterRegisteredCPU =
+                freshHosts.stream().mapToInt(DockerHost::getRegisteredCpu).sum();
+        double clusterRemainingCPU =
+                freshHosts.stream().mapToInt(DockerHost::getRemainingCpu).sum();
         return clusterRegisteredCPU == 0 ? 1 : 1 - clusterRemainingCPU / clusterRegisteredCPU;
-
     }
 
     @Property
@@ -62,7 +63,8 @@ public class CyclingECSSchedulerQuickTest {
     }
 
     @Property
-    public void selectHostTest(LinkedList<@From(DockerHostGenerator.class) DockerHost> candidates,
+    public void selectHostTest(
+            LinkedList<@From(DockerHostGenerator.class) DockerHost> candidates,
             Integer requiredMemory,
             Integer requiredCpu) {
         assumeThat(requiredMemory, greaterThan(0));
@@ -86,20 +88,16 @@ public class CyclingECSSchedulerQuickTest {
         final AWSSchedulerBackend awsSchedulerBackend = new AWSSchedulerBackend();
         final EventPublisher eventPublisher = new EventPublisher() {
             @Override
-            public void publish(Object event) {
-            }
+            public void publish(Object event) {}
 
             @Override
-            public void register(Object listener) {
-            }
+            public void register(Object listener) {}
 
             @Override
-            public void unregister(Object listener) {
-            }
+            public void unregister(Object listener) {}
 
             @Override
-            public void unregisterAll() {
-            }
+            public void unregisterAll() {}
         };
         DefaultModelUpdater dmu = new DefaultModelUpdater(awsSchedulerBackend, eventPublisher);
         DockerHosts hosts = new DockerHosts(allHosts, Duration.ofDays(1), new AutoScalingGroup(), "cn");
@@ -115,8 +113,7 @@ public class CyclingECSSchedulerQuickTest {
 
     static class TestECSConfigurationImpl implements ECSConfiguration {
 
-        public TestECSConfigurationImpl() {
-        }
+        public TestECSConfigurationImpl() {}
 
         @Override
         public String getCurrentCluster() {

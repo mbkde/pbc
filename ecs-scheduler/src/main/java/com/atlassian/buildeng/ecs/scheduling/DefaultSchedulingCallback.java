@@ -78,8 +78,8 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
         } else if (exception.getCause() instanceof InstancesSmallerThanAgentException) {
             toRet.withError(exception.getMessage());
         } else {
-            toRet.withRetryRecoverable("No Container Instance currently available. Reason: " +
-                    exception.getLocalizedMessage());
+            toRet.withRetryRecoverable(
+                    "No Container Instance currently available. Reason: " + exception.getLocalizedMessage());
         }
         callback.handle(toRet);
     }
@@ -91,11 +91,10 @@ public class DefaultSchedulingCallback implements SchedulingCallback {
         } else if ("ATTRIBUTE".equals(reason)) {
             return "ATTRIBUTE - Your task definition contains a parameter that requires a specific container instance attribute that is not available on your container instances.";
         } else if (reason.startsWith("RESOURCE")) {
-            return reason +
-                    " - The resource or resources requested by the task are unavailable on the given container instance. If the resource is CPU or memory, you may need to add container instances to your cluster.";
+            return reason
+                    + " - The resource or resources requested by the task are unavailable on the given container instance. If the resource is CPU or memory, you may need to add container instances to your cluster.";
         } else {
             return "Unknown RunTask reason:" + reason;
         }
     }
-
 }

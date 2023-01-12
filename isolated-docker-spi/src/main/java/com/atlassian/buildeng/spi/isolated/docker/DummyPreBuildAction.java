@@ -33,9 +33,7 @@ public class DummyPreBuildAction implements CustomPreBuildAction {
     private static final Logger LOG = LoggerFactory.getLogger(DummyPreBuildAction.class);
     private BuildContext buildContext;
 
-
-    private DummyPreBuildAction() {
-    }
+    private DummyPreBuildAction() {}
 
     @Override
     public ErrorCollection validate(BuildConfiguration config) {
@@ -51,5 +49,4 @@ public class DummyPreBuildAction implements CustomPreBuildAction {
     public BuildContext call() throws InterruptedException, Exception {
         return buildContext;
     }
-
 }

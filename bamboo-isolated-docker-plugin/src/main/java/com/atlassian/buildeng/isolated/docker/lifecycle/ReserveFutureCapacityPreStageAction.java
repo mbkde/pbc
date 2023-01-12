@@ -54,7 +54,8 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
     private final ContainerSizeDescriptor sizeDescriptor;
 
     @Inject
-    public ReserveFutureCapacityPreStageAction(IsolatedAgentService isoService,
+    public ReserveFutureCapacityPreStageAction(
+            IsolatedAgentService isoService,
             ResultsSummaryManager resultsSummaryManager,
             CachedPlanManager cachedPlanManager,
             ContainerSizeDescriptor sizeDescriptor) {
@@ -66,57 +67,50 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
 
     @Override
     public void execute(StageExecution stageExecution) throws InterruptedException, Exception {
-        Long currentStageMem =
-                stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(
-                        Collectors.summingLong((Configuration value) -> value.getMemoryTotal(sizeDescriptor)));
-        Long currentStageCpu =
-                stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex()).collect(
-                        Collectors.summingLong((Configuration value) -> value.getCPUTotal(sizeDescriptor)));
-        Long nextStageMem =
-                stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(
-                        Collectors.summingLong((Configuration value) -> value.getMemoryTotal(sizeDescriptor)));
-        Long nextStageCpu =
-                stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1).collect(
-                        Collectors.summingLong((Configuration value) -> value.getCPUTotal(sizeDescriptor)));
+        Long currentStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex())
+                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal(sizeDescriptor)));
+        Long currentStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex())
+                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal(sizeDescriptor)));
+        Long nextStageMem = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1)
+                .collect(Collectors.summingLong((Configuration value) -> value.getMemoryTotal(sizeDescriptor)));
+        Long nextStageCpu = stagePBCExecutions(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1)
+                .collect(Collectors.summingLong((Configuration value) -> value.getCPUTotal(sizeDescriptor)));
         long diffCpu = Math.max(0, nextStageCpu - currentStageCpu);
         long diffMem = Math.max(0, nextStageMem - currentStageMem);
         if (diffMem > 0 || diffCpu > 0) {
             long seconds = stageSuccessfulCompletionAvg(stageExecution);
             if (seconds != -1) { // for now ignore the time it takes, only care about succ/fail ratio
                 BuildKey key = findBuildKey(stageExecution);
-                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution,
-                        ReserveFutureCapacityPostStageAction.FutureState.RESERVED);
-                logger.info("Adding future reservation for {} {} ",
+                ReserveFutureCapacityPostStageAction.storeFutureState(
+                        stageExecution, ReserveFutureCapacityPostStageAction.FutureState.RESERVED);
+                logger.info(
+                        "Adding future reservation for {} {} ",
                         key,
                         stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex()));
-                isoService.reserveCapacity(key,
+                isoService.reserveCapacity(
+                        key,
                         stagePBCJobResultKeys(stageExecution.getChainExecution(), stageExecution.getStageIndex() + 1),
                         diffMem,
                         diffCpu);
             } else {
-                ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution,
-                        ReserveFutureCapacityPostStageAction.FutureState.NOT_RESERVED);
+                ReserveFutureCapacityPostStageAction.storeFutureState(
+                        stageExecution, ReserveFutureCapacityPostStageAction.FutureState.NOT_RESERVED);
             }
         } else {
-            ReserveFutureCapacityPostStageAction.storeFutureState(stageExecution,
-                    ReserveFutureCapacityPostStageAction.FutureState.NOT_APPLICABLE);
+            ReserveFutureCapacityPostStageAction.storeFutureState(
+                    stageExecution, ReserveFutureCapacityPostStageAction.FutureState.NOT_APPLICABLE);
         }
     }
 
-
     static BuildKey findBuildKey(StageExecution stageExecution) {
-        return stageExecution
-                .getBuilds()
-                .stream()
+        return stageExecution.getBuilds().stream()
                 .findAny()
                 .map((BuildExecution t) -> t.getBuildContext().getBuildKey())
                 .orElseThrow(() -> new IllegalStateException("Stage should have at least one job"));
     }
 
     private Stream<Configuration> stagePBCExecutions(ChainExecution chainExecution, int stageIndex) {
-        Stream<Configuration> stream = chainExecution
-                .getStages()
-                .stream()
+        Stream<Configuration> stream = chainExecution.getStages().stream()
                 .filter((StageExecution t) -> t.getStageIndex() == stageIndex)
                 .flatMap((StageExecution t) -> t.getBuilds().stream())
                 .map((BuildExecution t) -> AccessConfiguration.forContext(t.getBuildContext()))
@@ -125,12 +119,11 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
     }
 
     static List<String> stagePBCJobResultKeys(ChainExecution chainExecution, int stageIndex) {
-        return chainExecution
-                .getStages()
-                .stream()
+        return chainExecution.getStages().stream()
                 .filter((StageExecution t) -> t.getStageIndex() == stageIndex)
                 .flatMap((StageExecution t) -> t.getBuilds().stream())
-                .filter((BuildExecution t) -> AccessConfiguration.forContext(t.getBuildContext()).isEnabled())
+                .filter((BuildExecution t) ->
+                        AccessConfiguration.forContext(t.getBuildContext()).isEnabled())
                 .map((BuildExecution t) -> t.getBuildContext().getResultKey().getKey())
                 .collect(Collectors.toList());
     }
@@ -140,19 +133,18 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
         // present fallback to master branch.
         // once we have these, for each job's results calculate the success ratio and avg time it takes to build.
         // reduce to get the minumum success rate and maximum avg time across jobs.
-        Optional<Stats> stats = stageExecution
-                .getBuilds()
-                .stream()
+        Optional<Stats> stats = stageExecution.getBuilds().stream()
                 .map((BuildExecution t) -> t.getPlanResultKey().getPlanKey())
                 .map((PlanKey t) -> cachedPlanManager.getPlanByKey(t))
                 .map((ImmutablePlan t) -> {
-                    final ResultsSummaryCriteria criteria = new ResultsSummaryCriteria(t.getPlanKey().getKey());
+                    final ResultsSummaryCriteria criteria =
+                            new ResultsSummaryCriteria(t.getPlanKey().getKey());
                     criteria.setMaxRowCount(TOTAL_RESULT_COUNT);
                     List<ResultsSummary> summs = new ArrayList<>();
                     summs.addAll(resultsSummaryManager.getResultSummaries(criteria));
                     if (summs.size() < TOTAL_RESULT_COUNT && t.getMaster() != null) {
-                        final ResultsSummaryCriteria masterCrit =
-                                new ResultsSummaryCriteria(t.getMaster().getPlanKey().getKey());
+                        final ResultsSummaryCriteria masterCrit = new ResultsSummaryCriteria(
+                                t.getMaster().getPlanKey().getKey());
                         masterCrit.setMaxRowCount(TOTAL_RESULT_COUNT - summs.size());
                         summs.addAll(resultsSummaryManager.getResultSummaries(masterCrit));
                     }
@@ -168,25 +160,24 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
                             sum = sum + s.getDuration();
                         }
                     }
-                    return new Stats(count,
-                            count != 0 ? (succCount * 100) / count : 0,
-                            succCount != 0 ? sum / succCount : 0);
+                    return new Stats(
+                            count, count != 0 ? (succCount * 100) / count : 0, succCount != 0 ? sum / succCount : 0);
                 })
-                .reduce((Stats t, Stats u) -> new Stats(Math.min(t.count, u.count),
+                .reduce((Stats t, Stats u) -> new Stats(
+                        Math.min(t.count, u.count),
                         Math.min(t.successPercentage, u.successPercentage),
                         Math.max(t.avgDuration, u.avgDuration)));
 
         logger.debug("TEST_SECONDS:" + stageExecution.getChainExecution().getPlanResultKey() + "  " + stats.toString());
         // compare collected data to minimum requirements
-        if (stats.isPresent() &&
-                stats.get().count > MINIMUM_RESULT_COUNT &&
-                stats.get().successPercentage > MINIMUM_SUCCESS_PERCENTAGE) {
+        if (stats.isPresent()
+                && stats.get().count > MINIMUM_RESULT_COUNT
+                && stats.get().successPercentage > MINIMUM_SUCCESS_PERCENTAGE) {
             return stats.get().avgDuration;
         } else {
             return -1;
         }
     }
-
 
     private class Stats {
         final int count;
@@ -201,14 +192,13 @@ public class ReserveFutureCapacityPreStageAction implements PreStageAction {
 
         @Override
         public String toString() {
-            return "Stats{" +
-                    "count=" +
-                    count +
-                    ", successPercentage=" +
-                    successPercentage +
-                    ", avgDuration=" +
-                    avgDuration +
-                    '}';
+            return "Stats{" + "count="
+                    + count
+                    + ", successPercentage="
+                    + successPercentage
+                    + ", avgDuration="
+                    + avgDuration
+                    + '}';
         }
     }
 }

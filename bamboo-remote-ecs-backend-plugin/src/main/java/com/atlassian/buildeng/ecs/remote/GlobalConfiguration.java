@@ -40,7 +40,8 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager,
+    public GlobalConfiguration(
+            BandanaManager bandanaManager,
             AdministrationConfigurationAccessor admConfAccessor,
             AuditLogService auditLogService,
             BambooAuthenticationContext authenticationContext) {
@@ -73,29 +74,25 @@ public class GlobalConfiguration {
             if (StringUtils.isBlank(config.getAwsRole())) {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_AWS_ROLE_KEY,
-                        config.getAwsRole());
+                bandanaManager.setValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AWS_ROLE_KEY, config.getAwsRole());
             }
         }
         if (!StringUtils.equals(config.getSidekickImage(), getCurrentSidekick())) {
             auditLogEntry("PBC Sidekick Image", getCurrentSidekick(), config.getSidekickImage());
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_SIDEKICK_KEY,
-                    config.getSidekickImage());
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_KEY, config.getSidekickImage());
         }
         if (!StringUtils.equals(config.getServerUrl(), getCurrentServer())) {
             auditLogEntry("PBC Remote Service URL", getCurrentServer(), config.getServerUrl());
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_SERVER_URL_KEY,
-                    config.getServerUrl());
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SERVER_URL_KEY, config.getServerUrl());
         }
         boolean newPremptive = config.isPreemptiveScaling();
         if (isPreemptiveScaling() != newPremptive) {
             auditLogEntry("PBC Preemptive scaling", "" + isPreemptiveScaling(), "" + newPremptive);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_PREEMPTIVE_KEY,
-                    config.isPreemptiveScaling());
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PREEMPTIVE_KEY, config.isPreemptiveScaling());
         }
     }
 
@@ -105,7 +102,8 @@ public class GlobalConfiguration {
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+        AuditLogEntry ent = new AuditLogMessage(
+                authenticationContext.getUserName(),
                 new Date(),
                 null,
                 null,
@@ -117,5 +115,4 @@ public class GlobalConfiguration {
                 newValue);
         auditLogService.log(ent);
     }
-
 }

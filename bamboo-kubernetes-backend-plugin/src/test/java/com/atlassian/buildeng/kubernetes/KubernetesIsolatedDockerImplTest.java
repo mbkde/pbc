@@ -53,18 +53,25 @@ import org.quartz.Scheduler;
 public class KubernetesIsolatedDockerImplTest {
     @Mock
     GlobalConfiguration globalConfiguration;
+
     @Mock
     KubeJmxService kubeJmxService;
+
     @Mock
     ExecutorService executor;
+
     @Mock
     Scheduler scheduler;
+
     @Mock
     SubjectIdService subjectIdService;
+
     @Mock
     BandanaManager bandanaManager;
+
     @Mock
     DarkFeatureManager darkFeatureManager;
+
     @Mock
     KubernetesPodSpecList podSpecList;
 
@@ -82,8 +89,7 @@ public class KubernetesIsolatedDockerImplTest {
             }
 
             @Override
-            public void handle(IsolatedDockerAgentException exception) {
-            }
+            public void handle(IsolatedDockerAgentException exception) {}
         };
         kubernetesIsolatedDocker.handleKubeCtlException(callback, ke);
         assertTrue(retry.get(), "PBC should retry on exceeding kube quota");
@@ -91,13 +97,8 @@ public class KubernetesIsolatedDockerImplTest {
 
     @Test
     public void testSubjectIdForPlan() {
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true);
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                null, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
 
         when(subjectIdService.getSubjectId(any(PlanKey.class))).thenReturn("mock-subject-id");
 
@@ -107,13 +108,8 @@ public class KubernetesIsolatedDockerImplTest {
 
     @Test
     public void testSubjectIdForDeployment() {
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(null,
-                "111-222-333",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                false);
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                null, "111-222-333", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, false);
 
         when(subjectIdService.getSubjectId(any(Long.class))).thenReturn("mock-subject-id");
         kubernetesIsolatedDocker.getSubjectId(request);
@@ -129,14 +125,14 @@ public class KubernetesIsolatedDockerImplTest {
         final File file = mock(File.class);
         final Pod pod = setupMocksForPodFileDeleted(request, subjectId, file);
 
-        try (MockedConstruction<KubernetesClient> mocked = mockConstruction(KubernetesClient.class,
+        try (MockedConstruction<KubernetesClient> mocked = mockConstruction(
+                KubernetesClient.class,
                 // Could be worth moving the generation of KubeClient / createPod to its own
                 // service that can be dependency injected in the same way as the others, and
                 // then we don't have to take this hacky approach
                 (mock, context) -> when(mock.createPod(file)).thenReturn(pod))) {
             // when
             kubernetesIsolatedDocker.exec(request, callback, subjectId);
-
         }
         // then
         verify(podSpecList).generate(request, subjectId);
@@ -156,5 +152,4 @@ public class KubernetesIsolatedDockerImplTest {
         when(podMeta.getUid()).thenReturn(uid);
         return pod;
     }
-
 }

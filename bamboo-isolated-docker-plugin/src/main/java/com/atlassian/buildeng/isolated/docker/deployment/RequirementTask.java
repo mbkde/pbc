@@ -46,21 +46,20 @@ public class RequirementTask implements CommonTaskType {
             // task ignored in jobs
             commonTaskContext
                     .getBuildLogger()
-                    .addErrorLogEntry("Task 'Per-build Container (PBC) Agent for Deployments' " +
-                            "is only relevant for deployments, ignored in jobs.");
+                    .addErrorLogEntry("Task 'Per-build Container (PBC) Agent for Deployments' "
+                            + "is only relevant for deployments, ignored in jobs.");
         } else if (cc instanceof DeploymentContext) {
             DeploymentContext dc = (DeploymentContext) cc;
             commonTaskContext
                     .getBuildLogger()
-                    .addBuildLogEntry("Task 'Per-build Container (PBC) Agent for Deployments' " +
-                            "is deprecated, please use environment's Docker tab configuration.");
+                    .addBuildLogEntry("Task 'Per-build Container (PBC) Agent for Deployments' "
+                            + "is deprecated, please use environment's Docker tab configuration.");
             Map<String, String> map = dc.getPluginConfigMap("com.atlassian.buildeng.bamboo-isolated-docker-plugin");
             if (!map.isEmpty()) {
                 commonTaskContext
                         .getBuildLogger()
-                        .addErrorLogEntry("Task 'Per-build Container (PBC) Agent for Deployments' " +
-                                "configuration is not used, using config from environment's Docker tab.");
-
+                        .addErrorLogEntry("Task 'Per-build Container (PBC) Agent for Deployments' "
+                                + "configuration is not used, using config from environment's Docker tab.");
             }
         }
 

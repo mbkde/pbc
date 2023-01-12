@@ -65,6 +65,5 @@ public interface ModelUpdater {
         public long getFutureReservationCPU() {
             return futureReservationCPU;
         }
-
     }
 }

@@ -33,7 +33,6 @@ public class Rest {
 
     private final GlobalConfiguration configuration;
 
-
     @Autowired
     public Rest(GlobalConfiguration configuration) {
         this.configuration = configuration;
@@ -62,7 +61,9 @@ public class Rest {
         try {
             configuration.persist(config.getPrometheusUrl());
         } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
         }
         return Response.noContent().build();
     }

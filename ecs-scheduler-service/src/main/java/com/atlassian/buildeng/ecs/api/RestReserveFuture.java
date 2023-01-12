@@ -44,7 +44,6 @@ public class RestReserveFuture {
             return new RestReserveFuture(buildKey.getAsString(), rk, cpu.getAsLong(), memory.getAsLong());
         }
         throw new IllegalArgumentException("Wrong format!");
-
     }
 
     private final String buildKey;
@@ -74,6 +73,4 @@ public class RestReserveFuture {
     public long getMemoryReservation() {
         return memoryReservation;
     }
-
-
 }

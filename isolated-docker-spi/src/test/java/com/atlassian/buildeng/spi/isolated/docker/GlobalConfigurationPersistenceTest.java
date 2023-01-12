@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 public class GlobalConfigurationPersistenceTest {
 
-
     @Test
     public void testVersion1() {
         String persistedValue = "{'image'='aaa'}";
@@ -77,9 +76,11 @@ public class GlobalConfigurationPersistenceTest {
         assertEquals("bbb", extra.getName());
         assertEquals("bbb-image", extra.getImage());
         assertEquals(Configuration.ExtraContainerSize.SMALL, extra.getExtraSize());
-        assertTrue(conf.getFeatureFlags().contains("ccc"),
+        assertTrue(
+                conf.getFeatureFlags().contains("ccc"),
                 "ccc not found in feature flags: [" + String.join(", ", conf.getFeatureFlags()) + "]");
-        assertTrue(conf.getFeatureFlags().contains("ddd"),
+        assertTrue(
+                conf.getFeatureFlags().contains("ddd"),
                 "ddd not found in feature flags: [" + String.join(", ", conf.getFeatureFlags()) + "]");
     }
 }

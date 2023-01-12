@@ -34,15 +34,14 @@ public final class DockerAgentBuildQueue {
      * Bamboo's own QueueManagerView.
      */
     public static Stream<CommonContext> currentlyQueued(BuildQueueManager buildQueueManager) {
-        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager,
-                Functions.<BuildQueueManager.QueueItemView<CommonContext>>identity());
+        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(
+                buildQueueManager, Functions.<BuildQueueManager.QueueItemView<CommonContext>>identity());
 
-        return StreamSupport
-                .stream(queue.getQueueView(Iterables.emptyIterable()).spliterator(), false)
+        return StreamSupport.stream(
+                        queue.getQueueView(Iterables.emptyIterable()).spliterator(), false)
                 .map((BuildQueueManager.QueueItemView<CommonContext> t) -> t.getView())
                 // this filter is crutial for BUILDENG-12837
-                .filter((CommonContext t) -> t
-                        .getBuildKey()
+                .filter((CommonContext t) -> t.getBuildKey()
                         .getKey()
                         .equals(t.getCurrentResult().getCustomBuildData().get(BUILD_KEY)));
     }

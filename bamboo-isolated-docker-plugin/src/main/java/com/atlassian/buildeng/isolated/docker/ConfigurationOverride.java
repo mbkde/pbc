@@ -61,8 +61,9 @@ final class ConfigurationOverride {
         if (!StringUtils.isEmpty(registryAndRepo.left())) {
             String registry = registryAndRepo.left();
             String repo = registryAndRepo.right();
-            Optional<Map.Entry<String, String>> match =
-                    registryMapping.entrySet().stream().filter((it) -> registry.equals(it.getValue())).findFirst();
+            Optional<Map.Entry<String, String>> match = registryMapping.entrySet().stream()
+                    .filter((it) -> registry.equals(it.getValue()))
+                    .findFirst();
             if (match.isPresent()) {
                 return match.get().getKey() + "/" + repo;
             }

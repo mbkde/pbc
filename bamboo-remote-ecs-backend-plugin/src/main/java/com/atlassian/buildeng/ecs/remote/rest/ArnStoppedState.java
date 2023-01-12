@@ -22,8 +22,7 @@ public class ArnStoppedState {
     String containerArn;
     String reason;
 
-    public ArnStoppedState() {
-    }
+    public ArnStoppedState() {}
 
     public ArnStoppedState(String arn, String containerArn, String reason) {
         this.arn = arn;

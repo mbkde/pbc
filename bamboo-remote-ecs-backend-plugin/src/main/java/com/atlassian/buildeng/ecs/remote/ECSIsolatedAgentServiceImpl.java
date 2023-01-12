@@ -63,7 +63,6 @@ import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, LifecycleAware {
     private static final Logger logger = LoggerFactory.getLogger(ECSIsolatedAgentServiceImpl.class);
     static String PLUGIN_JOB_KEY = "ecs-remote-watchdog";
@@ -79,14 +78,12 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     private final Scheduler scheduler;
     private final PluginAccessor pluginAccessor;
 
-    public ECSIsolatedAgentServiceImpl(GlobalConfiguration globalConfiguration,
-            Scheduler scheduler,
-            PluginAccessor pluginAccessor) {
+    public ECSIsolatedAgentServiceImpl(
+            GlobalConfiguration globalConfiguration, Scheduler scheduler, PluginAccessor pluginAccessor) {
         this.globalConfiguration = globalConfiguration;
         this.scheduler = scheduler;
         this.pluginAccessor = pluginAccessor;
     }
-
 
     @Override
     public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
@@ -96,16 +93,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         // resource.addFilter(new HTTPBasicAuthFilter(username, password));
 
         try {
-            IsolatedDockerAgentResult result = resource
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
+            IsolatedDockerAgentResult result = resource.accept(MediaType.APPLICATION_JSON_TYPE)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .post(IsolatedDockerAgentResult.class, createBody(request, globalConfiguration));
-            logger.info("result:" +
-                    result.isRetryRecoverable() +
-                    " " +
-                    result.getErrors() +
-                    " " +
-                    result.getCustomResultData());
+            logger.info("result:" + result.isRetryRecoverable()
+                    + " "
+                    + result.getErrors()
+                    + " "
+                    + result.getCustomResultData());
             callback.handle(result);
         } catch (UniformInterfaceException e) {
             int code = e.getResponse().getStatusInfo().getStatusCode();
@@ -144,17 +139,18 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         if (taskArn == null) {
             return Collections.emptyMap();
         }
-        Stream<String> s = Stream.concat(Stream.of(AGENT_CONTAINER_NAME),
+        Stream<String> s = Stream.concat(
+                Stream.of(AGENT_CONTAINER_NAME),
                 configuration.getExtraContainers().stream().map((Configuration.ExtraContainer t) -> t.getName()));
         return s.collect(Collectors.toMap(Function.identity(), (String t) -> {
             try {
-                URIBuilder bb =
-                        new URIBuilder(globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
-                                .addParameter(Rest.PARAM_CONTAINER, t)
-                                .addParameter(Rest.PARAM_TASK_ARN, taskArn);
+                URIBuilder bb = new URIBuilder(
+                                globalConfiguration.getBambooBaseUrl() + "/rest/pbc-ecs-remote/latest/logs")
+                        .addParameter(Rest.PARAM_CONTAINER, t)
+                        .addParameter(Rest.PARAM_TASK_ARN, taskArn);
                 return bb.build().toURL();
             } catch (URISyntaxException | MalformedURLException ex) {
-                return null; //??
+                return null; // ??
             }
         }));
     }
@@ -165,17 +161,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     @Override
-    public void reserveCapacity(Key buildKey,
-            List<String> jobResultKeys,
-            long excessMemoryCapacity,
-            long excessCpuCapacity) {
+    public void reserveCapacity(
+            Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
         if (globalConfiguration.isPreemptiveScaling()) {
             Client client = createClient();
             final WebResource resource =
                     client.resource(globalConfiguration.getCurrentServer() + "/rest/scheduler/future");
             try {
-                resource
-                        .type(MediaType.APPLICATION_JSON_TYPE)
+                resource.type(MediaType.APPLICATION_JSON_TYPE)
                         .post(createFutureReqBody(buildKey, jobResultKeys, excessMemoryCapacity, excessCpuCapacity));
             } catch (UniformInterfaceException e) {
                 int code = e.getResponse().getStatusInfo().getStatusCode();
@@ -199,9 +192,14 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         config.put("isolatedAgentService", this);
         Trigger jobTrigger = newTrigger()
                 .startNow()
-                .withSchedule(simpleSchedule().withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS).repeatForever())
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
+                        .repeatForever())
                 .build();
-        JobDetail pluginJob = newJob(RemoteWatchdogJob.class).withIdentity(PLUGIN_JOB_KEY).usingJobData(config).build();
+        JobDetail pluginJob = newJob(RemoteWatchdogJob.class)
+                .withIdentity(PLUGIN_JOB_KEY)
+                .usingJobData(config)
+                .build();
         try {
             scheduler.scheduleJob(pluginJob, jobTrigger);
         } catch (SchedulerException e) {
@@ -235,10 +233,8 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
         return root.toString();
     }
 
-    private String createFutureReqBody(Key buildKey,
-            List<String> jobResultKeys,
-            long excessMemoryCapacity,
-            long excessCpuCapacity) {
+    private String createFutureReqBody(
+            Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {
         JsonObject root = new JsonObject();
         root.addProperty("buildKey", buildKey.getKey());
         JsonArray arr = new JsonArray();
@@ -264,9 +260,7 @@ public class ECSIsolatedAgentServiceImpl implements IsolatedAgentService, Lifecy
     }
 
     public List<HostFolderMapping> getHostFolderMappings() {
-        return pluginAccessor
-                .getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class)
-                .stream()
+        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
                 .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
                 .collect(Collectors.toList());
     }

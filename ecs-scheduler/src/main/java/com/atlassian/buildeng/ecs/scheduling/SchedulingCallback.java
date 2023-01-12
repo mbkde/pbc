@@ -23,5 +23,4 @@ public interface SchedulingCallback {
     void handle(SchedulingResult result);
 
     void handle(ECSException exception);
-
 }

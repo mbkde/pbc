@@ -67,9 +67,7 @@ public class AgentsThrottled {
      * @return number of agents throttled for longer than the specified number of minutes
      */
     public long numAgentsThrottledLongerThanMinutes(int minutes) {
-        return agentsThrottled
-                .values()
-                .stream()
+        return agentsThrottled.values().stream()
                 .filter(startTimeThrottled -> throttledOverXMinutesAgo(startTimeThrottled, minutes))
                 .count();
     }

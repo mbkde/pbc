@@ -12,8 +12,8 @@ public class KubernetesExceptionParserTest {
     public void testPodLimitQuotaException() {
         ShellException shellException = withErrorInStdout(
                 "Error from server (Forbidden): error when creating \"/opt/atlassian/bamboo/temp/pod4298680591083559475yaml\": pods \"atlasbi-atlasbidb113-jirajdk8linuxmysql-1-10f5e985-01d4-4451-b869-bb768984271e\" is forbidden: exceeded quota: pod-limit, requested: pods=1, used: pods=1500, limited: pods=1500");
-        assert mapper.map("kubectl returned non-zero exit code.",
-                shellException) instanceof PodLimitQuotaExceededException;
+        assert mapper.map("kubectl returned non-zero exit code.", shellException)
+                instanceof PodLimitQuotaExceededException;
     }
 
     @Test
@@ -27,8 +27,8 @@ public class KubernetesExceptionParserTest {
     public void testConcurrentResourceQuotaModificationException() {
         ShellException shellException = withErrorInStdout(
                 "Error from server (Conflict): error when creating \\\"/opt/atlassian/bamboo/temp/pod1yaml\\\": Operation cannot be fulfilled on resourcequotas \"pod-limit\": the object has been modified; please apply your changes to the latest version and try again");
-        assert mapper.map("kubectl returned non-zero exit code.",
-                shellException) instanceof ConcurrentResourceQuotaModificationException;
+        assert mapper.map("kubectl returned non-zero exit code.", shellException)
+                instanceof ConcurrentResourceQuotaModificationException;
     }
 
     private ShellException withErrorInStdout(String message) {

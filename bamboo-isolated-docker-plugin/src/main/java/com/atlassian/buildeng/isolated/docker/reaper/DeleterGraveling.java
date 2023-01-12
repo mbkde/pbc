@@ -27,7 +27,6 @@ import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class DeleterGraveling implements BuildAgentVisitor {
     private final AgentRemovals agentRemovals;
 
@@ -47,15 +46,15 @@ public class DeleterGraveling implements BuildAgentVisitor {
         buildAgent.getDefinition().accept(new PipelineDefinitionVisitor() {
             @Override
             public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
-                LOG.error("Wrong agent picked up. Type:{} Idle:{} Name:{}",
+                LOG.error(
+                        "Wrong agent picked up. Type:{} Idle:{} Name:{}",
                         buildAgent.getType(),
                         buildAgent.getAgentStatus().isIdle(),
                         buildAgent.getName());
             }
 
             @Override
-            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
-            }
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
@@ -64,6 +63,4 @@ public class DeleterGraveling implements BuildAgentVisitor {
             }
         });
     }
-
-
 }

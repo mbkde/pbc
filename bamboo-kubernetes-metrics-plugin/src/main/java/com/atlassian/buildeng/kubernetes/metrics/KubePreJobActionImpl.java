@@ -28,7 +28,6 @@ public class KubePreJobActionImpl extends PreJobActionImpl {
         this.globalConfiguration = globalConfiguration;
     }
 
-
     @Override
     public void execute(StageExecution stageExecution, BuildContext buildContext) {
         super.execute(stageExecution, buildContext);
@@ -36,8 +35,5 @@ public class KubePreJobActionImpl extends PreJobActionImpl {
                 .getBuildResult()
                 .getCustomBuildData()
                 .put(GlobalConfiguration.BANDANA_PROMETHEUS_URL, globalConfiguration.getPrometheusUrl());
-
     }
-
-
 }

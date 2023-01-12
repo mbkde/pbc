@@ -62,8 +62,7 @@ public class GlobalConfigurationTest {
     @InjectMocks
     GlobalConfiguration configuration;
 
-    public GlobalConfigurationTest() {
-    }
+    public GlobalConfigurationTest() {}
 
     Configuration of(String name) {
         return ConfigurationBuilder.create(name).build();
@@ -85,8 +84,9 @@ public class GlobalConfigurationTest {
         String name = new String(chars);
         when(conf.getInstanceName()).thenReturn(name);
         when(administrationAccessor.getAdministrationConfiguration()).thenReturn(conf);
-        assertEquals(name.substring(0, 255 - Constants.TASK_DEFINITION_SUFFIX.length()) +
-                Constants.TASK_DEFINITION_SUFFIX, configuration.getTaskDefinitionName());
+        assertEquals(
+                name.substring(0, 255 - Constants.TASK_DEFINITION_SUFFIX.length()) + Constants.TASK_DEFINITION_SUFFIX,
+                configuration.getTaskDefinitionName());
     }
 
     @Test
@@ -103,20 +103,22 @@ public class GlobalConfigurationTest {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
         Config config = new Config("x", "x", "newSidekick");
         configuration.setConfig(config);
-        verify(bandanaManager, times(1)).setValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY),
-                eq("newSidekick"));
+        verify(bandanaManager, times(1))
+                .setValue(
+                        eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
+                        eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY),
+                        eq("newSidekick"));
     }
 
     @Test
     public void setSidekickAudited() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
-        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(GlobalConfiguration.BANDANA_CLUSTER_KEY))).thenReturn("cluster1");
-        Mockito
-                .lenient()
-                .when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                        eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY)))
+        when(bandanaManager.getValue(
+                        eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_CLUSTER_KEY)))
+                .thenReturn("cluster1");
+        Mockito.lenient()
+                .when(bandanaManager.getValue(
+                        eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY)))
                 .thenReturn("sidekick1");
         Config config = new Config("cluster1", "asg1", "newsidekick");
         configuration.setConfig(config);
@@ -128,12 +130,15 @@ public class GlobalConfigurationTest {
     @Test
     public void setClusterAsgAudited() {
         AdministrationConfiguration conf = mock(AdministrationConfiguration.class);
-        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(GlobalConfiguration.BANDANA_CLUSTER_KEY))).thenReturn("cluster1");
-        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(GlobalConfiguration.BANDANA_ASG_KEY))).thenReturn("asg1");
-        when(bandanaManager.getValue(eq(PlanAwareBandanaContext.GLOBAL_CONTEXT),
-                eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY))).thenReturn("sidekick1");
+        when(bandanaManager.getValue(
+                        eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_CLUSTER_KEY)))
+                .thenReturn("cluster1");
+        when(bandanaManager.getValue(
+                        eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_ASG_KEY)))
+                .thenReturn("asg1");
+        when(bandanaManager.getValue(
+                        eq(PlanAwareBandanaContext.GLOBAL_CONTEXT), eq(GlobalConfiguration.BANDANA_SIDEKICK_KEY)))
+                .thenReturn("sidekick1");
         Config config = new Config("newcluster", "newasg", "sidekick1");
         configuration.setConfig(config);
         verify(auditLogService, times(1)).log(matches("cluster1", "newcluster"));

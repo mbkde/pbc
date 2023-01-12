@@ -26,5 +26,4 @@ public class InstancesSmallerThanAgentException extends Exception {
     public String toString() {
         return getMessage();
     }
-
 }

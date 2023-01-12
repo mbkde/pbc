@@ -51,6 +51,7 @@ public class DefaultModelUpdater implements ModelUpdater {
 
     // 20 for us to be able to debug what's going on. (5 minutes only for datadog to report the event)
     static final int TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT = 20;
+
     @VisibleForTesting
     final Map<DockerHost, Date> disconnectedAgentsCache = new HashMap<>();
 
@@ -59,7 +60,6 @@ public class DefaultModelUpdater implements ModelUpdater {
         this.schedulerBackend = schedulerBackend;
         this.eventPublisher = eventPublisher;
     }
-
 
     @Override
     public void scaleDown(DockerHosts hosts, State req) {
@@ -95,16 +95,16 @@ public class DefaultModelUpdater implements ModelUpdater {
                     1 + (req.getFutureReservationMemory() - freeMem) / computeInstanceMemoryLimits(hosts.allUsable());
             long cpuRequirements =
                     1 + (req.getFutureReservationCPU() - freeCpu) / computeInstanceCPULimits(hosts.allUsable());
-            logger.info("Scaling w.r.t. this much future CPU/memory {} {}",
+            logger.info(
+                    "Scaling w.r.t. this much future CPU/memory {} {}",
                     req.getFutureReservationCPU(),
                     req.getFutureReservationMemory());
             desiredScaleSize += Math.max(cpuRequirements, memoryRequirements);
-            logger.info("desired size: " +
-                    desiredScaleSize +
-                    " cpuReq:" +
-                    cpuRequirements +
-                    " memReq:" +
-                    memoryRequirements);
+            logger.info("desired size: " + desiredScaleSize
+                    + " cpuReq:"
+                    + cpuRequirements
+                    + " memReq:"
+                    + memoryRequirements);
         }
 
         int terminatedCount =
@@ -120,14 +120,14 @@ public class DefaultModelUpdater implements ModelUpdater {
             desiredScaleSize = desiredScaleSize + disconnectedSize;
             // never can scale beyond max capacity, will get an error then and not scale
             desiredScaleSize = Math.min(desiredScaleSize, hosts.getASG().getMaxSize());
-            if (desiredScaleSize > currentSize && desiredScaleSize > hosts.getASG().getDesiredCapacity()) {
+            if (desiredScaleSize > currentSize
+                    && desiredScaleSize > hosts.getASG().getDesiredCapacity()) {
                 // this is only meant to scale up!
                 schedulerBackend.scaleTo(desiredScaleSize, hosts.getASGName());
             }
         } catch (ECSException ex) {
             logger.error("Scaling of " + hosts.getASGName() + " failed", ex);
         }
-
     }
 
     private int terminateDisconnectedInstances(DockerHosts hosts) {
@@ -138,19 +138,18 @@ public class DefaultModelUpdater implements ModelUpdater {
             logger.warn("Hosts with disconnected agent:" + cache.size() + " " + cache.toString());
             // too chatty and datadog cannot filter it out properly
             /*  if (oldSize != cache.size()) {
-                  eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
-              } */
+                eventPublisher.publish(new DockerAgentEcsDisconnectedEvent(cache.keySet()));
+            } */
         }
         final List<DockerHost> selectedToKill = selectDisconnectedToKill(hosts, cache);
 
         if (!selectedToKill.isEmpty()) {
             // debugging block
-            logger.warn("Hosts to kill with disconnected agent:" +
-                    selectedToKill.size() +
-                    " " +
-                    selectedToKill.toString());
+            logger.warn(
+                    "Hosts to kill with disconnected agent:" + selectedToKill.size() + " " + selectedToKill.toString());
             // TODO it's very hard to figure out what tasks were running on the instance.
-            // 1. you need to get a list of task arns for (single) instance (aws api call per instance or paged per cluster)
+            // 1. you need to get a list of task arns for (single) instance (aws api call per instance or paged per
+            // cluster)
             // 2. describe them (another aws api call)
             // 3. in the task fine container override for bamboo-agent container and in there find the
             //    environment variable value for RESULT_ID
@@ -166,20 +165,23 @@ public class DefaultModelUpdater implements ModelUpdater {
 
     private List<DockerHost> selectDisconnectedToKill(DockerHosts hosts, Map<DockerHost, Date> dates) {
         return hosts.agentDisconnected().stream()
-                    // container without agent still shows like it's running something but it's not true, all the things are doomed.
-                    // maybe reevaluate at some point when major ecs changes arrive.
-                    //.filter(t -> t.runningNothing())
-                    .filter((DockerHost t) -> {
-                        Date date = dates.get(t);
-                        return date != null &&
-                                (Duration.ofMillis(new Date().getTime() - date.getTime()).toMinutes() >=
-                                        TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
-                    }).collect(Collectors.toList());
+                // container without agent still shows like it's running something but it's not true, all the things are
+                // doomed.
+                // maybe reevaluate at some point when major ecs changes arrive.
+                // .filter(t -> t.runningNothing())
+                .filter((DockerHost t) -> {
+                    Date date = dates.get(t);
+                    return date != null
+                            && (Duration.ofMillis(new Date().getTime() - date.getTime())
+                                            .toMinutes()
+                                    >= TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT);
+                })
+                .collect(Collectors.toList());
     }
 
     List<DockerHost> selectToTerminate(DockerHosts hosts, State req) {
-        List<DockerHost> toTerminate =
-                Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream()).collect(Collectors.toList());
+        List<DockerHost> toTerminate = Stream.concat(hosts.unusedStale().stream(), hosts.unusedFresh().stream())
+                .collect(Collectors.toList());
         if (toTerminate.isEmpty()) {
             return toTerminate;
         }
@@ -214,15 +216,13 @@ public class DefaultModelUpdater implements ModelUpdater {
     // 2. by how much the ASG size decreaesed
     // the current code is using it in both meanings, the asg drop is not calculated now and in case
     // of errors the return value is a lie as well.
-    private int terminateInstances(List<DockerHost> toTerminate,
-            String asgName,
-            boolean decrementAsgSize,
-            String clusterName) {
+    private int terminateInstances(
+            List<DockerHost> toTerminate, String asgName, boolean decrementAsgSize, String clusterName) {
         if (!toTerminate.isEmpty()) {
             if (toTerminate.size() > 15) {
                 // actual AWS limit is apparently 20
-                logger.info("Too many instances to kill in one go ({}), killing the first 15 only.",
-                        toTerminate.size());
+                logger.info(
+                        "Too many instances to kill in one go ({}), killing the first 15 only.", toTerminate.size());
                 toTerminate = toTerminate.subList(0, 14);
             }
             try {
@@ -245,12 +245,13 @@ public class DefaultModelUpdater implements ModelUpdater {
         // we settle on minimum as that's the safer option here, better to scale faster than slower.
         // the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
-        OptionalInt minCpu = hosts.stream().mapToInt((DockerHost value) -> value.getRegisteredCpu()).min();
+        OptionalInt minCpu = hosts.stream()
+                .mapToInt((DockerHost value) -> value.getRegisteredCpu())
+                .min();
         // if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         // current arbitrary values based on "m4.4xlarge"
         return minCpu.orElse(ECSInstance.DEFAULT_INSTANCE.getCpu());
     }
-
 
     /**
      * compute current value for available instance memory of currently running instances.
@@ -262,26 +263,36 @@ public class DefaultModelUpdater implements ModelUpdater {
         // we settle on minimum as that's the safer option here, better to scale faster than slower.
         // the alternative is to perform more checks with the asg/launchconfiguration in aws to see what
         // the current instance size is in launchconfig
-        OptionalInt minMemory = hosts.stream().mapToInt((DockerHost value) -> value.getRegisteredMemory()).min();
+        OptionalInt minMemory = hosts.stream()
+                .mapToInt((DockerHost value) -> value.getRegisteredMemory())
+                .min();
         // if no values found (we have nothing in our cluster, go with arbitrary value until something starts up.
         // current arbitrary values based on "m4.4xlarge"
         return minMemory.orElse(ECSInstance.DEFAULT_INSTANCE.getMemory());
     }
 
     private long computeMaxCapacityMemory(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRegisteredMemory()).sum();
+        return hosts.stream()
+                .mapToLong((DockerHost value) -> (long) value.getRegisteredMemory())
+                .sum();
     }
 
     private long computeFreeCapacityMemory(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRemainingMemory()).sum();
+        return hosts.stream()
+                .mapToLong((DockerHost value) -> (long) value.getRemainingMemory())
+                .sum();
     }
 
     private long computeFreeCapacityCPU(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRemainingCpu()).sum();
+        return hosts.stream()
+                .mapToLong((DockerHost value) -> (long) value.getRemainingCpu())
+                .sum();
     }
 
     private long computeMaxCapacityCPU(Collection<DockerHost> hosts) {
-        return hosts.stream().mapToLong((DockerHost value) -> (long) value.getRegisteredCpu()).sum();
+        return hosts.stream()
+                .mapToLong((DockerHost value) -> (long) value.getRegisteredCpu())
+                .sum();
     }
 
     /**
@@ -298,5 +309,4 @@ public class DefaultModelUpdater implements ModelUpdater {
         });
         return cache;
     }
-
 }

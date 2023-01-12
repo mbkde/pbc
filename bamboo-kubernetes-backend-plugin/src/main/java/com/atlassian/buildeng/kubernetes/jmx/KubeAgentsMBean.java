@@ -34,5 +34,4 @@ public interface KubeAgentsMBean {
     long getQueuedFor25MinutesGauge();
 
     long getQueuedFor30MinutesGauge();
-
 }

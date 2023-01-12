@@ -70,8 +70,7 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
         AtomicLong minutes30 = new AtomicLong(0);
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
             CurrentResult current = context.getCurrentResult();
-            String podName = current
-                    .getCustomBuildData()
+            String podName = current.getCustomBuildData()
                     .get(KubernetesIsolatedDockerImpl.RESULT_PREFIX + KubernetesIsolatedDockerImpl.NAME);
             // kube pbc only
             if (podName != null) {
@@ -106,7 +105,8 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
         agentsCount.minute20.getAndSet(minutes20.get());
         agentsCount.minute25.getAndSet(minutes25.get());
         agentsCount.minute30.getAndSet(minutes30.get());
-        logger.debug("total:{} 5min={} 10min={} 15min={} 20min={} 25min={} 30min={}",
+        logger.debug(
+                "total:{} 5min={} 10min={} 15min={} 20min={} 25min={} 30min={}",
                 total,
                 minutes5,
                 minutes10,
@@ -115,5 +115,4 @@ public class KubeJmxService implements DisposableBean, InitializingBean {
                 minutes25,
                 minutes30);
     }
-
 }

@@ -44,9 +44,8 @@ public class BuildCancelledEventListener {
     private final ExecutableAgentsHelper executableAgentsHelper;
 
     @Inject
-    public BuildCancelledEventListener(AgentRemovals agentRemovals,
-            AgentManager agentManager,
-            ExecutableAgentsHelper executableAgentsHelper) {
+    public BuildCancelledEventListener(
+            AgentRemovals agentRemovals, AgentManager agentManager, ExecutableAgentsHelper executableAgentsHelper) {
         this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;
         this.executableAgentsHelper = executableAgentsHelper;
@@ -61,7 +60,8 @@ public class BuildCancelledEventListener {
         if (agentId != null) {
             BuildAgent agent = agentManager.getAgent(agentId);
             if (AgentQueries.isDockerAgent(agent)) {
-                LOG.info("Stopping docker agent for cancelled build {} {}:{}",
+                LOG.info(
+                        "Stopping docker agent for cancelled build {} {}:{}",
                         event.getBuildResultKey(),
                         agent.getName(),
                         agentId);
@@ -70,13 +70,11 @@ public class BuildCancelledEventListener {
         } else {
             RequirementSetImpl reqs = new RequirementSetImpl();
             reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
-            Collection<BuildAgent> agents =
-                    executableAgentsHelper.getExecutableAgents(ExecutableAgentsHelper.ExecutorQuery.newQueryWithoutAssignments(
-                            reqs));
-            agents
-                    .stream()
-                    .filter((BuildAgent t) -> AgentQueries.isDockerAgentForResult(t, event.getPlanResultKey()) &&
-                            t.getAgentStatus().isIdle())
+            Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(
+                    ExecutableAgentsHelper.ExecutorQuery.newQueryWithoutAssignments(reqs));
+            agents.stream()
+                    .filter((BuildAgent t) -> AgentQueries.isDockerAgentForResult(t, event.getPlanResultKey())
+                            && t.getAgentStatus().isIdle())
                     .forEach((BuildAgent t) -> {
                         agentRemovals.stopAgentRemotely(t);
                     });

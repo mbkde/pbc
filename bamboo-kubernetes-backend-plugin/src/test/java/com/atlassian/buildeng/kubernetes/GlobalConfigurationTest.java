@@ -65,38 +65,45 @@ public class GlobalConfigurationTest {
 
     @Test
     public void testMigrationDoesntEnableIfNoPriorPbcSettings() {
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS))
+                .thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE))
+                .thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX))
+                .thenReturn(null);
 
-        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
-                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
+        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock =
+                Mockito.mockStatic(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
             globalConfiguration.migrateAwsVendor();
-            globalConfigurationMock.verify(() -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(
-                    any(),
-                    any()), times(0));
-
+            globalConfigurationMock.verify(
+                    () -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(any(), any()),
+                    times(0));
         }
     }
 
     @Test
     public void testMigrationEnablesIfPriorPbcSettings() {
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE)).thenReturn("template");
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX)).thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS))
+                .thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_IAM_REQUEST_TEMPLATE))
+                .thenReturn("template");
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_IAM_SUBJECT_ID_PREFIX))
+                .thenReturn(null);
 
-        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock = Mockito.mockStatic(
-                com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
+        try (MockedStatic<com.atlassian.buildeng.isolated.docker.GlobalConfiguration> globalConfigurationMock =
+                Mockito.mockStatic(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.class)) {
             globalConfiguration.migrateAwsVendor();
-            globalConfigurationMock.verify(() -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(
-                    any(),
-                    any()), times(1));
+            globalConfigurationMock.verify(
+                    () -> com.atlassian.buildeng.isolated.docker.GlobalConfiguration.setVendorWithBandana(any(), any()),
+                    times(1));
         }
     }
 
@@ -137,9 +144,8 @@ public class GlobalConfigurationTest {
     @Test
     public void testContainersMergedByName() {
         assertEquals("httplocalhost6990bamboo", GlobalConfiguration.stripLabelValue("http://localhost:6990/bamboo"));
-        assertEquals("httpsstaging-bamboo.internal.atlassian.com",
+        assertEquals(
+                "httpsstaging-bamboo.internal.atlassian.com",
                 GlobalConfiguration.stripLabelValue("https://staging-bamboo.internal.atlassian.com"));
     }
-
-
 }

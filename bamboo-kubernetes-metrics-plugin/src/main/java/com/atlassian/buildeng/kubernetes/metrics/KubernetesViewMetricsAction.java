@@ -33,7 +33,6 @@ import javax.ws.rs.core.MediaType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
 public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
     public final class ContainerMetrics {
@@ -145,8 +144,6 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         public void setFsReadMetrics(String fsRead) {
             this.fsReadMetrics = fsRead;
         }
-
-
     }
 
     static final String ARTIFACT_BUILD_DATA_KEY = "kubernetes_metrics_artifacts";
@@ -155,7 +152,6 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
     private String netWriteMetrics;
     private String netReadMetrics;
-
 
     public List<ContainerMetrics> getContainerList() {
         return containerList;
@@ -173,8 +169,8 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 String containerName = artifactJson.getString("name");
                 int cpu = artifactJson.getInt("cpuRequest");
                 int memory = artifactJson.getInt("memoryRequest");
-                int memoryLimit = artifactJson.optInt("memoryLimit",
-                        (int) (memory * DefaultContainerSizeDescriptor.SOFT_TO_HARD_LIMIT_RATIO));
+                int memoryLimit = artifactJson.optInt(
+                        "memoryLimit", (int) (memory * DefaultContainerSizeDescriptor.SOFT_TO_HARD_LIMIT_RATIO));
 
                 ContainerMetrics cont = new ContainerMetrics(containerName, cpu, memoryLimit, memory);
                 cont.setCpuMetrics(loadArtifact(containerName, "-cpu"));
@@ -189,13 +185,13 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
                 containerList.add(cont);
             }
         }
-
     }
 
     private String loadArtifact(String containerName, String suffix) {
         String artifactName = ARTIFACT_PREFIX + containerName + suffix;
 
-        Artifact artifact = createArtifact(artifactName,
+        Artifact artifact = createArtifact(
+                artifactName,
                 resultsSummary.getPlanResultKey(),
                 resultsSummary.getCustomBuildData().get(MetricsBuildProcessor.ARTIFACT_TYPE_BUILD_DATA_KEY));
 
@@ -245,5 +241,4 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
     public void setNetReadMetrics(String netReadMetrics) {
         this.netReadMetrics = netReadMetrics;
     }
-
 }

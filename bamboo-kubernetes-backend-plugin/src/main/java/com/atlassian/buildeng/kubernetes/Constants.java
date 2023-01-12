@@ -38,7 +38,6 @@ public interface Constants {
      */
     String STORAGE_DRIVER = System.getProperty(STORAGE_DRIVER_PROPERTY, "overlay2");
 
-
     String DIND_EXTRA_ARGS_PROPERTY = "pbc.dind.extra.args";
     String DIND_EXTRA_ARGS = System.getProperty(DIND_EXTRA_ARGS_PROPERTY, "");
 
@@ -61,5 +60,4 @@ public interface Constants {
      * After what amount of time should kubeclt timeout deletes. Format of --timeout switch (1s, 2m, 1h).
      */
     String KUBECTL_DELETE_TIMEOUT = System.getProperty(KUBECTL_DELETE_TIMEOUT_PROPERTY, "2m");
-
 }

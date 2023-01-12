@@ -28,11 +28,8 @@ import java.util.Optional;
 public class CustomEnvironmentConfigPluginImpl implements CustomEnvironmentConfigPlugin {
 
     @Override
-    public void populateContextForEdit(Optional<Map<String, String>> pluginConfig, Map<String, Object> context) {
-    }
+    public void populateContextForEdit(Optional<Map<String, String>> pluginConfig, Map<String, Object> context) {}
 
     @Override
-    public void populateEnvironmentPluginConfig(Map<String, String> pluginConfig, ActionParametersMap parametersMap) {
-    }
-
+    public void populateEnvironmentPluginConfig(Map<String, String> pluginConfig, ActionParametersMap parametersMap) {}
 }

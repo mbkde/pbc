@@ -80,10 +80,12 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     private final PluginAccessor pluginAccessor;
     private final GlobalConfiguration globalConfiguration;
     private static final String PLUGIN_JOB_KEY = "DockerWatchdogJob";
-    private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
+    private static final long PLUGIN_JOB_INTERVAL_MILLIS =
+            Duration.ofSeconds(30).toMillis();
     private final Logger logger = Logger.getLogger(IsolatedDockerImpl.class.getName());
 
-    public IsolatedDockerImpl(AdministrationConfigurationAccessor admConfAccessor,
+    public IsolatedDockerImpl(
+            AdministrationConfigurationAccessor admConfAccessor,
             Scheduler scheduler,
             GlobalConfiguration globalConfiguration,
             PluginAccessor pluginAccessor) {
@@ -97,7 +99,8 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     public void startAgent(IsolatedDockerAgentRequest request, IsolatedDockerRequestCallback callback) {
         Configuration config = request.getConfiguration();
         String rk = request.getResultKey();
-        String yaml = createComposeYaml(config,
+        String yaml = createComposeYaml(
+                config,
                 rk,
                 admConfAccessor.getAdministrationConfiguration().getBaseUrl(),
                 request.getUniqueIdentifier());
@@ -108,7 +111,8 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
             Files.asCharSink(f, StandardCharsets.UTF_8).write(yaml);
             ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(), "up");
             globalConfiguration.decorateCommands(pb);
-            pb.environment().put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
+            pb.environment()
+                    .put("COMPOSE_PROJECT_NAME", request.getUniqueIdentifier().toString());
             pb.environment().put("COMPOSE_FILE", f.getAbsolutePath());
 
             Process p = pb.inheritIO().start();
@@ -116,8 +120,8 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
             if (p.exitValue() == 0) {
                 callback.handle(new IsolatedDockerAgentResult());
             } else {
-                callback.handle(new IsolatedDockerAgentResult().withError("Failed to start, docker-compose exited with " +
-                        p.exitValue()));
+                callback.handle(new IsolatedDockerAgentResult()
+                        .withError("Failed to start, docker-compose exited with " + p.exitValue()));
             }
         } catch (IOException ex) {
             logger.log(Level.SEVERE, null, ex);
@@ -182,9 +186,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         config.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
             Map<String, Object> toRet = new HashMap<>();
             toRet.put("image", t.getImage());
-            Map<String, String> env = t
-                    .getEnvVariables()
-                    .stream()
+            Map<String, String> env = t.getEnvVariables().stream()
                     .collect(Collectors.toMap(Configuration.EnvVariable::getName, Configuration.EnvVariable::getValue));
             if (!env.isEmpty()) {
                 toRet.put("environment", env);
@@ -220,9 +222,14 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
         config.put("globalConfiguration", globalConfiguration);
         Trigger jobTrigger = newTrigger()
                 .startNow()
-                .withSchedule(simpleSchedule().withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS).repeatForever())
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(PLUGIN_JOB_INTERVAL_MILLIS)
+                        .repeatForever())
                 .build();
-        JobDetail pluginJob = newJob(DockerWatchdogJob.class).withIdentity(PLUGIN_JOB_KEY).usingJobData(config).build();
+        JobDetail pluginJob = newJob(DockerWatchdogJob.class)
+                .withIdentity(PLUGIN_JOB_KEY)
+                .usingJobData(config)
+                .build();
         try {
             scheduler.scheduleJob(pluginJob, jobTrigger);
         } catch (SchedulerException e) {
@@ -247,9 +254,7 @@ public class IsolatedDockerImpl implements IsolatedAgentService, LifecycleAware 
     }
 
     public List<HostFolderMapping> getHostFolderMappings() {
-        return pluginAccessor
-                .getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class)
-                .stream()
+        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
                 .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
                 .collect(Collectors.toList());
     }

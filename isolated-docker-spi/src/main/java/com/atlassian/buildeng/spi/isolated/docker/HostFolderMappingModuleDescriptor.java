@@ -23,5 +23,4 @@ import com.atlassian.plugin.ModuleDescriptor;
  *
  * @author mkleint
  */
-public interface HostFolderMappingModuleDescriptor extends ModuleDescriptor<HostFolderMapping> {
-}
+public interface HostFolderMappingModuleDescriptor extends ModuleDescriptor<HostFolderMapping> {}

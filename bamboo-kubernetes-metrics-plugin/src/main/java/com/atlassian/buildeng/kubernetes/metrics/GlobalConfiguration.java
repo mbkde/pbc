@@ -36,7 +36,8 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager,
+    public GlobalConfiguration(
+            BandanaManager bandanaManager,
             AuditLogService auditLogService,
             BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
@@ -47,7 +48,6 @@ public class GlobalConfiguration {
     public String getPrometheusUrl() {
         return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_PROMETHEUS_URL);
     }
-
 
     /**
      * Saves changes to the configuration.
@@ -60,9 +60,9 @@ public class GlobalConfiguration {
         }
     }
 
-
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+        AuditLogEntry ent = new AuditLogMessage(
+                authenticationContext.getUserName(),
                 new Date(),
                 null,
                 null,
@@ -74,5 +74,4 @@ public class GlobalConfiguration {
                 newValue);
         auditLogService.log(ent);
     }
-
 }
