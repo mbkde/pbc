@@ -33,5 +33,4 @@ public class DockerAgentNonMatchedRequirementEvent extends DockerAgentEvent {
     public String toString() {
         return "DockerAgentNonMatchedRequirementEvent{" + "key=" + key + ",requirements:" + missingReqKeys + "}";
     }
-
 }

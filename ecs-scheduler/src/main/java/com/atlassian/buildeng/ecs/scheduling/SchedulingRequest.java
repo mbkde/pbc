@@ -29,7 +29,8 @@ public class SchedulingRequest {
     private final long queueTimestamp;
     private final String buildKey;
 
-    public SchedulingRequest(UUID identifier,
+    public SchedulingRequest(
+            UUID identifier,
             String resultId,
             int revision,
             int cpu,

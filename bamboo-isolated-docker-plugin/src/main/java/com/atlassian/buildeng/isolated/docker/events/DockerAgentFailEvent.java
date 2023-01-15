@@ -28,7 +28,6 @@ public final class DockerAgentFailEvent extends DockerAgentEvent {
     private final String errorMessage;
     private final Key key;
 
-
     public DockerAgentFailEvent(String errorMessage, Key key) {
         this.errorMessage = errorMessage;
         this.key = key;

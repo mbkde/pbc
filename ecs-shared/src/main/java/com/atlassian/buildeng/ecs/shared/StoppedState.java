@@ -28,7 +28,6 @@ public final class StoppedState {
         this.arn = arn;
     }
 
-
     public String getArn() {
         return arn;
     }
@@ -40,5 +39,4 @@ public final class StoppedState {
     public String getContainerArn() {
         return containerArn;
     }
-
 }

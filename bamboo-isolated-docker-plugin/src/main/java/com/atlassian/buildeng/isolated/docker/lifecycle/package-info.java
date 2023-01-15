@@ -35,5 +35,4 @@
  * 5. When AgentOfflineEvent is received for docker agents, we just remove it.
  * </p>
  */
-
 package com.atlassian.buildeng.isolated.docker.lifecycle;

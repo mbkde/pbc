@@ -68,22 +68,17 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                 .size(config.getSize().name())
                 .awsRole(config.getAwsRole())
                 .architecture(config.getArchitecture())
-                .extraContainers(config
-                        .getExtraContainers()
-                        .stream()
+                .extraContainers(config.getExtraContainers().stream()
                         .map((Configuration.ExtraContainer t) -> new ExtraContainer()
                                 .name(t.getName())
                                 .image(t.getImage())
                                 .size(t.getExtraSize().name())
                                 .commands(t.getCommands())
-                                .envVariables(t
-                                        .getEnvVariables()
-                                        .stream()
+                                .envVariables(t.getEnvVariables().stream()
                                         .map((Configuration.EnvVariable t2) -> new EnvVar(t2.getName(), t2.getValue()))
                                         .collect(Collectors.toList())))
                         .collect(Collectors.toList()))
                 .withFeatureFlags(config.getFeatureFlags());
-
     }
 
     @NotNull
@@ -102,19 +97,22 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             toRet.put(Configuration.DOCKER_IMAGE_SIZE, custom.getSize());
             toRet.put(Configuration.DOCKER_AWS_ROLE, custom.getAwsRole());
             toRet.put(Configuration.DOCKER_ARCHITECTURE, custom.getArchitecture());
-            toRet.put(Configuration.DOCKER_EXTRA_CONTAINERS,
+            toRet.put(
+                    Configuration.DOCKER_EXTRA_CONTAINERS,
                     BuildProcessorServerImpl.toJsonString(custom.getExtraContainers()));
-            toRet.put(Configuration.DOCKER_FEATURE_FLAGS,
+            toRet.put(
+                    Configuration.DOCKER_FEATURE_FLAGS,
                     BuildProcessorServerImpl.toJsonString(custom.getFeatureFlags()));
             return toRet;
         }
-        throw new IllegalStateException("Don't know how to import configuration of type: " + epcp.getClass().getName());
+        throw new IllegalStateException("Don't know how to import configuration of type: "
+                + epcp.getClass().getName());
     }
 
     @NotNull
     @Override
-    public List<ValidationProblem> validate(@NotNull TaskValidationContext tvc,
-            @NotNull EnvironmentPluginConfigurationProperties epcp) {
+    public List<ValidationProblem> validate(
+            @NotNull TaskValidationContext tvc, @NotNull EnvironmentPluginConfigurationProperties epcp) {
         final AnyPluginConfigurationProperties any = Narrow.downTo(epcp, AnyPluginConfigurationProperties.class);
         if (any != null) {
             String enabled = any.getConfiguration().get(Configuration.ENABLED_FOR_JOB);
@@ -132,21 +130,26 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
             ErrorCollection coll = new SimpleErrorCollection();
             if (Boolean.parseBoolean(enabled)) {
                 validator.validate(image, size, awsRole, architecture, extraCont, coll, false);
-                return coll.getAllErrorMessages().stream().map(ValidationProblem::new).collect(Collectors.toList());
+                return coll.getAllErrorMessages().stream()
+                        .map(ValidationProblem::new)
+                        .collect(Collectors.toList());
             }
         }
         final PerBuildContainerForEnvironmentProperties pbc =
                 Narrow.downTo(epcp, PerBuildContainerForEnvironmentProperties.class);
         if (pbc != null && pbc.isEnabled()) {
             ErrorCollection coll = new SimpleErrorCollection();
-            validator.validate(pbc.getImage(),
+            validator.validate(
+                    pbc.getImage(),
                     pbc.getSize(),
                     pbc.getAwsRole(),
                     pbc.getArchitecture(),
                     BuildProcessorServerImpl.toJsonString(pbc.getExtraContainers()),
                     coll,
                     false);
-            return coll.getAllErrorMessages().stream().map(ValidationProblem::new).collect(Collectors.toList());
+            return coll.getAllErrorMessages().stream()
+                    .map(ValidationProblem::new)
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -172,9 +175,7 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
                     .size(config.getSize().name())
                     .awsRole(config.getAwsRole())
                     .architecture(config.getArchitecture())
-                    .extraContainers(config
-                            .getExtraContainers()
-                            .stream()
+                    .extraContainers(config.getExtraContainers().stream()
                             .map(BuildProcessorServerImpl.getExtraContainerExtraContainerFunction())
                             .collect(Collectors.toList()))
                     .withFeatureFlags(config.getFeatureFlags());
@@ -217,14 +218,13 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
      * @param container container
      */
     public static void convertExtraContainer(ConfigurationBuilder builder, ExtraContainerProperties container) {
-        Configuration.ExtraContainer extra = new Configuration.ExtraContainer(container.getName(),
+        Configuration.ExtraContainer extra = new Configuration.ExtraContainer(
+                container.getName(),
                 container.getImage(),
                 Configuration.ExtraContainerSize.valueOf(container.getSize()));
         extra.setCommands(container.getCommands());
         if (container.getEnvironments() != null) {
-            extra.setEnvVariables(container
-                    .getEnvironments()
-                    .stream()
+            extra.setEnvVariables(container.getEnvironments().stream()
                     .map(var -> new Configuration.EnvVariable(var.getKey(), var.getValue()))
                     .collect(Collectors.toList()));
         }
@@ -235,4 +235,3 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
         builder.withFeatureFlag(featureFlag);
     }
 }
-

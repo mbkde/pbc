@@ -68,19 +68,23 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
         }
         logger.info("Rescheduling {} for the {} time", event.getContext().getResultKey(), retryCount);
         event.getContext().getCurrentResult().getCustomBuildData().put(KEY, "true");
-        executor.schedule(() -> {
-            logger.info("Publishing {} for the {} time", event.getContext().getResultKey(), retryCount);
-            eventPublisher.publish(event);
-            event.getContext().getCurrentResult().getCustomBuildData().remove(KEY);
-        }, getDelay(retryCount), TimeUnit.SECONDS);
+        executor.schedule(
+                () -> {
+                    logger.info(
+                            "Publishing {} for the {} time", event.getContext().getResultKey(), retryCount);
+                    eventPublisher.publish(event);
+                    event.getContext().getCurrentResult().getCustomBuildData().remove(KEY);
+                },
+                getDelay(retryCount),
+                TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public void onStart() {
         logger.info("Checking what jobs are queued on plugin restart.");
-        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(buildQueueManager,
-                (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
+        QueueManagerView<CommonContext, CommonContext> queue = QueueManagerView.newView(
+                buildQueueManager, (BuildQueueManager.QueueItemView<CommonContext> input) -> input);
         queue.getQueueView(Iterables.emptyIterable()).forEach((BuildQueueManager.QueueItemView<CommonContext> t) -> {
             Map<String, String> bd = t.getView().getCurrentResult().getCustomBuildData();
             Configuration c = AccessConfiguration.forContext(t.getView());
@@ -88,7 +92,9 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
                 String wasWaiting = bd.get(KEY);
                 if (wasWaiting != null) {
                     // we need to restart this guy.
-                    logger.info("Restarted scheduling of {} after plugin restart.", t.getView().getResultKey());
+                    logger.info(
+                            "Restarted scheduling of {} after plugin restart.",
+                            t.getView().getResultKey());
                     eventPublisher.publish(new RetryAgentStartupEvent(c, t.getView()));
                 } else {
                     String buildKey = bd.get(DockerAgentBuildQueue.BUILD_KEY);
@@ -97,8 +103,10 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
                     // i.e., the plugin was offline when the build event was fired
                     // else, the docker agent for this one is either coming up online or will be dumped/stopped by
                     // ECSWatchDogJob
-                    if (buildKey == null || !buildKey.equals(t.getView().getBuildKey().getKey())) {
-                        logger.info("Refire build/deployment event for {} after plugin restart.",
+                    if (buildKey == null
+                            || !buildKey.equals(t.getView().getBuildKey().getKey())) {
+                        logger.info(
+                                "Refire build/deployment event for {} after plugin restart.",
                                 t.getView().getResultKey());
                         if (t.getView() instanceof BuildContext) {
                             eventPublisher.publish(new BuildQueuedEvent(buildQueueManager, (BuildContext) t.getView()));
@@ -139,5 +147,4 @@ public class AgentCreationReschedulerImpl implements LifecycleAware, AgentCreati
             return MAX_RETRY_DELAY.getSeconds();
         }
     }
-
 }

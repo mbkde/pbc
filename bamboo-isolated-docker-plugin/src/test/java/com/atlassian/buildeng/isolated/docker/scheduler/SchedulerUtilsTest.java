@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.isolated.docker.scheduler;
 
-
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,6 +42,7 @@ import org.slf4j.Logger;
 public class SchedulerUtilsTest {
     @Mock
     private Scheduler scheduler;
+
     @Mock
     private Logger logger;
 

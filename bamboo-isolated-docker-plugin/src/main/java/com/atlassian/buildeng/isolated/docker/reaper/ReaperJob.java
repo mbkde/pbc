@@ -63,10 +63,10 @@ public class ReaperJob implements Job {
 
         RequirementSetImpl reqs = new RequirementSetImpl();
         reqs.addRequirement(new RequirementImpl(Constants.CAPABILITY_RESULT, true, ".*"));
-        Collection<BuildAgent> agents = executableAgentsHelper.getExecutableAgents(ExecutorQuery
-                .newQueryWithoutAssignments(reqs)
-                .withOfflineIncluded()
-                .withDisabledIncluded());
+        Collection<BuildAgent> agents =
+                executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQueryWithoutAssignments(reqs)
+                        .withOfflineIncluded()
+                        .withDisabledIncluded());
 
         for (BuildAgent agent : agents) {
             if (agentShouldBeKilled(agent)) {
@@ -91,9 +91,10 @@ public class ReaperJob implements Job {
             PipelineDefinition definition = agent.getDefinition();
             Date creationTime = definition.getCreationDate();
             long currentTime = System.currentTimeMillis();
-            return (agent.getAgentStatus().isIdle() &&
-                    creationTime != null &&
-                    currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS) ||
+            return (agent.getAgentStatus().isIdle()
+                            && creationTime != null
+                            && currentTime - creationTime.getTime() > Reaper.REAPER_THRESHOLD_MILLIS)
+                    ||
                     // Ideally BuildCancelledEventListener#onOfflineAgent captures offline agents and removes them.
                     // However, the removal can fail for other reasons, e.g. bamboo is in a bad state.
                     // This condition check here works as the last defense to clean offline pbc agents

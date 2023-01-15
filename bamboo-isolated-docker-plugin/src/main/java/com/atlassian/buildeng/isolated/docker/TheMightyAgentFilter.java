@@ -41,9 +41,8 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     private static final Logger log = LoggerFactory.getLogger(TheMightyAgentFilter.class);
 
     @Override
-    public Collection<BuildAgent> filter(CommonContext context,
-            Collection<BuildAgent> agents,
-            MinimalRequirementSet requirements) {
+    public Collection<BuildAgent> filter(
+            CommonContext context, Collection<BuildAgent> agents, MinimalRequirementSet requirements) {
         log.debug("have {} agents for {}", agents.size(), context.getResultKey());
         if (isPBCContext(context)) {
             for (BuildAgent agent : agents) {
@@ -86,5 +85,4 @@ public final class TheMightyAgentFilter implements BuildAgentRequirementFilter {
     private static boolean isPBCContext(CommonContext context) {
         return AccessConfiguration.forContext(context).isEnabled();
     }
-
 }

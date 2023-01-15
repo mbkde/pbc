@@ -68,13 +68,11 @@ public class AgentRemovals {
         if (ba != null) {
             String agentName = ba.getName();
             try {
-                agentManager.removeAgent(agentId);        // Remove agent from the UI/server side
+                agentManager.removeAgent(agentId); // Remove agent from the UI/server side
                 logger.debug("Successfully removed agent {} (id: {})", agentName, agentId);
             } catch (TimeoutException e) {
                 logger.error(String.format("timeout on removing agent %s (id: %s)", agentName, agentId), e);
             }
         }
     }
-
-
 }

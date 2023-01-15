@@ -51,7 +51,8 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     private final ContainerSizeDescriptor sizeDescriptor = new DefaultContainerSizeDescriptor();
 
     @Inject
-    public ECSConfigurationImpl(@Named(ECS_ASG) String asg,
+    public ECSConfigurationImpl(
+            @Named(ECS_ASG) String asg,
             @Named(ECS_CLUSTER) String cluster,
             @Named(ECS_TASK_DEF) String taskDef,
             @Named(ECS_LOG_DRIVER) String logDriver,
@@ -76,7 +77,6 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
         });
         return toRet;
     }
-
 
     @Override
     public String getCurrentCluster() {
@@ -119,8 +119,8 @@ public class ECSConfigurationImpl implements ECSConfiguration, TaskDefinitionReg
     }
 
     @Override
-    public void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings,
-            Map<String, Integer> taskRequestMappings) {
+    public void persistDockerMappingsConfiguration(
+            Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
         this.configurationMapping = dockerMappings;
         this.ecsTaskMapping = taskRequestMappings;
     }

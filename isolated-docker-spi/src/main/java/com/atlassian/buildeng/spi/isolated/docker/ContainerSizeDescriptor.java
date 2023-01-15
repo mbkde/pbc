@@ -21,7 +21,6 @@ package com.atlassian.buildeng.spi.isolated.docker;
  */
 public interface ContainerSizeDescriptor {
 
-
     int getCpu(Configuration.ContainerSize size);
 
     int getCpu(Configuration.ExtraContainerSize size);

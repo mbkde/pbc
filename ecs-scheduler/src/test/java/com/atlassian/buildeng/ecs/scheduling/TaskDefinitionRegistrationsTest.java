@@ -38,7 +38,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-
 @ExtendWith(MockitoExtension.class)
 public class TaskDefinitionRegistrationsTest {
     @Mock
@@ -50,8 +49,7 @@ public class TaskDefinitionRegistrationsTest {
     @InjectMocks
     TaskDefinitionRegistrationsSubclass regs;
 
-    public TaskDefinitionRegistrationsTest() {
-    }
+    public TaskDefinitionRegistrationsTest() {}
 
     Configuration of(String name) {
         return ConfigurationBuilder.create(name).build();
@@ -66,10 +64,10 @@ public class TaskDefinitionRegistrationsTest {
         when(backend.getAllRegistrations()).thenReturn(dock);
         BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 
-        when(regs.ecsClient.registerTaskDefinition(any())).thenReturn(new RegisterTaskDefinitionResult().withTaskDefinition(
-                new TaskDefinition().withRevision(4)));
-        Configuration c = ConfigurationBuilder
-                .create("aaa")
+        when(regs.ecsClient.registerTaskDefinition(any()))
+                .thenReturn(
+                        new RegisterTaskDefinitionResult().withTaskDefinition(new TaskDefinition().withRevision(4)));
+        Configuration c = ConfigurationBuilder.create("aaa")
                 .withImageSize(Configuration.ContainerSize.SMALL)
                 .withExtraContainer("extra", "extra", Configuration.ExtraContainerSize.SMALL)
                 .build();
@@ -98,20 +96,20 @@ public class TaskDefinitionRegistrationsTest {
         when(backend.getAllRegistrations()).thenReturn(dock);
         when(ecsConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
 
-        when(regs.ecsClient.registerTaskDefinition(any())).then(invocation -> new RegisterTaskDefinitionResult().withTaskDefinition(
-                new TaskDefinition().withRevision(4)));
+        when(regs.ecsClient.registerTaskDefinition(any())).then(invocation -> new RegisterTaskDefinitionResult()
+                .withTaskDefinition(new TaskDefinition().withRevision(4)));
         BambooServerEnvironment env = mock(BambooServerEnvironment.class);
 
         Configuration c = ConfigurationBuilder.create("image").build();
         Integer number = regs.registerDockerImage(c, env);
         Integer number2 = regs.findTaskRegistrationVersion(c, env);
         assertEquals(number, number2);
-        Configuration c2 =
-                ConfigurationBuilder.create("image").withImageSize(Configuration.ContainerSize.SMALL).build();
+        Configuration c2 = ConfigurationBuilder.create("image")
+                .withImageSize(Configuration.ContainerSize.SMALL)
+                .build();
 
         int notExisting = regs.findTaskRegistrationVersion(c2, env);
         assertEquals(-1, notExisting);
-
     }
 
     @Test
@@ -130,6 +128,5 @@ public class TaskDefinitionRegistrationsTest {
         protected AmazonECS createClient() {
             return ecsClient;
         }
-
     }
 }

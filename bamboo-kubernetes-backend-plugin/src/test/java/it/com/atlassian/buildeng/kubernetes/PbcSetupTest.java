@@ -41,14 +41,12 @@ public class PbcSetupTest extends AbstractPbcTest {
 
         backdoor.agents().enableRemoteAgents(true);
 
-        bamboo
-                .visit(GenericPerBuildContainerConfigurationPage.class)
+        bamboo.visit(GenericPerBuildContainerConfigurationPage.class)
                 .setEnableSwitch(true)
                 .setAgentCreationThrottling(100)
                 .setArchitectureConfig("")
                 .save();
-        bamboo
-                .visit(GenericKubernetesConfigPage.class)
+        bamboo.visit(GenericKubernetesConfigPage.class)
                 .setSidekickImage(SIDEKICK_IMAGE)
                 .setCurrentContext("")
                 .setPodTemplate(getPodTemplateAsString())
@@ -57,8 +55,9 @@ public class PbcSetupTest extends AbstractPbcTest {
     }
 
     private String getPodTemplateAsString() throws IOException {
-        return FileUtils.readFileToString(new File(Objects
-                .requireNonNull(this.getClass().getResource("/basePodTemplate.yaml"))
-                .getFile()), "UTF-8");
+        return FileUtils.readFileToString(
+                new File(Objects.requireNonNull(this.getClass().getResource("/basePodTemplate.yaml"))
+                        .getFile()),
+                "UTF-8");
     }
 }

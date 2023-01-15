@@ -56,8 +56,7 @@ public class SummaryPanel implements WebPanel {
                 : AccessConfiguration.forBuildResultSummary(summary);
         StringBuilder ret = new StringBuilder();
         if (configuration.isEnabled()) {
-            ret
-                    .append("<h2>Built with Per-build Container Agent</h2>")
+            ret.append("<h2>Built with Per-build Container Agent</h2>")
                     .append("<dl class=\"details-list\"><dt>Image(s) used:</dt><dd>")
                     .append(ConfigurationOverride.reverseRegistryOverride(configuration.getDockerImage()));
             configuration.getExtraContainers().forEach((Configuration.ExtraContainer t) -> {
@@ -66,11 +65,15 @@ public class SummaryPanel implements WebPanel {
             ret.append("</dd>");
 
             if (configuration.getArchitecture() != null) {
-                ret.append("<dt>CPU Architecture:</dt><dd>").append(configuration.getArchitecture()).append("</dd>");
+                ret.append("<dt>CPU Architecture:</dt><dd>")
+                        .append(configuration.getArchitecture())
+                        .append("</dd>");
             }
 
             if (configuration.getAwsRole() != null) {
-                ret.append("<dt>AWS IAM Role:</dt><dd>").append(configuration.getAwsRole()).append("</dd>");
+                ret.append("<dt>AWS IAM Role:</dt><dd>")
+                        .append(configuration.getAwsRole())
+                        .append("</dd>");
             }
 
             Map<String, String> customData = createCustomDataMap(buildcontext, summary);
@@ -78,27 +81,23 @@ public class SummaryPanel implements WebPanel {
             Map<String, URL> containerLogs = detail.getContainerLogs(configuration, customData);
             if (!containerLogs.isEmpty()) {
                 ret.append("<dt>Container logs:</dt><dd>");
-                ret.append(containerLogs
-                        .entrySet()
-                        .stream()
+                ret.append(containerLogs.entrySet().stream()
                         .map((Map.Entry e) -> "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>")
                         .collect(Collectors.joining(",&nbsp;&nbsp;")));
                 ret.append("</dd>");
             }
-            String error = buildcontext != null ? buildcontext
-                    .getCurrentResult()
-                    .getCustomBuildData()
-                    .get(Constants.RESULT_ERROR) : summary.getCustomBuildData().get(Constants.RESULT_ERROR);
+            String error = buildcontext != null
+                    ? buildcontext.getCurrentResult().getCustomBuildData().get(Constants.RESULT_ERROR)
+                    : summary.getCustomBuildData().get(Constants.RESULT_ERROR);
             if (error != null) {
-                ret.append("<dt>Error:</dt><dd class=\"errorText\">").append(error).append("</dd>");
+                ret.append("<dt>Error:</dt><dd class=\"errorText\">")
+                        .append(error)
+                        .append("</dd>");
             }
-            customData
-                    .entrySet()
-                    .stream()
+            customData.entrySet().stream()
                     .filter((Map.Entry<String, String> entry) -> entry.getKey().startsWith(Constants.RESULT_PREFIX))
                     .forEach((Map.Entry<String, String> entry) -> {
-                        ret
-                                .append("<dt>")
+                        ret.append("<dt>")
                                 .append(entry.getKey().substring(Constants.RESULT_PREFIX.length()))
                                 .append("</dt>");
                         ret.append("<dd>").append(entry.getValue()).append("</dd>");
@@ -111,12 +110,12 @@ public class SummaryPanel implements WebPanel {
     }
 
     static Map<String, String> createCustomDataMap(BuildContext buildcontext, BuildResultsSummary summary) {
-        Map<String, String> customData = new HashMap<>(buildcontext != null
-                ? buildcontext.getCurrentResult().getCustomBuildData()
-                : summary.getCustomBuildData());
-        customData
-                .entrySet()
-                .removeIf((Map.Entry<String, String> t) -> !t.getKey().startsWith(Constants.RESULT_PREFIX));
+        Map<String, String> customData = new HashMap<>(
+                buildcontext != null
+                        ? buildcontext.getCurrentResult().getCustomBuildData()
+                        : summary.getCustomBuildData());
+        customData.entrySet().removeIf((Map.Entry<String, String> t) -> !t.getKey()
+                .startsWith(Constants.RESULT_PREFIX));
         return customData;
     }
 

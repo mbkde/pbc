@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 
 public class DockerHostTest {
 
-    public DockerHostTest() {
-    }
+    public DockerHostTest() {}
 
     @Test
     public void testCompareAgeOnly() {
-        DockerHost h1 = new DockerHost(1000,
+        DockerHost h1 = new DockerHost(
+                1000,
                 1000,
                 1000,
                 1000,
@@ -42,7 +42,8 @@ public class DockerHostTest {
                 new Date(new Date().getTime() - 10000),
                 true,
                 "m4.xlarge");
-        DockerHost h2 = new DockerHost(1000,
+        DockerHost h2 = new DockerHost(
+                1000,
                 1000,
                 1000,
                 1000,
@@ -52,7 +53,8 @@ public class DockerHostTest {
                 new Date(new Date().getTime() - 5000),
                 true,
                 "m4.xlarge");
-        DockerHost h3 = new DockerHost(1000,
+        DockerHost h3 = new DockerHost(
+                1000,
                 1000,
                 1000,
                 1000,
@@ -62,7 +64,8 @@ public class DockerHostTest {
                 new Date(new Date().getTime() - 15000),
                 true,
                 "m4.xlarge");
-        DockerHost h4 = new DockerHost(1000,
+        DockerHost h4 = new DockerHost(
+                1000,
                 1000,
                 1000,
                 1000,
@@ -74,8 +77,8 @@ public class DockerHostTest {
                 "m4.xlarge");
 
         ArrayList<DockerHost> lst = Lists.newArrayList(h1, h2, h3, h4);
-        Optional<DockerHost> first = lst.stream().sorted(DockerHost.compareByResourcesAndAge()).findFirst();
+        Optional<DockerHost> first =
+                lst.stream().sorted(DockerHost.compareByResourcesAndAge()).findFirst();
         assertEquals(first.get(), h3);
     }
-
 }

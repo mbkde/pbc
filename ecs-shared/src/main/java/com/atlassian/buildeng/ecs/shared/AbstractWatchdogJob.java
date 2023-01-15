@@ -57,7 +57,6 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
     private static final int CACHE_CLEANUP_TIMEOUT_MINUTES = 30;
     private static final String KEY_MISSING_ARNS_MAP = "MISSING_ARNS_MAP";
 
-
     private static final Logger logger = LoggerFactory.getLogger(AbstractWatchdogJob.class);
 
     @Override
@@ -74,7 +73,6 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
 
     protected abstract List<StoppedState> retrieveStoppedTasksByArn(List<String> arns, Map<String, Object> jobDataMap)
             throws Exception;
-
 
     private void executeImpl(Map<String, Object> jobDataMap) throws Exception {
         BuildQueueManager buildQueueManager = getService(BuildQueueManager.class, "buildQueueManager");
@@ -94,8 +92,7 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
         }
         logger.debug("Currently queued docker agent requests {}", arns.size());
 
-        Map<String, StoppedState> stoppedTasksByArn = retrieveStoppedTasksByArn(arns, jobDataMap)
-                .stream()
+        Map<String, StoppedState> stoppedTasksByArn = retrieveStoppedTasksByArn(arns, jobDataMap).stream()
                 .collect(Collectors.toMap(StoppedState::getArn, Function.identity()));
 
         if (!stoppedTasksByArn.isEmpty()) {
@@ -113,43 +110,38 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
                             // if there was a way of finding out when the bambo job was started, we could
                             // have a simple grace period, we have to come up with our own somehow.
                             Date firstTimeMissing = missingTaskArns.get(taskArn);
-                            if (firstTimeMissing == null ||
-                                    Duration
-                                            .ofMillis(System.currentTimeMillis() - firstTimeMissing.getTime())
-                                            .toMinutes() < MISSING_TASK_GRACE_PERIOD_MINUTES) {
+                            if (firstTimeMissing == null
+                                    || Duration.ofMillis(System.currentTimeMillis() - firstTimeMissing.getTime())
+                                                    .toMinutes()
+                                            < MISSING_TASK_GRACE_PERIOD_MINUTES) {
                                 if (firstTimeMissing == null) {
                                     missingTaskArns.put(taskArn, new Date());
                                 }
-                                logger.debug("Task {} missing, still in grace period, not stopping the build.",
-                                        taskArn);
+                                logger.debug(
+                                        "Task {} missing, still in grace period, not stopping the build.", taskArn);
                                 return; // do not stop or retry, we could be just too fast on checking
                             }
                         }
 
-                        if (error.contains("CannotStartContainerError") ||
-                                error.contains("CannotCreateContainerError") ||
-                                error.contains("HostConfigError")) {
-                            logger.info("Retrying job {} because of ecs task {} failure: {}",
-                                    t.getResultKey(),
-                                    tsk,
-                                    error);
+                        if (error.contains("CannotStartContainerError")
+                                || error.contains("CannotCreateContainerError")
+                                || error.contains("HostConfigError")) {
+                            logger.info(
+                                    "Retrying job {} because of ecs task {} failure: {}", t.getResultKey(), tsk, error);
                             Configuration config = AccessConfiguration.forContext(t);
                             eventPublisher.publish(new RetryAgentStartupEvent(config, t));
                             // monitoring only
-                            eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(error,
-                                    t.getEntityKey(),
-                                    tsk.getArn(),
-                                    tsk.getContainerArn()));
+                            eventPublisher.publish(new DockerAgentRemoteSilentRetryEvent(
+                                    error, t.getEntityKey(), tsk.getArn(), tsk.getContainerArn()));
                         } else {
-                            logger.info("Stopping job {} because of ecs task {} failure: {}",
-                                    t.getResultKey(),
-                                    tsk,
-                                    error);
-                            errorUpdateHandler.recordError(t.getEntityKey(),
-                                    "Build was not queued due to error:" + error);
+                            logger.info(
+                                    "Stopping job {} because of ecs task {} failure: {}", t.getResultKey(), tsk, error);
+                            errorUpdateHandler.recordError(
+                                    t.getEntityKey(), "Build was not queued due to error:" + error);
                             current.getCustomBuildData().put(RESULT_ERROR, error);
                             generateRemoteFailEvent(t, error, tsk, isolatedAgentService, eventPublisher);
-                            killBuild(deploymentExecutionService,
+                            killBuild(
+                                    deploymentExecutionService,
                                     deploymentResultService,
                                     logger,
                                     buildQueueManager,
@@ -160,10 +152,10 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
                 }
             });
         }
-
     }
 
-    private void generateRemoteFailEvent(CommonContext t,
+    private void generateRemoteFailEvent(
+            CommonContext t,
             String error,
             StoppedState tsk,
             IsolatedAgentService isolatedAgentService,
@@ -172,15 +164,11 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
         Map<String, String> customData = new HashMap<>(t.getCurrentResult().getCustomBuildData());
         // sort of implementation detail, would be nice to place elsewhere but it's shared across
         // ecs-shared and bamboo-isolated-docker modules
-        customData
-                .entrySet()
-                .removeIf((Map.Entry<String, String> tt) -> !tt.getKey().startsWith("result.isolated.docker."));
+        customData.entrySet().removeIf((Map.Entry<String, String> tt) -> !tt.getKey()
+                .startsWith("result.isolated.docker."));
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(c, customData);
-        DockerAgentRemoteFailEvent event = new DockerAgentRemoteFailEvent(error,
-                t.getEntityKey(),
-                tsk.getArn(),
-                tsk.getContainerArn(),
-                containerLogs);
+        DockerAgentRemoteFailEvent event = new DockerAgentRemoteFailEvent(
+                error, t.getEntityKey(), tsk.getArn(), tsk.getContainerArn(), containerLogs);
         eventPublisher.publish(event);
     }
 
@@ -206,12 +194,12 @@ public abstract class AbstractWatchdogJob extends WatchdogJob {
         // trim values that are too old to have
         for (Iterator<Map.Entry<String, Date>> iterator = map.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<String, Date> next = iterator.next();
-            if (Duration.ofMillis(System.currentTimeMillis() - next.getValue().getTime()).toMinutes() >
-                    CACHE_CLEANUP_TIMEOUT_MINUTES) {
+            if (Duration.ofMillis(System.currentTimeMillis() - next.getValue().getTime())
+                            .toMinutes()
+                    > CACHE_CLEANUP_TIMEOUT_MINUTES) {
                 iterator.remove();
             }
         }
         return map;
     }
-
 }

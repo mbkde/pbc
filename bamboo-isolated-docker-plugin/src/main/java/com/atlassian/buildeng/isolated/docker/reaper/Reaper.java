@@ -61,7 +61,8 @@ public class Reaper implements LifecycleAware {
     static String REAPER_UNMET_KEY = "reaper-unmet-requirements";
 
     @Inject
-    public Reaper(Scheduler scheduler,
+    public Reaper(
+            Scheduler scheduler,
             ExecutableAgentsHelper executableAgentsHelper,
             AgentManager agentManager,
             AgentRemovals agentRemovals,
@@ -89,9 +90,14 @@ public class Reaper implements LifecycleAware {
 
         Trigger reaperTrigger = newTrigger()
                 .startNow()
-                .withSchedule(simpleSchedule().withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS).repeatForever())
+                .withSchedule(simpleSchedule()
+                        .withIntervalInMilliseconds(REAPER_INTERVAL_MILLIS)
+                        .repeatForever())
                 .build();
-        JobDetail reaperJob = newJob(ReaperJob.class).withIdentity(REAPER_KEY).usingJobData(data).build();
+        JobDetail reaperJob = newJob(ReaperJob.class)
+                .withIdentity(REAPER_KEY)
+                .usingJobData(data)
+                .build();
         try {
             scheduler.scheduleJob(reaperJob, reaperTrigger);
         } catch (SchedulerException e) {

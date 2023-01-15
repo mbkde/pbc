@@ -38,6 +38,4 @@ public class DockerAgentTimeoutEvent extends DockerAgentEvent {
     public String toString() {
         return "DockerAgentTimeoutEvent{" + "key=" + key + ", retryCount=" + retryCount + '}';
     }
-
-
 }

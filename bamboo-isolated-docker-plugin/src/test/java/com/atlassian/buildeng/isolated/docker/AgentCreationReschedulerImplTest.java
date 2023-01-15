@@ -66,5 +66,4 @@ public class AgentCreationReschedulerImplTest {
         when(currentResult.getCustomBuildData()).thenReturn(customBuildData);
         return context;
     }
-
 }

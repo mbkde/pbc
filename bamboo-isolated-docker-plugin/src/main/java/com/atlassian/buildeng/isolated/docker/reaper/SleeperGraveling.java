@@ -39,23 +39,22 @@ public class SleeperGraveling implements BuildAgentVisitor {
     }
 
     @Override
-    public void visitLocal(LocalBuildAgent localBuildAgent) {
-    }
+    public void visitLocal(LocalBuildAgent localBuildAgent) {}
 
     @Override
     public void visitRemote(final BuildAgent buildAgent) {
         buildAgent.getDefinition().accept(new PipelineDefinitionVisitor() {
             @Override
             public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
-                LOG.error("Wrong agent picked up. Type:{} Idle:{} Name:{}",
+                LOG.error(
+                        "Wrong agent picked up. Type:{} Idle:{} Name:{}",
                         buildAgent.getType(),
                         buildAgent.getAgentStatus().isIdle(),
                         buildAgent.getName());
             }
 
             @Override
-            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
-            }
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
@@ -68,5 +67,4 @@ public class SleeperGraveling implements BuildAgentVisitor {
             }
         });
     }
-
 }

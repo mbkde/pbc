@@ -57,7 +57,8 @@ public class AWSSchedulerBackendTest {
     public void matchWithExistingCommands() {
         ExtraContainer t = new ExtraContainer("aaa", "docker:dind", Configuration.ExtraContainerSize.REGULAR);
         t.setCommands(Arrays.asList("--debug", "--default-gateway-v6"));
-        assertEquals(Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
+        assertEquals(
+                Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
                 AWSSchedulerBackend.adjustCommands(t, mockHost(null)));
     }
 
@@ -65,7 +66,8 @@ public class AWSSchedulerBackendTest {
     public void matchAndRemoveExistingDriver() {
         ExtraContainer t = new ExtraContainer("aaa", "docker:dind", Configuration.ExtraContainerSize.REGULAR);
         t.setCommands(Arrays.asList("--debug", "-s", "vfs", "--default-gateway-v6"));
-        assertEquals(Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
+        assertEquals(
+                Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
                 AWSSchedulerBackend.adjustCommands(t, mockHost(null)));
     }
 
@@ -73,20 +75,23 @@ public class AWSSchedulerBackendTest {
     public void matchAndRemoveExistingDriver2() {
         ExtraContainer t = new ExtraContainer("aaa", "docker:dind", Configuration.ExtraContainerSize.REGULAR);
         t.setCommands(Arrays.asList("--debug", "--storage-driver=vfs", "--default-gateway-v6"));
-        assertEquals(Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
+        assertEquals(
+                Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
                 AWSSchedulerBackend.adjustCommands(t, mockHost(null)));
     }
 
     @Test
     public void matchAndRemoveExistingDriverOpts() {
         ExtraContainer t = new ExtraContainer("aaa", "docker:dind", Configuration.ExtraContainerSize.REGULAR);
-        t.setCommands(Arrays.asList("--debug",
+        t.setCommands(Arrays.asList(
+                "--debug",
                 "-s",
                 "devicemapper",
                 "--storage-opt",
                 "dm.thinpooldev=/dev/mapper/thin-pool",
                 "--default-gateway-v6"));
-        assertEquals(Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
+        assertEquals(
+                Arrays.asList("--debug", "--default-gateway-v6", "--storage-driver=overlay2"),
                 AWSSchedulerBackend.adjustCommands(t, mockHost(null)));
     }
 
@@ -94,10 +99,9 @@ public class AWSSchedulerBackendTest {
     public void matchEmptyContainerInstanceValue() {
         ExtraContainer t = new ExtraContainer("aaa", "docker:1.11.0-dind", Configuration.ExtraContainerSize.REGULAR);
         t.setCommands(new ArrayList<>());
-        assertEquals(Arrays.asList("--storage-driver=overlay"),
-                AWSSchedulerBackend.adjustCommands(t, mockHost("overlay")));
+        assertEquals(
+                Arrays.asList("--storage-driver=overlay"), AWSSchedulerBackend.adjustCommands(t, mockHost("overlay")));
     }
-
 
     DockerHost mockHost(String value) {
         DockerHost host = Mockito.mock(DockerHost.class);

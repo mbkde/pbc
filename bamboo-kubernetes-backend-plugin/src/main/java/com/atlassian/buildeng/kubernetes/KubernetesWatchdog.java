@@ -79,7 +79,6 @@ import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Background job checking the state of the cluster.
  */
@@ -97,7 +96,6 @@ public class KubernetesWatchdog extends WatchdogJob {
     private static final int MAX_RETRY_COUNT = 30;
     private static final int MAX_WAIT_FOR_TERMINATION_IN_SECONDS = 30;
 
-
     private final ExecutorService executorService;
     private static final Logger logger = LoggerFactory.getLogger(KubernetesWatchdog.class);
 
@@ -109,7 +107,6 @@ public class KubernetesWatchdog extends WatchdogJob {
         tpe.allowCoreThreadTimeOut(true);
         executorService = tpe;
     }
-
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -123,7 +120,6 @@ public class KubernetesWatchdog extends WatchdogJob {
             logger.error("Exception caught and swallowed to preserve rescheduling of the task", t);
         }
         logger.debug("Time overall {}", Duration.ofMillis(System.currentTimeMillis() - start));
-
     }
 
     private void executeImpl(Map<String, Object> jobDataMap)
@@ -144,15 +140,15 @@ public class KubernetesWatchdog extends WatchdogJob {
         // injection between plugins. It is always instantiated by the required bamboo-isolated-docker-plugin, so we
         // directly use the plugin accessor to fetch the instance of it from there.
         PluginAccessor pluginAccessor = getService(PluginAccessor.class, "pluginAccessor");
-        final AgentCreationRescheduler agentCreationRescheduler = Optional
-                .ofNullable(pluginAccessor.getPlugin("com.atlassian.buildeng.bamboo-isolated-docker-plugin"))
+        final AgentCreationRescheduler agentCreationRescheduler = Optional.ofNullable(
+                        pluginAccessor.getPlugin("com.atlassian.buildeng.bamboo-isolated-docker-plugin"))
                 .map(plugin -> Narrow.downTo(plugin, ContainerManagedPlugin.class))
                 .map(ContainerManagedPlugin::getContainerAccessor)
                 .map(containerAccessor -> containerAccessor.getBeansOfType(AgentCreationRescheduler.class))
                 .map(Collection::stream)
                 .flatMap(Stream::findFirst)
-                .orElseThrow(() -> new IllegalStateException("Cannot find component " +
-                        "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler"));
+                .orElseThrow(() -> new IllegalStateException("Cannot find component "
+                        + "com.atlassian.buildeng.bamboo-isolated-docker-plugin:agentCreationRescheduler"));
 
         KubernetesClient client = new KubernetesClient(globalConfiguration, new JavaShellExecutor());
         long clusterStateQueryTime = System.currentTimeMillis();
@@ -172,7 +168,8 @@ public class KubernetesWatchdog extends WatchdogJob {
             }
         }
 
-        logger.debug("Time it took query current alivePods {}",
+        logger.debug(
+                "Time it took query current alivePods {}",
                 Duration.ofMillis(System.currentTimeMillis() - clusterStateQueryTime));
 
         Map<String, TerminationReason> terminationReasons = getPodTerminationReasons(jobDataMap);
@@ -181,15 +178,15 @@ public class KubernetesWatchdog extends WatchdogJob {
         // delete alivePods which have had the bamboo-agent container terminated
         Set<BackoffCache> newBackedOff = new HashSet<>();
 
-        List<TerminatePodSelector> selectors = Arrays.asList(new OutOfResourcesSelector(),
+        List<TerminatePodSelector> selectors = Arrays.asList(
+                new OutOfResourcesSelector(),
                 new TerminatedAgentContainer(),
                 new CreateContainerError(),
                 new ContainerErrorStates());
 
         long killingStart = System.currentTimeMillis();
         for (Pod pod : alivePods) {
-            selectors
-                    .stream()
+            selectors.stream()
                     .filter((TerminatePodSelector t) -> t.shouldBeDeleted(pod))
                     .findFirst()
                     .ifPresent((TerminatePodSelector t) -> {
@@ -215,20 +212,23 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
 
         if (!killedFutures.isEmpty()) {
-            logger.info("Deleting {} alivePods took:{} s",
+            logger.info(
+                    "Deleting {} alivePods took:{} s",
                     killedFutures.size(),
                     Duration.ofMillis(System.currentTimeMillis() - killingStart).getSeconds());
         }
 
         for (Pod pod : alivePods) {
             // identify if pod is stuck in "imagePullBackOff" loop.
-            newBackedOff.addAll(Stream
-                    .concat(pod.getStatus().getContainerStatuses().stream(),
+            newBackedOff.addAll(Stream.concat(
+                            pod.getStatus().getContainerStatuses().stream(),
                             pod.getStatus().getInitContainerStatuses().stream())
                     .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
-                    .filter((ContainerStatus t) -> "ImagePullBackOff".equals(t.getState().getWaiting().getReason()) ||
-                            "ErrImagePull".equals(t.getState().getWaiting().getReason()))
-                    .map((ContainerStatus t) -> new BackoffCache(KubernetesHelper.getName(pod),
+                    .filter((ContainerStatus t) -> "ImagePullBackOff"
+                                    .equals(t.getState().getWaiting().getReason())
+                            || "ErrImagePull".equals(t.getState().getWaiting().getReason()))
+                    .map((ContainerStatus t) -> new BackoffCache(
+                            KubernetesHelper.getName(pod),
                             t.getName(),
                             t.getState().getWaiting().getMessage(),
                             t.getImage()))
@@ -241,10 +241,10 @@ public class KubernetesWatchdog extends WatchdogJob {
         backoffCache.addAll(newBackedOff);
 
         long currentTime = System.currentTimeMillis();
-        backoffCache
-                .stream()
-                .filter((BackoffCache t) -> MAX_BACKOFF_SECONDS <
-                        Duration.ofMillis(currentTime - t.creationTime.getTime()).getSeconds())
+        backoffCache.stream()
+                .filter((BackoffCache t) -> MAX_BACKOFF_SECONDS
+                        < Duration.ofMillis(currentTime - t.creationTime.getTime())
+                                .getSeconds())
                 .forEach((BackoffCache t) -> {
                     Pod pod = null;
                     for (Pod possibleBackoffPod : alivePods) {
@@ -254,15 +254,16 @@ public class KubernetesWatchdog extends WatchdogJob {
                         }
                     }
                     if (pod != null) {
-                        logger.warn("Killing pod {} with container in ImagePullBackOff state: {}",
-                                t.podName,
-                                t.message);
-                        Optional<TerminationReason> deleted = deletePod(client,
+                        logger.warn(
+                                "Killing pod {} with container in ImagePullBackOff state: {}", t.podName, t.message);
+                        Optional<TerminationReason> deleted = deletePod(
+                                client,
                                 pod,
                                 "Container '" + t.containerName + "' image '" + t.imageName + "' pull failed",
                                 false);
                         if (deleted.isPresent()) {
-                            terminationReasons.put(KubernetesHelper.getName(deleted.get().getPod()), deleted.get());
+                            terminationReasons.put(
+                                    KubernetesHelper.getName(deleted.get().getPod()), deleted.get());
                             alivePods.remove(pod);
                         }
                     } else {
@@ -270,14 +271,12 @@ public class KubernetesWatchdog extends WatchdogJob {
                     }
                 });
 
-
         AtomicBoolean shouldPrintDebugInfo = new AtomicBoolean(false);
         Map<String, Pod> nameToPod = alivePods.stream().collect(Collectors.toMap(KubernetesHelper::getName, x -> x));
         // Kill queued jobs waiting on alivePods that no longer exist or which have been queued for too long
         DockerAgentBuildQueue.currentlyQueued(buildQueueManager).forEach((CommonContext context) -> {
             CurrentResult current = context.getCurrentResult();
-            String podName = current
-                    .getCustomBuildData()
+            String podName = current.getCustomBuildData()
                     .get(KubernetesIsolatedDockerImpl.RESULT_PREFIX + KubernetesIsolatedDockerImpl.NAME);
             logger.debug("Processing {} with podName: {}", context.getResultKey(), podName);
             if (podName != null) {
@@ -294,27 +293,28 @@ public class KubernetesWatchdog extends WatchdogJob {
                     // on a query that could have happened significantly in the past. The pod query itself takes time
                     // and every pod deletion equals to 2 kubectl commands and thus in this loop we can accumulate
                     // significant time penalties that don't fit MISSING_POD_GRACE_PERIOD_MINUTES nicely.
-                    // Ideally we would also not compare to QUEUE_TIMESTAMP but to the time when 'kubectl create pod' was
+                    // Ideally we would also not compare to QUEUE_TIMESTAMP but to the time when 'kubectl create pod'
+                    // was
                     // actually executed in KubernetesIsolatedDockerImpl (we create alivePods concurrently, still
                     // can incur some time penalty there.
                     Duration grace = Duration.ofMillis(clusterStateQueryTime - queueTime);
-                    if (terminationReasons.get(podName) != null ||
-                            grace.toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES) {
+                    if (terminationReasons.get(podName) != null
+                            || grace.toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES) {
 
                         String errorMessage;
                         TerminationReason reason = terminationReasons.get(podName);
 
-                        if (reason != null &&
-                                reason.isRestartPod() &&
-                                getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
+                        if (reason != null
+                                && reason.isRestartPod()
+                                && getRetryCount(reason.getPod()) < MAX_RETRY_COUNT) {
                             try {
                                 deletePod(client, pod, "Delete existing Pod before retry", false);
                             } catch (KubectlException e) {
-                                logger.debug("Unable to delete pod before retry for reason: " +
-                                        e.getMessage() +
-                                        " proceeding with retry anyway");
+                                logger.debug("Unable to delete pod before retry for reason: " + e.getMessage()
+                                        + " proceeding with retry anyway");
                             }
-                            retryPodCreation(context,
+                            retryPodCreation(
+                                    context,
                                     reason.getPod(),
                                     reason.getErrorMessage(),
                                     podName,
@@ -325,24 +325,28 @@ public class KubernetesWatchdog extends WatchdogJob {
                         } else {
                             if (reason != null) {
                                 String logMessage = "Build was not queued due to pod deletion: " + podName;
-                                logger.info("Stopping job {} because pod {} no longer exists (grace timeout {})",
+                                logger.info(
+                                        "Stopping job {} because pod {} no longer exists (grace timeout {})",
                                         context.getResultKey(),
                                         podName,
                                         grace);
                                 errorUpdateHandler.recordError(context.getEntityKey(), logMessage);
                                 errorMessage = reason.getErrorMessage();
-                                logger.error("{}\n{}\n{}",
+                                logger.error(
+                                        "{}\n{}\n{}",
                                         logMessage,
                                         errorMessage,
                                         terminationReasons.get(podName).getDescribePod());
                                 current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                                generateRemoteFailEvent(context,
+                                generateRemoteFailEvent(
+                                        context,
                                         errorMessage,
                                         podName,
                                         isolatedAgentService,
                                         eventPublisher,
                                         globalConfiguration);
-                                killBuild(deploymentExecutionService,
+                                killBuild(
+                                        deploymentExecutionService,
                                         deploymentResultService,
                                         logger,
                                         buildQueueManager,
@@ -355,7 +359,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                                     logger.debug("Rescheduling pod {} for build {}", podName, context.getResultKey());
                                     shouldPrintDebugInfo.set(true);
                                     //                                    retryPodCreation(context, null, errorMessage,
-                                    //                                            podName, 0, eventPublisher, agentCreationRescheduler, globalConfiguration);
+                                    //                                            podName, 0, eventPublisher,
+                                    // agentCreationRescheduler, globalConfiguration);
                                 }
                             }
                         }
@@ -363,26 +368,29 @@ public class KubernetesWatchdog extends WatchdogJob {
                         logger.debug("Pod {} missing but still in grace period, not stopping the build.", podName);
                     }
                 } else {
-                    Date creationTime = Date.from(Instant.parse(pod.getMetadata().getCreationTimestamp()));
-                    if (Duration.ofMillis(System.currentTimeMillis() - creationTime.getTime()).toMinutes() >
-                            MAX_QUEUE_TIME_MINUTES) {
-                        String logMessage = "Build was not queued after " +
-                                MAX_QUEUE_TIME_MINUTES +
-                                " minutes." +
-                                " podName: " +
-                                podName;
+                    Date creationTime =
+                            Date.from(Instant.parse(pod.getMetadata().getCreationTimestamp()));
+                    if (Duration.ofMillis(System.currentTimeMillis() - creationTime.getTime())
+                                    .toMinutes()
+                            > MAX_QUEUE_TIME_MINUTES) {
+                        String logMessage = "Build was not queued after " + MAX_QUEUE_TIME_MINUTES
+                                + " minutes."
+                                + " podName: "
+                                + podName;
                         errorUpdateHandler.recordError(context.getEntityKey(), logMessage);
                         String errorMessage = "Build terminated for queuing for too long";
 
                         current.getCustomBuildData().put(RESULT_ERROR, errorMessage);
-                        generateRemoteFailEvent(context,
+                        generateRemoteFailEvent(
+                                context,
                                 errorMessage,
                                 podName,
                                 isolatedAgentService,
                                 eventPublisher,
                                 globalConfiguration);
 
-                        killBuild(deploymentExecutionService,
+                        killBuild(
+                                deploymentExecutionService,
                                 deploymentResultService,
                                 logger,
                                 buildQueueManager,
@@ -399,16 +407,13 @@ public class KubernetesWatchdog extends WatchdogJob {
         });
 
         if (shouldPrintDebugInfo.get()) {
-            logger.debug("All pods:" +
-                    bambooPods.size() +
-                    "\n" +
-                    new JSONArray(bambooPods.stream().map(Pod::getMetadata).collect(Collectors.toList())));
-            logger.debug("Alive pods:" +
-                    alivePods.size() +
-                    "\n" +
-                    new JSONObject(alivePods
-                            .stream()
-                            .collect(Collectors.toMap(KubernetesHelper::getName, Pod::getMetadata))));
+            logger.debug("All pods:" + bambooPods.size()
+                    + "\n"
+                    + new JSONArray(bambooPods.stream().map(Pod::getMetadata).collect(Collectors.toList())));
+            logger.debug("Alive pods:" + alivePods.size()
+                    + "\n"
+                    + new JSONObject(
+                            alivePods.stream().collect(Collectors.toMap(KubernetesHelper::getName, Pod::getMetadata))));
         }
     }
 
@@ -417,7 +422,8 @@ public class KubernetesWatchdog extends WatchdogJob {
         return Integer.parseInt(retry);
     }
 
-    private void retryPodCreation(CommonContext context,
+    private void retryPodCreation(
+            CommonContext context,
             Pod pod,
             String errorMessage,
             String podName,
@@ -425,28 +431,26 @@ public class KubernetesWatchdog extends WatchdogJob {
             EventPublisher eventPublisher,
             AgentCreationRescheduler rescheduler,
             GlobalConfiguration configuration) {
-        logger.info("Retrying pod creation for {} for {} time because: {}",
+        logger.info(
+                "Retrying pod creation for {} for {} time because: {}",
                 context.getResultKey(),
                 retryCount,
                 errorMessage);
         Configuration config = AccessConfiguration.forContext(context);
         // when pod is not around, just generate new UUID :(
         String uuid = pod != null
-                ? pod
-                .getMetadata()
-                .getAnnotations()
-                .getOrDefault(PodCreator.ANN_UUID, pod.getMetadata().getLabels().get(PodCreator.ANN_UUID))
+                ? pod.getMetadata()
+                        .getAnnotations()
+                        .getOrDefault(
+                                PodCreator.ANN_UUID,
+                                pod.getMetadata().getLabels().get(PodCreator.ANN_UUID))
                 : UUID.randomUUID().toString();
-        context
-                .getCurrentResult()
+        context.getCurrentResult()
                 .getCustomBuildData()
                 .remove(KubernetesIsolatedDockerImpl.RESULT_PREFIX + KubernetesIsolatedDockerImpl.NAME);
         rescheduler.reschedule(new RetryAgentStartupEvent(config, context, retryCount + 1, UUID.fromString(uuid)));
-        eventPublisher.publish(new DockerAgentKubeRestartEvent(errorMessage,
-                context.getResultKey(),
-                podName,
-                Collections.emptyMap(),
-                configuration));
+        eventPublisher.publish(new DockerAgentKubeRestartEvent(
+                errorMessage, context.getResultKey(), podName, Collections.emptyMap(), configuration));
     }
 
     Set<BackoffCache> getImagePullBackOffCache(Map<String, Object> jobDataMap) {
@@ -459,32 +463,26 @@ public class KubernetesWatchdog extends WatchdogJob {
         return list;
     }
 
-    private void generateRemoteFailEvent(CommonContext context,
+    private void generateRemoteFailEvent(
+            CommonContext context,
             String reason,
             String podName,
             IsolatedAgentService isolatedAgentService,
             EventPublisher eventPublisher,
             GlobalConfiguration configuration) {
         Configuration config = AccessConfiguration.forContext(context);
-        Map<String, String> customData = new HashMap<>(context.getCurrentResult().getCustomBuildData());
-        customData
-                .entrySet()
-                .removeIf((Map.Entry<String, String> tt) -> !tt
-                        .getKey()
-                        .startsWith(KubernetesIsolatedDockerImpl.RESULT_PREFIX));
+        Map<String, String> customData =
+                new HashMap<>(context.getCurrentResult().getCustomBuildData());
+        customData.entrySet().removeIf((Map.Entry<String, String> tt) -> !tt.getKey()
+                .startsWith(KubernetesIsolatedDockerImpl.RESULT_PREFIX));
         Map<String, URL> containerLogs = isolatedAgentService.getContainerLogs(config, customData);
 
-        eventPublisher.publish(new DockerAgentKubeFailEvent(reason,
-                context.getResultKey(),
-                podName,
-                containerLogs,
-                configuration));
+        eventPublisher.publish(
+                new DockerAgentKubeFailEvent(reason, context.getResultKey(), podName, containerLogs, configuration));
     }
 
-    private static Optional<TerminationReason> deletePod(KubernetesClient client,
-            Pod pod,
-            String terminationReason,
-            boolean restartPod) {
+    private static Optional<TerminationReason> deletePod(
+            KubernetesClient client, Pod pod, String terminationReason, boolean restartPod) {
         String describePod;
         // describe is expensive operation especially if a lot of events are present and the cluster is large.
         // this condition hopes to preserve the describe for debugging purposes but avoid it in normal traffic.
@@ -497,8 +495,8 @@ public class KubernetesWatchdog extends WatchdogJob {
                 logger.error(describePod);
             }
         } else {
-            describePod = "Pods not described when debug logging not enabled." +
-                    "(com.atlassian.buildeng.kubernetes.KubernetesWatchdog)";
+            describePod = "Pods not described when debug logging not enabled."
+                    + "(com.atlassian.buildeng.kubernetes.KubernetesWatchdog)";
         }
         try {
             client.deletePod(pod);
@@ -519,11 +517,11 @@ public class KubernetesWatchdog extends WatchdogJob {
             data.put(KEY_TERMINATED_POD_REASONS, map);
         }
         // trim values that are too old to have
-        map
-                .entrySet()
-                .removeIf(next -> Duration
-                        .ofMillis(System.currentTimeMillis() - next.getValue().getTerminationTime().getTime())
-                        .toMinutes() >= MISSING_POD_GRACE_PERIOD_MINUTES);
+        map.entrySet()
+                .removeIf(next -> Duration.ofMillis(System.currentTimeMillis()
+                                        - next.getValue().getTerminationTime().getTime())
+                                .toMinutes()
+                        >= MISSING_POD_GRACE_PERIOD_MINUTES);
         return map;
     }
 
@@ -566,7 +564,6 @@ public class KubernetesWatchdog extends WatchdogJob {
             }
             return Objects.equals(this.containerName, other.containerName);
         }
-
     }
 
     private static final class TerminationReason {
@@ -576,11 +573,8 @@ public class KubernetesWatchdog extends WatchdogJob {
         private final Pod pod;
         private final boolean restartPod;
 
-        public TerminationReason(Pod pod,
-                Date terminationTime,
-                String errorMessage,
-                String describePod,
-                boolean restartPod) {
+        public TerminationReason(
+                Pod pod, Date terminationTime, String errorMessage, String describePod, boolean restartPod) {
             this.terminationTime = terminationTime;
             this.errorMessage = errorMessage;
             this.describePod = describePod;
@@ -614,40 +608,32 @@ public class KubernetesWatchdog extends WatchdogJob {
         boolean shouldBeDeleted(Pod pod);
 
         Callable<Optional<TerminationReason>> delete(Pod pod, KubernetesClient client);
-
     }
 
     private static class OutOfResourcesSelector implements TerminatePodSelector {
 
         @Override
         public boolean shouldBeDeleted(Pod pod) {
-            return "Failed".equals(pod.getStatus().getPhase()) &&
-                    ("OutOfcpu".equals(pod.getStatus().getReason()) ||
-                            "OutOfmemory".equals(pod.getStatus().getReason()));
+            return "Failed".equals(pod.getStatus().getPhase())
+                    && ("OutOfcpu".equals(pod.getStatus().getReason())
+                            || "OutOfmemory".equals(pod.getStatus().getReason()));
         }
 
         @Override
         public Callable<Optional<TerminationReason>> delete(Pod pod, KubernetesClient client) {
-            logger.info("Killing pod {} due to resource constraints. {} ",
-                    KubernetesHelper.getName(pod),
-                    pod.getStatus());
+            logger.info(
+                    "Killing pod {} due to resource constraints. {} ", KubernetesHelper.getName(pod), pod.getStatus());
             String message = pod.getStatus().getReason();
-            return () -> deletePod(client,
-                    pod,
-                    "Bamboo agent could not be scheduled " + (message != null ? ":" + message : ""),
-                    true);
+            return () -> deletePod(
+                    client, pod, "Bamboo agent could not be scheduled " + (message != null ? ":" + message : ""), true);
         }
-
     }
 
     private static class TerminatedAgentContainer implements TerminatePodSelector {
 
         @Override
         public boolean shouldBeDeleted(Pod pod) {
-            ContainerStatus agentContainer = pod
-                    .getStatus()
-                    .getContainerStatuses()
-                    .stream()
+            ContainerStatus agentContainer = pod.getStatus().getContainerStatuses().stream()
                     .filter((ContainerStatus t) -> t.getName().equals(PodCreator.CONTAINER_NAME_BAMBOOAGENT))
                     .findFirst()
                     .orElse(null);
@@ -657,18 +643,13 @@ public class KubernetesWatchdog extends WatchdogJob {
 
         @Override
         public Callable<Optional<TerminationReason>> delete(Pod pod, KubernetesClient client) {
-            logger.info("Killing pod {} with terminated agent container. Container states: {}",
+            logger.info(
+                    "Killing pod {} with terminated agent container. Container states: {}",
                     KubernetesHelper.getName(pod),
-                    pod
-                            .getStatus()
-                            .getContainerStatuses()
-                            .stream()
+                    pod.getStatus().getContainerStatuses().stream()
                             .map(t -> t.getState())
                             .collect(Collectors.toList()));
-            String message = pod
-                    .getStatus()
-                    .getContainerStatuses()
-                    .stream()
+            String message = pod.getStatus().getContainerStatuses().stream()
                     .filter((ContainerStatus t) -> t.getName().equals(PodCreator.CONTAINER_NAME_BAMBOOAGENT))
                     .findFirst()
                     .get()
@@ -678,33 +659,32 @@ public class KubernetesWatchdog extends WatchdogJob {
             try {
                 // Short circuit AND so that we don't grab the line if unnecessary
                 if (message == null && client.lastLogLinePod(pod).trim().endsWith("exec format error")) {
-                    message = "An 'exec format error' was detected when starting your container. Check that the " +
-                            "architecture of your image matches the architecture your build is configured to run on.";
+                    message = "An 'exec format error' was detected when starting your container. Check that the "
+                            + "architecture of your image matches the architecture your build is configured to run on.";
                 }
             } catch (KubectlException e) {
-                logger.info("Failed to retrieve last line of pod logs from " +
-                        KubernetesHelper.getName(pod) +
-                        ": " +
-                        e);
+                logger.info(
+                        "Failed to retrieve last line of pod logs from " + KubernetesHelper.getName(pod) + ": " + e);
             }
             final String finalMessage = message;
-            return () -> deletePod(client,
+            return () -> deletePod(
+                    client,
                     pod,
                     "Bamboo agent container prematurely exited" + (finalMessage != null ? " : " + finalMessage : ""),
                     false);
         }
-
     }
 
     private static class CreateContainerError implements TerminatePodSelector {
 
         @Override
         public boolean shouldBeDeleted(Pod pod) {
-            return Stream
-                    .concat(pod.getStatus().getInitContainerStatuses().stream(),
+            return Stream.concat(
+                            pod.getStatus().getInitContainerStatuses().stream(),
                             pod.getStatus().getContainerStatuses().stream())
                     .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
-                    .filter((ContainerStatus t) -> "CreateContainerError".equals(t.getState().getWaiting().getReason()))
+                    .filter((ContainerStatus t) -> "CreateContainerError"
+                            .equals(t.getState().getWaiting().getReason()))
                     .findFirst()
                     .isPresent();
         }
@@ -714,14 +694,13 @@ public class KubernetesWatchdog extends WatchdogJob {
             logger.info("Killing pod {} with CreateContainerError.", KubernetesHelper.getName(pod));
             return () -> deletePod(client, pod, "Pod with CreateContainerError.", true);
         }
-
     }
 
     private static class ContainerErrorStates implements TerminatePodSelector {
 
         private List<String> errorStates(Pod pod) {
-            return Stream
-                    .of(waitingStateErrorsStream(pod),
+            return Stream.of(
+                            waitingStateErrorsStream(pod),
                             terminatedStateErrorsStream(pod),
                             terminatedStateOomKilledStream(pod))
                     .flatMap(Function.identity())
@@ -736,7 +715,8 @@ public class KubernetesWatchdog extends WatchdogJob {
         @Override
         public Callable<Optional<TerminationReason>> delete(Pod pod, KubernetesClient client) {
             List<String> errorStates = errorStates(pod);
-            logger.info("Killing pod {} with error state. Container states: {}",
+            logger.info(
+                    "Killing pod {} with error state. Container states: {}",
                     KubernetesHelper.getName(pod),
                     errorStates);
             // ImageInspectError:Failed to inspect image "xxx":
@@ -749,51 +729,47 @@ public class KubernetesWatchdog extends WatchdogJob {
         }
 
         private Stream<String> waitingStateErrorsStream(Pod pod) {
-            return Stream
-                    .concat(pod.getStatus().getContainerStatuses().stream(),
+            return Stream.concat(
+                            pod.getStatus().getContainerStatuses().stream(),
                             pod.getStatus().getInitContainerStatuses().stream())
                     .filter((ContainerStatus t) -> t.getState().getWaiting() != null)
-                    .filter((ContainerStatus t) -> "ImageInspectError".equals(t.getState().getWaiting().getReason()) ||
-                            "ErrInvalidImageName".equals(t.getState().getWaiting().getReason()) ||
-                            "InvalidImageName".equals(t.getState().getWaiting().getReason()))
-                    .map((ContainerStatus t) -> t.getName() +
-                            ":" +
-                            t.getState().getWaiting().getReason() +
-                            ":" +
-                            (StringUtils.isBlank(t.getState().getWaiting().getMessage())
+                    .filter((ContainerStatus t) ->
+                            "ImageInspectError".equals(t.getState().getWaiting().getReason())
+                                    || "ErrInvalidImageName"
+                                            .equals(t.getState().getWaiting().getReason())
+                                    || "InvalidImageName"
+                                            .equals(t.getState().getWaiting().getReason()))
+                    .map((ContainerStatus t) -> t.getName() + ":"
+                            + t.getState().getWaiting().getReason()
+                            + ":"
+                            + (StringUtils.isBlank(t.getState().getWaiting().getMessage())
                                     ? "<no details>"
                                     : t.getState().getWaiting().getMessage()));
         }
 
         private Stream<String> terminatedStateErrorsStream(Pod pod) {
-            return pod
-                    .getStatus()
-                    .getContainerStatuses()
-                    .stream()
+            return pod.getStatus().getContainerStatuses().stream()
                     .filter((ContainerStatus t) -> t.getState().getTerminated() != null)
-                    .filter((ContainerStatus t) -> "Error".equals(t.getState().getTerminated().getReason()))
-                    .map((ContainerStatus t) -> t.getName() +
-                            ":" +
-                            t.getState().getTerminated().getReason() +
-                            ":" +
-                            "ExitCode:" +
-                            t.getState().getTerminated().getExitCode() +
-                            " - " +
-                            (StringUtils.isBlank(t.getState().getTerminated().getMessage())
+                    .filter((ContainerStatus t) ->
+                            "Error".equals(t.getState().getTerminated().getReason()))
+                    .map((ContainerStatus t) -> t.getName() + ":"
+                            + t.getState().getTerminated().getReason()
+                            + ":"
+                            + "ExitCode:"
+                            + t.getState().getTerminated().getExitCode()
+                            + " - "
+                            + (StringUtils.isBlank(t.getState().getTerminated().getMessage())
                                     ? "<no details>"
                                     : t.getState().getTerminated().getMessage()));
         }
 
         private Stream<String> terminatedStateOomKilledStream(Pod pod) {
-            return pod
-                    .getStatus()
-                    .getContainerStatuses()
-                    .stream()
+            return pod.getStatus().getContainerStatuses().stream()
                     .filter((ContainerStatus t) -> t.getState().getTerminated() != null)
-                    .filter((ContainerStatus t) -> "OOMKilled".equals(t.getState().getTerminated().getReason()))
-                    .map((ContainerStatus t) -> t.getName() + ":" + t.getState().getTerminated().getReason());
+                    .filter((ContainerStatus t) ->
+                            "OOMKilled".equals(t.getState().getTerminated().getReason()))
+                    .map((ContainerStatus t) ->
+                            t.getName() + ":" + t.getState().getTerminated().getReason());
         }
-
-
     }
 }

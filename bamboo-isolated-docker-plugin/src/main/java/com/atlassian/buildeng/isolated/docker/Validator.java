@@ -42,7 +42,8 @@ public class Validator {
      * Validate configuration.
      * Errors are collected in ErrorCollection parameter passed in.
      */
-    public void validate(String image,
+    public void validate(
+            String image,
             String size,
             String role,
             String architecture,
@@ -51,44 +52,52 @@ public class Validator {
             boolean task) {
         if (role != null) {
             if (!StringUtils.deleteWhitespace(role).equals(role)) {
-                errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
+                errorCollection.addError(
+                        task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                         "AWS IAM Role cannot contain whitespace.");
-            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9+=,.@_\\-]+").matcher(role).matches()) {
-                errorCollection.addError(task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
+            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9+=,.@_\\-]+")
+                    .matcher(role)
+                    .matches()) {
+                errorCollection.addError(
+                        task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                         "AWS IAM Role doesn't match ARN pattern.");
             }
         }
 
-        if (StringUtils.isNotBlank(architecture) &&
-                !(globalConfiguration.getArchitectureConfig().containsKey(architecture))) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_ARCHITECTURE : Configuration.DOCKER_ARCHITECTURE,
-                    "Specified architecture is not supported on this server. Supported architectures: " +
-                            globalConfiguration.getArchitectureConfig().keySet());
+        if (StringUtils.isNotBlank(architecture)
+                && !(globalConfiguration.getArchitectureConfig().containsKey(architecture))) {
+            errorCollection.addError(
+                    task ? Configuration.TASK_DOCKER_ARCHITECTURE : Configuration.DOCKER_ARCHITECTURE,
+                    "Specified architecture is not supported on this server. Supported architectures: "
+                            + globalConfiguration.getArchitectureConfig().keySet());
         }
 
         validateExtraContainers(extraCont, errorCollection);
 
         if (StringUtils.isBlank(image)) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE,
+            errorCollection.addError(
+                    task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE,
                     "Docker Image cannot be empty.");
         } else if (image != null && !StringUtils.deleteWhitespace(image).equals(image)) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE,
+            errorCollection.addError(
+                    task ? Configuration.TASK_DOCKER_IMAGE : Configuration.DOCKER_IMAGE,
                     "Docker Image cannot contain whitespace.");
         }
 
         try {
             if (size == null) {
-                errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
-                        "Image size must be defined and one of:" +
-                                Arrays.toString(Configuration.ContainerSize.values()));
+                errorCollection.addError(
+                        task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
+                        "Image size must be defined and one of:"
+                                + Arrays.toString(Configuration.ContainerSize.values()));
             } else {
                 Configuration.ContainerSize val = Configuration.ContainerSize.valueOf(size);
             }
         } catch (IllegalArgumentException e) {
-            errorCollection.addError(task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
+            errorCollection.addError(
+                    task ? Configuration.TASK_DOCKER_IMAGE_SIZE : Configuration.DOCKER_IMAGE_SIZE,
                     "Image size value to be one of:" + Arrays.toString(Configuration.ContainerSize.values()));
         }
-
     }
 
     // TODO a bit unfortunate that the field associated with extra containers is hidden
@@ -111,8 +120,8 @@ public class Validator {
                                     errorCollection.addErrorMessage("Extra container requires a non empty name.");
                                 }
                                 if (!v2.getName().matches("[a-z0-9]([\\-a-z0-9]*[a-z0-9])?")) {
-                                    errorCollection.addErrorMessage("Extra container name should " +
-                                            "be composed of lowercase letters, numbers and - character only");
+                                    errorCollection.addErrorMessage("Extra container name should "
+                                            + "be composed of lowercase letters, numbers and - character only");
                                 }
                                 if (StringUtils.isBlank(v2.getImage())) {
                                     errorCollection.addErrorMessage("Extra container requires non empty image.");

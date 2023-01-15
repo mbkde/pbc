@@ -52,12 +52,10 @@ public class AgentQueries {
         AtomicReference<String> ref = new AtomicReference<>();
         agent.getDefinition().accept(new PipelineDefinitionVisitor() {
             @Override
-            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {
-            }
+            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {}
 
             @Override
-            public void visitLocal(LocalAgentDefinition pipelineDefinition) {
-            }
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
@@ -74,5 +72,4 @@ public class AgentQueries {
         });
         return ref.get();
     }
-
 }

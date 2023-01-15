@@ -30,7 +30,6 @@ public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
     private final String taskArn;
     private final String containerArn;
 
-
     public DockerAgentRemoteSilentRetryEvent(String errorMessage, Key key, String taskArn, String containerArn) {
         this.errorMessage = errorMessage;
         this.key = key;
@@ -42,30 +41,27 @@ public final class DockerAgentRemoteSilentRetryEvent extends DockerAgentEvent {
     public String toString() {
         if (DockerAgentRemoteFailEvent.ddmarkdown) {
             // http://docs.datadoghq.com/guides/markdown/
-            return "%%% \\n" +
-                    "Key:**" +
-                    key.getKey() +
-                    "** Task ARN:" +
-                    taskArn +
-                    "\\n" +
-                    "Container ARN:" +
-                    containerArn +
-                    "\\n" +
-                    escape(errorMessage) +
-                    "\\n" +
-                    "\\n %%%";
+            return "%%% \\n" + "Key:**"
+                    + key.getKey()
+                    + "** Task ARN:"
+                    + taskArn
+                    + "\\n"
+                    + "Container ARN:"
+                    + containerArn
+                    + "\\n"
+                    + escape(errorMessage)
+                    + "\\n"
+                    + "\\n %%%";
         }
 
-        return "DockerAgentRemoteSilentRetryEvent{" +
-                "errorMessage=" +
-                errorMessage +
-                ", key=" +
-                key +
-                ", task=" +
-                taskArn +
-                ", container=" +
-                containerArn +
-                "}";
+        return "DockerAgentRemoteSilentRetryEvent{" + "errorMessage="
+                + errorMessage
+                + ", key="
+                + key
+                + ", task="
+                + taskArn
+                + ", container="
+                + containerArn
+                + "}";
     }
-
 }

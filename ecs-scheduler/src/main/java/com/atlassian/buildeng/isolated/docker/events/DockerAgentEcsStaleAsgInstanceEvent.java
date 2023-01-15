@@ -30,6 +30,4 @@ public class DockerAgentEcsStaleAsgInstanceEvent extends DockerAgentEvent {
     public String toString() {
         return "DockerAgentEcsStaleAsgInstanceEvent{" + "instance=" + instance + '}';
     }
-
-
 }

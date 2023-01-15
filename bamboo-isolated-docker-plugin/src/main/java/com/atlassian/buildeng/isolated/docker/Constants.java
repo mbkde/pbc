@@ -26,6 +26,7 @@ public interface Constants {
      * possible values 'true', 'false' or not defined.
      */
     String RESULT_AGENT_KILLED_ITSELF = "custom.isolated.docker.stopped";
+
     String CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.for";
     /**
      * prefix for custom data passed from the api implementation.
@@ -39,5 +40,4 @@ public interface Constants {
      * This is used in determining the architecture a build should be used when unspecified.
      */
     public static final String DEFAULT_ARCHITECTURE = "default";
-
 }

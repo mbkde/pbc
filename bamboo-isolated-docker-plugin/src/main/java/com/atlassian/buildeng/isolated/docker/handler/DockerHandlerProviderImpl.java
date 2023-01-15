@@ -51,7 +51,8 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
      * New stateless instance.
      */
     @Inject
-    public DockerHandlerProviderImpl(TemplateRenderer templateRenderer,
+    public DockerHandlerProviderImpl(
+            TemplateRenderer templateRenderer,
             EnvironmentCustomConfigService environmentCustomConfigService,
             EnvironmentRequirementService environmentRequirementService,
             WebResourceManager webResourceManager,
@@ -72,14 +73,17 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
 
     @Override
     public DockerHandler getHandler(BuildDefinition bd, boolean create) {
-        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
+        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage())
+                .withEnabled(false)
+                .build();
         if (bd != null) {
             c = AccessConfiguration.forBuildDefinition(bd);
             if (c.getDockerImage().equals("")) {
                 c.setDockerImage(globalConfiguration.getDefaultImage());
             }
         }
-        return new DockerHandlerImpl(moduleDescriptor,
+        return new DockerHandlerImpl(
+                moduleDescriptor,
                 webResourceManager,
                 templateRenderer,
                 environmentCustomConfigService,
@@ -93,14 +97,17 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
 
     @Override
     public DockerHandler getHandler(Environment environment, boolean create) {
-        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage()).withEnabled(false).build();
+        Configuration c = ConfigurationBuilder.create(globalConfiguration.getDefaultImage())
+                .withEnabled(false)
+                .build();
         if (environment != null) {
             c = AccessConfiguration.forEnvironment(environment, environmentCustomConfigService);
             if (c.getDockerImage().equals("")) {
                 c.setDockerImage(globalConfiguration.getDefaultImage());
             }
         }
-        return new DockerHandlerImpl(moduleDescriptor,
+        return new DockerHandlerImpl(
+                moduleDescriptor,
                 webResourceManager,
                 templateRenderer,
                 environmentCustomConfigService,
@@ -115,7 +122,8 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     @Override
     public DockerHandler getHandler(Map<String, Object> webFragmentsContextMap, boolean create) {
         Configuration c = DockerHandlerImpl.createFromWebContext(webFragmentsContextMap);
-        return new DockerHandlerImpl(moduleDescriptor,
+        return new DockerHandlerImpl(
+                moduleDescriptor,
                 webResourceManager,
                 templateRenderer,
                 environmentCustomConfigService,

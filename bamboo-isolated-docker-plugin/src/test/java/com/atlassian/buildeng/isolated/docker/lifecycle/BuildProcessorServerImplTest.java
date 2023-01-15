@@ -74,8 +74,8 @@ class BuildProcessorServerImplTest {
         result.setProperty(Configuration.DOCKER_AWS_ROLE, "arn:aws:iam::0:role/aws_role");
         result.setProperty(Configuration.DOCKER_ARCHITECTURE, "arm64");
         result.setProperty(Configuration.DOCKER_FEATURE_FLAGS, "[feature1, feature2]");
-        result.setProperty(Configuration.DOCKER_EXTRA_CONTAINERS,
-                "[{'name':'bbb','image':'bbb-image','size':'SMALL'}]");
+        result.setProperty(
+                Configuration.DOCKER_EXTRA_CONTAINERS, "[{'name':'bbb','image':'bbb-image','size':'SMALL'}]");
         return result;
     }
 
@@ -84,18 +84,10 @@ class BuildProcessorServerImplTest {
         featureFlags.add("feature1");
         featureFlags.add("feature2");
         List<ExtraContainerProperties> extraContainers = new ArrayList<>();
-        extraContainers.add(new ExtraContainerProperties("bbb",
-                "bbb-image",
-                "SMALL",
-                new ArrayList<>(),
-                new ArrayList<>()));
-        return new PerBuildContainerForJobProperties(true,
-                "abc123",
-                "LARGE_4X",
-                extraContainers,
-                "arn:aws:iam::0:role/aws_role",
-                "arm64",
-                featureFlags);
+        extraContainers.add(
+                new ExtraContainerProperties("bbb", "bbb-image", "SMALL", new ArrayList<>(), new ArrayList<>()));
+        return new PerBuildContainerForJobProperties(
+                true, "abc123", "LARGE_4X", extraContainers, "arn:aws:iam::0:role/aws_role", "arm64", featureFlags);
     }
 
     private PerBuildContainerForJob createPBCJob() {
@@ -107,8 +99,8 @@ class BuildProcessorServerImplTest {
                 .architecture("arm64")
                 .withFeatureFlag("feature1")
                 .withFeatureFlag("feature2")
-                .extraContainers(new ExtraContainer().name("bbb").image("bbb-image").size("SMALL"));
-
+                .extraContainers(
+                        new ExtraContainer().name("bbb").image("bbb-image").size("SMALL"));
     }
 
     private void assertBuildConfiguration(HierarchicalConfiguration buildConfiguration) {
@@ -118,7 +110,8 @@ class BuildProcessorServerImplTest {
         assertEquals("arn:aws:iam::0:role/aws_role", buildConfiguration.getProperty(Configuration.DOCKER_AWS_ROLE));
         assertEquals("arm64", buildConfiguration.getProperty(Configuration.DOCKER_ARCHITECTURE));
         assertEquals("[\"feature2\",\"feature1\"]", buildConfiguration.getProperty(Configuration.DOCKER_FEATURE_FLAGS));
-        assertEquals("[{\"name\":\"bbb\",\"image\":\"bbb-image\",\"size\":\"SMALL\"}]",
+        assertEquals(
+                "[{\"name\":\"bbb\",\"image\":\"bbb-image\",\"size\":\"SMALL\"}]",
                 buildConfiguration.getProperty(Configuration.DOCKER_EXTRA_CONTAINERS));
     }
 }

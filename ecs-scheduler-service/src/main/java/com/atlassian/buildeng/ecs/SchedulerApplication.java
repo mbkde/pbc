@@ -47,25 +47,23 @@ import org.eclipse.jetty.util.component.LifeCycle;
 
 public class SchedulerApplication extends io.dropwizard.Application<Configuration> {
 
-    public SchedulerApplication() {
-    }
+    public SchedulerApplication() {}
 
     public static void main(String[] args) throws Exception {
         validateEnvironment();
-        new SchedulerApplication().run(new String[]{"server"});
+        new SchedulerApplication().run(new String[] {"server"});
     }
 
     private static void validateEnvironment() {
-        if (StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_ASG)) ||
-                StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_CLUSTER)) ||
-                StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_TASK_DEF))) {
-            throw new IllegalStateException("Environment variables " +
-                    ECSConfigurationImpl.ECS_ASG +
-                    ", " +
-                    ECSConfigurationImpl.ECS_CLUSTER +
-                    ", " +
-                    ECSConfigurationImpl.ECS_TASK_DEF +
-                    " are mandatory.");
+        if (StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_ASG))
+                || StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_CLUSTER))
+                || StringUtils.isBlank(System.getenv(ECSConfigurationImpl.ECS_TASK_DEF))) {
+            throw new IllegalStateException("Environment variables " + ECSConfigurationImpl.ECS_ASG
+                    + ", "
+                    + ECSConfigurationImpl.ECS_CLUSTER
+                    + ", "
+                    + ECSConfigurationImpl.ECS_TASK_DEF
+                    + " are mandatory.");
         }
     }
 

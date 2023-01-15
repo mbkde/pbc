@@ -45,7 +45,6 @@ public enum ECSInstance {
         return DEFAULT_INSTANCE;
     }
 
-
     public int getCpu() {
         return cpu;
     }
@@ -58,4 +57,3 @@ public enum ECSInstance {
         return name;
     }
 }
-

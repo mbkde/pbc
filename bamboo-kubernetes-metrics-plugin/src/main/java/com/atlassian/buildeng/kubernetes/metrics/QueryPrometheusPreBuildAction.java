@@ -49,7 +49,6 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
         this.buildLoggerManager = buildLoggerManager;
     }
 
-
     @Override
     public ErrorCollection validate(BuildConfiguration config) {
         return new SimpleErrorCollection();
@@ -78,7 +77,6 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             buildLogger.addBuildLogEntry("Name of pod:" + KUBE_POD_NAME);
             loadImageDetails(prometheusUrl, "kube_pod_container_info{pod=\"" + KUBE_POD_NAME + "\"}", buildLogger);
             loadHost(prometheusUrl, "kube_pod_info{pod=\"" + KUBE_POD_NAME + "\"}", buildLogger, buildContext);
-
         }
         return buildContext;
     }
@@ -93,8 +91,8 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             JSONObject jsonResponse = loadJson(prometheusUrl, query);
             JSONArray result = jsonResponse.getJSONObject("data").getJSONArray("result");
             if (result.length() == 0) {
-                buildLogger.addBuildLogEntry("No metrics found for pod." +
-                        " This can occur when the build time is too short for metrics to appear in Prometheus.");
+                buildLogger.addBuildLogEntry("No metrics found for pod."
+                        + " This can occur when the build time is too short for metrics to appear in Prometheus.");
                 return;
             }
             Set<String> processed = new HashSet<>();
@@ -111,11 +109,8 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
         } catch (URISyntaxException | IOException | RuntimeException ex) {
             buildLogger.addErrorLogEntry(String.format(
                     "Error when querying Prometheus server: %s. Query: %s Response %s",
-                    prometheusUrl,
-                    query,
-                    ex.getClass().getName() + " " + ex.getMessage()));
+                    prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
         }
-
     }
 
     private void loadHost(String prometheusUrl, String query, BuildLogger buildLogger, BuildContext buildContext) {
@@ -123,8 +118,8 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             JSONObject jsonResponse = loadJson(prometheusUrl, query);
             JSONArray result = jsonResponse.getJSONObject("data").getJSONArray("result");
             if (result.length() == 0) {
-                buildLogger.addBuildLogEntry("No metrics found for pod." +
-                        " This can occur when the build time is too short for metrics to appear in Prometheus.");
+                buildLogger.addBuildLogEntry("No metrics found for pod."
+                        + " This can occur when the build time is too short for metrics to appear in Prometheus.");
                 return;
             }
             JSONObject metric = result.getJSONObject(0).getJSONObject("metric");
@@ -136,10 +131,7 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
         } catch (URISyntaxException | IOException | RuntimeException ex) {
             buildLogger.addErrorLogEntry(String.format(
                     "Error when querying Prometheus server: %s. Query: %s Response %s",
-                    prometheusUrl,
-                    query,
-                    ex.getClass().getName() + " " + ex.getMessage()));
+                    prometheusUrl, query, ex.getClass().getName() + " " + ex.getMessage()));
         }
     }
-
 }

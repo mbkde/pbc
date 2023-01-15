@@ -30,5 +30,4 @@ public class KubernetesWatchdogTest {
 
         assertTrue(jobDetail.isPersistJobDataAfterExecution());
     }
-
 }

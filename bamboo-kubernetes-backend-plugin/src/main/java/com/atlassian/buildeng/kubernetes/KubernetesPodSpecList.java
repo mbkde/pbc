@@ -50,7 +50,8 @@ public class KubernetesPodSpecList {
     private final DarkFeatureManager darkFeatureManager;
 
     @Inject
-    public KubernetesPodSpecList(GlobalConfiguration globalConfiguration,
+    public KubernetesPodSpecList(
+            GlobalConfiguration globalConfiguration,
             BandanaManager bandanaManager,
             DarkFeatureManager darkFeatureManager) {
         this.globalConfiguration = globalConfiguration;
@@ -135,7 +136,8 @@ public class KubernetesPodSpecList {
     }
 
     private boolean isArtifactoryCachePlanConfigured(IsolatedDockerAgentRequest request) {
-        logger.info("When checking configuration for plan {} we have these feature flags: {}",
+        logger.info(
+                "When checking configuration for plan {} we have these feature flags: {}",
                 request.getResultKey(),
                 String.join(",", request.getConfiguration().getFeatureFlags()));
         return request.getConfiguration().getFeatureFlags().contains("ARTIFACTORY_CACHE");
@@ -146,8 +148,8 @@ public class KubernetesPodSpecList {
     }
 
     @VisibleForTesting
-    Map<String, Object> addArchitectureOverrides(IsolatedDockerAgentRequest request,
-            Map<String, Object> podWithoutArchOverrides) {
+    Map<String, Object> addArchitectureOverrides(
+            IsolatedDockerAgentRequest request, Map<String, Object> podWithoutArchOverrides) {
         Map<String, Object> archConfig = loadArchitectureConfig();
 
         if (archConfig.isEmpty()) {
@@ -158,16 +160,18 @@ public class KubernetesPodSpecList {
                 if (archConfig.containsKey(architecture)) { // Architecture matches one in the Kubernetes pod overrides
                     return mergeMap(podWithoutArchOverrides, getSpecificArchConfig(archConfig, architecture));
                 } else {
-                    String supportedArchs = com.atlassian.buildeng.isolated.docker.GlobalConfiguration
-                            .getArchitectureConfigWithBandana(bandanaManager)
-                            .keySet()
-                            .toString();
-                    throw new IllegalArgumentException("Architecture specified in build configuration was not " +
-                            "found in server's allowed architectures list! Supported architectures are: " +
-                            supportedArchs);
+                    String supportedArchs =
+                            com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getArchitectureConfigWithBandana(
+                                            bandanaManager)
+                                    .keySet()
+                                    .toString();
+                    throw new IllegalArgumentException("Architecture specified in build configuration was not "
+                            + "found in server's allowed architectures list! Supported architectures are: "
+                            + supportedArchs);
                 }
             } else { // Architecture is not specified at all
-                return mergeMap(podWithoutArchOverrides,
+                return mergeMap(
+                        podWithoutArchOverrides,
                         getSpecificArchConfig(archConfig, getDefaultArchitectureName(archConfig)));
             }
         }
@@ -248,15 +252,13 @@ public class KubernetesPodSpecList {
                 ArrayList<Map<String, Object>> lst = new ArrayList<>();
 
                 if (t.equals("containers")) {
-                    mergeById("name",
-                            lst,
-                            (Collection<Map<String, Object>>) originalEntry,
-                            (Collection<Map<String, Object>>) u);
+                    mergeById("name", lst, (Collection<Map<String, Object>>) originalEntry, (Collection<
+                                    Map<String, Object>>)
+                            u);
                 } else if (t.equals("hostAliases")) {
-                    mergeById("ip",
-                            lst,
-                            (Collection<Map<String, Object>>) originalEntry,
-                            (Collection<Map<String, Object>>) u);
+                    mergeById("ip", lst, (Collection<Map<String, Object>>) originalEntry, (Collection<
+                                    Map<String, Object>>)
+                            u);
                 } else {
                     lst.addAll((Collection<Map<String, Object>>) originalEntry);
                     lst.addAll((Collection<Map<String, Object>>) u);
@@ -269,7 +271,8 @@ public class KubernetesPodSpecList {
         return merged;
     }
 
-    private static void mergeById(String id,
+    private static void mergeById(
+            String id,
             ArrayList<Map<String, Object>> lst,
             Collection<Map<String, Object>> originalEntry,
             Collection<Map<String, Object>> u) {
@@ -299,5 +302,4 @@ public class KubernetesPodSpecList {
     String getDefaultArchitectureName(Map<String, Object> archConfig) {
         return (String) archConfig.get(DEFAULT_ARCHITECTURE);
     }
-
 }

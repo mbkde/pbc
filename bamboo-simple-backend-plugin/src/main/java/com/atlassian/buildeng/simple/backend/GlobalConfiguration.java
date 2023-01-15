@@ -38,7 +38,8 @@ public class GlobalConfiguration {
     private final AuditLogService auditLogService;
     private final BambooAuthenticationContext authenticationContext;
 
-    public GlobalConfiguration(BandanaManager bandanaManager,
+    public GlobalConfiguration(
+            BandanaManager bandanaManager,
             AuditLogService auditLogService,
             BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
@@ -67,19 +68,17 @@ public class GlobalConfiguration {
     }
 
     public Config getDockerConfig() {
-        String api = StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_API_VERSION), "");
-        String url = StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_URL), "");
-        String certPath =
-                StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_CERTPATH), "");
-        String sidekick =
-                StringUtils.defaultString((String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_SIDEKICK), "");
-        boolean image =
-                BooleanUtils.toBooleanDefaultIfNull((Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_SIDEKICK_IMAGE), true);
+        String api = StringUtils.defaultString(
+                (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_API_VERSION), "");
+        String url = StringUtils.defaultString(
+                (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_URL), "");
+        String certPath = StringUtils.defaultString(
+                (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CERTPATH), "");
+        String sidekick = StringUtils.defaultString(
+                (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK), "");
+        boolean image = BooleanUtils.toBooleanDefaultIfNull(
+                (Boolean) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_SIDEKICK_IMAGE),
+                true);
         return new Config(api, certPath, url, sidekick, image);
     }
 
@@ -99,7 +98,8 @@ public class GlobalConfiguration {
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+        AuditLogEntry ent = new AuditLogMessage(
+                authenticationContext.getUserName(),
                 new Date(),
                 null,
                 null,
@@ -111,5 +111,4 @@ public class GlobalConfiguration {
                 newValue);
         auditLogService.log(ent);
     }
-
 }

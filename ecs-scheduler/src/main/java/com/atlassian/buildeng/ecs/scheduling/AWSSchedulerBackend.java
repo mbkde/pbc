@@ -82,8 +82,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private static final int MAXIMUM_TASKS_TO_DESCRIBE = 90;
 
     @Inject
-    public AWSSchedulerBackend() {
-    }
+    public AWSSchedulerBackend() {}
 
     @Override
     public List<ContainerInstance> getClusterContainerInstances(String cluster) throws ECSException {
@@ -108,11 +107,14 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             if (containerInstanceArns.isEmpty()) {
                 return Collections.emptyList();
             } else {
-                return Lists.partition(containerInstanceArns, 99).stream().flatMap((List<String> t) -> {
-                    DescribeContainerInstancesRequest describeReq =
-                            new DescribeContainerInstancesRequest().withCluster(cluster).withContainerInstances(t);
-                    return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream();
-                }).collect(Collectors.toList());
+                return Lists.partition(containerInstanceArns, 99).stream()
+                        .flatMap((List<String> t) -> {
+                            DescribeContainerInstancesRequest describeReq = new DescribeContainerInstancesRequest()
+                                    .withCluster(cluster)
+                                    .withContainerInstances(t);
+                            return ecsClient.describeContainerInstances(describeReq).getContainerInstances().stream();
+                        })
+                        .collect(Collectors.toList());
             }
         } catch (Exception ex) {
             throw new ECSException(ex);
@@ -122,16 +124,15 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public List<Instance> getInstances(Collection<String> instanceIds) throws ECSException {
         // if not in instanceIds, remove from cache
-        List<String> stale = cachedInstances
-                .entrySet()
-                .stream()
+        List<String> stale = cachedInstances.entrySet().stream()
                 .map(Map.Entry::getKey)
                 .filter(t -> !instanceIds.contains(t))
                 .collect(Collectors.toList());
 
         stale.forEach(cachedInstances::remove);
-        List<String> misses =
-                instanceIds.stream().filter(t -> !cachedInstances.containsKey(t)).collect(Collectors.toList());
+        List<String> misses = instanceIds.stream()
+                .filter(t -> !cachedInstances.containsKey(t))
+                .collect(Collectors.toList());
         if (!misses.isEmpty()) {
             try {
                 AmazonEC2 ec2Client = AmazonEC2ClientBuilder.defaultClient();
@@ -140,9 +141,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
 
                 while (!finished) {
                     DescribeInstancesResult describeInstancesResult = ec2Client.describeInstances(req);
-                    describeInstancesResult
-                            .getReservations()
-                            .stream()
+                    describeInstancesResult.getReservations().stream()
                             .flatMap(t -> t.getInstances().stream())
                             .forEach(t -> cachedInstances.put(t.getInstanceId(), t));
                     String nextToken = describeInstancesResult.getNextToken();
@@ -173,10 +172,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     }
 
     @Override
-    public void terminateAndDetachInstances(List<DockerHost> hosts,
-            String asgName,
-            boolean decrementSize,
-            String clusterName) throws ECSException {
+    public void terminateAndDetachInstances(
+            List<DockerHost> hosts, String asgName, boolean decrementSize, String clusterName) throws ECSException {
         try {
             logger.info("Detaching and terminating unused and stale instances: {}", hosts);
             // explicit deregister first BUILDENG-12397 for details
@@ -192,19 +189,17 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     logger.error("Failed deregistering ecs container instance, we survive but suspicious", th);
                 }
             });
-            final List<String> asgInstances = hosts
-                    .stream()
+            final List<String> asgInstances = hosts.stream()
                     .filter(DockerHost::isPresentInASG)
                     .map(DockerHost::getInstanceId)
                     .collect(Collectors.toList());
             if (!asgInstances.isEmpty()) {
                 AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-                DetachInstancesResult result =
-                        asClient.detachInstances(new DetachInstancesRequest().withAutoScalingGroupName(asgName)
-                                                                             // only detach instances that are actually in the ASG group
-                                                                             .withInstanceIds(asgInstances)
-                                                                             .withShouldDecrementDesiredCapacity(
-                                                                                     decrementSize));
+                DetachInstancesResult result = asClient.detachInstances(new DetachInstancesRequest()
+                        .withAutoScalingGroupName(asgName)
+                        // only detach instances that are actually in the ASG group
+                        .withInstanceIds(asgInstances)
+                        .withShouldDecrementDesiredCapacity(decrementSize));
                 logger.info("Result of detachment: {}", result);
                 terminateInstances(hosts.stream().map(DockerHost::getInstanceId).collect(Collectors.toList()));
             }
@@ -214,7 +209,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             throw new ECSException(e);
         }
     }
-
 
     @Override
     public void terminateInstances(List<String> instanceIds) throws ECSException {
@@ -226,7 +220,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                 logger.info("Result of successful instance termination: {}" + ec2Result);
             } catch (AmazonEC2Exception e) {
                 // attempt to limit the scope of BUILDENG-12143
-                // according to docs when one instance in list is borked (not allowed to be killed), we might not be able to kill any.
+                // according to docs when one instance in list is borked (not allowed to be killed), we might not be
+                // able to kill any.
                 // so try one by one, logging the error. If at least one throws exception,
                 // rethrow the original
                 if (instanceIds.size() == 1) {
@@ -235,9 +230,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     AtomicBoolean failed = new AtomicBoolean(false);
                     instanceIds.forEach((String t) -> {
                         try {
-                            TerminateInstancesResult ec2Result =
-                                    ec2Client.terminateInstances(new TerminateInstancesRequest(Collections.singletonList(
-                                            t)));
+                            TerminateInstancesResult ec2Result = ec2Client.terminateInstances(
+                                    new TerminateInstancesRequest(Collections.singletonList(t)));
                         } catch (AmazonEC2Exception e1) {
                             failed.set(true);
                             logger.error("Failed instance termination:" + t, e1);
@@ -256,8 +250,7 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     @Override
     public void drainInstances(List<DockerHost> hosts, String clusterName) {
         if (!hosts.isEmpty()) {
-            List<String> instances = hosts
-                    .stream()
+            List<String> instances = hosts.stream()
                     .map(DockerHost::getContainerInstanceArn)
                     .filter(StringUtils::isNotEmpty)
                     .collect(Collectors.toList());
@@ -281,16 +274,15 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withContainerInstance(containerInstanceArn));
         } catch (RuntimeException e) {
             // failure to deregister is recoverable in our usecase
-            //(it will be eventually deregistered as result ASG detachment)
+            // (it will be eventually deregistered as result ASG detachment)
             logger.error("Failed to deregister container instance " + containerInstanceArn, e);
         }
     }
 
     @Override
-    public SchedulingResult schedule(DockerHost dockerHost,
-            String cluster,
-            SchedulingRequest request,
-            String taskDefinition) throws ECSException {
+    public SchedulingResult schedule(
+            DockerHost dockerHost, String cluster, SchedulingRequest request, String taskDefinition)
+            throws ECSException {
         try {
             AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
             TaskOverride overrides = new TaskOverride();
@@ -301,12 +293,10 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withEnvironment(new KeyValuePair()
                             .withName(Constants.ECS_CONTAINER_INSTANCE_ARN_KEY)
                             .withValue(dockerHost.getContainerInstanceArn()))
-                    .withEnvironment(new KeyValuePair()
-                            .withName("QUEUE_TIMESTAMP")
-                            .withValue("" + request.getQueueTimeStamp()))
-                    .withEnvironment(new KeyValuePair()
-                            .withName("SUBMIT_TIMESTAMP")
-                            .withValue("" + System.currentTimeMillis()))
+                    .withEnvironment(
+                            new KeyValuePair().withName("QUEUE_TIMESTAMP").withValue("" + request.getQueueTimeStamp()))
+                    .withEnvironment(
+                            new KeyValuePair().withName("SUBMIT_TIMESTAMP").withValue("" + System.currentTimeMillis()))
                     .withEnvironment(new KeyValuePair()
                             .withName("RESULT_UUID")
                             .withValue(request.getIdentifier().toString()))
@@ -320,7 +310,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                         ride.withCommand(t1);
                     });
                     t.getEnvVariables().forEach((Configuration.EnvVariable t1) -> {
-                        ride.withEnvironment(new KeyValuePair().withName(t1.getName()).withValue(t1.getValue()));
+                        ride.withEnvironment(
+                                new KeyValuePair().withName(t1.getName()).withValue(t1.getValue()));
                     });
                     overrides.withContainerOverrides(ride);
                 }
@@ -330,9 +321,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     .withContainerInstances(dockerHost.getContainerInstanceArn())
                     .withTaskDefinition(taskDefinition + ":" + request.getRevision())
                     .withOverrides(overrides));
-            return new SchedulingResult(startTaskResult,
-                    dockerHost.getContainerInstanceArn(),
-                    dockerHost.getInstanceId());
+            return new SchedulingResult(
+                    startTaskResult, dockerHost.getContainerInstanceArn(), dockerHost.getInstanceId());
         } catch (Exception e) {
             throw new ECSException(e);
         }
@@ -351,7 +341,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             AmazonAutoScaling asgClient = AmazonAutoScalingClientBuilder.defaultClient();
             DescribeAutoScalingGroupsRequest asgReq =
                     new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScalingGroup);
-            List<AutoScalingGroup> groups = asgClient.describeAutoScalingGroups(asgReq).getAutoScalingGroups();
+            List<AutoScalingGroup> groups =
+                    asgClient.describeAutoScalingGroups(asgReq).getAutoScalingGroups();
             if (groups.size() > 1) {
                 throw new ECSException("More than one group by name:" + autoScalingGroup);
             }
@@ -368,7 +359,6 @@ public class AWSSchedulerBackend implements SchedulerBackend {
         }
     }
 
-
     @Override
     public Collection<ArnStoppedState> checkStoppedTasks(String cluster, List<String> taskArns) throws ECSException {
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
@@ -376,8 +366,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
             final List<ArnStoppedState> toRet = new ArrayList<>();
             List<List<String>> partitioned = Lists.partition(taskArns, MAXIMUM_TASKS_TO_DESCRIBE);
             for (List<String> batch : partitioned) {
-                DescribeTasksResult res =
-                        ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
+                DescribeTasksResult res = ecsClient.describeTasks(
+                        new DescribeTasksRequest().withCluster(cluster).withTasks(batch));
                 res.getTasks().forEach((Task t) -> {
                     if ("STOPPED".equals(t.getLastStatus())) {
                         toRet.add(new ArnStoppedState(t.getTaskArn(), t.getContainerInstanceArn(), getError(t)));
@@ -401,9 +391,11 @@ public class AWSSchedulerBackend implements SchedulerBackend {
     private String getError(Task tsk) {
         StringBuilder sb = new StringBuilder();
         sb.append(tsk.getStoppedReason()).append(":");
-        tsk.getContainers().stream().filter((Container t) -> StringUtils.isNotBlank(t.getReason())).forEach((c) -> {
-            sb.append(c.getName()).append("[").append(c.getReason()).append("],");
-        });
+        tsk.getContainers().stream()
+                .filter((Container t) -> StringUtils.isNotBlank(t.getReason()))
+                .forEach((c) -> {
+                    sb.append(c.getName()).append("[").append(c.getReason()).append("],");
+                });
         return sb.toString();
     }
 
@@ -425,8 +417,8 @@ public class AWSSchedulerBackend implements SchedulerBackend {
                     }
                 }
             }
-            String driver = StringUtils.defaultIfEmpty(host.getContainerAttribute(Constants.STORAGE_DRIVER_PROPERTY),
-                    Constants.storage_driver);
+            String driver = StringUtils.defaultIfEmpty(
+                    host.getContainerAttribute(Constants.STORAGE_DRIVER_PROPERTY), Constants.storage_driver);
             cmds.add("--storage-driver=" + driver);
             return cmds;
         }

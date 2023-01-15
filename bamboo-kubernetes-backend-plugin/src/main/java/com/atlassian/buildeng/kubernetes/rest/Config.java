@@ -32,13 +32,12 @@ public class Config {
     public String artifactoryCacheAllowList;
     public String artifactoryCachePodSpec;
 
-
     public boolean showAwsSpecificFields;
 
-    public Config() {
-    }
+    public Config() {}
 
-    public Config(String sidekickImage,
+    public Config(
+            String sidekickImage,
             String currentContext,
             String podTemplate,
             String architecturePodConfig,

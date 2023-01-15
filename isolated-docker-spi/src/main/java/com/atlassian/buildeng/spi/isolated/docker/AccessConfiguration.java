@@ -41,7 +41,6 @@ public class AccessConfiguration {
     private static final String ENV_MODULE = "pbcEnvironment";
     private static final String DOCKERTASK_MODULE = "dockertask";
 
-
     /**
      * Constructs Configuration object for given key value pair.
      * Assumes the keys relating to jobs/environments, not tasks.
@@ -56,16 +55,14 @@ public class AccessConfiguration {
         if (StringUtils.isBlank(architecture)) {
             architecture = null;
         }
-        return ConfigurationBuilder
-                .create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.DOCKER_IMAGE, ""))
                 .withEnabled(Boolean.parseBoolean(cc.getOrDefault(Configuration.ENABLED_FOR_JOB, "false")))
-                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE,
-                        Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(cc.getOrDefault(
-                        Configuration.DOCKER_EXTRA_CONTAINERS,
-                        "[]")))
-                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(cc.getOrDefault(Configuration.DOCKER_FEATURE_FLAGS,
-                        "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(
+                        cc.getOrDefault(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(
+                        cc.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
+                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(
+                        cc.getOrDefault(Configuration.DOCKER_FEATURE_FLAGS, "[]")))
                 .withAwsRole(role)
                 .withArchitecture(architecture)
                 .build();
@@ -81,7 +78,8 @@ public class AccessConfiguration {
         if (context instanceof DeploymentContext) {
             return forDeploymentContext((DeploymentContext) context);
         }
-        throw new IllegalStateException("Unknown Common Context subclass:" + context.getClass().getName());
+        throw new IllegalStateException(
+                "Unknown Common Context subclass:" + context.getClass().getName());
     }
 
     @Nonnull
@@ -106,18 +104,16 @@ public class AccessConfiguration {
      */
     @Nonnull
     public static Configuration forBuildConfiguration(@Nonnull BuildConfiguration config) {
-        return ConfigurationBuilder
-                .create(config.getString(Configuration.DOCKER_IMAGE))
+        return ConfigurationBuilder.create(config.getString(Configuration.DOCKER_IMAGE))
                 .withEnabled(config.getBoolean(Configuration.ENABLED_FOR_JOB))
-                .withImageSize(Configuration.ContainerSize.valueOf(config.getString(Configuration.DOCKER_IMAGE_SIZE,
-                        Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(config.getString(
-                        Configuration.DOCKER_EXTRA_CONTAINERS,
-                        "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(
+                        config.getString(Configuration.DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(
+                        config.getString(Configuration.DOCKER_EXTRA_CONTAINERS, "[]")))
                 .withAwsRole(config.getString(Configuration.DOCKER_AWS_ROLE))
                 .withArchitecture(config.getString(Configuration.DOCKER_ARCHITECTURE))
-                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(config.getString(Configuration.DOCKER_FEATURE_FLAGS,
-                        "[]")))
+                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(
+                        config.getString(Configuration.DOCKER_FEATURE_FLAGS, "[]")))
                 .build();
     }
 
@@ -148,18 +144,16 @@ public class AccessConfiguration {
     @Nonnull
     public static Configuration forTaskConfiguration(@Nonnull TaskDefinition taskDefinition) {
         Map<String, String> cc = taskDefinition.getConfiguration();
-        return ConfigurationBuilder
-                .create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
+        return ConfigurationBuilder.create(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE, ""))
                 .withEnabled(taskDefinition.isEnabled())
-                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(Configuration.TASK_DOCKER_IMAGE_SIZE,
-                        Configuration.ContainerSize.REGULAR.name())))
-                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(cc.getOrDefault(
-                        Configuration.TASK_DOCKER_EXTRA_CONTAINERS,
-                        "[]")))
+                .withImageSize(Configuration.ContainerSize.valueOf(cc.getOrDefault(
+                        Configuration.TASK_DOCKER_IMAGE_SIZE, Configuration.ContainerSize.REGULAR.name())))
+                .withExtraContainers(ConfigurationPersistence.fromJsonStringToExtraContainers(
+                        cc.getOrDefault(Configuration.TASK_DOCKER_EXTRA_CONTAINERS, "[]")))
                 .withAwsRole(cc.getOrDefault(Configuration.TASK_DOCKER_AWS_ROLE, null))
                 .withArchitecture(cc.getOrDefault(Configuration.TASK_DOCKER_ARCHITECTURE, null))
-                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(cc.getOrDefault(Configuration.DOCKER_FEATURE_FLAGS,
-                        "[]")))
+                .withFeatureFlags(ConfigurationPersistence.fromJsonStringToFeatureFlags(
+                        cc.getOrDefault(Configuration.DOCKER_FEATURE_FLAGS, "[]")))
                 .build();
     }
 
@@ -181,8 +175,8 @@ public class AccessConfiguration {
     /**
      * Constructs Configuration object for given Environment.
      */
-    public static Configuration forEnvironment(Environment environment,
-            EnvironmentCustomConfigService environmentCustomConfigService) {
+    public static Configuration forEnvironment(
+            Environment environment, EnvironmentCustomConfigService environmentCustomConfigService) {
         return forMap(environmentCustomConfigService
                 .getEnvironmentPluginConfig(environment.getId())
                 .getOrDefault(IMPL_PLUGIN_KEY + ":" + ENV_MODULE, Collections.emptyMap()));

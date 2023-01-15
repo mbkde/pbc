@@ -37,5 +37,4 @@ public class MetricHostFolderMapping implements HostFolderMapping {
     public String getContainerPath() {
         return CONTAINER_METRICS_PATH;
     }
-
 }

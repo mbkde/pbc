@@ -90,7 +90,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     private final ContainerSizeDescriptor defaults = new DefaultContainerSizeDescriptor();
 
     @Inject
-    public GlobalConfiguration(BandanaManager bandanaManager,
+    public GlobalConfiguration(
+            BandanaManager bandanaManager,
             AuditLogService auditLogService,
             AdministrationConfigurationAccessor admConfAccessor,
             BambooAuthenticationContext authenticationContext) {
@@ -161,26 +162,23 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_POD_TEMPLATE, podTemplate);
         }
         if (!StringUtils.equals(architecturePodConfig, getBandanaArchitecturePodConfig())) {
-            auditLogEntry("PBC Kubernetes Architecture Dependent Config",
+            auditLogEntry(
+                    "PBC Kubernetes Architecture Dependent Config",
                     getBandanaArchitecturePodConfig(),
                     architecturePodConfig);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_CONFIG,
-                    architecturePodConfig);
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG, architecturePodConfig);
         }
         if (!StringUtils.equals(iamRequestTemplate, getBandanaIamRequestTemplateAsString())) {
-            auditLogEntry("PBC Kuberenetes IAM Request Template",
-                    getBandanaIamRequestTemplateAsString(),
-                    iamRequestTemplate);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_IAM_REQUEST_TEMPLATE,
-                    iamRequestTemplate);
+            auditLogEntry(
+                    "PBC Kuberenetes IAM Request Template", getBandanaIamRequestTemplateAsString(), iamRequestTemplate);
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE, iamRequestTemplate);
         }
         if (!StringUtils.equals(iamSubjectIdPrefix, getIamSubjectIdPrefix())) {
             auditLogEntry("PBC Kuberenetes IAM Subject ID Prefix", getIamSubjectIdPrefix(), iamSubjectIdPrefix);
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_IAM_SUBJECT_ID_PREFIX,
-                    iamSubjectIdPrefix);
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX, iamSubjectIdPrefix);
         }
         if (!StringUtils.equals(containerSizes, getContainerSizesAsString())) {
             auditLogEntry("PBC Kubernetes Container Sizes", getContainerSizesAsString(), containerSizes);
@@ -196,59 +194,64 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
             }
         }
         if (isUseClusterRegistry() != useClusterRegistry) {
-            auditLogEntry("PBC Kubernetes Cluster Registry",
+            auditLogEntry(
+                    "PBC Kubernetes Cluster Registry",
                     Boolean.toString(isUseClusterRegistry()),
                     Boolean.toString(useClusterRegistry));
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_USE_CLUSTER_REGISTRY,
-                    useClusterRegistry);
-
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_USE_CLUSTER_REGISTRY, useClusterRegistry);
         }
         if (!StringUtils.equals(availableSelector, getClusterRegistryAvailableClusterSelector())) {
-            auditLogEntry("PBC Kubernetes Cluster Registry Available Cluster Label Selector",
+            auditLogEntry(
+                    "PBC Kubernetes Cluster Registry Available Cluster Label Selector",
                     getClusterRegistryAvailableClusterSelector(),
                     availableSelector);
             if (StringUtils.isBlank(availableSelector)) {
-                bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
+                bandanaManager.removeValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                bandanaManager.setValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR,
                         availableSelector);
             }
         }
         if (!StringUtils.equals(primarySelector, getClusterRegistryPrimaryClusterSelector())) {
-            auditLogEntry("PBC Kubernetes Cluster Registry primary Cluster Label Selector",
+            auditLogEntry(
+                    "PBC Kubernetes Cluster Registry primary Cluster Label Selector",
                     getClusterRegistryPrimaryClusterSelector(),
                     primarySelector);
             if (StringUtils.isBlank(primarySelector)) {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_CR_PRIMARY_CLUSTER_SELECTOR,
-                        primarySelector);
+                bandanaManager.setValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CR_PRIMARY_CLUSTER_SELECTOR, primarySelector);
             }
         }
         if (!StringUtils.equals(artifactoryCacheAllowList, getArtifactoryCacheAllowListAsString())) {
-            auditLogEntry("PBC Kubernetes Artifactory Cache Allow List",
+            auditLogEntry(
+                    "PBC Kubernetes Artifactory Cache Allow List",
                     getArtifactoryCacheAllowListAsString(),
                     artifactoryCacheAllowList);
             if (StringUtils.isBlank(artifactoryCacheAllowList)) {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                bandanaManager.setValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_ARTIFACTORY_CACHE_ALLOWLIST,
                         artifactoryCacheAllowList);
             }
         }
         if (!StringUtils.equals(artifactoryCachePodSpec, getArtifactoryCachePodSpecAsString())) {
-            auditLogEntry("PBC Kubernetes Artifactory Cache Pod Spec",
+            auditLogEntry(
+                    "PBC Kubernetes Artifactory Cache Pod Spec",
                     getArtifactoryCachePodSpecAsString(),
                     artifactoryCachePodSpec);
             if (StringUtils.isBlank(artifactoryCachePodSpec)) {
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARTIFACTORY_CACHE_PODSPEC);
             } else {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                bandanaManager.setValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
                         BANDANA_ARTIFACTORY_CACHE_PODSPEC,
                         artifactoryCachePodSpec);
             }
@@ -262,22 +265,26 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
 
     private void validateContainerSizes(String containerSizes) throws IllegalArgumentException {
         JsonElement root = JsonParser.parseString(containerSizes);
-        Preconditions.checkArgument(root.isJsonObject() &&
-                root.getAsJsonObject().has("main") &&
-                root.getAsJsonObject().has("extra"), "Required root json object with 'main' and 'extra' fields");
+        Preconditions.checkArgument(
+                root.isJsonObject()
+                        && root.getAsJsonObject().has("main")
+                        && root.getAsJsonObject().has("extra"),
+                "Required root json object with 'main' and 'extra' fields");
         JsonElement main = root.getAsJsonObject().get("main");
         Preconditions.checkArgument(main.isJsonArray(), "Field 'main' to be array  of objects");
         main.getAsJsonArray().forEach((JsonElement t) -> {
             Preconditions.checkArgument(t.isJsonObject(), "Field 'main' to contain objects");
             validateObject(t);
-            Configuration.ContainerSize.valueOf(t.getAsJsonObject().getAsJsonPrimitive("name").getAsString());
+            Configuration.ContainerSize.valueOf(
+                    t.getAsJsonObject().getAsJsonPrimitive("name").getAsString());
         });
         JsonElement extra = root.getAsJsonObject().get("extra");
         Preconditions.checkArgument(main.isJsonArray(), "Field 'extra' to be array  of objects");
         extra.getAsJsonArray().forEach((JsonElement t) -> {
             Preconditions.checkArgument(t.isJsonObject(), "Field 'extra' to contain objects");
             validateObject(t);
-            Configuration.ExtraContainerSize.valueOf(t.getAsJsonObject().getAsJsonPrimitive("name").getAsString());
+            Configuration.ExtraContainerSize.valueOf(
+                    t.getAsJsonObject().getAsJsonPrimitive("name").getAsString());
         });
     }
 
@@ -301,9 +308,11 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
 
             Object defaultArchName = yaml.get(DEFAULT_ARCHITECTURE);
             if (defaultArchName instanceof String) {
-                Preconditions.checkArgument(!defaultArchName.equals(DEFAULT_ARCHITECTURE),
+                Preconditions.checkArgument(
+                        !defaultArchName.equals(DEFAULT_ARCHITECTURE),
                         "Default architecture cannot be 'default', as this is the internal default key!");
-                Preconditions.checkArgument(yaml.containsKey(defaultArchName),
+                Preconditions.checkArgument(
+                        yaml.containsKey(defaultArchName),
                         "Specified default architecture does not exist in configuration!");
             } else {
                 throw new IllegalArgumentException("Value under 'default' key must be a string!");
@@ -315,43 +324,48 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
             Set<String> architecturesLeftover = new HashSet<>(availableArchitectures.keySet());
             architecturesLeftover.remove(DEFAULT_ARCHITECTURE);
 
-            // Ensure each architecture has a "config" sub-key, that it is valid and is one of the available architectures
+            // Ensure each architecture has a "config" sub-key, that it is valid and is one of the available
+            // architectures
             for (Map.Entry<String, Object> arch : yaml.entrySet()) {
                 if (!arch.getKey().equals(DEFAULT_ARCHITECTURE)) {
-                    Preconditions.checkArgument(availableArchitectures.containsKey(arch.getKey()),
-                            "Each architecture entry must be defined in the PBC General Settings first before " +
-                                    "it can be configured in the PBC Kubernetes Backend settings. '" +
-                                    arch.getKey() +
-                                    "' is currently missing from the list of available architectures: " +
-                                    availableArchitectures.keySet());
-                    Preconditions.checkArgument(arch.getValue() instanceof Map,
-                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!" +
-                                    " Please fix the entry: " +
-                                    arch.getKey());
-                    Preconditions.checkArgument(((Map<String, Object>) arch.getValue()).containsKey("config"),
-                            "Each architecture must contain a sub-key 'config'! Please fix the entry: " +
-                                    arch.getKey());
+                    Preconditions.checkArgument(
+                            availableArchitectures.containsKey(arch.getKey()),
+                            "Each architecture entry must be defined in the PBC General Settings first before "
+                                    + "it can be configured in the PBC Kubernetes Backend settings. '"
+                                    + arch.getKey()
+                                    + "' is currently missing from the list of available architectures: "
+                                    + availableArchitectures.keySet());
+                    Preconditions.checkArgument(
+                            arch.getValue() instanceof Map,
+                            "Each architecture entry must contain a map as its entry, with at least a 'config' key!"
+                                    + " Please fix the entry: "
+                                    + arch.getKey());
+                    Preconditions.checkArgument(
+                            ((Map<String, Object>) arch.getValue()).containsKey("config"),
+                            "Each architecture must contain a sub-key 'config'! Please fix the entry: "
+                                    + arch.getKey());
 
                     Object config = ((Map<String, Object>) arch.getValue()).get("config");
                     if (config == null) {
-                        throw new IllegalArgumentException("The 'config' key for each architecture should contain a" +
-                                " map. If you do not require any additional config, use an empty map with {} instead of" +
-                                " leaving the value blank (i.e. null). Please fix the entry: " +
-                                arch.getKey());
+                        throw new IllegalArgumentException("The 'config' key for each architecture should contain a"
+                                + " map. If you do not require any additional config, use an empty map with {} instead of"
+                                + " leaving the value blank (i.e. null). Please fix the entry: "
+                                + arch.getKey());
                     } else {
-                        Preconditions.checkArgument(config instanceof Map,
-                                "The 'config' key for each architecture should contain a map. Please fix the entry: " +
-                                        arch.getKey());
+                        Preconditions.checkArgument(
+                                config instanceof Map,
+                                "The 'config' key for each architecture should contain a map. Please fix the entry: "
+                                        + arch.getKey());
                     }
                     architecturesLeftover.remove(arch.getKey());
                 }
             }
 
             if (architecturesLeftover.size() > 0) {
-                throw new IllegalArgumentException("Not all architectures in the PBC General settings were defined in" +
-                        " the architecture dependent configuration! Please add configuration for the following" +
-                        " architectures: " +
-                        architecturesLeftover);
+                throw new IllegalArgumentException("Not all architectures in the PBC General settings were defined in"
+                        + " the architecture dependent configuration! Please add configuration for the following"
+                        + " architectures: "
+                        + architecturesLeftover);
             }
         }
     }
@@ -371,8 +385,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
                     throw new IllegalArgumentException("Artifactory cache spec is not a map!");
                 }
             } catch (YAMLException e) {
-                throw new IllegalArgumentException("Artifactory cache spec is not valid YAML! Error: " +
-                        e.getMessage());
+                throw new IllegalArgumentException(
+                        "Artifactory cache spec is not valid YAML! Error: " + e.getMessage());
             }
         }
     }
@@ -382,7 +396,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+        AuditLogEntry ent = new AuditLogMessage(
+                authenticationContext.getUserName(),
                 new Date(),
                 null,
                 null,
@@ -480,7 +495,6 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         } catch (IOException ex) {
             logger.error("IO error during reloading container sizes", ex);
         }
-
     }
 
     public String getPodLogsUrl() {
@@ -497,24 +511,24 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     }
 
     public String getClusterRegistryAvailableClusterSelector() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
+        return (String)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CR_AVAILABLE_CLUSTER_SELECTOR);
     }
 
     public String getClusterRegistryPrimaryClusterSelector() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
+        return (String)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CR_PRIMARY_CLUSTER_SELECTOR);
     }
 
     public String getArtifactoryCacheAllowListAsString() {
-        String allowList = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
+        String allowList = (String)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARTIFACTORY_CACHE_ALLOWLIST);
         return allowList != null ? allowList : "";
     }
 
     public String getArtifactoryCachePodSpecAsString() {
-        String podSpec = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ARTIFACTORY_CACHE_PODSPEC);
+        String podSpec = (String)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARTIFACTORY_CACHE_PODSPEC);
         return podSpec != null ? podSpec : "";
     }
 
@@ -530,9 +544,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         if (!StringUtils.equals(currentContext, getCurrentContext())) {
             auditLogEntry("PBC Kubernetes Current Context", getCurrentContext(), currentContext);
             if (StringUtils.isNotBlank(currentContext)) {
-                bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_CURRENT_CONTEXT,
-                        currentContext.trim());
+                bandanaManager.setValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT, currentContext.trim());
             } else {
                 // rely on default context in .kube/config.
                 bandanaManager.removeValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CURRENT_CONTEXT);
@@ -541,11 +554,13 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     }
 
     private void validateObject(JsonElement t) {
-        Preconditions.checkArgument(t.getAsJsonObject().has("name") &&
-                t.getAsJsonObject().has("cpu") &&
-                t.getAsJsonObject().has("memory") &&
-                t.getAsJsonObject().has("memoryLimit") &&
-                t.getAsJsonObject().has("label"), "name, memory, memoryLimit and label are required fields");
+        Preconditions.checkArgument(
+                t.getAsJsonObject().has("name")
+                        && t.getAsJsonObject().has("cpu")
+                        && t.getAsJsonObject().has("memory")
+                        && t.getAsJsonObject().has("memoryLimit")
+                        && t.getAsJsonObject().has("label"),
+                "name, memory, memoryLimit and label are required fields");
     }
 
     /**
@@ -637,8 +652,8 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     void migrateAwsVendor() {
         String vendor = getVendorWithBandanaRaw(bandanaManager);
         if (vendor == null) {
-            boolean optionsNotNull =
-                    Stream.of(getIamSubjectIdPrefixRaw(), getBandanaIamRequestTemplateRaw()).anyMatch(Objects::nonNull);
+            boolean optionsNotNull = Stream.of(getIamSubjectIdPrefixRaw(), getBandanaIamRequestTemplateRaw())
+                    .anyMatch(Objects::nonNull);
 
             if (optionsNotNull) {
                 logger.info(

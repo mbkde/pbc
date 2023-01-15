@@ -34,5 +34,4 @@ public interface ECSConfiguration {
     Map<String, String> getEnvVars();
 
     ContainerSizeDescriptor getSizeDescriptor();
-
 }

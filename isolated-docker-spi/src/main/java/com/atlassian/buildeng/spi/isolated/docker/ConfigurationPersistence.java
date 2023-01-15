@@ -36,7 +36,8 @@ public class ConfigurationPersistence {
         JsonElement obj = JsonParser.parseString(source);
         if (obj.isJsonObject()) {
             JsonObject jsonobj = obj.getAsJsonObject();
-            ConfigurationBuilder bld = ConfigurationBuilder.create(jsonobj.getAsJsonPrimitive("image").getAsString());
+            ConfigurationBuilder bld = ConfigurationBuilder.create(
+                    jsonobj.getAsJsonPrimitive("image").getAsString());
             JsonPrimitive size = jsonobj.getAsJsonPrimitive("size");
             if (size != null) {
                 try {
@@ -98,7 +99,8 @@ public class ConfigurationPersistence {
                 List<Configuration.EnvVariable> vars = new ArrayList<>();
                 envvars.forEach((JsonElement t) -> {
                     JsonObject to = t.getAsJsonObject();
-                    vars.add(new Configuration.EnvVariable(to.getAsJsonPrimitive("name").getAsString(),
+                    vars.add(new Configuration.EnvVariable(
+                            to.getAsJsonPrimitive("name").getAsString(),
                             to.getAsJsonPrimitive("value").getAsString()));
                 });
                 toRet.setEnvVariables(vars);
@@ -198,5 +200,4 @@ public class ConfigurationPersistence {
         }
         return el;
     }
-
 }

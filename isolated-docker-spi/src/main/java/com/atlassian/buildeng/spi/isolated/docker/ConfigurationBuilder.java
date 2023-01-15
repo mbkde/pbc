@@ -91,5 +91,4 @@ public final class ConfigurationBuilder {
     public Configuration build() {
         return new Configuration(enabled, dockerImage, awsRole, architecture, size, extras, featureFlags);
     }
-
 }

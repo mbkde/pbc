@@ -73,7 +73,8 @@ public class GlobalConfiguration
     private final PluginAccessor pluginAccessor;
     private final ContainerSizeDescriptor sizeDescriptor;
 
-    public GlobalConfiguration(BandanaManager bandanaManager,
+    public GlobalConfiguration(
+            BandanaManager bandanaManager,
             AdministrationConfigurationAccessor admConfAccessor,
             AuditLogService auditLogService,
             BambooAuthenticationContext authenticationContext,
@@ -93,16 +94,15 @@ public class GlobalConfiguration
         // Sanitize as the family for a task definition can only contain certain characters and
         // be of max length 255
         instanceName = instanceName.replaceAll("[^\\w-]", "");
-        return instanceName.substring(0,
-                Math.min(instanceName.length(), 255 - Constants.TASK_DEFINITION_SUFFIX.length())) +
-                Constants.TASK_DEFINITION_SUFFIX;
+        return instanceName.substring(
+                        0, Math.min(instanceName.length(), 255 - Constants.TASK_DEFINITION_SUFFIX.length()))
+                + Constants.TASK_DEFINITION_SUFFIX;
     }
 
     // Constructs a standard de-register request for a standard generated task definition
     private DeregisterTaskDefinitionRequest deregisterTaskDefinitionRequest(Integer revision) {
         return new DeregisterTaskDefinitionRequest().withTaskDefinition(getTaskDefinitionName() + ":" + revision);
     }
-
 
     /**
      * Get the repository that is currently configured to be used for the agent sidekick.
@@ -115,14 +115,12 @@ public class GlobalConfiguration
     }
 
     @Override
-    public void persistDockerMappingsConfiguration(Map<Configuration, Integer> dockerMappings,
-            Map<String, Integer> taskRequestMappings) {
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_DOCKER_MAPPING_KEY,
-                convertToPersisted(dockerMappings));
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ECS_TASK_MAPPING_KEY,
-                taskRequestMappings);
+    public void persistDockerMappingsConfiguration(
+            Map<Configuration, Integer> dockerMappings, Map<String, Integer> taskRequestMappings) {
+        bandanaManager.setValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY, convertToPersisted(dockerMappings));
+        bandanaManager.setValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY, taskRequestMappings);
     }
 
     // ECS Cluster management
@@ -146,7 +144,9 @@ public class GlobalConfiguration
     List<String> getValidClusters() throws ECSException {
         try {
             ListClustersResult result = createClient().listClusters();
-            return result.getClusterArns().stream().map((String x) -> x.split("/")[1]).collect(Collectors.toList());
+            return result.getClusterArns().stream()
+                    .map((String x) -> x.split("/")[1])
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new ECSException(e);
         }
@@ -169,8 +169,8 @@ public class GlobalConfiguration
      */
     @Override
     public Map<String, String> getLoggingDriverOpts() {
-        Map<String, String> map = (Map<String, String>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_LOGGING_OPTS_KEY);
+        Map<String, String> map = (Map<String, String>)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_OPTS_KEY);
         return map != null ? map : new HashMap<>();
     }
 
@@ -183,7 +183,6 @@ public class GlobalConfiguration
 
     // Docker - ECS mapping management
 
-
     @Override
     public String getBambooBaseUrl() {
         return admConfAccessor.getAdministrationConfiguration().getBaseUrl();
@@ -194,7 +193,6 @@ public class GlobalConfiguration
         return val != null ? val : false;
     }
 
-
     /**
      * Returns a list of Configuration objects that were used to register the given
      * task definition revision.
@@ -203,17 +201,15 @@ public class GlobalConfiguration
      */
     @Override
     public Map<Configuration, Integer> getAllRegistrations() {
-        Map<String, Integer> values =
-                (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_DOCKER_MAPPING_KEY);
+        Map<String, Integer> values = (Map<String, Integer>)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_DOCKER_MAPPING_KEY);
         return values == null ? new HashMap<>() : convertFromPersisted(values);
     }
 
     @Override
     public Map<String, Integer> getAllECSTaskRegistrations() {
-        Map<String, Integer> ret =
-                (Map<String, Integer>) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                        BANDANA_ECS_TASK_MAPPING_KEY);
+        Map<String, Integer> ret = (Map<String, Integer>)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ECS_TASK_MAPPING_KEY);
         return ret == null ? new HashMap<>() : ret;
     }
 
@@ -254,15 +250,13 @@ public class GlobalConfiguration
         Preconditions.checkArgument(StringUtils.isNotBlank(config.getEcsClusterName()));
         if (!StringUtils.equals(config.getEcsClusterName(), getCurrentCluster())) {
             auditLogEntry("PBC Cluster", getCurrentCluster(), config.getEcsClusterName());
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_CLUSTER_KEY,
-                    config.getEcsClusterName());
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_CLUSTER_KEY, config.getEcsClusterName());
         }
         if (!StringUtils.equals(config.getAutoScalingGroupName(), getCurrentASG())) {
             auditLogEntry("PBC Autoscaling Group", getCurrentASG(), config.getAutoScalingGroupName());
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ASG_KEY,
-                    config.getAutoScalingGroupName());
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ASG_KEY, config.getAutoScalingGroupName());
         }
         String newSidekick = config.getSidekickImage();
         if (!StringUtils.equals(newSidekick, getCurrentSidekick())) {
@@ -284,7 +278,8 @@ public class GlobalConfiguration
                 bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_LOGGING_DRIVER_KEY, driver);
             }
         }
-        bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+        bandanaManager.setValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT,
                 BANDANA_LOGGING_OPTS_KEY,
                 lc != null ? lc.getOptions() : Collections.emptyMap());
         Map<String, String> newMap = config.getEnvs() != null ? config.getEnvs() : Collections.emptyMap();
@@ -295,7 +290,8 @@ public class GlobalConfiguration
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+        AuditLogEntry ent = new AuditLogMessage(
+                authenticationContext.getUserName(),
                 new Date(),
                 null,
                 null,
@@ -310,9 +306,7 @@ public class GlobalConfiguration
 
     @Override
     public List<HostFolderMapping> getHostFolderMappings() {
-        return pluginAccessor
-                .getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class)
-                .stream()
+        return pluginAccessor.getEnabledModuleDescriptorsByClass(HostFolderMappingModuleDescriptor.class).stream()
                 .map((HostFolderMappingModuleDescriptor t) -> t.getModule())
                 .collect(Collectors.toList());
     }

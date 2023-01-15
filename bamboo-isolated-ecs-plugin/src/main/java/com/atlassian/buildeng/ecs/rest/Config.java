@@ -27,8 +27,7 @@ public class Config {
     public LogConfiguration logConfiguration;
     public Map<String, String> envs;
 
-    public Config() {
-    }
+    public Config() {}
 
     public Config(String ecsClusterName, String autoScalingGroupName, String sidekickImage) {
         this.ecsClusterName = ecsClusterName;
@@ -88,8 +87,7 @@ public class Config {
         public String driver;
         public Map<String, String> options;
 
-        public LogConfiguration() {
-        }
+        public LogConfiguration() {}
 
         public LogConfiguration(String driver, Map<String, String> options) {
             this.driver = driver;
@@ -111,7 +109,5 @@ public class Config {
         public void setOptions(Map<String, String> options) {
             this.options = options;
         }
-
-
     }
 }

@@ -31,7 +31,6 @@ public class SettingsRest {
 
     private final GlobalConfiguration configuration;
 
-
     @Inject
     public SettingsRest(GlobalConfiguration configuration) {
         this.configuration = configuration;
@@ -64,7 +63,9 @@ public class SettingsRest {
         try {
             configuration.persist(config);
         } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
         }
         return Response.noContent().build();
     }

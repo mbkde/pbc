@@ -45,7 +45,6 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
-
 /**
  * Spring component that provides access to settings set in the administration panel.
  * WARNING: Do not try and be smart and use custom container classes to store config. A different class loader will be
@@ -73,7 +72,8 @@ public class GlobalConfiguration implements LifecycleAware {
     private final Logger logger = LoggerFactory.getLogger(GlobalConfiguration.class);
 
     @Inject
-    public GlobalConfiguration(BandanaManager bandanaManager,
+    public GlobalConfiguration(
+            BandanaManager bandanaManager,
             AuditLogService auditLogService,
             BambooAuthenticationContext authenticationContext) {
         this.bandanaManager = bandanaManager;
@@ -95,8 +95,8 @@ public class GlobalConfiguration implements LifecycleAware {
      */
     @Nullable
     private String getDefaultImageRaw() {
-        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_DEFAULT_IMAGE);
+        return (String) bandanaManager.getValue(
+                PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DEFAULT_IMAGE);
     }
 
     @NotNull
@@ -113,8 +113,8 @@ public class GlobalConfiguration implements LifecycleAware {
      */
     @Nullable
     private Integer getMaxAgentCreationPerMinuteRaw() {
-        Integer maxAgents = (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
+        Integer maxAgents = (Integer)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
         return maxAgents;
     }
 
@@ -148,8 +148,8 @@ public class GlobalConfiguration implements LifecycleAware {
      * @return the raw architecture config from Bandana, which may be null
      */
     private String getArchitectureConfigAsStringRaw() {
-        String architectureConfig = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ARCHITECTURE_CONFIG_RAW);
+        String architectureConfig = (String)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_RAW);
         return architectureConfig;
     }
 
@@ -185,9 +185,8 @@ public class GlobalConfiguration implements LifecycleAware {
      *         Use {@code new LinkedHashMap<>(getArchitectureConfig())} if you need a mutable map.
      */
     public static Map<String, String> getArchitectureConfigWithBandana(BandanaManager bandanaManager) {
-        LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>) bandanaManager.getValue(
-                PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                BANDANA_ARCHITECTURE_CONFIG_PARSED);
+        LinkedHashMap<String, String> architectureConfig = (LinkedHashMap<String, String>)
+                bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED);
         return architectureConfig != null ? Collections.unmodifiableMap(architectureConfig) : new LinkedHashMap<>();
     }
 
@@ -227,10 +226,12 @@ public class GlobalConfiguration implements LifecycleAware {
         }
 
         if (!Objects.equals(maxAgentCreationPerMinute, getMaxAgentCreationPerMinute())) {
-            auditLogEntry("PBC Maximum Number of Agent Creation Per Minute",
+            auditLogEntry(
+                    "PBC Maximum Number of Agent Creation Per Minute",
                     Integer.toString(getMaxAgentCreationPerMinute()),
                     Integer.toString(maxAgentCreationPerMinute));
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT,
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE,
                     maxAgentCreationPerMinute);
         }
@@ -258,17 +259,17 @@ public class GlobalConfiguration implements LifecycleAware {
             if (isNotBlank(archRawString)) {
                 Yaml yamlParser = new Yaml(new SafeConstructor());
                 try {
-                    // Will be loaded as a LinkedHashMap, and we want to keep that to preserver ordering (i.e. default on top)
+                    // Will be loaded as a LinkedHashMap, and we want to keep that to preserver ordering (i.e. default
+                    // on top)
                     Object uncastYaml = yamlParser.load(archRawString);
                     if (uncastYaml instanceof LinkedHashMap) {
                         yaml = (LinkedHashMap) uncastYaml;
                         for (Map.Entry entry : yaml.entrySet()) {
                             if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
                                 throw new IllegalArgumentException(
-                                        "Architecture configuration must be a map from String to" +
-                                                " String, but " +
-                                                entry +
-                                                " was not!");
+                                        "Architecture configuration must be a map from String to" + " String, but "
+                                                + entry
+                                                + " was not!");
                             }
                         }
                         yaml = (LinkedHashMap<String, String>) uncastYaml;
@@ -281,9 +282,8 @@ public class GlobalConfiguration implements LifecycleAware {
                 }
             }
 
-            bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                    BANDANA_ARCHITECTURE_CONFIG_RAW,
-                    archRawString);
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_RAW, archRawString);
             bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_ARCHITECTURE_CONFIG_PARSED, yaml);
         }
     }
@@ -298,7 +298,8 @@ public class GlobalConfiguration implements LifecycleAware {
     }
 
     private void auditLogEntry(String name, String oldValue, String newValue) {
-        AuditLogEntry ent = new AuditLogMessage(authenticationContext.getUserName(),
+        AuditLogEntry ent = new AuditLogMessage(
+                authenticationContext.getUserName(),
                 new Date(),
                 null,
                 null,
@@ -314,8 +315,8 @@ public class GlobalConfiguration implements LifecycleAware {
     void migrateEnabled() {
         Boolean enabled = getEnabledRaw();
         if (enabled == null) {
-            boolean optionsNotNull = Stream
-                    .of(getDefaultImageRaw(), getMaxAgentCreationPerMinuteRaw(), getArchitectureConfigAsStringRaw())
+            boolean optionsNotNull = Stream.of(
+                            getDefaultImageRaw(), getMaxAgentCreationPerMinuteRaw(), getArchitectureConfigAsStringRaw())
                     .anyMatch(Objects::nonNull);
 
             if (optionsNotNull) {
@@ -336,4 +337,3 @@ public class GlobalConfiguration implements LifecycleAware {
         // We don't need to do anything on stop for this class
     }
 }
-

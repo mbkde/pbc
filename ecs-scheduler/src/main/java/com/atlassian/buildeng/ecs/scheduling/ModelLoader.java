@@ -21,5 +21,4 @@ import com.atlassian.buildeng.ecs.exceptions.ECSException;
 public interface ModelLoader {
 
     DockerHosts load(String clusterName, String asgName) throws ECSException;
-
 }

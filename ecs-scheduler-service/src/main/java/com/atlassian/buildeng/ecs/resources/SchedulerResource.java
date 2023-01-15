@@ -49,7 +49,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ManagedAsync;
 
-
 @Path("/rest/scheduler")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -61,7 +60,8 @@ public class SchedulerResource {
     private final ECSConfiguration configuration;
 
     @Inject
-    public SchedulerResource(TaskDefinitionRegistrations taskDefReistrations,
+    public SchedulerResource(
+            TaskDefinitionRegistrations taskDefReistrations,
             ECSScheduler ecsScheduler,
             SchedulerBackend schedulerBackend,
             ECSConfiguration configuration) {
@@ -103,9 +103,8 @@ public class SchedulerResource {
                 revision = taskDefRegistrations.registerDockerImage(s.getConfiguration(), env);
             } catch (ECSException ex) {
                 // Have to catch some of the exceptions here instead of the callback to use retries.
-                if (ex.getCause() instanceof ClientException &&
-                        ex
-                                .getMessage()
+                if (ex.getCause() instanceof ClientException
+                        && ex.getMessage()
                                 .contains(
                                         "Too many concurrent attempts to create a new revision of the specified family")) {
                     IsolatedDockerAgentResult toRet = new IsolatedDockerAgentResult();
@@ -117,7 +116,8 @@ public class SchedulerResource {
                 return;
             }
         }
-        SchedulingRequest request = new SchedulingRequest(UUID.fromString(s.getUuid()),
+        SchedulingRequest request = new SchedulingRequest(
+                UUID.fromString(s.getUuid()),
                 s.getResultId(),
                 revision,
                 s.getConfiguration().getCPUTotal(configuration.getSizeDescriptor()),
@@ -125,17 +125,19 @@ public class SchedulerResource {
                 s.getConfiguration(),
                 s.getQueueTimestamp(),
                 s.getBuildKey());
-        DefaultSchedulingCallback dsc = new DefaultSchedulingCallback(new IsolatedDockerRequestCallback() {
-            @Override
-            public void handle(IsolatedDockerAgentResult result) {
-                response.resume(result);
-            }
+        DefaultSchedulingCallback dsc = new DefaultSchedulingCallback(
+                new IsolatedDockerRequestCallback() {
+                    @Override
+                    public void handle(IsolatedDockerAgentResult result) {
+                        response.resume(result);
+                    }
 
-            @Override
-            public void handle(IsolatedDockerAgentException exception) {
-                response.resume(exception);
-            }
-        }, s.getResultId());
+                    @Override
+                    public void handle(IsolatedDockerAgentException exception) {
+                        response.resume(exception);
+                    }
+                },
+                s.getResultId());
         ecsScheduler.schedule(request, dsc);
         /* ^^ TODO: Dropwizard will :
         Once sayHello has returned, Jersey takes the Scheduler instance and looks for a provider class which can
@@ -149,10 +151,8 @@ public class SchedulerResource {
     @Path("future")
     public void postFutureReservations(final String body) {
         final RestReserveFuture f = RestReserveFuture.fromJson(body);
-        ecsScheduler.reserveFutureCapacity(new ReserveRequest(f.getBuildKey(),
-                f.getResultKeys(),
-                f.getCpuReservation(),
-                f.getMemoryReservation()));
+        ecsScheduler.reserveFutureCapacity(new ReserveRequest(
+                f.getBuildKey(), f.getResultKeys(), f.getCpuReservation(), f.getMemoryReservation()));
     }
 
     @GET
@@ -166,4 +166,3 @@ public class SchedulerResource {
         return tasks.toArray(new ArnStoppedState[0]);
     }
 }
-

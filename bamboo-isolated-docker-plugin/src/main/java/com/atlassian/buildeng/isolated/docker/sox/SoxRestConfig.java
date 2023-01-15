@@ -21,8 +21,7 @@ public class SoxRestConfig {
     public boolean enabled;
     public String[] whitelistPatterns;
 
-    public SoxRestConfig() {
-    }
+    public SoxRestConfig() {}
 
     SoxRestConfig(boolean enabled, String[] whitelist) {
         this.enabled = enabled;

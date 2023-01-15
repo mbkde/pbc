@@ -34,5 +34,4 @@ public interface HostFolderMapping {
     String getHostPath();
 
     String getContainerPath();
-
 }

@@ -54,10 +54,6 @@ public interface IsolatedAgentService {
     /**
      * optional way to announce future requirements.
      */
-    default void reserveCapacity(Key buildKey,
-            List<String> jobResultKeys,
-            long excessMemoryCapacity,
-            long excessCpuCapacity) {
-    }
-
+    default void reserveCapacity(
+            Key buildKey, List<String> jobResultKeys, long excessMemoryCapacity, long excessCpuCapacity) {}
 }

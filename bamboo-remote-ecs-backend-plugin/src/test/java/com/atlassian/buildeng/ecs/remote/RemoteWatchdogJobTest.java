@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-
 public class RemoteWatchdogJobTest {
     @Test
     public void testRetrieveStoppedTasksBatched() throws Exception {
@@ -47,9 +46,8 @@ public class RemoteWatchdogJobTest {
     public static class RemoteWatchdogJobMock extends RemoteWatchdogJob {
 
         @Override
-        protected List<StoppedState> queryStoppedTasksByArn(GlobalConfiguration globalConfig,
-                Client client,
-                List<String> arns) {
+        protected List<StoppedState> queryStoppedTasksByArn(
+                GlobalConfiguration globalConfig, Client client, List<String> arns) {
             return arns.stream().map(arn -> new StoppedState(arn, "", "")).collect(toList());
         }
     }

@@ -58,7 +58,9 @@ public class UIRest {
     @Produces(MediaType.APPLICATION_JSON)
     public Response isDockerEnabled(@QueryParam("jobKey") String jobKey) {
         if (jobKey == null) {
-            return Response.status(Status.BAD_REQUEST).entity("JobKey query parameter not defined").build();
+            return Response.status(Status.BAD_REQUEST)
+                    .entity("JobKey query parameter not defined")
+                    .build();
         }
         PlanKey key = PlanKeys.getPlanKey(jobKey);
         ImmutablePlan job = cpm.getPlanByKey(key);
@@ -80,7 +82,8 @@ public class UIRest {
                     JSONObject obj = new JSONObject();
                     obj.put("id", t.getId());
                     // runtime in nodejs, label evenrywhere else?
-                    String lbl = t.getConfiguration().getOrDefault("label", t.getConfiguration().get("runtime"));
+                    String lbl = t.getConfiguration()
+                            .getOrDefault("label", t.getConfiguration().get("runtime"));
                     obj.put("label", lbl);
                     obj.put("buildJdk", t.getConfiguration().get("buildJdk"));
                     result.put(obj);

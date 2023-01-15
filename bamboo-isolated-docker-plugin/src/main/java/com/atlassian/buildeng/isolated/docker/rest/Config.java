@@ -29,8 +29,7 @@ public class Config {
     public String architectureConfig;
     public boolean awsVendor;
 
-    public Config() {
-    }
+    public Config() {}
 
     public Boolean isEnabled() {
         return enabled;
@@ -77,4 +76,3 @@ public class Config {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.NO_CLASS_NAME_STYLE);
     }
 }
-

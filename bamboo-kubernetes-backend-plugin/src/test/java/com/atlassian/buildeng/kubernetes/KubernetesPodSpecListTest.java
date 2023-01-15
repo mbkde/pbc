@@ -56,13 +56,14 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 @ExtendWith({MockitoExtension.class})
 public class KubernetesPodSpecListTest {
-    public KubernetesPodSpecListTest() {
-    }
+    public KubernetesPodSpecListTest() {}
 
     @Mock
     GlobalConfiguration globalConfiguration;
+
     @Mock
     BandanaManager bandanaManager;
+
     @Mock
     DarkFeatureManager darkFeatureManager;
 
@@ -74,25 +75,24 @@ public class KubernetesPodSpecListTest {
     public void testContainersMergedByName() {
         Yaml yaml = new Yaml(new SafeConstructor());
         String templateString = getPodTemplateAsString();
-        String overridesString = "metadata:\n" +
-                "    namespace: buildeng\n" +
-                "    annotations:\n" +
-                "        iam.amazonaws.com/role: arn:aws:iam::123456678912:role/staging-bamboo\n" +
-                "spec:\n" +
-                "  hostAliases:\n" +
-                "    - ip: 100.100.0.1\n" +
-                "      hostnames:\n" +
-                "          - remote\n" +
-                "    - ip: 127.0.0.1\n" +
-                "      hostnames:\n" +
-                "          - bamboo-agent\n" +
-                "  containers:\n" +
-                "    - name: main\n" +
-                "      image: xueshanf/awscli:latest\n" +
-                "    - name: myContainer3\n" +
-                "      image: xueshanf/awscli:latest\n" +
-                "  volumes:\n" +
-                "    - name: myvolume\n";
+        String overridesString = "metadata:\n" + "    namespace: buildeng\n"
+                + "    annotations:\n"
+                + "        iam.amazonaws.com/role: arn:aws:iam::123456678912:role/staging-bamboo\n"
+                + "spec:\n"
+                + "  hostAliases:\n"
+                + "    - ip: 100.100.0.1\n"
+                + "      hostnames:\n"
+                + "          - remote\n"
+                + "    - ip: 127.0.0.1\n"
+                + "      hostnames:\n"
+                + "          - bamboo-agent\n"
+                + "  containers:\n"
+                + "    - name: main\n"
+                + "      image: xueshanf/awscli:latest\n"
+                + "    - name: myContainer3\n"
+                + "      image: xueshanf/awscli:latest\n"
+                + "  volumes:\n"
+                + "    - name: myvolume\n";
 
         Map<String, Object> template = (Map<String, Object>) yaml.load(templateString);
         Map<String, Object> overrides = (Map<String, Object>) yaml.load(overridesString);
@@ -103,7 +103,8 @@ public class KubernetesPodSpecListTest {
         assertEquals(3, ((Collection<Map<String, Object>>) spec.get("hostAliases")).size());
 
         List<Map<String, Object>> containers = ((List<Map<String, Object>>) spec.get("containers"));
-        assertEquals(1, (int) containers.stream().filter(c -> c.containsValue("main")).count());
+        assertEquals(1, (int)
+                containers.stream().filter(c -> c.containsValue("main")).count());
         for (Map<String, Object> container : containers) {
             if (container.containsValue("main")) {
                 assertNotEquals(null, container.get("image"));
@@ -111,9 +112,9 @@ public class KubernetesPodSpecListTest {
             }
         }
         List<Map<String, Object>> hostAliases = ((List<Map<String, Object>>) spec.get("hostAliases"));
-        assertEquals(2,
-                hostAliases
-                        .stream()
+        assertEquals(
+                2,
+                hostAliases.stream()
                         .filter((Map<String, Object> t) -> "127.0.0.1".equals(t.get("ip")))
                         .mapToLong((Map<String, Object> t) -> ((List<String>) t.get("hostnames")).size())
                         .sum());
@@ -122,13 +123,8 @@ public class KubernetesPodSpecListTest {
     @Test
     public void testPodSpecIsUnmodifiedIfArchitectureConfigIsEmpty() {
         Configuration c = ConfigurationBuilder.create("docker-image").build();
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true);
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                c, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn("");
 
@@ -147,13 +143,8 @@ public class KubernetesPodSpecListTest {
     @Test
     public void testPodSpecHasOverrideIfArchitectureOmittedButServerHasDefaultDefined() throws IOException {
         Configuration c = ConfigurationBuilder.create("docker-image").build();
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true);
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                c, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
 
@@ -164,14 +155,11 @@ public class KubernetesPodSpecListTest {
 
     @Test
     public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndExists() throws IOException {
-        Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("arm64").build();
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true);
+        Configuration c = ConfigurationBuilder.create("docker-image")
+                .withArchitecture("arm64")
+                .build();
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                c, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
 
@@ -182,24 +170,23 @@ public class KubernetesPodSpecListTest {
 
     @Test
     public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndDoesNotExist() throws IOException {
-        Configuration c = ConfigurationBuilder.create("docker-image").withArchitecture("fakeArch").build();
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(c,
-                "TEST-PLAN-JOB1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true);
+        Configuration c = ConfigurationBuilder.create("docker-image")
+                .withArchitecture("fakeArch")
+                .build();
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                c, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
 
         when(globalConfiguration.getBandanaArchitecturePodConfig()).thenReturn(getArchitecturePodOverridesAsString());
-        when(bandanaManager.getValue(any(),
-                matches("com.atlassian.buildeng.pbc.architecture.config.parsed"))).thenReturn(new LinkedHashMap<>(
-                Collections.singletonMap("myArch", "")));
+        when(bandanaManager.getValue(any(), matches("com.atlassian.buildeng.pbc.architecture.config.parsed")))
+                .thenReturn(new LinkedHashMap<>(Collections.singletonMap("myArch", "")));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
                 () -> kubernetesPodSpecList.addArchitectureOverrides(request, new HashMap<>()));
-        assertEquals("Architecture specified in build configuration was not found in server's allowed" +
-                " architectures list! Supported architectures are: [myArch]", exception.getMessage());
+        assertEquals(
+                "Architecture specified in build configuration was not found in server's allowed"
+                        + " architectures list! Supported architectures are: [myArch]",
+                exception.getMessage());
     }
 
     @Test
@@ -323,42 +310,40 @@ public class KubernetesPodSpecListTest {
     public void testAddCachePodSpec() {
         Yaml yaml = new Yaml(new SafeConstructor());
 
-        String ogSpec = "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "spec:\n" +
-                "  volumes:\n" +
-                "    - name: git-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/gitcache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: git-cache\n" +
-                "        mountPath: /pbc/overlay/gitcache";
-        String expectedSpec = "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "spec:\n" +
-                "  volumes:\n" +
-                "    - name: git-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/gitcache\n" +
-                "    - name: m2-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/m2cache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: git-cache\n" +
-                "        mountPath: /pbc/overlay/gitcache\n" +
-                "      - name: m2-cache\n" +
-                "        mountPath: /pbc/overlay/m2cache";
+        String ogSpec = "apiVersion: v1\n" + "kind: Pod\n"
+                + "spec:\n"
+                + "  volumes:\n"
+                + "    - name: git-cache\n"
+                + "      flexVolume:\n"
+                + "        driver: mkleint/cow\n"
+                + "        fsType: cow\n"
+                + "        options:\n"
+                + "          lower: /var/per-build-cache/gitcache\n"
+                + "  containers:\n"
+                + "    volumeMounts:\n"
+                + "      - name: git-cache\n"
+                + "        mountPath: /pbc/overlay/gitcache";
+        String expectedSpec = "apiVersion: v1\n" + "kind: Pod\n"
+                + "spec:\n"
+                + "  volumes:\n"
+                + "    - name: git-cache\n"
+                + "      flexVolume:\n"
+                + "        driver: mkleint/cow\n"
+                + "        fsType: cow\n"
+                + "        options:\n"
+                + "          lower: /var/per-build-cache/gitcache\n"
+                + "    - name: m2-cache\n"
+                + "      flexVolume:\n"
+                + "        driver: mkleint/cow\n"
+                + "        fsType: cow\n"
+                + "        options:\n"
+                + "          lower: /var/per-build-cache/m2cache\n"
+                + "  containers:\n"
+                + "    volumeMounts:\n"
+                + "      - name: git-cache\n"
+                + "        mountPath: /pbc/overlay/gitcache\n"
+                + "      - name: m2-cache\n"
+                + "        mountPath: /pbc/overlay/m2cache";
 
         mockArtifactoryCache(globalConfiguration);
 
@@ -382,36 +367,36 @@ public class KubernetesPodSpecListTest {
 
     // Helper functions
     private String getPodTemplateAsString() {
-        return "apiVersion: v1\n" +
-                "kind: Pod\n" +
-                "metadata:\n" +
-                "  name: aws-cli\n" +
-                "spec:\n" +
-                "  hostAliases:\n" +
-                "    - ip: 192.168.1.1\n" +
-                "      hostnames:\n" +
-                "          - wifi\n" +
-                "    - ip: 127.0.0.1\n" +
-                "      hostnames:\n" +
-                "          - me.local\n" +
-                "  containers:\n" +
-                "    - name: main\n" +
-                "      volumeMounts:\n" +
-                "          - name: secrets\n" +
-                "            mountPath: /root/.aws\n" +
-                "    - name: myContainer2\n" +
-                "      image: xueshanf/awscli:latest\n" +
-                "  restartPolicy: Never\n" +
-                "  volumes:\n" +
-                "    - name: secrets\n" +
-                "      secret:\n" +
-                "        secretName: bitbucket-bamboo\n";
+        return "apiVersion: v1\n" + "kind: Pod\n"
+                + "metadata:\n"
+                + "  name: aws-cli\n"
+                + "spec:\n"
+                + "  hostAliases:\n"
+                + "    - ip: 192.168.1.1\n"
+                + "      hostnames:\n"
+                + "          - wifi\n"
+                + "    - ip: 127.0.0.1\n"
+                + "      hostnames:\n"
+                + "          - me.local\n"
+                + "  containers:\n"
+                + "    - name: main\n"
+                + "      volumeMounts:\n"
+                + "          - name: secrets\n"
+                + "            mountPath: /root/.aws\n"
+                + "    - name: myContainer2\n"
+                + "      image: xueshanf/awscli:latest\n"
+                + "  restartPolicy: Never\n"
+                + "  volumes:\n"
+                + "    - name: secrets\n"
+                + "      secret:\n"
+                + "        secretName: bitbucket-bamboo\n";
     }
 
     private String getArchitecturePodOverridesAsString() throws IOException {
-        return FileUtils.readFileToString(new File(Objects
-                .requireNonNull(this.getClass().getResource("/architecturePodOverrides.yaml"))
-                .getFile()), "UTF-8");
+        return FileUtils.readFileToString(
+                new File(Objects.requireNonNull(this.getClass().getResource("/architecturePodOverrides.yaml"))
+                        .getFile()),
+                "UTF-8");
     }
 
     @SuppressWarnings("unchecked")
@@ -445,27 +430,28 @@ public class KubernetesPodSpecListTest {
         return request;
     }
 
-    private void assertPodSpecFileCreated(MockedStatic<File> mockFile,
-            MockedStatic<FileUtils> mockFileUtils,
-            File file) {
+    private void assertPodSpecFileCreated(
+            MockedStatic<File> mockFile, MockedStatic<FileUtils> mockFileUtils, File file) {
         mockFile.verify(() -> File.createTempFile("pod", "yaml"));
-        mockFileUtils.verify(() -> FileUtils.write(eq(file), any(), // Any way to improve this?
-                matches("UTF-8"), eq(false)));
+        mockFileUtils.verify(() -> FileUtils.write(
+                eq(file),
+                any(), // Any way to improve this?
+                matches("UTF-8"),
+                eq(false)));
     }
 
     private void mockArtifactoryCache(GlobalConfiguration globalConfiguration) {
-        when(globalConfiguration.getArtifactoryCachePodSpecAsString()).thenReturn("spec:\n" +
-                "  volumes:\n" +
-                "    - name: m2-cache\n" +
-                "      flexVolume:\n" +
-                "        driver: mkleint/cow\n" +
-                "        fsType: cow\n" +
-                "        options:\n" +
-                "          lower: /var/per-build-cache/m2cache\n" +
-                "  containers:\n" +
-                "    volumeMounts:\n" +
-                "      - name: m2-cache\n" +
-                "        mountPath: /pbc/overlay/m2cache");
+        when(globalConfiguration.getArtifactoryCachePodSpecAsString())
+                .thenReturn("spec:\n" + "  volumes:\n"
+                        + "    - name: m2-cache\n"
+                        + "      flexVolume:\n"
+                        + "        driver: mkleint/cow\n"
+                        + "        fsType: cow\n"
+                        + "        options:\n"
+                        + "          lower: /var/per-build-cache/m2cache\n"
+                        + "  containers:\n"
+                        + "    volumeMounts:\n"
+                        + "      - name: m2-cache\n"
+                        + "        mountPath: /pbc/overlay/m2cache");
     }
-
 }

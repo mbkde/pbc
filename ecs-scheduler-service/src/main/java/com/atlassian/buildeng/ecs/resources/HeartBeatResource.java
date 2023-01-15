@@ -28,8 +28,7 @@ import javax.ws.rs.core.MediaType;
 public class HeartBeatResource {
 
     @Inject
-    public HeartBeatResource() {
-    }
+    public HeartBeatResource() {}
 
     @GET
     public Heartbeat returnHeartbeat() {

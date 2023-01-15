@@ -28,32 +28,46 @@ import org.openqa.selenium.By;
 public class GenericKubernetesConfigPage extends AbstractBambooPage {
     public static final String IAM_REQUEST_TEMPLATE = "setRemoteConfig_iamRequestTemplate";
     public static final String IAM_SUBJECT_ID_PREFIX = "setRemoteConfig_iamSubjectIdPrefix";
+
     @ElementBy(id = "setRemoteConfig_sidekickToUse")
     private PageElement sidekickImage;
+
     @ElementBy(id = "setRemoteConfig_currentContext")
     private PageElement currentContext;
+
     @ElementBy(id = "setRemoteConfig_useClusterRegistry")
     private AuiCheckbox useClusterRegistry;
+
     @ElementBy(id = "setRemoteConfig_clusterRegistryAvailableSelector")
     private PageElement availableClusterLabel;
+
     @ElementBy(id = "setRemoteConfig_clusterRegistryPrimarySelector")
     private PageElement clusterRegistryPrimarySelector;
+
     @ElementBy(id = "setRemoteConfig_podTemplate")
     private PageElement podTemplate;
+
     @ElementBy(id = "setRemoteConfig_architecturePodConfig")
     private PageElement architecturePodConfig;
+
     @ElementBy(id = IAM_REQUEST_TEMPLATE)
     private PageElement iamRequestTemplate;
+
     @ElementBy(id = IAM_SUBJECT_ID_PREFIX)
     private PageElement iamSubjectIdPrefix;
+
     @ElementBy(id = "setRemoteConfig_containerSizes")
     private PageElement containerSizes;
+
     @ElementBy(id = "errorMessage")
     private PageElement errorMessage;
+
     @ElementBy(cssSelector = ".save-status")
     private PageElement saveStatus;
+
     @ElementBy(id = "setRemoteConfig_save")
     private PageElement saveButton;
+
     @ElementBy(id = "load_complete")
     private PageElement loadComplete;
 

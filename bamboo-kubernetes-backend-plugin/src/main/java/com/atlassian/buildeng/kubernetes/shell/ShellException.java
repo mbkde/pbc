@@ -6,10 +6,13 @@ import javax.annotation.Nullable;
 public class ShellException extends RuntimeException {
     @Nullable
     private String stdout;
+
     @Nullable
     private String stderr;
+
     @Nullable
     private int returnCode;
+
     private List<String> arguments;
 
     public ShellException(String message, String stdout, String stderr, int returnCode, List<String> arguments) {

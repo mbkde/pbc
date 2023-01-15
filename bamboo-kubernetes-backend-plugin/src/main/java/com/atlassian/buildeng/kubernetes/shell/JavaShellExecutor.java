@@ -9,7 +9,6 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class JavaShellExecutor implements ShellExecutor {
     private static final Logger logger = LoggerFactory.getLogger(JavaShellExecutor.class);
 
@@ -29,7 +28,8 @@ public class JavaShellExecutor implements ShellExecutor {
             logger.debug("process finished");
 
             if (ret != 0) {
-                throw new ShellException("Non-zero exit code",
+                throw new ShellException(
+                        "Non-zero exit code",
                         IOUtils.toString(data, "UTF-8"),
                         IOUtils.toString(process.getErrorStream(), Charsets.UTF_8),
                         ret,

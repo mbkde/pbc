@@ -53,7 +53,8 @@ public class DockerWatchdogJob implements Job {
         }
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(ExecutablePathUtils.getDockerBinaryPath(),
+            ProcessBuilder pb = new ProcessBuilder(
+                    ExecutablePathUtils.getDockerBinaryPath(),
                     "ps",
                     "-a",
                     "--format",
@@ -62,29 +63,32 @@ public class DockerWatchdogJob implements Job {
             Process p = pb.start();
             p.waitFor();
             try (BufferedReader buffer = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                List<PsItem> all = buffer.lines().map((String t) -> {
-                    List<String> splitted = Splitter.on("::").splitToList(t);
-                    if (splitted.size() == 4) {
-                        return new PsItem(splitted.get(0), splitted.get(2), splitted.get(1), splitted.get(3));
-                    }
-                    return null;
-                }).filter((PsItem t) -> t != null).collect(Collectors.toList());
-                all
-                        .stream()
+                List<PsItem> all = buffer.lines()
+                        .map((String t) -> {
+                            List<String> splitted = Splitter.on("::").splitToList(t);
+                            if (splitted.size() == 4) {
+                                return new PsItem(splitted.get(0), splitted.get(2), splitted.get(1), splitted.get(3));
+                            }
+                            return null;
+                        })
+                        .filter((PsItem t) -> t != null)
+                        .collect(Collectors.toList());
+                all.stream()
                         .filter((PsItem t) -> t.isExited() && t.name.equals("bamboo-agent"))
                         .map((PsItem t) -> t.uuid)
                         .forEach((String t) -> {
                             try {
-                                ProcessBuilder rm = new ProcessBuilder(ExecutablePathUtils.getDockerComposeBinaryPath(),
-                                        "down",
-                                        "-v");
+                                ProcessBuilder rm = new ProcessBuilder(
+                                        ExecutablePathUtils.getDockerComposeBinaryPath(), "down", "-v");
                                 // yes. docker-compose up can pass -p and -f parameters but all other commands
                                 // rely on env variables to do the same (facepalm)
                                 globalConfiguration.decorateCommands(pb);
                                 rm.environment().put("COMPOSE_PROJECT_NAME", t);
-                                rm
-                                        .environment()
-                                        .put("COMPOSE_FILE", IsolatedDockerImpl.fileForUUID(t).getAbsolutePath());
+                                rm.environment()
+                                        .put(
+                                                "COMPOSE_FILE",
+                                                IsolatedDockerImpl.fileForUUID(t)
+                                                        .getAbsolutePath());
                                 Process p2 = rm.inheritIO().start();
                             } catch (IOException ex) {
                                 logger.error("Failed to run docker-compose down", ex);

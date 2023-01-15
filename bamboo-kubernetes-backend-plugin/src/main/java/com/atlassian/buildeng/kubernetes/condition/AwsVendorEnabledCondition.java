@@ -28,9 +28,7 @@ public class AwsVendorEnabledCondition implements Condition {
     private BandanaManager bandanaManager;
 
     @Override
-    public void init(Map<String, String> map) throws PluginParseException {
-
-    }
+    public void init(Map<String, String> map) throws PluginParseException {}
 
     @Override
     public boolean shouldDisplay(Map<String, Object> map) {

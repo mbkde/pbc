@@ -40,10 +40,12 @@ public final class DockerHosts {
     private final String clusterName;
 
     DockerHosts(Collection<DockerHost> allHosts, Duration stalePeriod, AutoScalingGroup asg, String clusterName) {
-        usable = allHosts.stream().filter((DockerHost t) -> t.getAgentConnected()).collect(Collectors.toList());
-        agentDisconnected = allHosts
-                .stream()
-                .filter((DockerHost t) -> !ContainerInstanceStatus.DRAINING.toString().equals(t.getStatus()))
+        usable = allHosts.stream()
+                .filter((DockerHost t) -> t.getAgentConnected())
+                .collect(Collectors.toList());
+        agentDisconnected = allHosts.stream()
+                .filter((DockerHost t) ->
+                        !ContainerInstanceStatus.DRAINING.toString().equals(t.getStatus()))
                 .filter((DockerHost t) -> !t.getAgentConnected())
                 .collect(Collectors.toSet());
         Map<Boolean, List<DockerHost>> partitionedHosts = partitionFreshness(usable, stalePeriod);
@@ -98,21 +100,19 @@ public final class DockerHosts {
     }
 
     List<DockerHost> unusedFreshInstances(List<DockerHost> freshHosts, Set<DockerHost> usedCandidates) {
-        return freshHosts
-                .stream()
+        return freshHosts.stream()
                 .filter((DockerHost dockerHost) -> !usedCandidates.contains(dockerHost))
                 .filter(DockerHost::runningNothing)
                 .filter(DockerHost::reachingEndOfBillingCycle)
                 .collect(Collectors.toList());
     }
 
-    private Map<Boolean, List<DockerHost>> partitionFreshness(Collection<DockerHost> dockerHosts,
-            Duration stalePeriod) {
-        return dockerHosts
-                .stream()
-                .collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.isPresentInASG() &&
-                        dockerHost.ageMillis() < stalePeriod.toMillis() &&
-                        !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())));
+    private Map<Boolean, List<DockerHost>> partitionFreshness(
+            Collection<DockerHost> dockerHosts, Duration stalePeriod) {
+        return dockerHosts.stream()
+                .collect(Collectors.partitioningBy((DockerHost dockerHost) -> dockerHost.isPresentInASG()
+                        && dockerHost.ageMillis() < stalePeriod.toMillis()
+                        && !ContainerInstanceStatus.DRAINING.toString().equals(dockerHost.getStatus())));
     }
 
     AutoScalingGroup getASG() {

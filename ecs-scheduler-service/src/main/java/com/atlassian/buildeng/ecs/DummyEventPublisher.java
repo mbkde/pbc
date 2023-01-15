@@ -25,9 +25,7 @@ public class DummyEventPublisher implements EventPublisher {
     private static final Logger logger = LoggerFactory.getLogger(DummyEventPublisher.class);
 
     @Inject
-    public DummyEventPublisher() {
-    }
-
+    public DummyEventPublisher() {}
 
     @Override
     public void publish(Object event) {
@@ -35,15 +33,11 @@ public class DummyEventPublisher implements EventPublisher {
     }
 
     @Override
-    public void register(Object listener) {
-    }
+    public void register(Object listener) {}
 
     @Override
-    public void unregister(Object listener) {
-    }
+    public void unregister(Object listener) {}
 
     @Override
-    public void unregisterAll() {
-    }
-
+    public void unregisterAll() {}
 }

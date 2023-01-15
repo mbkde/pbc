@@ -61,30 +61,31 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 public class CyclingECSSchedulerTest {
 
-    public CyclingECSSchedulerTest() {
-    }
+    public CyclingECSSchedulerTest() {}
 
     @Test
     public void testSelectHost() throws ECSException {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 50, 50),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 50, 50),
                         ci("id2", "arn2", true, 40, 40),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 20, 20),
                         ci("id5", "arn5", true, 10, 10)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())));
-        Collection<DockerHost> candidates =
-                new AwsPullModelLoader(schedulerBackend, mock(EventPublisher.class), mockGlobalConfig())
-                        .load("", "asg")
-                        .allUsable();
+        Collection<DockerHost> candidates = new AwsPullModelLoader(
+                        schedulerBackend, mock(EventPublisher.class), mockGlobalConfig())
+                .load("", "asg")
+                .allUsable();
         // 5 cpu & 5 mem means all are viable candidates
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5), false);
         assertTrue(candidate.isPresent());
@@ -107,21 +108,24 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void testSelectHostWithDemandOverflow() throws ECSException {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 50, 50),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 50, 50),
                         ci("id2", "arn2", true, 40, 40),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 20, 20),
                         ci("id5", "arn5", true, 10, 10)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())));
         final ECSConfiguration mockGlobalConfig = mockGlobalConfig();
-        Collection<DockerHost> candidates =
-                new AwsPullModelLoader(schedulerBackend, mock(EventPublisher.class), mockGlobalConfig)
-                        .load("", "asg")
-                        .allUsable();
+        Collection<DockerHost> candidates = new AwsPullModelLoader(
+                        schedulerBackend, mock(EventPublisher.class), mockGlobalConfig)
+                .load("", "asg")
+                .allUsable();
         // 5 cpu & 5 mem means all are viable candidates, id5 is the less full one.
         Optional<DockerHost> candidate = CyclingECSScheduler.selectHost(candidates, mem(5), cpu(5), true);
         assertTrue(candidate.isPresent());
@@ -138,29 +142,30 @@ public class CyclingECSSchedulerTest {
         // we don't update the utilization model, so id5 is always picked because it's the
         // least utilized in the beginning
         assertEquals("id5", candidate.get().getInstanceId()); // least utilized
-
     }
-
 
     @Test
     public void scheduleScaleUp() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 10, 50),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 10, 50),
                         ci("id2", "arn2", true, 20, 40),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 40, 20),
                         ci("id5", "arn5", true, 50, 10)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(75), mem(75), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(75), mem(75), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -175,19 +180,23 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void scheduleNoScaling() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 10, 50),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 10, 50),
                         ci("id2", "arn2", true, 20, 40),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 40, 20),
                         ci("id5", "arn5", true, 50, 10)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(55), mem(55), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(55), mem(55), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -195,8 +204,7 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
@@ -207,14 +215,18 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void scheduleTerminateStale() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 0, 0),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 0, 0),
                         ci("id2", "arn2", true, 50, 50),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 40, 20),
                         ci("id5", "arn5", true, 50, 10)),
-                Arrays.asList(ec2("id1",
-                                new Date(System.currentTimeMillis() -
-                                        (AwsPullModelLoader.DEFAULT_STALE_PERIOD.toMillis() + 1000))),
+                Arrays.asList(
+                        ec2(
+                                "id1",
+                                new Date(System.currentTimeMillis()
+                                        - (AwsPullModelLoader.DEFAULT_STALE_PERIOD.toMillis() + 1000))),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
@@ -222,7 +234,8 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
 
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -230,8 +243,7 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
@@ -243,14 +255,18 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void scheduleStaleNotLoaded() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 10, 10),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 10, 10),
                         ci("id2", "arn2", true, 40, 40),
                         ci("id3", "arn3", true, 10, 10),
                         ci("id4", "arn4", true, 40, 20),
                         ci("id5", "arn5", true, 30, 10)),
-                Arrays.asList(ec2("id1",
-                                new Date(System.currentTimeMillis() -
-                                        (AwsPullModelLoader.DEFAULT_STALE_PERIOD.toMillis() + 1000))),
+                Arrays.asList(
+                        ec2(
+                                "id1",
+                                new Date(System.currentTimeMillis()
+                                        - (AwsPullModelLoader.DEFAULT_STALE_PERIOD.toMillis() + 1000))),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
@@ -258,7 +274,8 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
 
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -266,8 +283,7 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
@@ -279,22 +295,27 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void scheduleTerminatingOfIdleInLastQuarterOfBillingCycle() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 0, 0),
-                ci("id2", "arn2", true, 60, 60),
-                ci("id3", "arn3", true, 30, 30),
-                ci("id4", "arn4", true, 30, 30),
-                ci("id5", "arn5", true, 10, 10)), Arrays.asList(
-                // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
-                ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
-                // 45 minute old instance i.e. in its working stage of the billing cycle, should not be terminated
-                ec2("id2", new Date(System.currentTimeMillis() - 1000 * 60 * 45)),
-                ec2("id3", new Date()),
-                ec2("id4", new Date()),
-                ec2("id5", new Date())));
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 0, 0),
+                        ci("id2", "arn2", true, 60, 60),
+                        ci("id3", "arn3", true, 30, 30),
+                        ci("id4", "arn4", true, 30, 30),
+                        ci("id5", "arn5", true, 10, 10)),
+                Arrays.asList(
+                        // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
+                        ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
+                        // 45 minute old instance i.e. in its working stage of the billing cycle, should not be
+                        // terminated
+                        ec2("id2", new Date(System.currentTimeMillis() - 1000 * 60 * 45)),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(5), mem(5), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(5), mem(5), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -302,8 +323,7 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
@@ -315,28 +335,33 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void scheduleTerminationKeepFreeRation() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 0, 0),
-                ci("id2", "arn2", true, 80, 80),
-                ci("id3", "arn3", true, 80, 80),
-                ci("id4", "arn4", true, 80, 80),
-                ci("id5", "arn5", true, 80, 80),
-                ci("id6", "arn6", true, 0, 0),
-                ci("id7", "arn7", true, 0, 0)), Arrays.asList(
-                // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
-                ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
-                // 45 minute old instance i.e. in its working stage of the billing cycle, should not be terminated
-                ec2("id2", new Date(System.currentTimeMillis() - 1000 * 60 * 45)),
-                ec2("id3", new Date()),
-                ec2("id4", new Date()),
-                ec2("id5", new Date()),
-                // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
-                ec2("id6", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
-                // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
-                ec2("id7", new Date(System.currentTimeMillis() - 1000 * 60 * 55))));
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 0, 0),
+                        ci("id2", "arn2", true, 80, 80),
+                        ci("id3", "arn3", true, 80, 80),
+                        ci("id4", "arn4", true, 80, 80),
+                        ci("id5", "arn5", true, 80, 80),
+                        ci("id6", "arn6", true, 0, 0),
+                        ci("id7", "arn7", true, 0, 0)),
+                Arrays.asList(
+                        // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
+                        ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
+                        // 45 minute old instance i.e. in its working stage of the billing cycle, should not be
+                        // terminated
+                        ec2("id2", new Date(System.currentTimeMillis() - 1000 * 60 * 45)),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date()),
+                        // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
+                        ec2("id6", new Date(System.currentTimeMillis() - 1000 * 60 * 55)),
+                        // 55 minute old instance, i.e. in its final stage of the billing cycle and should be terminated
+                        ec2("id7", new Date(System.currentTimeMillis() - 1000 * 60 * 55))));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -344,37 +369,37 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
-        verify(schedulerBackend, times(1)).terminateAndDetachInstances(argThat(new IsListOfTwoElements()),
-                anyString(),
-                eq(true),
-                anyString());
+        verify(schedulerBackend, times(1))
+                .terminateAndDetachInstances(argThat(new IsListOfTwoElements()), anyString(), eq(true), anyString());
         verify(schedulerBackend, never()).scaleTo(anyInt(), anyString());
         assertEquals("arn2", arn.get());
     }
 
-
     @Test
     public void scheduleUnusedFreshIsSelected() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 60, 60),
-                ci("id2", "arn2", true, 20, 20),
-                ci("id3", "arn3", true, 30, 30),
-                ci("id4", "arn4", true, 40, 40),
-                ci("id5", "arn5", true, 50, 50)), Arrays.asList(
-                // 40 minutes old instance (past halfway in billing cycle)\
-                // Should pick up the job anyway (isn't stale)
-                ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 40)),
-                ec2("id2", new Date()),
-                ec2("id3", new Date()),
-                ec2("id4", new Date()),
-                ec2("id5", new Date())));
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 60, 60),
+                        ci("id2", "arn2", true, 20, 20),
+                        ci("id3", "arn3", true, 30, 30),
+                        ci("id4", "arn4", true, 40, 40),
+                        ci("id5", "arn5", true, 50, 50)),
+                Arrays.asList(
+                        // 40 minutes old instance (past halfway in billing cycle)\
+                        // Should pick up the job anyway (isn't stale)
+                        ec2("id1", new Date(System.currentTimeMillis() - 1000 * 60 * 40)),
+                        ec2("id2", new Date()),
+                        ec2("id3", new Date()),
+                        ec2("id4", new Date()),
+                        ec2("id5", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(39), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(39), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -382,8 +407,7 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
@@ -393,16 +417,16 @@ public class CyclingECSSchedulerTest {
         assertEquals("arn1", arn.get());
     }
 
-
     @Test
     public void scheduleRequestCoalesce() throws Exception {
-        SchedulerBackend schedulerBackend =
-                mockBackend(Arrays.asList(ci("id1", "arn1", true, 60, 60), ci("id2", "arn2", true, 40, 40)),
-                        Arrays.asList(ec2("id1", new Date()), ec2("id2", new Date())));
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(ci("id1", "arn1", true, 60, 60), ci("id2", "arn2", true, 40, 40)),
+                Arrays.asList(ec2("id1", new Date()), ec2("id2", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
         AtomicReference<String> arn = new AtomicReference<>();
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -410,14 +434,13 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a2", 1, cpu(65), mem(65), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a2", 1, cpu(65), mem(65), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -438,11 +461,11 @@ public class CyclingECSSchedulerTest {
         when(backend.getClusterContainerInstances(anyString())).thenThrow(new ECSException("error1"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -453,24 +476,20 @@ public class CyclingECSSchedulerTest {
         assertTrue(thrown.get(), "Exception Thrown correctly");
     }
 
-
     @Test
     public void scheduleBackendFailGetInstances() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
-        when(backend.getClusterContainerInstances(anyString())).thenReturn(Arrays.asList(ci("id1",
-                "arn1",
-                true,
-                60,
-                60), ci("id2", "arn2", true, 20, 40)));
+        when(backend.getClusterContainerInstances(anyString()))
+                .thenReturn(Arrays.asList(ci("id1", "arn1", true, 60, 60), ci("id2", "arn2", true, 20, 40)));
         when(backend.getInstances(anySet())).thenThrow(new ECSException("error2"));
         mockASG(Sets.newHashSet("id1", "id2"), backend);
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -484,21 +503,18 @@ public class CyclingECSSchedulerTest {
     @Test
     public void scheduleBackendFailSchedule() throws Exception {
         SchedulerBackend backend = mock(SchedulerBackend.class);
-        when(backend.getClusterContainerInstances(anyString())).thenReturn(Arrays.asList(ci("id1",
-                "arn1",
-                true,
-                60,
-                60), ci("id2", "arn2", true, 20, 40)));
+        when(backend.getClusterContainerInstances(anyString()))
+                .thenReturn(Arrays.asList(ci("id1", "arn1", true, 60, 60), ci("id2", "arn2", true, 20, 40)));
         when(backend.getInstances(anySet())).thenReturn(Arrays.asList(ec2("id1", new Date()), ec2("id2", new Date())));
         mockASG(Sets.newHashSet("id1", "id2"), backend);
         when(backend.schedule(any(), anyString(), any(), any())).thenThrow(new ECSException("error3"));
         CyclingECSScheduler scheduler = create(backend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(19), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(39), mem(19), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -509,15 +525,17 @@ public class CyclingECSSchedulerTest {
         assertTrue(thrown.get(), "Exception Thrown correctly");
     }
 
-
     @Test
     public void scheduleScaleUpWithDisconnected() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", false, 10, 10),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", false, 10, 10),
                         ci("id2", "arn2", false, 20, 20),
                         ci("id3", "arn3", false, 80, 80),
                         ci("id4", "arn4", false, 100, 100),
                         ci("id5", "arn5", false, 0, 0)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
@@ -526,11 +544,11 @@ public class CyclingECSSchedulerTest {
 
         populateDisconnectedCacheWithRipeHosts(scheduler);
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -547,23 +565,26 @@ public class CyclingECSSchedulerTest {
 
     @Test
     public void noTerminationOnFreshDisconnected() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", false, 10, 50),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", false, 10, 50),
                         ci("id2", "arn2", false, 20, 20),
                         ci("id3", "arn3", false, 0, 0),
                         ci("id4", "arn4", false, 100, 100),
                         ci("id5", "arn5", false, 50, 50)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(60), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -578,40 +599,46 @@ public class CyclingECSSchedulerTest {
         verify(schedulerBackend, times(1)).scaleTo(eq(6), anyString());
     }
 
-
     private void populateDisconnectedCacheWithRipeHosts(CyclingECSScheduler scheduler) throws ECSException {
         DockerHosts hosts = scheduler.modelLoader.load("", "");
         for (DockerHost disc : hosts.agentDisconnected()) {
-            ((DefaultModelUpdater) scheduler.modelUpdater).disconnectedAgentsCache.put(disc,
-                    new Date(new Date().getTime() -
-                            1000 * 60 * 2 * DefaultModelUpdater.TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT));
+            ((DefaultModelUpdater) scheduler.modelUpdater)
+                    .disconnectedAgentsCache.put(
+                            disc,
+                            new Date(new Date().getTime()
+                                    - 1000
+                                            * 60
+                                            * 2
+                                            * DefaultModelUpdater.TIMEOUT_IN_MINUTES_TO_KILL_DISCONNECTED_AGENT));
         }
     }
 
     @Test
     public void scheduleScaleUpWithDisconnectedTerminationFailed() throws Exception {
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", false, 10, 20),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", false, 10, 20),
                         ci("id2", "arn2", false, 10, 10),
                         ci("id3", "arn3", false, 80, 80),
                         ci("id4", "arn4", false, 50, 50),
                         ci("id5", "arn5", false, 50, 50)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         populateDisconnectedCacheWithRipeHosts(scheduler);
-        Mockito
-                .doThrow(new ECSException("error"))
+        Mockito.doThrow(new ECSException("error"))
                 .when(schedulerBackend)
                 .terminateAndDetachInstances(anyList(), anyString(), eq(false), anyString());
         AtomicBoolean thrown = new AtomicBoolean(false);
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(60), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(60), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -632,11 +659,11 @@ public class CyclingECSSchedulerTest {
                 mockBackend(Arrays.asList(ci("id1", "arn1", true, 0, 0)), Arrays.asList(ec2("id1", new Date())));
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> thrown = new AtomicReference<>("not thrown");
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(120), mem(120), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(120), mem(120), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
                     public void handle(ECSException exception) {
@@ -644,20 +671,22 @@ public class CyclingECSSchedulerTest {
                     }
                 });
         awaitProcessing(scheduler);
-        assertEquals("Agent's resource reservation is larger than any single instance size in ECS cluster.",
-                thrown.get());
+        assertEquals(
+                "Agent's resource reservation is larger than any single instance size in ECS cluster.", thrown.get());
     }
-
 
     @Test
     public void scheduleTerminatingOfNonASGContainer() throws Exception {
         // unused stale only gets killed
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 0, 0),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 0, 0),
                         ci("id2", "arn2", true, 20, 40),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 40, 20),
                         ci("id5", "arn5", true, 0, 0)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
@@ -667,7 +696,8 @@ public class CyclingECSSchedulerTest {
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), mock(EventPublisher.class));
         AtomicReference<String> arn = new AtomicReference<>();
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(59), mem(79), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(59), mem(79), null, -1, null),
                 new SchedulingCallback() {
                     @Override
                     public void handle(SchedulingResult result) {
@@ -675,8 +705,7 @@ public class CyclingECSSchedulerTest {
                     }
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
 
@@ -689,47 +718,53 @@ public class CyclingECSSchedulerTest {
     @Test
     public void asgIsLonely() throws Exception {
         // unused stale only gets killed
-        SchedulerBackend schedulerBackend = mockBackend(Arrays.asList(ci("id1", "arn1", true, 0, 0),
+        SchedulerBackend schedulerBackend = mockBackend(
+                Arrays.asList(
+                        ci("id1", "arn1", true, 0, 0),
                         ci("id2", "arn2", true, 20, 40),
                         ci("id3", "arn3", true, 30, 30),
                         ci("id4", "arn4", true, 20, 20),
                         ci("id5", "arn5", true, 0, 0)),
-                Arrays.asList(ec2("id1", new Date()),
+                Arrays.asList(
+                        ec2("id1", new Date()),
                         ec2("id2", new Date()),
                         ec2("id3", new Date()),
                         ec2("id4", new Date()),
                         ec2("id5", new Date()),
-                        ec2("id6", new Date(System.currentTimeMillis() - Duration.ofMinutes(20).toMillis())),
-                        ec2("id7", new Date(System.currentTimeMillis() - Duration.ofDays(1).toMillis()))),
+                        ec2(
+                                "id6",
+                                new Date(System.currentTimeMillis()
+                                        - Duration.ofMinutes(20).toMillis())),
+                        ec2(
+                                "id7",
+                                new Date(System.currentTimeMillis()
+                                        - Duration.ofDays(1).toMillis()))),
                 // id5 is not in ASG
                 Sets.newHashSet("id1", "id2", "id3", "id4", "id5", "id6", "id7"));
         final EventPublisher eventPublisher = mock(EventPublisher.class);
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), eventPublisher);
 
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
-        scheduler.schedule(new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
+        scheduler.schedule(
+                new SchedulingRequest(UUID.randomUUID(), "a1", 1, cpu(10), mem(10), null, -1, null),
                 new SchedulingCallback() {
                     @Override
-                    public void handle(SchedulingResult result) {
-                    }
+                    public void handle(SchedulingResult result) {}
 
                     @Override
-                    public void handle(ECSException exception) {
-                    }
+                    public void handle(ECSException exception) {}
                 });
         awaitProcessing(scheduler);
         // only id6 should be marked as stale, id7 is just transiently in asg and not in ecs
         verify(eventPublisher, times(1)).publish(any(DockerAgentEcsStaleAsgInstanceEvent.class));
-
     }
 
     @Test
@@ -738,16 +773,10 @@ public class CyclingECSSchedulerTest {
         final SchedulerBackend schedulerBackend = mock(SchedulerBackend.class);
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), eventPublisher);
         // run at current time, reset is supposed to remove the
-        ReserveRequest r = new ReserveRequest("111-222",
-                Collections.singletonList("AAA-BBB-CCC-1"),
-                100,
-                100,
-                System.currentTimeMillis());
-        ReserveRequest reset = new ReserveRequest("111-222",
-                Collections.singletonList("AAA-BBB-CCC-1"),
-                0,
-                0,
-                System.currentTimeMillis());
+        ReserveRequest r = new ReserveRequest(
+                "111-222", Collections.singletonList("AAA-BBB-CCC-1"), 100, 100, System.currentTimeMillis());
+        ReserveRequest reset = new ReserveRequest(
+                "111-222", Collections.singletonList("AAA-BBB-CCC-1"), 0, 0, System.currentTimeMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.reserveFutureCapacity(reset);
         assertTrue(scheduler.futureReservations.isEmpty(), "future reservation was reset and entry removed from map");
@@ -759,16 +788,10 @@ public class CyclingECSSchedulerTest {
         final SchedulerBackend schedulerBackend = mock(SchedulerBackend.class);
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), eventPublisher);
         // run at current time, reset is supposed to remove the
-        ReserveRequest r = new ReserveRequest("111-222",
-                Collections.singletonList("AAA-BBB-CCC-1"),
-                100,
-                100,
-                System.currentTimeMillis());
-        ReserveRequest reset = new ReserveRequest("111-222",
-                Collections.singletonList("AAA-BBB-CCC-1"),
-                0,
-                0,
-                System.currentTimeMillis());
+        ReserveRequest r = new ReserveRequest(
+                "111-222", Collections.singletonList("AAA-BBB-CCC-1"), 100, 100, System.currentTimeMillis());
+        ReserveRequest reset = new ReserveRequest(
+                "111-222", Collections.singletonList("AAA-BBB-CCC-1"), 0, 0, System.currentTimeMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.reserveFutureCapacity(reset);
         scheduler.reserveFutureCapacity(reset);
@@ -781,21 +804,20 @@ public class CyclingECSSchedulerTest {
         final SchedulerBackend schedulerBackend = mock(SchedulerBackend.class);
         CyclingECSScheduler scheduler = create(schedulerBackend, mockGlobalConfig(), eventPublisher);
         // run at current time, reset is supposed to remove the
-        ReserveRequest r = new ReserveRequest("111-222",
+        ReserveRequest r = new ReserveRequest(
+                "111-222",
                 Collections.singletonList("AAA-BBB-CCC-1"),
                 100,
                 100,
                 System.currentTimeMillis() - Duration.ofHours(1).toMillis());
         scheduler.reserveFutureCapacity(r);
         scheduler.sumOfFutureReservations();
-        assertTrue(scheduler.futureReservations.isEmpty(),
-                "future reservation was timedout and entry removed from map");
+        assertTrue(
+                scheduler.futureReservations.isEmpty(), "future reservation was timedout and entry removed from map");
     }
 
-
-    private CyclingECSScheduler create(SchedulerBackend backend,
-            ECSConfiguration globalConfig,
-            EventPublisher eventPublisher) {
+    private CyclingECSScheduler create(
+            SchedulerBackend backend, ECSConfiguration globalConfig, EventPublisher eventPublisher) {
         AwsPullModelLoader loader = new AwsPullModelLoader(backend, eventPublisher, globalConfig);
         DefaultModelUpdater updater = new DefaultModelUpdater(backend, eventPublisher);
         return new CyclingECSScheduler(backend, mockGlobalConfig(), loader, updater);
@@ -803,22 +825,26 @@ public class CyclingECSSchedulerTest {
 
     private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances, List<Instance> ec2Instances)
             throws ECSException {
-        return mockBackend(containerInstances,
+        return mockBackend(
+                containerInstances,
                 ec2Instances,
                 ec2Instances.stream().map(Instance::getInstanceId).collect(Collectors.toSet()));
     }
 
-    private SchedulerBackend mockBackend(List<ContainerInstance> containerInstances,
-            List<Instance> ec2Instances,
-            Set<String> asgInstances) throws ECSException {
+    private SchedulerBackend mockBackend(
+            List<ContainerInstance> containerInstances, List<Instance> ec2Instances, Set<String> asgInstances)
+            throws ECSException {
         SchedulerBackend mocked = mock(SchedulerBackend.class);
         when(mocked.getClusterContainerInstances(anyString())).thenReturn(containerInstances);
         when(mocked.getInstances(anySet())).thenReturn(ec2Instances);
         mockASG(asgInstances, mocked);
-        Mockito.lenient().when(mocked.schedule(any(), anyString(), any(), any())).thenAnswer(invocationOnMock -> {
-            DockerHost foo = (DockerHost) invocationOnMock.getArguments()[0];
-            return new SchedulingResult(new StartTaskResult(), foo.getContainerInstanceArn(), foo.getInstanceId());
-        });
+        Mockito.lenient()
+                .when(mocked.schedule(any(), anyString(), any(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    DockerHost foo = (DockerHost) invocationOnMock.getArguments()[0];
+                    return new SchedulingResult(
+                            new StartTaskResult(), foo.getContainerInstanceArn(), foo.getInstanceId());
+                });
         return mocked;
     }
 
@@ -827,42 +853,34 @@ public class CyclingECSSchedulerTest {
         asg.setMaxSize(50);
         asg.setDesiredCapacity(asgInstances.size());
         asg.setAutoScalingGroupName("test-asg");
-        asg.setInstances(asgInstances.stream().map((String t) -> {
-            com.amazonaws.services.autoscaling.model.Instance i =
-                    new com.amazonaws.services.autoscaling.model.Instance();
-            i.setInstanceId(t);
-            return i;
-        }).collect(Collectors.toList()));
+        asg.setInstances(asgInstances.stream()
+                .map((String t) -> {
+                    com.amazonaws.services.autoscaling.model.Instance i =
+                            new com.amazonaws.services.autoscaling.model.Instance();
+                    i.setInstanceId(t);
+                    return i;
+                })
+                .collect(Collectors.toList()));
         when(mocked.describeAutoScalingGroup(anyString())).thenReturn(asg);
     }
 
-    static ContainerInstance ci(String ec2Id,
-            String arn,
-            boolean connected,
-            int usedMemPercentage,
-            int usedCpuPercentage) {
+    static ContainerInstance ci(
+            String ec2Id, String arn, boolean connected, int usedMemPercentage, int usedCpuPercentage) {
         return new ContainerInstance()
                 .withEc2InstanceId(ec2Id)
                 .withContainerInstanceArn(arn)
                 .withAgentConnected(connected)
                 .withStatus(ContainerInstanceStatus.ACTIVE.toString())
-                .withRegisteredResources(new Resource()
-                                .withName("MEMORY")
-                                .withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getMemory()),
+                .withRegisteredResources(
+                        new Resource().withName("MEMORY").withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getMemory()),
                         new Resource().withName("CPU").withIntegerValue(ECSInstance.DEFAULT_INSTANCE.getCpu()))
-                .withRemainingResources(new Resource()
-                                .withName("MEMORY")
-                                .withIntegerValue(mem(100 - usedMemPercentage)),
+                .withRemainingResources(
+                        new Resource().withName("MEMORY").withIntegerValue(mem(100 - usedMemPercentage)),
                         new Resource().withName("CPU").withIntegerValue(cpu(100 - usedCpuPercentage)));
-
     }
 
-    static ContainerInstance ci(String ec2Id,
-            String arn,
-            boolean connected,
-            int usedMemPercentage,
-            int usedCpuPercentage,
-            String status) {
+    static ContainerInstance ci(
+            String ec2Id, String arn, boolean connected, int usedMemPercentage, int usedCpuPercentage, String status) {
         return ci(ec2Id, arn, connected, usedMemPercentage, usedCpuPercentage).withStatus(status);
     }
 
@@ -878,7 +896,6 @@ public class CyclingECSSchedulerTest {
         scheduler.shutdownExecutor();
         scheduler.executor.awaitTermination(500, TimeUnit.MILLISECONDS); // make sure the background thread finishes
     }
-
 
     private ECSConfiguration mockGlobalConfig() {
         ECSConfiguration mock = mock(ECSConfiguration.class);
@@ -903,4 +920,3 @@ public class CyclingECSSchedulerTest {
         }
     }
 }
-

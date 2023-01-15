@@ -16,7 +16,6 @@
 
 package com.atlassian.buildeng.simple.backend.rest;
 
-
 public class Config {
     public String apiVersion;
     public String certPath;
@@ -24,8 +23,7 @@ public class Config {
     public boolean sidekickImage;
     public String sidekick;
 
-    public Config() {
-    }
+    public Config() {}
 
     public Config(String api, String certPath, String url, String sidekick, boolean image) {
         this.apiVersion = api;
@@ -74,6 +72,4 @@ public class Config {
     public void setSidekick(String sidekick) {
         this.sidekick = sidekick;
     }
-
-
 }

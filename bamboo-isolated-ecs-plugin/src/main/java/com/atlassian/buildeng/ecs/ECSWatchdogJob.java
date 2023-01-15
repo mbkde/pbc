@@ -36,9 +36,7 @@ public class ECSWatchdogJob extends AbstractWatchdogJob {
             throws Exception {
         GlobalConfiguration globalConfig = getService(GlobalConfiguration.class, "globalConfiguration", jobDataMap);
         SchedulerBackend backend = getService(SchedulerBackend.class, "schedulerBackend", jobDataMap);
-        return backend
-                .checkStoppedTasks(globalConfig.getCurrentCluster(), arns)
-                .stream()
+        return backend.checkStoppedTasks(globalConfig.getCurrentCluster(), arns).stream()
                 .map((ArnStoppedState t) -> new StoppedState((t.getArn()), t.getContainerArn(), t.getReason()))
                 .collect(Collectors.toList());
     }

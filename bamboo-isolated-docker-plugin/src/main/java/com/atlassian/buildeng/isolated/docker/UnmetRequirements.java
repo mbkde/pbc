@@ -66,7 +66,8 @@ public class UnmetRequirements {
     private final AgentAssignmentService agentAssignmentService;
 
     @Inject
-    public UnmetRequirements(BuildQueueManager buildQueueManager,
+    public UnmetRequirements(
+            BuildQueueManager buildQueueManager,
             CachedPlanManager cachedPlanManager,
             AgentManager agentManager,
             AgentRemovals agentRemovals,
@@ -100,8 +101,7 @@ public class UnmetRequirements {
             final ResultKey key = PlanKeys.isPlanResultKey(resultKey)
                     ? PlanKeys.getPlanResultKey(resultKey)
                     : DeploymentResultKeyImpl.from(resultKey);
-            Optional<CommonContext> found = DockerAgentBuildQueue
-                    .currentlyQueued(buildQueueManager)
+            Optional<CommonContext> found = DockerAgentBuildQueue.currentlyQueued(buildQueueManager)
                     .filter((CommonContext t) -> key.equals(t.getResultKey()))
                     .findFirst();
             if (found.isPresent() && found.get() instanceof BuildContext) {
@@ -113,18 +113,15 @@ public class UnmetRequirements {
                     // only builds
                     ImmutableRequirementSet req = build.getEffectiveRequirementSet();
                     if (!capabilityRequirementsMatcher.matches(capabilitySet, req)) {
-                        current
-                                .getCustomBuildData()
-                                .put(Constants.RESULT_ERROR,
-                                        "Capabilities of <a href=\"/admin/agent/viewAgent.action?agentId=" +
-                                                pipelineDefinition.getId() +
-                                                "\">agent</a> don't match requirements.</br>Capabilities of agent:</br>" +
-                                                capabilitySet
-                                                        .getCapabilities()
-                                                        .stream()
-                                                        .map((Capability c) -> c.getKey() +
-                                                                "=" +
-                                                                c.getValueWithDefault())
+                        current.getCustomBuildData()
+                                .put(
+                                        Constants.RESULT_ERROR,
+                                        "Capabilities of <a href=\"/admin/agent/viewAgent.action?agentId="
+                                                + pipelineDefinition.getId()
+                                                + "\">agent</a> don't match requirements.</br>Capabilities of agent:</br>"
+                                                + capabilitySet.getCapabilities().stream()
+                                                        .map((Capability c) ->
+                                                                c.getKey() + "=" + c.getValueWithDefault())
                                                         .collect(Collectors.joining("<br>")));
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
@@ -134,15 +131,15 @@ public class UnmetRequirements {
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
 
                         List<String> missingReqKeys = findMissingRequirements(capabilitySet, req);
-                        errorUpdateHandler.recordError(found.get().getEntityKey(),
-                                "Capabilities of PBC agent don't match job " +
-                                        planResultKey.getPlanKey() +
-                                        " requirements (" +
-                                        found.get().getResultKey() +
-                                        "). Affected requirements:" +
-                                        missingReqKeys);
-                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(found.get().getEntityKey(),
-                                missingReqKeys));
+                        errorUpdateHandler.recordError(
+                                found.get().getEntityKey(),
+                                "Capabilities of PBC agent don't match job " + planResultKey.getPlanKey()
+                                        + " requirements ("
+                                        + found.get().getResultKey()
+                                        + "). Affected requirements:"
+                                        + missingReqKeys);
+                        eventPublisher.publish(new DockerAgentNonMatchedRequirementEvent(
+                                found.get().getEntityKey(), missingReqKeys));
                         return true;
                     }
                     AgentAssignmentMap assignments = agentAssignmentService.getAgentAssignments();
@@ -150,24 +147,26 @@ public class UnmetRequirements {
                     PlanKey planKey = PlanKeys.getChainKeyIfJobKey(planResultKey.getPlanKey());
                     ImmutablePlan plan = cachedPlanManager.getPlanByKey(planKey);
                     Set<AgentAssignmentService.AgentAssignmentExecutor> dedicatedAgents =
-                            assignments.forExecutables(Iterables.concat(AgentAssignmentServiceHelper.asExecutables(build),
+                            assignments.forExecutables(Iterables.concat(
+                                    AgentAssignmentServiceHelper.asExecutables(build),
                                     AgentAssignmentServiceHelper.asExecutables(plan),
                                     AgentAssignmentServiceHelper.projectToExecutables(plan.getProject())));
                     if (!dedicatedAgents.isEmpty()) {
-                        current
-                                .getCustomBuildData()
-                                .put(Constants.RESULT_ERROR,
+                        current.getCustomBuildData()
+                                .put(
+                                        Constants.RESULT_ERROR,
                                         "Please <a href=\"https://confluence.atlassian.com/display/BAMBOO/Dedicating+an+agent\">undedictate</a> this job or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
                         current.getCustomBuildData().put(Constants.RESULT_AGENT_KILLED_ITSELF, "false");
                         current.setLifeCycleState(LifeCycleState.NOT_BUILT);
                         buildQueueManager.removeBuildFromQueue(found.get().getResultKey());
                         agentRemovals.stopAgentRemotely(pipelineDefinition.getId());
                         agentRemovals.removeAgent(pipelineDefinition.getId());
-                        errorUpdateHandler.recordError(found.get().getEntityKey(),
-                                "Please undedictate job " +
-                                        planResultKey.getPlanKey() +
-                                        " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
-                        eventPublisher.publish(new DockerAgentDedicatedJobEvent(found.get().getEntityKey()));
+                        errorUpdateHandler.recordError(
+                                found.get().getEntityKey(),
+                                "Please undedictate job " + planResultKey.getPlanKey()
+                                        + " or it's plan from building on specific remote agent or elastic image. It cannot run on per-build container agents.");
+                        eventPublisher.publish(
+                                new DockerAgentDedicatedJobEvent(found.get().getEntityKey()));
                         return true;
                     }
                 }
@@ -181,9 +180,7 @@ public class UnmetRequirements {
     }
 
     private List<String> findMissingRequirements(CapabilitySet capabilitySet, ImmutableRequirementSet req) {
-        return req
-                .getRequirements()
-                .stream()
+        return req.getRequirements().stream()
                 .filter((ImmutableRequirement t) -> !capabilityRequirementsMatcher.matches(capabilitySet, t))
                 .map((ImmutableRequirement t) -> t.getKey())
                 .collect(Collectors.toList());

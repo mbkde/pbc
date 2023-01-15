@@ -35,7 +35,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class CustomPreBuildActionImpl implements CustomPreBuildAction {
     // ecs uses this for unnamed host volume mounts
     private static final String AMAZON_MAGIC_VOLUME_NAME = "~internal~ecs-emptyvolume-source";
@@ -46,9 +45,7 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
     private BuildContext buildContext;
     private BuildLoggerManager buildLoggerManager;
 
-
-    public CustomPreBuildActionImpl() {
-    }
+    public CustomPreBuildActionImpl() {}
 
     public BuildLoggerManager getBuildLoggerManager() {
         return buildLoggerManager;
@@ -78,14 +75,13 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
                         topLevel.getAsJsonArray().forEach(jsonElement -> {
                             JsonObject curr = jsonElement.getAsJsonObject();
                             JsonElement nameObj = curr.get("name");
-                            if (nameObj != null &&
-                                    !nameObj.getAsString().equals(METADATA_CONTAINER_NAME) &&
-                                    !nameObj.getAsString().equals(AMAZON_MAGIC_VOLUME_NAME)) {
+                            if (nameObj != null
+                                    && !nameObj.getAsString().equals(METADATA_CONTAINER_NAME)
+                                    && !nameObj.getAsString().equals(AMAZON_MAGIC_VOLUME_NAME)) {
                                 String hash = curr.get("hash").getAsString();
                                 String tag = curr.get("tag").getAsString();
-                                buildLogger.addBuildLogEntry(String.format("Docker image '%s' had hash: %s",
-                                        tag,
-                                        hash));
+                                buildLogger.addBuildLogEntry(
+                                        String.format("Docker image '%s' had hash: %s", tag, hash));
                             }
                         });
                     }
@@ -103,5 +99,4 @@ public class CustomPreBuildActionImpl implements CustomPreBuildAction {
     public ErrorCollection validate(BuildConfiguration config) {
         return new SimpleErrorCollection();
     }
-
 }

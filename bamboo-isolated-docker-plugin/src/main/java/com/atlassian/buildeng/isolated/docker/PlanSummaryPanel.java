@@ -66,8 +66,7 @@ public class PlanSummaryPanel implements WebPanel {
                 final String planName = brs.getPlanIfExists().isPresent()
                         ? brs.getPlanIfExists().get().getBuildName()
                         : brs.getPlanName();
-                ret
-                        .append("<dt>")
+                ret.append("<dt>")
                         .append(planName)
                         .append("</dt><dd>")
                         .append(ConfigurationOverride.reverseRegistryOverride(config.getDockerImage()));
@@ -75,9 +74,7 @@ public class PlanSummaryPanel implements WebPanel {
                 Map<String, URL> containerLogs = detail.getContainerLogs(config, custom);
                 if (!containerLogs.isEmpty()) {
                     ret.append("<br/>");
-                    ret.append(containerLogs
-                            .entrySet()
-                            .stream()
+                    ret.append(containerLogs.entrySet().stream()
                             .map((Map.Entry e) -> "<a href=\"" + e.getValue().toString() + "\">" + e.getKey() + "</a>")
                             .collect(Collectors.joining(",&nbsp;&nbsp;")));
                     ret.append("</dd>");

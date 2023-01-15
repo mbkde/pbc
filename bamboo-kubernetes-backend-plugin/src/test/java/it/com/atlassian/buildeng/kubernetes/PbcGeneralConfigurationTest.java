@@ -54,7 +54,8 @@ public class PbcGeneralConfigurationTest extends AbstractPbcTest {
         genericConfigPage.setEnableSwitch(true);
         genericConfigPage.setArchitectureConfig("invalidyaml");
         genericConfigPage.save();
-        waitUntilTrue(forSupplier(timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD),
+        waitUntilTrue(forSupplier(
+                timeouts.timeoutFor(TimeoutType.SLOW_PAGE_LOAD),
                 () -> StringUtils.isNotBlank(genericConfigPage.getErrors())));
         assertThat(genericConfigPage.getErrors(), containsString("Received invalid YAML for architecture list"));
     }

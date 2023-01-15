@@ -64,7 +64,5 @@ public class ReaperTest {
         reaper.onStop();
 
         verify(scheduler, times(1)).deleteJob(Reaper.REAPER_KEY);
-
     }
-
 }

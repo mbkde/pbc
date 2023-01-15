@@ -24,8 +24,7 @@ package com.atlassian.buildeng.kubernetes.metrics.rest;
 public class Config {
     public String prometheusUrl;
 
-    public Config() {
-    }
+    public Config() {}
 
     public String getPrometheusUrl() {
         return prometheusUrl;
@@ -34,5 +33,4 @@ public class Config {
     public void setPrometheusUrl(String prometheusUrl) {
         this.prometheusUrl = prometheusUrl;
     }
-
 }

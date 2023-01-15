@@ -85,9 +85,11 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     public static final String NAME = "name";
 
     private static final JobKey PLUGIN_JOB_KEY = JobKey.jobKey("KubernetesIsolatedDockerImpl");
-    private static final long PLUGIN_JOB_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
+    private static final long PLUGIN_JOB_INTERVAL_MILLIS =
+            Duration.ofSeconds(30).toMillis();
     private static final JobKey PLUGIN_JOB_JMX_KEY = JobKey.jobKey("KubeJmxService");
-    private static final long PLUGIN_JOB_JMX_INTERVAL_MILLIS = Duration.ofSeconds(20).toMillis();
+    private static final long PLUGIN_JOB_JMX_INTERVAL_MILLIS =
+            Duration.ofSeconds(20).toMillis();
 
     private final GlobalConfiguration globalConfiguration;
     private final KubeJmxService kubeJmxService;
@@ -98,7 +100,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private final KubernetesPodSpecList podSpecList;
 
     @Inject
-    public KubernetesIsolatedDockerImpl(GlobalConfiguration globalConfiguration,
+    public KubernetesIsolatedDockerImpl(
+            GlobalConfiguration globalConfiguration,
             Scheduler scheduler,
             KubeJmxService kubeJmxService,
             SubjectIdService subjectIdService,
@@ -140,7 +143,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
 
             Duration servedIn = Duration.ofMillis(System.currentTimeMillis() - request.getQueueTimestamp());
             String name = KubernetesHelper.getName(pod);
-            logger.info("Kubernetes successfully processed request for {} in {}, pod name: {}",
+            logger.info(
+                    "Kubernetes successfully processed request for {} in {}, pod name: {}",
                     request.getResultKey(),
                     servedIn,
                     name);
@@ -172,7 +176,6 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
             }
         }
     }
-
 
     @VisibleForTesting
     String getSubjectId(IsolatedDockerAgentRequest request) {
@@ -211,8 +214,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     @Override
     public void onStart() {
         SchedulerUtils schedulerUtils = new SchedulerUtils(scheduler, logger);
-        logger.info("PBC Kubernetes Backend plugin started. Checking that jobs from a prior instance of the" +
-                " plugin are not still running.");
+        logger.info("PBC Kubernetes Backend plugin started. Checking that jobs from a prior instance of the"
+                + " plugin are not still running.");
         List<JobKey> previousJobKeys = Arrays.asList(PLUGIN_JOB_KEY, PLUGIN_JOB_JMX_KEY);
         schedulerUtils.awaitPreviousJobExecutions(previousJobKeys);
 
@@ -241,7 +244,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
     private Trigger jobTrigger(long interval) {
         return newTrigger()
                 .startNow()
-                .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
+                .withSchedule(
+                        simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
                 .build();
     }
 
@@ -258,8 +262,8 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 logger.warn("Was not able to delete KubernetesWatchdog job. Was it already delete?");
             }
         } catch (SchedulerException e) {
-            logger.error("Kubernetes Isolated Docker Plugin being stopped but unable to delete KubernetesWatchdogJob",
-                    e);
+            logger.error(
+                    "Kubernetes Isolated Docker Plugin being stopped but unable to delete KubernetesWatchdogJob", e);
         }
         try {
             boolean jmxJobUnschedule = scheduler.deleteJob(PLUGIN_JOB_JMX_KEY);
@@ -279,9 +283,7 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
         if (StringUtils.isBlank(url) || StringUtils.isBlank(podName)) {
             return Collections.emptyMap();
         }
-        return PodCreator
-                .containerNames(configuration)
-                .stream()
+        return PodCreator.containerNames(configuration).stream()
                 .map((String t) -> {
                     String resolvedUrl = url.replace(URL_CONTAINER_NAME, t).replace(URL_POD_NAME, podName);
                     try {
@@ -295,5 +297,4 @@ public class KubernetesIsolatedDockerImpl implements IsolatedAgentService, Lifec
                 .filter((Pair<String, URL> t) -> t.getSecond() != null)
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
-
 }

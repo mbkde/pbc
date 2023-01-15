@@ -35,9 +35,8 @@ public class AgentLicenseLimits {
     private final BuildQueueManager buildQueueManager;
 
     @Inject
-    public AgentLicenseLimits(AgentManager agentManager,
-            AgentCreationReschedulerImpl rescheduler,
-            BuildQueueManager buildQueueManager) {
+    public AgentLicenseLimits(
+            AgentManager agentManager, AgentCreationReschedulerImpl rescheduler, BuildQueueManager buildQueueManager) {
         this.agentManager = agentManager;
         this.rescheduler = rescheduler;
         this.buildQueueManager = buildQueueManager;
@@ -57,7 +56,8 @@ public class AgentLicenseLimits {
         boolean limitReached = !agentManager.allowNewRemoteAgents((int) (1 + queued));
         if (limitReached) {
             // intentionally not creating new event object to avoid increasing the retry count.
-            logger.info("Remote agent limit reached, delaying agent creation for {}",
+            logger.info(
+                    "Remote agent limit reached, delaying agent creation for {}",
                     event.getContext().getResultKey());
             rescheduler.reschedule(event);
         }

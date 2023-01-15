@@ -33,11 +33,8 @@ public class DockerAgentKubeEvent extends DockerAgentEvent {
     /**
      * Event sent to Datadog for when a pod fails to queue, for any reason.
      */
-    public DockerAgentKubeEvent(String errorMessage,
-            Key key,
-            String podName,
-            Map<String, URL> markdownLinks,
-            GlobalConfiguration config) {
+    public DockerAgentKubeEvent(
+            String errorMessage, Key key, String podName, Map<String, URL> markdownLinks, GlobalConfiguration config) {
         this.errorMessage = errorMessage;
         this.key = key;
         this.podName = podName;
@@ -49,33 +46,29 @@ public class DockerAgentKubeEvent extends DockerAgentEvent {
     public String toString() {
         if (ddmarkdown) {
             // http://docs.datadoghq.com/guides/markdown/
-            return "%%% \\n" +
-                    "[Build link](" +
-                    config.getBambooBaseUrl() +
-                    "/browse/" +
-                    key.getKey() +
-                    ")\\n" +
-                    "Pod name: " +
-                    podName +
-                    "\\n" +
-                    "Container logs: " +
-                    generateMarkdownLinks(markdownLinks) +
-                    "\\n" +
-                    escape(errorMessage) +
-                    "\\n" +
-                    "\\n %%%";
+            return "%%% \\n" + "[Build link]("
+                    + config.getBambooBaseUrl()
+                    + "/browse/"
+                    + key.getKey()
+                    + ")\\n"
+                    + "Pod name: "
+                    + podName
+                    + "\\n"
+                    + "Container logs: "
+                    + generateMarkdownLinks(markdownLinks)
+                    + "\\n"
+                    + escape(errorMessage)
+                    + "\\n"
+                    + "\\n %%%";
         }
-        return this.getClass().getSimpleName() +
-                "{podName=" +
-                podName +
-                ", key=" +
-                key +
-                ",containerLogs=" +
-                markdownLinks +
-                ",message=" +
-                errorMessage +
-                "}";
+        return this.getClass().getSimpleName() + "{podName="
+                + podName
+                + ", key="
+                + key
+                + ",containerLogs="
+                + markdownLinks
+                + ",message="
+                + errorMessage
+                + "}";
     }
-
 }
-

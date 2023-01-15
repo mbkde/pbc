@@ -27,15 +27,14 @@ public class ReserveRequest {
     private final long creationTimestamp;
     private final List<String> resultKeys;
 
-    public ReserveRequest(String groupIdentifier,
-            List<String> resultKeys,
-            long cpuReservation,
-            long memoryReservation) {
+    public ReserveRequest(
+            String groupIdentifier, List<String> resultKeys, long cpuReservation, long memoryReservation) {
         this(groupIdentifier, resultKeys, cpuReservation, memoryReservation, System.currentTimeMillis());
     }
 
     @VisibleForTesting
-    ReserveRequest(String groupIdentifier,
+    ReserveRequest(
+            String groupIdentifier,
             List<String> resultKeys,
             long cpuReservation,
             long memoryReservation,
@@ -100,6 +99,4 @@ public class ReserveRequest {
         }
         return Objects.equals(this.resultKeys, other.resultKeys);
     }
-
-
 }

@@ -38,8 +38,8 @@ public class KubernetesClientTest {
             StubShellExecutor shellExecutor = new StubShellExecutor();
             ResponseStub stub =
                     new ResponseStub("/fixture/kubectl/pod-quota-limit.txt", "/fixture/kubectl/empty.txt", 1);
-            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml",
-                    stub);
+            shellExecutor.addStub(
+                    "kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
             KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
             client.createPod(new File("/tmp/file.yaml"));
         });
@@ -51,8 +51,8 @@ public class KubernetesClientTest {
             StubShellExecutor shellExecutor = new StubShellExecutor();
             ResponseStub stub =
                     new ResponseStub("/fixture/kubectl/resource-quota-concurrent.txt", "/fixture/kubectl/empty.txt", 1);
-            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml",
-                    stub);
+            shellExecutor.addStub(
+                    "kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
             KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
             client.createPod(new File("/tmp/file.yaml"));
         });
@@ -64,12 +64,10 @@ public class KubernetesClientTest {
             StubShellExecutor shellExecutor = new StubShellExecutor();
             ResponseStub stub =
                     new ResponseStub("/fixture/kubectl/tls-connection-timeout.txt", "/fixture/kubectl/empty.txt", 1);
-            shellExecutor.addStub("kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml",
-                    stub);
+            shellExecutor.addStub(
+                    "kubectl --request-timeout=5m -o json create --validate=false -f /tmp/file.yaml", stub);
             KubernetesClient client = new KubernetesClient(globalConfiguration, shellExecutor);
             client.createPod(new File("/tmp/file.yaml"));
         });
     }
-
-
 }

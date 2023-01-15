@@ -142,9 +142,8 @@ public interface Constants {
             .withName(METADATA_CONTAINER_NAME)
             .withMemoryReservation(Configuration.DOCKER_MINIMUM_MEMORY)
             .withImage(METADATA_IMAGE)
-            .withMountPoints(new MountPoint()
-                            .withContainerPath(DOCKER_SOCKET)
-                            .withSourceVolume(DOCKER_SOCKET_VOLUME_NAME),
+            .withMountPoints(
+                    new MountPoint().withContainerPath(DOCKER_SOCKET).withSourceVolume(DOCKER_SOCKET_VOLUME_NAME),
                     new MountPoint().withContainerPath(BUILD_DIR).withSourceVolume(BUILD_DIR_VOLUME_NAME))
             .withEssential(false);
 }

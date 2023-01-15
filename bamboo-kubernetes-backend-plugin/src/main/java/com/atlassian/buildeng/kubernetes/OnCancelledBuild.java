@@ -27,7 +27,6 @@ import com.atlassian.event.api.EventListener;
 import java.io.IOException;
 import org.slf4j.LoggerFactory;
 
-
 public class OnCancelledBuild {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(OnCancelledBuild.class);
@@ -53,8 +52,7 @@ public class OnCancelledBuild {
             if (result != null) {
                 Configuration config = AccessConfiguration.forBuildResultSummary(result);
                 if (config.isEnabled()) {
-                    String podName = result
-                            .getCustomBuildData()
+                    String podName = result.getCustomBuildData()
                             .get(KubernetesIsolatedDockerImpl.RESULT_PREFIX + KubernetesIsolatedDockerImpl.NAME);
                     if (podName != null) {
                         KubernetesClient client = new KubernetesClient(globalConfiguration, new JavaShellExecutor());

@@ -23,11 +23,8 @@ import java.util.Map;
 
 public final class DockerAgentKubeFailEvent extends DockerAgentKubeEvent {
 
-    public DockerAgentKubeFailEvent(String errorMessage,
-            Key key,
-            String podName,
-            Map<String, URL> markdownLinks,
-            GlobalConfiguration config) {
+    public DockerAgentKubeFailEvent(
+            String errorMessage, Key key, String podName, Map<String, URL> markdownLinks, GlobalConfiguration config) {
         super(errorMessage, key, podName, markdownLinks, config);
     }
 }

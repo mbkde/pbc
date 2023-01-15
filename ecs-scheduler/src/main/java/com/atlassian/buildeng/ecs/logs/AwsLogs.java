@@ -48,14 +48,11 @@ public class AwsLogs {
         return prefix + "/" + containerName + "/" + task;
     }
 
-
-    public static void writeTo(OutputStream os,
-            String logGroupName,
-            String region,
-            String prefix,
-            String containerName,
-            String taskArn) {
-        AWSLogs logs = AWSLogsClientBuilder.standard().withRegion(Regions.fromName(region)).build();
+    public static void writeTo(
+            OutputStream os, String logGroupName, String region, String prefix, String containerName, String taskArn) {
+        AWSLogs logs = AWSLogsClientBuilder.standard()
+                .withRegion(Regions.fromName(region))
+                .build();
         PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)));
         try {
             String logStreamName = constructLogStream(prefix, containerName, taskArn);
@@ -64,16 +61,18 @@ public class AwsLogs {
             while (response != null) {
                 response.getEvents().forEach((OutputLogEvent t) -> {
                     if (t.getTimestamp() != null) {
-                        writer.write(DateFormat.getTimeInstance(DateFormat.MEDIUM).format(new Date(t.getTimestamp())));
+                        writer.write(
+                                DateFormat.getTimeInstance(DateFormat.MEDIUM).format(new Date(t.getTimestamp())));
                         writer.write(" ");
                     }
                     writer.write(t.getMessage());
                     writer.write("\n");
                 });
                 // why check the last token in request you ask.
-                // if you don't sometimes aws will keep on sending you the same token and then trhottle you if you keep trying to get it.
-                if (response.getNextForwardToken() != null &&
-                        !response.getNextForwardToken().equals(request.getNextToken())) {
+                // if you don't sometimes aws will keep on sending you the same token and then trhottle you if you keep
+                // trying to get it.
+                if (response.getNextForwardToken() != null
+                        && !response.getNextForwardToken().equals(request.getNextToken())) {
                     request = request.withNextToken(response.getNextForwardToken());
                     response = logs.getLogEvents(request);
                 } else {
@@ -95,7 +94,8 @@ public class AwsLogs {
     public static Driver getAwsLogsDriver(ECSConfiguration config) {
         String driver = config.getLoggingDriver();
         if ("awslogs".equals(driver)) {
-            return new Driver(config.getLoggingDriverOpts().get("awslogs-region"),
+            return new Driver(
+                    config.getLoggingDriverOpts().get("awslogs-region"),
                     config.getLoggingDriverOpts().get("awslogs-group"),
                     config.getLoggingDriverOpts().get("awslogs-stream-prefix"));
         }
@@ -108,7 +108,9 @@ public class AwsLogs {
             try {
                 AmazonEC2 client = AmazonEC2ClientBuilder.defaultClient();
                 GetConsoleOutputResult result = client.getConsoleOutput(new GetConsoleOutputRequest(t));
-                AWSLogs logs = AWSLogsClientBuilder.standard().withRegion(Regions.fromName(driver.getRegion())).build();
+                AWSLogs logs = AWSLogsClientBuilder.standard()
+                        .withRegion(Regions.fromName(driver.getRegion()))
+                        .build();
                 // t (ec2 instance id) should be unique within reason
                 final String logStreamName = "pbc-ec2-instance-stale/" + t;
                 logs.createLogStream(new CreateLogStreamRequest(driver.getLogGroupName(), logStreamName));
@@ -148,6 +150,5 @@ public class AwsLogs {
         public String getStreamPrefix() {
             return streamPrefix;
         }
-
     }
 }

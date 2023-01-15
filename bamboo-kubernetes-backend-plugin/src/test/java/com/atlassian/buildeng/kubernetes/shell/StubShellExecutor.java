@@ -12,8 +12,7 @@ import org.apache.commons.io.IOUtils;
 public class StubShellExecutor implements ShellExecutor {
     private Map<String, ResponseStub> responses = new HashMap<>();
 
-    public StubShellExecutor() {
-    }
+    public StubShellExecutor() {}
 
     @Override
     public <T> T exec(List<String> args, ResponseMapper<T> responseMapper) {

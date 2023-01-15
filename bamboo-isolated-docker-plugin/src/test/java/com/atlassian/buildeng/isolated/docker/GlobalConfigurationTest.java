@@ -56,14 +56,18 @@ public class GlobalConfigurationTest {
 
     @Test
     public void testMigrationDoesntEnableIfNoPriorPbcSettings() {
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_ENABLED_PROPERTY)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_DEFAULT_IMAGE)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_MAX_AGENT_CREATION_PER_MINUTE)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_ARCHITECTURE_CONFIG_RAW)).thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_ENABLED_PROPERTY))
+                .thenReturn(null);
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DEFAULT_IMAGE))
+                .thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        GlobalConfiguration.BANDANA_MAX_AGENT_CREATION_PER_MINUTE))
+                .thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_ARCHITECTURE_CONFIG_RAW))
+                .thenReturn(null);
 
         globalConfiguration.migrateEnabled();
         verify(globalConfiguration, times(0)).setEnabledProperty(true);
@@ -71,14 +75,18 @@ public class GlobalConfigurationTest {
 
     @Test
     public void testMigrationEnablesIfPriorPbcSettings() {
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_ENABLED_PROPERTY)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_DEFAULT_IMAGE)).thenReturn("image");
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_MAX_AGENT_CREATION_PER_MINUTE)).thenReturn(null);
-        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
-                GlobalConfiguration.BANDANA_ARCHITECTURE_CONFIG_RAW)).thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_ENABLED_PROPERTY))
+                .thenReturn(null);
+        when(bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_DEFAULT_IMAGE))
+                .thenReturn("image");
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT,
+                        GlobalConfiguration.BANDANA_MAX_AGENT_CREATION_PER_MINUTE))
+                .thenReturn(null);
+        when(bandanaManager.getValue(
+                        PlanAwareBandanaContext.GLOBAL_CONTEXT, GlobalConfiguration.BANDANA_ARCHITECTURE_CONFIG_RAW))
+                .thenReturn(null);
 
         globalConfiguration.migrateEnabled();
         verify(globalConfiguration, times(1)).setEnabledProperty(true);
