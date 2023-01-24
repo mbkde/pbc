@@ -21,13 +21,13 @@ import static org.mockito.Mockito.when;
 
 import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomConfigService;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
+import com.atlassian.bamboo.plugin.descriptor.DockerHandlerModuleDescriptor;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.utils.Pair;
 import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
-import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,7 +44,7 @@ public class DockerHandlerImplTest {
     private final LinkedHashMap<String, String> archList = new DefaultArchList();
 
     @Mock
-    ModuleDescriptor moduleDescriptor;
+    DockerHandlerModuleDescriptor moduleDescriptor;
 
     @Mock
     TemplateRenderer templateRenderer;
