@@ -42,13 +42,13 @@ import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.atlassian.struts.TextProvider;
 import org.quartz.Scheduler;
 
+@SuppressWarnings("unused")
 public class ComponentImports {
     @ComponentImport
     public AgentContext agentContext;
@@ -105,9 +105,6 @@ public class ComponentImports {
 
     @BambooImport
     public TextProvider textProvider;
-
-    @BambooImport
-    public ModuleDescriptor moduleDescriptor;
 
     @BambooImport
     public TemplateRenderer templateRenderer;

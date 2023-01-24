@@ -23,6 +23,7 @@ import com.atlassian.bamboo.deployments.configuration.service.EnvironmentCustomC
 import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
 import com.atlassian.bamboo.exception.WebValidationException;
+import com.atlassian.bamboo.plugin.descriptor.DockerHandlerModuleDescriptor;
 import com.atlassian.bamboo.struts.OgnlStackUtils;
 import com.atlassian.bamboo.template.TemplateRenderer;
 import com.atlassian.bamboo.utils.ConfigUtils;
@@ -41,7 +42,6 @@ import com.atlassian.buildeng.isolated.docker.lifecycle.BuildProcessorServerImpl
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationPersistence;
-import com.atlassian.plugin.ModuleDescriptor;
 import com.atlassian.plugin.elements.ResourceLocation;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import java.util.Arrays;
@@ -51,7 +51,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +60,7 @@ import org.slf4j.LoggerFactory;
 public class DockerHandlerImpl implements DockerHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
-    private final ModuleDescriptor moduleDescriptor;
+    private final DockerHandlerModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
     private final EnvironmentCustomConfigService environmentCustomConfigService;
     private final boolean create;
@@ -75,9 +74,8 @@ public class DockerHandlerImpl implements DockerHandler {
     /**
      * Creates new stateful instance.
      */
-    @Inject
     public DockerHandlerImpl(
-            ModuleDescriptor moduleDescriptor,
+            DockerHandlerModuleDescriptor dockerHandlerModuleDescriptor,
             WebResourceManager webResourceManager,
             TemplateRenderer templateRenderer,
             EnvironmentCustomConfigService environmentCustomConfigService,
@@ -87,7 +85,7 @@ public class DockerHandlerImpl implements DockerHandler {
             GlobalConfiguration globalConfiguration,
             Validator validator,
             Boolean providerEnabled) {
-        this.moduleDescriptor = moduleDescriptor;
+        this.moduleDescriptor = dockerHandlerModuleDescriptor;
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
         this.environmentRequirementService = environmentRequirementService;
