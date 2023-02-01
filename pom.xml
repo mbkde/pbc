@@ -49,6 +49,7 @@
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
         <palantirJavaFormat.version>1.1.0</palantirJavaFormat.version>
         <spotless.version>2.29.0</spotless.version>
+        <buildengCodestyle.version>1.2.2</buildengCodestyle.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -248,7 +249,7 @@
                     <dependency>
                         <groupId>com.atlassian.codestyle</groupId>
                         <artifactId>buildeng</artifactId>
-                        <version>1.2.0</version>
+                        <version>${buildengCodestyle.version}</version>
                     </dependency>
                 </dependencies>
                 <configuration>
