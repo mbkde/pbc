@@ -16,11 +16,12 @@
 
 package com.atlassian.buildeng.kubernetes.metrics;
 
+import static com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor.ARTIFACT_PREFIX;
+
 import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
-import static com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor.ARTIFACT_PREFIX;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.sun.jersey.api.client.Client;
