@@ -27,6 +27,7 @@ import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
@@ -212,7 +213,12 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
         ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
         if (single != null) {
             Client client = Client.create();
-            WebResource webTarget = client.resource(single.getUrl());
+            String singleUrl = single.getUrl();
+            URI singleURI = URI.create(singleUrl);
+            if (!singleURI.isAbsolute()) {
+                singleURI = URI.create(getBaseUrl() + (singleUrl.startsWith("/") ? "" : "/") + singleUrl);
+            }
+            WebResource webTarget = client.resource(singleURI);
 
             // We have to directly retrieve the artifact here instead of passing the URL to the user due to
             // same-origin policy.
