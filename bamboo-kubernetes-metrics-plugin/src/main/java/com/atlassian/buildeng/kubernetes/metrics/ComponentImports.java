@@ -20,6 +20,7 @@ import com.atlassian.bamboo.build.BuildLoggerManager;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkManager;
 import com.atlassian.bamboo.build.artifact.ArtifactManager;
 import com.atlassian.bamboo.chains.BuildContextFactory;
+import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
 import com.atlassian.bamboo.jsonator.Jsonator;
 import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.plan.PlanExecutionManager;
@@ -39,6 +40,9 @@ public class ComponentImports {
 
     @BambooImport
     public AuditLogService auditLogService;
+
+    @BambooImport
+    public AdministrationConfigurationAccessor administrationConfigurationAccessor;
 
     @BambooImport
     public BambooAuthenticationContext authenticationContext;
