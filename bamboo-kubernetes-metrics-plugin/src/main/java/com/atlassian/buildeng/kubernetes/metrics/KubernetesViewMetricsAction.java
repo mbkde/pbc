@@ -210,14 +210,15 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
             return null;
         }
 
-        if (artifactLinkDataProvider instanceof FileSystemArtifactLinkDataProvider) {
-            return loadArtifactFile(((FileSystemArtifactLinkDataProvider) artifactLinkDataProvider).getFile());
-        }
-
         if (artifactLinkDataProvider == null) {
             addActionError("Unable to find artifact link data provider for artifact link");
             return null;
         }
+
+        if (artifactLinkDataProvider instanceof FileSystemArtifactLinkDataProvider) {
+            return loadArtifactFile(((FileSystemArtifactLinkDataProvider) artifactLinkDataProvider).getFile());
+        }
+
         Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
         ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
         if (single != null) {
@@ -243,13 +244,13 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
 
     private String loadArtifactFile(File file) {
         if (file == null || !file.exists() || file.isDirectory()) {
-            addActionError("Unable to load artifact file " + file);
+            addActionError("Unable to load artifact file, " + file + " is not a file");
             return null;
         }
         try {
             return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            addActionError("Unable to load artifact file " + file);
+            addActionError("Unable to load artifact file " + file + " due to exception: " + e.getMessage());
             return null;
         }
     }
