@@ -21,16 +21,21 @@ import static com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor.ARTIFA
 import com.atlassian.bamboo.artifact.Artifact;
 import com.atlassian.bamboo.build.artifact.ArtifactFileData;
 import com.atlassian.bamboo.build.artifact.ArtifactLinkDataProvider;
+import com.atlassian.bamboo.build.artifact.FileSystemArtifactLinkDataProvider;
 import com.atlassian.buildeng.metrics.shared.MetricsBuildProcessor;
 import com.atlassian.buildeng.metrics.shared.ViewMetricsAction;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -209,6 +214,11 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
             addActionError("Unable to find artifact link data provider for artifact link");
             return null;
         }
+
+        if (artifactLinkDataProvider instanceof FileSystemArtifactLinkDataProvider) {
+            return loadArtifactFile(((FileSystemArtifactLinkDataProvider) artifactLinkDataProvider).getFile());
+        }
+
         Iterable<ArtifactFileData> artifactFiles = artifactLinkDataProvider.listObjects("");
         ArtifactFileData single = getSingleDownloadableFile(artifactFiles);
         if (single != null) {
@@ -230,6 +240,19 @@ public class KubernetesViewMetricsAction extends ViewMetricsAction {
             }
         }
         return null;
+    }
+
+    private String loadArtifactFile(File file) {
+        if (file == null || !file.exists() || file.isDirectory()) {
+            addActionError("Unable to load artifact file, " + file + " is not a file");
+            return null;
+        }
+        try {
+            return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            addActionError("Unable to load artifact file " + file + " due to exception: " + e.getMessage());
+            return null;
+        }
     }
 
     public String getNetWriteMetrics() {
