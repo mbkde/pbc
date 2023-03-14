@@ -18,14 +18,10 @@ import com.atlassian.bamboo.specs.api.builders.plan.dependencies.Dependencies;
 import com.atlassian.bamboo.specs.api.builders.plan.dependencies.DependenciesConfiguration;
 import com.atlassian.bamboo.specs.api.builders.project.Project;
 import com.atlassian.bamboo.specs.api.builders.repository.VcsRepositoryIdentifier;
-import com.atlassian.bamboo.specs.api.builders.trigger.AnyTriggerCondition;
 import com.atlassian.bamboo.specs.builders.task.CheckoutItem;
 import com.atlassian.bamboo.specs.builders.task.ScriptTask;
 import com.atlassian.bamboo.specs.builders.task.VcsCheckoutTask;
-import com.atlassian.bamboo.specs.builders.trigger.BitbucketServerTrigger;
 import com.atlassian.bamboo.specs.util.BambooServer;
-import com.atlassian.bamboo.specs.util.MapBuilder;
-
 import java.nio.file.Paths;
 
 @BambooSpec
@@ -41,19 +37,32 @@ public class IsolatedDockerSpec {
                         new BambooKey("PBCB"))
                 .pluginConfigurations(new PlanOwner("mknight"))
                 .stages(new Stage("Default Stage")
-                        .jobs(new Job("Default Job", new BambooKey("JOB1"))
-                                .pluginConfigurations(new PerBuildContainerForJob()
-                                        .image("docker.atl-paas.net/buildeng/agent-baseagent:staging")
-                                        .size(ContainerSize.REGULAR))
-                                .tasks(
-                                        new VcsCheckoutTask()
-                                                .description("Checkout Default Repository")
-                                                .checkoutItems(new CheckoutItem()
-                                                        .repository(new VcsRepositoryIdentifier()
-                                                                .name("bamboo-isolated-docker"))),
-                                        new ScriptTask()
-                                                .inlineBodyFromPath(
-                                                        Paths.get("src/main/resources/check-bamboo-version.sh")))))
+                        .jobs(
+                                new Job("Default Job", new BambooKey("JOB1"))
+                                        .pluginConfigurations(new PerBuildContainerForJob()
+                                                .image("docker.atl-paas.net/buildeng/agent-baseagent:staging")
+                                                .size(ContainerSize.REGULAR))
+                                        .tasks(
+                                                new VcsCheckoutTask()
+                                                        .description("Checkout Default Repository")
+                                                        .checkoutItems(new CheckoutItem()
+                                                                .repository(new VcsRepositoryIdentifier()
+                                                                        .name("bamboo-isolated-docker"))),
+                                                new ScriptTask()
+                                                        .inlineBodyFromPath(Paths.get(
+                                                                "src/main/resources/check-bamboo-version.sh"))),
+                                new Job("Specs linting", new BambooKey("SPECS"))
+                                        .pluginConfigurations(new PerBuildContainerForJob()
+                                                .image("docker.atl-paas.net/sox/buildeng/agent-baseagent")
+                                                .size(ContainerSize.SMALL))
+                                        .tasks(
+                                                new VcsCheckoutTask()
+                                                        .description("Checkout Default Repository")
+                                                        .checkoutItems(new CheckoutItem().defaultRepository()),
+                                                new ScriptTask()
+                                                        .description("Specs checks")
+                                                        .inlineBodyFromPath(
+                                                                Paths.get("src/main/resources/test-specs.sh")))))
                 .linkedRepositories("bamboo-isolated-docker")
                 .planBranchManagement(
                         new PlanBranchManagement().delete(new BranchCleanup()).notificationForCommitters())
