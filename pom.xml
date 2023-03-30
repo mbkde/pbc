@@ -37,16 +37,16 @@
         <bamboo.version>9.3.0-m142</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.8.0</amps.version>
-        <snakeyaml.version>1.32</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <xvfb.enable>true</xvfb.enable>
-        <platform.version>5.3.4</platform.version>
-        <spring.scanner.version>2.2.3</spring.scanner.version>
-        <aws-java.version>1.12.188</aws-java.version>
-        <jackson-core.version>2.13.4</jackson-core.version>
+        <platform.version>6.0.21</platform.version>
+        <spring.scanner.version>3.0.2</spring.scanner.version>
+        <aws-java.version>1.12.381</aws-java.version>
+        <jackson-core.version>2.14.1</jackson-core.version>
         <checkstyle.version>9.3</checkstyle.version>
         <failOnMilestoneOrReleaseCandidateDeps>false</failOnMilestoneOrReleaseCandidateDeps>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
-        <junit.jupiter.version>5.8.2</junit.jupiter.version>
+        <junit.jupiter.version>5.9.2</junit.jupiter.version>
         <palantirJavaFormat.version>1.1.0</palantirJavaFormat.version>
         <spotless.version>2.29.0</spotless.version>
         <buildengCodestyle.version>1.2.3</buildengCodestyle.version>
