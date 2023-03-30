@@ -144,4 +144,14 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     public String getIsolationTypeLabel(TextProvider textProvider) {
         return "Per Build Container (PBC) plugin";
     }
+
+    @Override
+    public boolean isCustomDedicatedAgentExpected(@NotNull BuildDefinition buildDefinition) {
+        return false;
+    }
+
+    @Override
+    public boolean isCustomDedicatedAgentExpected(@NotNull Map<String, String> environmentCustomConfig) {
+        return false;
+    }
 }

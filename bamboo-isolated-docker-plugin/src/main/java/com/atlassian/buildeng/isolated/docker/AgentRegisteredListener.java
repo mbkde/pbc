@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
+import com.atlassian.bamboo.buildqueue.EphemeralAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
@@ -52,6 +53,10 @@ public class AgentRegisteredListener {
                 }
                 unmetRequirements.markAndStopTheBuild(pipelineDefinition);
             }
+
+            @Override
+            // we don't need to make any changes here as Ephemeral agents will stop running automatically
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
         });
     }
 }
