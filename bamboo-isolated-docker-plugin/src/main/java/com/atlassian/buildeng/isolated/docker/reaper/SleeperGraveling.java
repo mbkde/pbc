@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
+import com.atlassian.bamboo.buildqueue.EphemeralAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
@@ -65,6 +66,10 @@ public class SleeperGraveling implements BuildAgentVisitor {
                 pipelineDefinition.setEnabled(false);
                 agentManager.savePipeline(pipelineDefinition, null);
             }
+
+            @Override
+            // ReaperJob does not sleep ephemeral agents. They handle their shut down on their own.
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
         });
     }
 }

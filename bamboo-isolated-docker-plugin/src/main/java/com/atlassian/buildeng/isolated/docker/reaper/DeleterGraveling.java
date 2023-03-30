@@ -17,6 +17,7 @@
 package com.atlassian.buildeng.isolated.docker.reaper;
 
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
+import com.atlassian.bamboo.buildqueue.EphemeralAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
@@ -61,6 +62,10 @@ public class DeleterGraveling implements BuildAgentVisitor {
                 agentRemovals.stopAgentRemotely(buildAgent);
                 agentRemovals.removeAgent(buildAgent);
             }
+
+            @Override
+            // ReaperJob does not remove Ephemeral agents, they stop automatically on their own
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
         });
     }
 }

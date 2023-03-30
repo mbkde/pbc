@@ -18,6 +18,7 @@ package com.atlassian.buildeng.isolated.docker;
 
 import com.atlassian.bamboo.ResultKey;
 import com.atlassian.bamboo.buildqueue.ElasticAgentDefinition;
+import com.atlassian.bamboo.buildqueue.EphemeralAgentDefinition;
 import com.atlassian.bamboo.buildqueue.LocalAgentDefinition;
 import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
@@ -69,6 +70,10 @@ public class AgentQueries {
                     }
                 }
             }
+
+            @Override
+            // Don't count ephemeral agents as "docker agents" for the purposes of ReaperJob queries
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
         });
         return ref.get();
     }
