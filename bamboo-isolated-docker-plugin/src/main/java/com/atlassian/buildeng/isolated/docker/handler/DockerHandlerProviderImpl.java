@@ -147,11 +147,13 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
 
     @Override
     public boolean isCustomDedicatedAgentExpected(@NotNull BuildDefinition buildDefinition) {
-        return false;
+        // return new DockerHandlerImpl(buildDefinition, environmentCustomConfigService).isEnabled();
+        return true;
     }
 
     @Override
     public boolean isCustomDedicatedAgentExpected(@NotNull Map<String, String> environmentCustomConfig) {
-        return false;
+        // return Boolean.parseBoolean(environmentCustomConfig.get(DockerHandlerImpl.ENABLED_KEY));
+        return true;
     }
 }
