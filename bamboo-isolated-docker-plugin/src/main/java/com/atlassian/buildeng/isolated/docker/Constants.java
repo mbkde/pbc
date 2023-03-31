@@ -40,4 +40,10 @@ public interface Constants {
      * This is used in determining the architecture a build should be used when unspecified.
      */
     public static final String DEFAULT_ARCHITECTURE = "default";
+
+    /*
+     * Ephemeral builds are enabled for PBC, as opposed to our
+     * original implementation of hacking remote agents
+     */
+    String PBC_EPHEMERAL_ENABLED = "pbc.ephemeral.enabled";
 }

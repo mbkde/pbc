@@ -27,10 +27,12 @@ import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.buildeng.spi.isolated.docker.DefaultContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.sal.api.features.DarkFeatureManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -42,9 +44,10 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 @ExtendWith(MockitoExtension.class)
-public class PodCreatorTest {
+class PodCreatorTest {
 
     private GlobalConfiguration globalConfiguration;
+    private DarkFeatureManager darkFeatureManager;
     private Yaml yaml;
 
     public PodCreatorTest() {}
@@ -53,6 +56,7 @@ public class PodCreatorTest {
     public void setUp() {
 
         globalConfiguration = mock(GlobalConfiguration.class);
+        darkFeatureManager = mock(DarkFeatureManager.class);
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -62,7 +66,7 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testCreatePodName() {
+    void testCreatePodName() {
         String result = PodCreator.createPodName(new IsolatedDockerAgentRequest(
                 null,
                 "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
@@ -76,7 +80,7 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testCreateIrsaSecretName() {
+    void testCreateIrsaSecretName() {
         String result = PodCreator.createIrsaSecretName(new IsolatedDockerAgentRequest(
                 null,
                 "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
@@ -89,7 +93,7 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testCreateIamRequestName() {
+    void testCreateIamRequestName() {
         String result = PodCreator.createIamRequestName(new IsolatedDockerAgentRequest(
                 null,
                 "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
@@ -102,7 +106,7 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testCreatePodNameExactly51Chars() {
+    void testCreatePodNameExactly51Chars() {
         String result = PodCreator.createPodName(new IsolatedDockerAgentRequest(
                 null,
                 "shar-servicedeskembeddablesservicedeskemb-bd-45555",
@@ -115,7 +119,7 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testCreatePodNameExactly52Chars() {
+    void testCreatePodNameExactly52Chars() {
         String result = PodCreator.createPodName(new IsolatedDockerAgentRequest(
                 null,
                 "shar-servicedeskembeddablesservicedeskemb-bdx-45555",
@@ -128,10 +132,12 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testRole() throws IOException {
+    void testRole() throws IOException {
         when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
         when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(false));
 
         Configuration config = ConfigurationBuilder.create("testImage")
                 .withAwsRole("arn:aws:iam::123456789012:role/testrole")
@@ -142,7 +148,7 @@ public class PodCreatorTest {
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
                 config, "TEST-PLAN-JOB-1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
 
-        Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration);
+        Map<String, Object> podRequest = PodCreator.create(request, darkFeatureManager, globalConfiguration);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
         Map<String, Object> metadata = (Map<String, Object>) podRequest.get("metadata");
         Map<String, String> annotations = (Map<String, String>) metadata.get("annotations");
@@ -187,10 +193,12 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testNoRole() {
+    void testNoRole() {
         when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
         when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(false));
 
         Configuration config = ConfigurationBuilder.create("testImage")
                 .withImageSize(Configuration.ContainerSize.REGULAR)
@@ -206,7 +214,7 @@ public class PodCreatorTest {
                 true,
                 "someRandomToken");
 
-        Map<String, Object> podRequest = PodCreator.create(request, globalConfiguration);
+        Map<String, Object> podRequest = PodCreator.create(request, darkFeatureManager, globalConfiguration);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
         List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
         Map<String, Object> mainContainer = containers.get(0);
@@ -227,7 +235,22 @@ public class PodCreatorTest {
     }
 
     @Test
-    public void testIAMRequest() throws IOException {
+    void testEphemeralWhenDarkFeatureTrue() {
+        testEphemeral(Optional.of(true), "true");
+    }
+
+    @Test
+    void testEphemeralWhenDarkFeatureFalse() {
+        testEphemeral(Optional.of(false), "false");
+    }
+
+    @Test
+    void testEphemeralWhenDarkFeatureUndefined() {
+        testEphemeral(Optional.empty(), "false");
+    }
+
+    @Test
+    void testIAMRequest() throws IOException {
         Configuration config = ConfigurationBuilder.create("testImage")
                 .withAwsRole("arn:aws:iam::123456789012:role/testrole")
                 .withImageSize(Configuration.ContainerSize.REGULAR)
@@ -243,6 +266,38 @@ public class PodCreatorTest {
                 new File(this.getClass().getResource("/iamRequest.yaml").getFile()), "UTF-8");
 
         assertEquals(expectedIamRequest, yaml.dump(iamRequest));
+    }
+
+    private void testEphemeral(Optional<Boolean> darkFeatureResult, String expected) {
+        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
+        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(darkFeatureResult);
+
+        Configuration config = ConfigurationBuilder.create("testImage")
+                .withImageSize(Configuration.ContainerSize.REGULAR)
+                .build();
+
+        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
+                config,
+                "TEST-PLAN-JOB-1",
+                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
+                0,
+                "bk",
+                0,
+                true,
+                "someRandomToken");
+
+        Map<String, Object> podRequest = PodCreator.create(request, darkFeatureManager, globalConfiguration);
+        Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
+        List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
+        Map<String, Object> mainContainer = containers.get(0);
+
+        // Test env variables
+        Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
+        assertTrue(envVariables.containsKey("EPHEMERAL"));
+        assertEquals(expected, envVariables.get("EPHEMERAL"));
     }
 
     private Map<String, String> getEnvVariablesFromContainer(Map<String, Object> container) {
