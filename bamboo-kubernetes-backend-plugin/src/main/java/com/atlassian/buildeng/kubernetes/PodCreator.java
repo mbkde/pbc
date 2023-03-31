@@ -22,6 +22,7 @@ import com.atlassian.bamboo.utils.SystemProperty;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -134,12 +135,15 @@ public class PodCreator {
     private static final String IMAGE_PULL_POLICY =
             new SystemProperty(false, "atlassian.bamboo.pbc.image.pull.policy").getValue("Always");
 
-    static Map<String, Object> create(IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration) {
+    static Map<String, Object> create(
+            IsolatedDockerAgentRequest r,
+            DarkFeatureManager darkFeatureManager,
+            GlobalConfiguration globalConfiguration) {
         Map<String, Object> root = new HashMap<>();
         root.put("apiVersion", "v1");
         root.put("kind", "Pod");
         root.put("metadata", createMetadata(globalConfiguration, r));
-        root.put("spec", createSpec(globalConfiguration, r));
+        root.put("spec", createSpec(globalConfiguration, darkFeatureManager, r));
         return root;
     }
 
@@ -328,7 +332,10 @@ public class PodCreator {
         return name.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier();
     }
 
-    private static Object createSpec(GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+    private static Object createSpec(
+            GlobalConfiguration globalConfiguration,
+            DarkFeatureManager darkFeatureManager,
+            IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("restartPolicy", "Never");
         // 63 is max - https://tools.ietf.org/html/rfc2181#section-11
@@ -338,7 +345,7 @@ public class PodCreator {
         }
         map.put("hostname", hostname);
         map.put("volumes", createVolumes(r));
-        map.put("containers", createContainers(globalConfiguration, r));
+        map.put("containers", createContainers(globalConfiguration, darkFeatureManager, r));
         List<Map<String, Object>> initContainersList = new ArrayList<>();
         String currentSidekick = Objects.requireNonNull(
                 globalConfiguration.getCurrentSidekick(),
@@ -392,10 +399,12 @@ public class PodCreator {
     }
 
     private static List<Map<String, Object>> createContainers(
-            GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+            GlobalConfiguration globalConfiguration,
+            DarkFeatureManager darkFeatureManager,
+            IsolatedDockerAgentRequest r) {
         ArrayList<Map<String, Object>> toRet = new ArrayList<>();
         toRet.addAll(createExtraContainers(r.getConfiguration(), globalConfiguration));
-        toRet.add(createMainContainer(globalConfiguration, r));
+        toRet.add(createMainContainer(globalConfiguration, darkFeatureManager, r));
         return toRet;
     }
 
@@ -445,14 +454,16 @@ public class PodCreator {
     }
 
     private static Map<String, Object> createMainContainer(
-            GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+            GlobalConfiguration globalConfiguration,
+            DarkFeatureManager darkFeatureManager,
+            IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", CONTAINER_NAME_BAMBOOAGENT);
         map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
         map.put("imagePullPolicy", IMAGE_PULL_POLICY);
         map.put("workingDir", WORK_DIR);
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
-        map.put("env", createMainContainerEnvs(globalConfiguration, r));
+        map.put("env", createMainContainerEnvs(globalConfiguration, darkFeatureManager, r));
         ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
                 .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))
                 .addAll(commonVolumeMounts());
@@ -482,7 +493,9 @@ public class PodCreator {
     }
 
     private static Object createMainContainerEnvs(
-            GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+            GlobalConfiguration globalConfiguration,
+            DarkFeatureManager darkFeatureManager,
+            IsolatedDockerAgentRequest r) {
         List<Map<String, Object>> envs = new ArrayList<>();
         Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream()
                 .filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage()))
@@ -495,6 +508,7 @@ public class PodCreator {
                 "name", ENV_VAR_IMAGE, "value", r.getConfiguration().getDockerImage()));
         envs.add(ImmutableMap.of("name", ENV_VAR_RESULT_ID, "value", r.getResultKey()));
         envs.add(ImmutableMap.of("name", ENV_VAR_SERVER, "value", globalConfiguration.getBambooBaseUrl()));
+        envs.add(ImmutableMap.of("name", "EPHEMERAL", "value", isBuildEphemeral(darkFeatureManager)));
         envs.add(ImmutableMap.of("name", ARG_SECURITY_TOKEN, "value", r.getSecurityToken()));
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
@@ -510,6 +524,16 @@ public class PodCreator {
             envs.add(ImmutableMap.of("name", ENV_AWS_WEB_IDENTITY, "value", AWS_WEB_IDENTITY_TOKEN_FILE + "token"));
         }
         return envs;
+    }
+
+    private static String isBuildEphemeral(DarkFeatureManager darkFeatureManager) {
+        if (darkFeatureManager
+                .isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED)
+                .orElse(false)) {
+            return "true";
+        } else {
+            return "false";
+        }
     }
 
     private static Object createLocalhostAliases(Configuration c) {

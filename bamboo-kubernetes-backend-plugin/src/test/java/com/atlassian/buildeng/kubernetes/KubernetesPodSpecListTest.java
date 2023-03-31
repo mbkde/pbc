@@ -202,7 +202,7 @@ public class KubernetesPodSpecListTest {
                 try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
                     mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
                     mockPodCreator
-                            .when(() -> PodCreator.create(request, globalConfiguration))
+                            .when(() -> PodCreator.create(request, darkFeatureManager, globalConfiguration))
                             .thenReturn(Collections.emptyMap());
                     // when
                     kubernetesPodSpecList.generate(request, stringId);
@@ -269,7 +269,7 @@ public class KubernetesPodSpecListTest {
                 try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
                     mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
                     mockPodCreator
-                            .when(() -> PodCreator.create(request, globalConfiguration))
+                            .when(() -> PodCreator.create(request, darkFeatureManager, globalConfiguration))
                             .thenReturn(Collections.emptyMap());
                     // when
                     kubernetesPodSpecList.generate(request, stringId);
@@ -294,7 +294,7 @@ public class KubernetesPodSpecListTest {
                 try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
                     mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
                     mockPodCreator
-                            .when(() -> PodCreator.create(request, globalConfiguration))
+                            .when(() -> PodCreator.create(request, darkFeatureManager, globalConfiguration))
                             .thenReturn(Collections.emptyMap());
                     // when
                     kubernetesPodSpecList.generate(request, stringId);

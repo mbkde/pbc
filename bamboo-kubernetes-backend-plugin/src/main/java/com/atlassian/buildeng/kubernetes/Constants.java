@@ -60,4 +60,6 @@ public interface Constants {
      * After what amount of time should kubeclt timeout deletes. Format of --timeout switch (1s, 2m, 1h).
      */
     String KUBECTL_DELETE_TIMEOUT = System.getProperty(KUBECTL_DELETE_TIMEOUT_PROPERTY, "2m");
+
+    String PBC_EPHEMERAL_ENABLED = com.atlassian.buildeng.isolated.docker.Constants.PBC_EPHEMERAL_ENABLED;
 }

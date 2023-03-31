@@ -24,12 +24,14 @@ import com.atlassian.bamboo.deployments.environments.Environment;
 import com.atlassian.bamboo.deployments.environments.requirement.EnvironmentRequirementService;
 import com.atlassian.bamboo.plugin.descriptor.DockerHandlerModuleDescriptor;
 import com.atlassian.bamboo.template.TemplateRenderer;
+import com.atlassian.buildeng.isolated.docker.Constants;
 import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ConfigurationBuilder;
 import com.atlassian.plugin.webresource.WebResourceManager;
+import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.opensymphony.xwork2.TextProvider;
 import java.util.Map;
 import javax.inject.Inject;
@@ -46,6 +48,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     private final WebResourceManager webResourceManager;
     private final GlobalConfiguration globalConfiguration;
     private final Validator validator;
+    private final DarkFeatureManager darkFeatureManager;
 
     /**
      * New stateless instance.
@@ -57,13 +60,15 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
             EnvironmentRequirementService environmentRequirementService,
             WebResourceManager webResourceManager,
             GlobalConfiguration globalConfiguration,
-            Validator validator) {
+            Validator validator,
+            DarkFeatureManager darkFeatureManager) {
         this.templateRenderer = templateRenderer;
         this.environmentCustomConfigService = environmentCustomConfigService;
         this.environmentRequirementService = environmentRequirementService;
         this.webResourceManager = webResourceManager;
         this.globalConfiguration = globalConfiguration;
         this.validator = validator;
+        this.darkFeatureManager = darkFeatureManager;
     }
 
     @Override
@@ -147,13 +152,17 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
 
     @Override
     public boolean isCustomDedicatedAgentExpected(@NotNull BuildDefinition buildDefinition) {
-        // return new DockerHandlerImpl(buildDefinition, environmentCustomConfigService).isEnabled();
-        return true;
+        return isEphemeral();
     }
 
     @Override
     public boolean isCustomDedicatedAgentExpected(@NotNull Map<String, String> environmentCustomConfig) {
-        // return Boolean.parseBoolean(environmentCustomConfig.get(DockerHandlerImpl.ENABLED_KEY));
-        return true;
+        return isEphemeral();
+    }
+
+    private boolean isEphemeral() {
+        return darkFeatureManager
+                .isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED)
+                .orElse(false);
     }
 }

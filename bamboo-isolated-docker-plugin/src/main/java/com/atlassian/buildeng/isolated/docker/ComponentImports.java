@@ -45,6 +45,7 @@ import com.atlassian.event.api.EventPublisher;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.webresource.WebResourceManager;
+import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.atlassian.struts.TextProvider;
 import org.quartz.Scheduler;
 
@@ -67,6 +68,9 @@ public class ComponentImports {
 
     @BambooImport
     public FeatureManager featureManager;
+
+    @BambooImport
+    public DarkFeatureManager darkFeatureManager;
 
     @BambooImport
     public AuditLogService auditLogService;

@@ -69,7 +69,7 @@ public class KubernetesPodSpecList {
 
     private List<Map<String, Object>> createPodSpecList(IsolatedDockerAgentRequest request, String subjectId) {
         Map<String, Object> template = loadTemplatePod();
-        Map<String, Object> podDefinition = PodCreator.create(request, globalConfiguration);
+        Map<String, Object> podDefinition = PodCreator.create(request, darkFeatureManager, globalConfiguration);
         Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
 
         Map<String, Object> finalPod;
