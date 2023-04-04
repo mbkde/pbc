@@ -43,6 +43,7 @@ public class AgentRemovals {
         // Stop the agent
         Long agentId = buildAgent.getId();
         String agentName = buildAgent.getName();
+        buildAgent.setRequestedToBeStopped(true); // Set status correctly
         agentCommandSender.send(new StopAgentNicelyMessage(), agentId);
         logger.debug("Sent remote message to stop PBC agent {} (id: {})", agentName, agentId);
     }
