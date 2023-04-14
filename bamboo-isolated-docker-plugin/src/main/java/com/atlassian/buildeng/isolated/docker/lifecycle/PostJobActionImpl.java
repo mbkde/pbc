@@ -33,6 +33,7 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -94,7 +95,18 @@ public class PostJobActionImpl implements PostJobAction {
             if (StringUtils.equals("true", properStopped)) {
                 BuildAgent agent = findAgent(job, buildResultsSummary);
                 if (agent != null) {
-                    agentRemovals.removeAgent(agent);
+                    new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        TimeUnit.SECONDS.sleep(30);
+                                    } catch (InterruptedException e) {
+                                        LOG.error("Error while waiting for build to complete", e);
+                                    }
+                                    agentRemovals.removeAgent(agent);
+                                }
+                            })
+                            .start();
                 }
             }
         }
