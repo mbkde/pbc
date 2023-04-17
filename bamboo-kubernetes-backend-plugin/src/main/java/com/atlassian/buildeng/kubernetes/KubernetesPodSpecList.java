@@ -48,15 +48,18 @@ public class KubernetesPodSpecList {
     private final GlobalConfiguration globalConfiguration;
     private final BandanaManager bandanaManager;
     private final DarkFeatureManager darkFeatureManager;
+    private final PodCreator podCreator;
 
     @Inject
     public KubernetesPodSpecList(
             GlobalConfiguration globalConfiguration,
             BandanaManager bandanaManager,
-            DarkFeatureManager darkFeatureManager) {
+            DarkFeatureManager darkFeatureManager,
+            PodCreator podCreator) {
         this.globalConfiguration = globalConfiguration;
         this.bandanaManager = bandanaManager;
         this.darkFeatureManager = darkFeatureManager;
+        this.podCreator = podCreator;
     }
 
     public File generate(IsolatedDockerAgentRequest request, String subjectId) throws IOException {
@@ -69,7 +72,7 @@ public class KubernetesPodSpecList {
 
     private List<Map<String, Object>> createPodSpecList(IsolatedDockerAgentRequest request, String subjectId) {
         Map<String, Object> template = loadTemplatePod();
-        Map<String, Object> podDefinition = PodCreator.create(request, darkFeatureManager, globalConfiguration);
+        Map<String, Object> podDefinition = podCreator.create(request);
         Map<String, Object> podWithoutArchOverrides = mergeMap(template, podDefinition);
 
         Map<String, Object> finalPod;
@@ -86,7 +89,7 @@ public class KubernetesPodSpecList {
         podSpecList.add(finalPod);
 
         if (request.getConfiguration().isAwsRoleDefined()) {
-            Map<String, Object> iamRequest = PodCreator.createIamRequest(request, globalConfiguration, subjectId);
+            Map<String, Object> iamRequest = podCreator.createIamRequest(request, subjectId);
             Map<String, Object> iamRequestTemplate = loadTemplateIamRequest();
 
             Map<String, Object> finalIamRequest = mergeMap(iamRequestTemplate, iamRequest);
