@@ -46,4 +46,9 @@ public interface Constants {
      * original implementation of hacking remote agents
      */
     String PBC_EPHEMERAL_ENABLED = "pbc.ephemeral.enabled";
+
+    /*
+     * Time to wait before asking an agent to stopNicely and remove it from the agent list
+     */
+    int AGENT_CLEANUP_DELAY = 30;
 }

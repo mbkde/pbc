@@ -92,6 +92,8 @@ public class PostJobActionImpl implements PostJobAction {
         if (config.isEnabled()) {
             String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
             // only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
+            // Make sure to wait the same amount of time that the stopNicely is delayed by in
+            // StopDockerAgentBuildProcessor
             if (StringUtils.equals("true", properStopped)) {
                 BuildAgent agent = findAgent(job, buildResultsSummary);
                 if (agent != null) {
@@ -99,7 +101,7 @@ public class PostJobActionImpl implements PostJobAction {
                                 @Override
                                 public void run() {
                                     try {
-                                        TimeUnit.SECONDS.sleep(30);
+                                        TimeUnit.SECONDS.sleep(Constants.AGENT_CLEANUP_DELAY);
                                     } catch (InterruptedException e) {
                                         LOG.error("Error while waiting for build to complete", e);
                                     }
