@@ -33,6 +33,7 @@ import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -91,10 +92,23 @@ public class PostJobActionImpl implements PostJobAction {
         if (config.isEnabled()) {
             String properStopped = buildResultsSummary.getCustomBuildData().get(Constants.RESULT_AGENT_KILLED_ITSELF);
             // only remove the agent when the agent was stopped from inside by StopDockerAgentBuildProcessor.
+            // Make sure to wait the same amount of time that the stopNicely is delayed by in
+            // StopDockerAgentBuildProcessor
             if (StringUtils.equals("true", properStopped)) {
                 BuildAgent agent = findAgent(job, buildResultsSummary);
                 if (agent != null) {
-                    agentRemovals.removeAgent(agent);
+                    new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        TimeUnit.SECONDS.sleep(Constants.AGENT_CLEANUP_DELAY);
+                                    } catch (InterruptedException e) {
+                                        LOG.error("Error while waiting for build to complete", e);
+                                    }
+                                    agentRemovals.removeAgent(agent);
+                                }
+                            })
+                            .start();
                 }
             }
         }
