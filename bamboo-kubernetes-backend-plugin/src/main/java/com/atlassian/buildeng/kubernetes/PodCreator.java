@@ -22,6 +22,7 @@ import com.atlassian.bamboo.utils.SystemProperty;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -41,6 +42,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
+@BambooComponent
 public class PodCreator {
     /**
      * The environment variable to override on the agent per image.
