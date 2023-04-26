@@ -18,6 +18,7 @@ package com.atlassian.buildeng.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -48,7 +49,21 @@ class PodCreatorTest {
 
     private GlobalConfiguration globalConfiguration;
     private DarkFeatureManager darkFeatureManager;
+    private PodCreator podCreator;
     private Yaml yaml;
+    private UUID requestUuid;
+    private String resultKey;
+
+    private static final String EXPECTED_POD_NAME =
+            "shardspipeline-servicedeskembeddablesservicede-455-379ad7b0-b4f5-4fae-914b-070e9442c0a9";
+    private static final String EXPECTED_IAM_REQUEST_NAME =
+            "shardspipeline-servicedeskembeddabl-455-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9";
+    private static final String EXPECTED_IRSA_NAME = "iamtoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9";
+    private static final String BAMBOO_BASE_URL = "http://test-bamboo.com";
+    private static final String SIDEKICK_IMAGE = "sidekickImage";
+    private static final String EXPECTED_ANNOTATION_RESULTID =
+            "shardspipeline-servicedeskembeddablesservicedeskembeddab...Z";
+    private static final String IMAGE_NAME = "testImage";
 
     public PodCreatorTest() {}
 
@@ -57,7 +72,9 @@ class PodCreatorTest {
 
         globalConfiguration = mock(GlobalConfiguration.class);
         darkFeatureManager = mock(DarkFeatureManager.class);
-
+        podCreator = new PodCreator(globalConfiguration, darkFeatureManager);
+        requestUuid = UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9");
+        resultKey = "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455";
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setIndent(4);
@@ -67,119 +84,68 @@ class PodCreatorTest {
 
     @Test
     void testCreatePodName() {
-        String result = PodCreator.createPodName(new IsolatedDockerAgentRequest(
-                null,
-                "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true,
-                "someRandomToken"));
-        assertEquals("shardspipeline-servicedeskembeddablesservicede-455-379ad7b0-b4f5-4fae-914b-070e9442c0a9", result);
+        String result = podCreator.createPodName(
+                new IsolatedDockerAgentRequest(null, resultKey, requestUuid, 0, "bk", 0, true, "someRandomToken"));
+        assertEquals(EXPECTED_POD_NAME, result);
     }
 
     @Test
     void testCreateIrsaSecretName() {
-        String result = PodCreator.createIrsaSecretName(new IsolatedDockerAgentRequest(
-                null,
-                "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true));
-        assertEquals("iamtoken-379ad7b0-b4f5-4fae-914b-070e9442c0a9", result);
+        String result = podCreator.createIrsaSecretName(
+                new IsolatedDockerAgentRequest(null, resultKey, requestUuid, 0, "bk", 0, true));
+        assertEquals(EXPECTED_IRSA_NAME, result);
     }
 
     @Test
     void testCreateIamRequestName() {
-        String result = PodCreator.createIamRequestName(new IsolatedDockerAgentRequest(
-                null,
-                "shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp-455",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true));
-        assertEquals("shardspipeline-servicedeskembeddabl-455-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9", result);
+        String result = podCreator.createIamRequestName(
+                new IsolatedDockerAgentRequest(null, resultKey, requestUuid, 0, "bk", 0, true));
+        assertEquals(EXPECTED_IAM_REQUEST_NAME, result);
     }
 
     @Test
     void testCreatePodNameExactly51Chars() {
-        String result = PodCreator.createPodName(new IsolatedDockerAgentRequest(
-                null,
-                "shar-servicedeskembeddablesservicedeskemb-bd-45555",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true));
+        String result = podCreator.createPodName(new IsolatedDockerAgentRequest(
+                null, "shar-servicedeskembeddablesservicedeskemb-bd-45555", requestUuid, 0, "bk", 0, true));
         assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9", result);
     }
 
     @Test
     void testCreatePodNameExactly52Chars() {
-        String result = PodCreator.createPodName(new IsolatedDockerAgentRequest(
-                null,
-                "shar-servicedeskembeddablesservicedeskemb-bdx-45555",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true));
+        String result = podCreator.createPodName(new IsolatedDockerAgentRequest(
+                null, "shar-servicedeskembeddablesservicedeskemb-bdx-45555", requestUuid, 0, "bk", 0, true));
         assertEquals("shar-servicedeskembeddablesservicedeskemb-bd-45555-379ad7b0-b4f5-4fae-914b-070e9442c0a9", result);
     }
 
     @Test
     void testRole() throws IOException {
-        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
-        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
-        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
-        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
-                .thenReturn(Optional.of(false));
+        mockGlobalConfiguration();
+        mockDarkFeatureManager(Optional.of(false));
 
-        Configuration config = ConfigurationBuilder.create("testImage")
+        Configuration config = ConfigurationBuilder.create(IMAGE_NAME)
                 .withAwsRole("arn:aws:iam::123456789012:role/testrole")
                 .withImageSize(Configuration.ContainerSize.REGULAR)
                 .withExtraContainer("extra-container", "testExtraContainer", Configuration.ExtraContainerSize.REGULAR)
                 .build();
 
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
-                config, "TEST-PLAN-JOB-1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
+        IsolatedDockerAgentRequest request =
+                new IsolatedDockerAgentRequest(config, resultKey, requestUuid, 0, "bk", 0, true);
 
-        Map<String, Object> podRequest = PodCreator.create(request, darkFeatureManager, globalConfiguration);
+        Map<String, Object> podRequest = podCreator.create(request);
+        assertRootKeys(podRequest);
+        assertMetadata((Map<String, Object>) podRequest.get("metadata"), true);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
-        Map<String, Object> metadata = (Map<String, Object>) podRequest.get("metadata");
-        Map<String, String> annotations = (Map<String, String>) metadata.get("annotations");
-
-        assertTrue(annotations.containsKey("pbc.iamRequestName"));
-        assertEquals(
-                "test-plan-job-1-iamrequest-379ad7b0-b4f5-4fae-914b-070e9442c0a9",
-                annotations.get("pbc.iamRequestName"));
+        assertSpec(spec);
 
         List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
 
         // Test env variables
         for (Map<String, Object> container : containers) {
-            Map<String, String> envVariables = getEnvVariablesFromContainer(container);
-
-            assertTrue(envVariables.containsKey("AWS_ROLE_ARN"));
-            assertTrue(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
-
-            assertEquals("arn:aws:iam::123456789012:role/testrole", envVariables.get("AWS_ROLE_ARN"));
-            assertEquals(
-                    "/var/run/secrets/eks.amazonaws.com/serviceaccount/token",
-                    envVariables.get("AWS_WEB_IDENTITY_TOKEN_FILE"));
+            assertIamContainerEnvVariables(container);
         }
 
         for (Map<String, Object> container : containers) {
-            // Test Volume mounts
-            Map<String, Object> iamTokenVolumeMount = getVolumeMount(container, "aws-iam-token");
-
-            assertEquals("aws-iam-token", iamTokenVolumeMount.get("name"));
-            assertEquals("/var/run/secrets/eks.amazonaws.com/serviceaccount/", iamTokenVolumeMount.get("mountPath"));
-            assertEquals(true, iamTokenVolumeMount.get("readOnly"));
+            assertIamContainerVolumeMounts(container);
         }
 
         // Test Volumes
@@ -194,30 +160,22 @@ class PodCreatorTest {
 
     @Test
     void testNoRole() {
-        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
-        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
-        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
-        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
-                .thenReturn(Optional.of(false));
+        mockGlobalConfiguration();
+        mockDarkFeatureManager(Optional.of(false));
 
-        Configuration config = ConfigurationBuilder.create("testImage")
+        Configuration config = ConfigurationBuilder.create(IMAGE_NAME)
                 .withImageSize(Configuration.ContainerSize.REGULAR)
                 .build();
 
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
-                config,
-                "TEST-PLAN-JOB-1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true,
-                "someRandomToken");
+        IsolatedDockerAgentRequest request =
+                new IsolatedDockerAgentRequest(config, resultKey, requestUuid, 0, "bk", 0, true, "someRandomToken");
 
-        Map<String, Object> podRequest = PodCreator.create(request, darkFeatureManager, globalConfiguration);
+        Map<String, Object> podRequest = podCreator.create(request);
+        assertRootKeys(podRequest);
+        assertMetadata((Map<String, Object>) podRequest.get("metadata"), false);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
-        List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
-        Map<String, Object> mainContainer = containers.get(0);
+        assertSpec(spec);
+        Map<String, Object> mainContainer = getMainContainer(spec);
 
         // Test env variables
         Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
@@ -251,16 +209,14 @@ class PodCreatorTest {
 
     @Test
     void testIAMRequest() throws IOException {
-        Configuration config = ConfigurationBuilder.create("testImage")
+        Configuration config = ConfigurationBuilder.create(IMAGE_NAME)
                 .withAwsRole("arn:aws:iam::123456789012:role/testrole")
                 .withImageSize(Configuration.ContainerSize.REGULAR)
                 .build();
 
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
-                config, "TEST-PLAN-JOB-1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
-
-        Map<String, Object> iamRequest =
-                PodCreator.createIamRequest(request, globalConfiguration, "test-bamboo/TEST-PLAN/abc123");
+        IsolatedDockerAgentRequest request =
+                new IsolatedDockerAgentRequest(config, "TEST-PLAN-JOB-1", requestUuid, 0, "bk", 0, true);
+        Map<String, Object> iamRequest = podCreator.createIamRequest(request, "test-bamboo/TEST-PLAN/abc123");
 
         String expectedIamRequest = FileUtils.readFileToString(
                 new File(this.getClass().getResource("/iamRequest.yaml").getFile()), "UTF-8");
@@ -269,35 +225,131 @@ class PodCreatorTest {
     }
 
     private void testEphemeral(Optional<Boolean> darkFeatureResult, String expected) {
-        when(globalConfiguration.getBambooBaseUrl()).thenReturn("http://test-bamboo.com");
-        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
-        when(globalConfiguration.getCurrentSidekick()).thenReturn("sidekickImage");
-        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
-                .thenReturn(darkFeatureResult);
+        mockGlobalConfiguration();
+        mockDarkFeatureManager(darkFeatureResult);
 
-        Configuration config = ConfigurationBuilder.create("testImage")
+        Configuration config = ConfigurationBuilder.create(IMAGE_NAME)
                 .withImageSize(Configuration.ContainerSize.REGULAR)
                 .build();
 
-        IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
-                config,
-                "TEST-PLAN-JOB-1",
-                UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"),
-                0,
-                "bk",
-                0,
-                true,
-                "someRandomToken");
+        IsolatedDockerAgentRequest request =
+                new IsolatedDockerAgentRequest(config, resultKey, requestUuid, 0, "bk", 0, true, "someRandomToken");
 
-        Map<String, Object> podRequest = PodCreator.create(request, darkFeatureManager, globalConfiguration);
+        Map<String, Object> podRequest = podCreator.create(request);
+        assertRootKeys(podRequest);
+        assertMetadata((Map<String, Object>) podRequest.get("metadata"), false);
         Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
-        List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
-        Map<String, Object> mainContainer = containers.get(0);
+        assertSpec(spec);
+        assertEphemeral(expected, spec);
+    }
+
+    private void mockGlobalConfiguration() {
+        when(globalConfiguration.getBambooBaseUrl()).thenReturn(BAMBOO_BASE_URL);
+        when(globalConfiguration.getBambooBaseUrlAskKubeLabel()).thenReturn(BAMBOO_BASE_URL);
+        when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
+        when(globalConfiguration.getCurrentSidekick()).thenReturn(SIDEKICK_IMAGE);
+    }
+
+    private void mockDarkFeatureManager(Optional<Boolean> ephemeral) {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(ephemeral);
+    }
+
+    private void assertAllKeys(String[] expectedKeys, Map<String, Object> map) {
+        for (String expectedKey : expectedKeys) {
+            assertTrue(map.containsKey(expectedKey), expectedKey);
+        }
+    }
+
+    private void assertRootKeys(Map<String, Object> podRequest) {
+        assertAllKeys(new String[] {"apiVersion", "kind", "metadata", "spec"}, podRequest);
+        assertEquals("v1", podRequest.get("apiVersion"));
+        assertEquals("Pod", podRequest.get("kind"));
+    }
+
+    private void assertMetadata(Map<String, Object> metadata, boolean iamRole) {
+        assertAllKeys(new String[] {"name", "labels", "annotations"}, metadata);
+        assertEquals(EXPECTED_POD_NAME, metadata.get("name"));
+        assertLabels((Map<String, Object>) metadata.get("labels"));
+        assertAnnotations((Map<String, Object>) metadata.get("annotations"), iamRole);
+    }
+
+    private void assertLabels(Map<String, Object> labels) {
+        assertAllKeys(
+                new String[] {
+                    PodCreator.LABEL_PBC_MARKER,
+                    PodCreator.ANN_RESULTID,
+                    PodCreator.ANN_UUID,
+                    PodCreator.LABEL_BAMBOO_SERVER
+                },
+                labels);
+        assertEquals("true", labels.get(PodCreator.LABEL_PBC_MARKER));
+        assertEquals(EXPECTED_ANNOTATION_RESULTID, labels.get(PodCreator.ANN_RESULTID));
+        assertEquals(requestUuid.toString(), labels.get(PodCreator.ANN_UUID));
+        assertEquals(BAMBOO_BASE_URL, labels.get(PodCreator.LABEL_BAMBOO_SERVER));
+    }
+
+    private void assertAnnotations(Map<String, Object> annotations, boolean iamRole) {
+        assertAllKeys(
+                new String[] {
+                    PodCreator.ANN_UUID, PodCreator.ANN_RESULTID, PodCreator.ANN_RETRYCOUNT,
+                },
+                annotations);
+        assertEquals(requestUuid.toString(), annotations.get(PodCreator.ANN_UUID));
+        assertEquals(resultKey, annotations.get(PodCreator.ANN_RESULTID));
+        assertEquals("0", annotations.get(PodCreator.ANN_RETRYCOUNT));
+        if (iamRole) {
+            assertTrue(annotations.containsKey(PodCreator.ANN_IAM_REQUEST_NAME));
+            assertEquals(EXPECTED_IAM_REQUEST_NAME, annotations.get(PodCreator.ANN_IAM_REQUEST_NAME));
+        } else {
+            assertFalse(annotations.containsKey(PodCreator.ANN_IAM_REQUEST_NAME));
+        }
+    }
+
+    private void assertSpec(Map<String, Object> spec) {
+        assertAllKeys(
+                new String[] {"restartPolicy", "hostname", "volumes", "containers", "initContainers", "hostAliases"},
+                spec);
+        assertEquals("Never", spec.get("restartPolicy"));
+        assertEquals("shardspipeline-servicedeskembeddablesservicedeskembeddables-bdp", spec.get("hostname"));
+        Map<String, Object> mainContainer = getMainContainer(spec);
+        assertAllKeys(new String[] {"image"}, mainContainer);
+        assertEquals(IMAGE_NAME, mainContainer.get("image"));
+    }
+
+    private void assertIamContainerEnvVariables(Map<String, Object> container) {
+        Map<String, String> envVariables = getEnvVariablesFromContainer(container);
+
+        assertTrue(envVariables.containsKey("AWS_ROLE_ARN"));
+        assertTrue(envVariables.containsKey("AWS_WEB_IDENTITY_TOKEN_FILE"));
+
+        assertEquals("arn:aws:iam::123456789012:role/testrole", envVariables.get("AWS_ROLE_ARN"));
+        assertEquals(
+                "/var/run/secrets/eks.amazonaws.com/serviceaccount/token",
+                envVariables.get("AWS_WEB_IDENTITY_TOKEN_FILE"));
+    }
+
+    private void assertIamContainerVolumeMounts(Map<String, Object> container) {
+        Map<String, Object> iamTokenVolumeMount = getVolumeMount(container, "aws-iam-token");
+
+        assertEquals("aws-iam-token", iamTokenVolumeMount.get("name"));
+        assertEquals("/var/run/secrets/eks.amazonaws.com/serviceaccount/", iamTokenVolumeMount.get("mountPath"));
+        assertEquals(true, iamTokenVolumeMount.get("readOnly"));
+    }
+
+    private void assertEphemeral(String expectedEphemeral, Map<String, Object> spec) {
+        Map<String, Object> mainContainer = getMainContainer(spec);
 
         // Test env variables
         Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
         assertTrue(envVariables.containsKey("EPHEMERAL"));
-        assertEquals(expected, envVariables.get("EPHEMERAL"));
+        assertEquals(expectedEphemeral, envVariables.get("EPHEMERAL"));
+    }
+
+    private Map<String, Object> getMainContainer(Map<String, Object> spec) {
+        List<Map<String, Object>> containers = (List<Map<String, Object>>) spec.get("containers");
+        assertNotEquals(0, containers.size());
+        return containers.get(containers.size() - 1);
     }
 
     private Map<String, String> getEnvVariablesFromContainer(Map<String, Object> container) {

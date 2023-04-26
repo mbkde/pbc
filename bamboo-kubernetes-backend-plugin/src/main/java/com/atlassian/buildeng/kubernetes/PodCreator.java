@@ -22,6 +22,7 @@ import com.atlassian.bamboo.utils.SystemProperty;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.ContainerSizeDescriptor;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedDockerAgentRequest;
+import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -38,8 +39,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
+@BambooComponent
 public class PodCreator {
     /**
      * The environment variable to override on the agent per image.
@@ -124,6 +127,15 @@ public class PodCreator {
     static final String IRSA_SECRET_NAME_SUFFIX = "it";
     static final String IAM_REQUEST_NAME_SUFFIX = "iamrequest";
 
+    private final GlobalConfiguration globalConfiguration;
+    private final DarkFeatureManager darkFeatureManager;
+
+    @Inject
+    public PodCreator(GlobalConfiguration globalConfiguration, DarkFeatureManager darkFeatureManager) {
+        this.globalConfiguration = globalConfiguration;
+        this.darkFeatureManager = darkFeatureManager;
+    }
+
     /**
      * generate volume with memory fs at /dev/shm via https://docs.openshift.org/latest/dev_guide/shared_memory.html
      * the preferable solution is to modify the docker daemon's --default-shm-size parameter on hosts but it only
@@ -135,20 +147,16 @@ public class PodCreator {
     private static final String IMAGE_PULL_POLICY =
             new SystemProperty(false, "atlassian.bamboo.pbc.image.pull.policy").getValue("Always");
 
-    static Map<String, Object> create(
-            IsolatedDockerAgentRequest r,
-            DarkFeatureManager darkFeatureManager,
-            GlobalConfiguration globalConfiguration) {
+    Map<String, Object> create(IsolatedDockerAgentRequest r) {
         Map<String, Object> root = new HashMap<>();
         root.put("apiVersion", "v1");
         root.put("kind", "Pod");
-        root.put("metadata", createMetadata(globalConfiguration, r));
-        root.put("spec", createSpec(globalConfiguration, darkFeatureManager, r));
+        root.put("metadata", createMetadata(r));
+        root.put("spec", createSpec(r));
         return root;
     }
 
-    static Map<String, Object> createIamRequest(
-            IsolatedDockerAgentRequest r, GlobalConfiguration globalConfiguration, String subjectId) {
+    Map<String, Object> createIamRequest(IsolatedDockerAgentRequest r, String subjectId) {
         Map<String, Object> iamRequest = new HashMap<>();
         iamRequest.put("kind", "IAMRequest");
         iamRequest.put(
@@ -162,7 +170,7 @@ public class PodCreator {
         return iamRequest;
     }
 
-    private static Map<String, String> createAnnotations(IsolatedDockerAgentRequest r) {
+    private Map<String, String> createAnnotations(IsolatedDockerAgentRequest r) {
         Map<String, String> annotations = new HashMap<>();
         annotations.put(ANN_UUID, r.getUniqueIdentifier().toString());
         annotations.put(ANN_RESULTID, r.getResultKey());
@@ -174,14 +182,14 @@ public class PodCreator {
         return annotations;
     }
 
-    private static Map<String, String> createLabels(IsolatedDockerAgentRequest r, GlobalConfiguration c) {
+    private Map<String, String> createLabels(IsolatedDockerAgentRequest r) {
         Map<String, String> labels = new HashMap<>();
         labels.put(LABEL_PBC_MARKER, "true");
 
         // TODO remove these two in the future, no need to have them as labels.
         labels.put(ANN_RESULTID, StringUtils.abbreviate(r.getResultKey(), 59) + "Z");
         labels.put(ANN_UUID, r.getUniqueIdentifier().toString());
-        labels.put(LABEL_BAMBOO_SERVER, c.getBambooBaseUrlAskKubeLabel());
+        labels.put(LABEL_BAMBOO_SERVER, globalConfiguration.getBambooBaseUrlAskKubeLabel());
         return labels;
     }
 
@@ -189,8 +197,7 @@ public class PodCreator {
         return image.contains("docker:") && image.endsWith("dind");
     }
 
-    private static List<Map<String, Object>> createExtraContainers(
-            Configuration c, GlobalConfiguration globalConfiguration) {
+    private List<Map<String, Object>> createExtraContainers(Configuration c) {
         return c.getExtraContainers().stream()
                 .map((Configuration.ExtraContainer t) -> {
                     Map<String, Object> map = new HashMap<>();
@@ -279,28 +286,27 @@ public class PodCreator {
     static List<String> containerNames(Configuration config) {
         return Stream.concat(
                         Stream.of(CONTAINER_NAME_BAMBOOAGENT),
-                        config.getExtraContainers().stream().map(t -> t.getName()))
+                        config.getExtraContainers().stream().map(Configuration.ExtraContainer::getName))
                 .collect(Collectors.toList());
     }
 
-    private static Map<String, Object> createMetadata(
-            GlobalConfiguration globalConfiguration, IsolatedDockerAgentRequest r) {
+    private Map<String, Object> createMetadata(IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", createPodName(r));
-        map.put("labels", createLabels(r, globalConfiguration));
+        map.put("labels", createLabels(r));
         map.put("annotations", createAnnotations(r));
         return map;
     }
 
-    static String createPodName(IsolatedDockerAgentRequest r) {
+    String createPodName(IsolatedDockerAgentRequest r) {
         return createName(r, "", KUBE_NAME_MAX_LENGTH);
     }
 
-    static String createIrsaSecretName(IsolatedDockerAgentRequest r) {
+    String createIrsaSecretName(IsolatedDockerAgentRequest r) {
         return "iamtoken-" + r.getUniqueIdentifier().toString();
     }
 
-    static String createIamRequestName(IsolatedDockerAgentRequest r) {
+    String createIamRequestName(IsolatedDockerAgentRequest r) {
         return createName(r, IAM_REQUEST_NAME_SUFFIX, KUBE_NAME_MAX_LENGTH);
     }
 
@@ -308,7 +314,7 @@ public class PodCreator {
      * A character for some resources are necessary. This functions reduces the name of a plan to 50 characters
      * while keeping identifying characteristics.
      */
-    private static String createName(IsolatedDockerAgentRequest r, String suffix, Integer maxLength) {
+    private String createName(IsolatedDockerAgentRequest r, String suffix, Integer maxLength) {
         // 50 is magic constant that attempts to limit the overall length of the name.
         String key = r.getResultKey();
         String name = suffix.isEmpty() ? key : key + "-" + suffix;
@@ -332,10 +338,7 @@ public class PodCreator {
         return name.toLowerCase(Locale.ENGLISH) + "-" + r.getUniqueIdentifier();
     }
 
-    private static Object createSpec(
-            GlobalConfiguration globalConfiguration,
-            DarkFeatureManager darkFeatureManager,
-            IsolatedDockerAgentRequest r) {
+    private Object createSpec(IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("restartPolicy", "Never");
         // 63 is max - https://tools.ietf.org/html/rfc2181#section-11
@@ -345,7 +348,7 @@ public class PodCreator {
         }
         map.put("hostname", hostname);
         map.put("volumes", createVolumes(r));
-        map.put("containers", createContainers(globalConfiguration, darkFeatureManager, r));
+        map.put("containers", createContainers(r));
         List<Map<String, Object>> initContainersList = new ArrayList<>();
         String currentSidekick = Objects.requireNonNull(
                 globalConfiguration.getCurrentSidekick(),
@@ -357,21 +360,21 @@ public class PodCreator {
         return map;
     }
 
-    private static List<Map<String, Object>> createVolumes(IsolatedDockerAgentRequest r) {
-        ImmutableList.Builder<Map<String, Object>> bldr = ImmutableList.builder();
+    private List<Map<String, Object>> createVolumes(IsolatedDockerAgentRequest r) {
+        ImmutableList.Builder<Map<String, Object>> builder = ImmutableList.builder();
         if (GENERATE_SHM_VOLUME) {
             // workaround for low default of 64M in docker daemon.
             // https://docs.openshift.org/latest/dev_guide/shared_memory.html
             // since docker daemon 17.06
             // the default size should be configurable on the docker daemon size and is likely preferable.
-            bldr.add(ImmutableMap.of("name", "shm", "emptyDir", ImmutableMap.of("medium", "Memory")));
+            builder.add(ImmutableMap.of("name", "shm", "emptyDir", ImmutableMap.of("medium", "Memory")));
         }
-        bldr.add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
+        builder.add(ImmutableMap.of("name", "workdir", "emptyDir", new HashMap<>()))
                 .add(ImmutableMap.of("name", "pbcwork", "emptyDir", new HashMap<>()))
                 .add(ImmutableMap.of("name", "logspool", "emptyDir", new HashMap<>()))
                 .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "emptyDir", new HashMap<>()));
         if (r.getConfiguration().isAwsRoleDefined()) {
-            bldr.add(ImmutableMap.<String, Object>builder()
+            builder.add(ImmutableMap.<String, Object>builder()
                     .put("name", "aws-iam-token")
                     .put(
                             "projected",
@@ -395,20 +398,16 @@ public class PodCreator {
                                     .build())
                     .build());
         }
-        return bldr.build();
+        return builder.build();
     }
 
-    private static List<Map<String, Object>> createContainers(
-            GlobalConfiguration globalConfiguration,
-            DarkFeatureManager darkFeatureManager,
-            IsolatedDockerAgentRequest r) {
-        ArrayList<Map<String, Object>> toRet = new ArrayList<>();
-        toRet.addAll(createExtraContainers(r.getConfiguration(), globalConfiguration));
-        toRet.add(createMainContainer(globalConfiguration, darkFeatureManager, r));
+    private List<Map<String, Object>> createContainers(IsolatedDockerAgentRequest r) {
+        ArrayList<Map<String, Object>> toRet = new ArrayList<>(createExtraContainers(r.getConfiguration()));
+        toRet.add(createMainContainer(r));
         return toRet;
     }
 
-    private static Map<String, Object> createSidekick(String currentSidekick) {
+    private Map<String, Object> createSidekick(String currentSidekick) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", "bamboo-agent-sidekick");
         map.put("image", sanitizeImageName(currentSidekick));
@@ -453,17 +452,14 @@ public class PodCreator {
                 ImmutableMap.of("memory", "" + softMemory + "Mi", "cpu", "" + cpu + "m"));
     }
 
-    private static Map<String, Object> createMainContainer(
-            GlobalConfiguration globalConfiguration,
-            DarkFeatureManager darkFeatureManager,
-            IsolatedDockerAgentRequest r) {
+    private Map<String, Object> createMainContainer(IsolatedDockerAgentRequest r) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", CONTAINER_NAME_BAMBOOAGENT);
         map.put("image", sanitizeImageName(r.getConfiguration().getDockerImage()));
         map.put("imagePullPolicy", IMAGE_PULL_POLICY);
         map.put("workingDir", WORK_DIR);
         map.put("command", ImmutableList.of("sh", "-c", "/buildeng/run-agent.sh"));
-        map.put("env", createMainContainerEnvs(globalConfiguration, darkFeatureManager, r));
+        map.put("env", createMainContainerEnvs(r));
         ImmutableList.Builder<Map<String, Object>> mountsBuilder = ImmutableList.<Map<String, Object>>builder()
                 .add(ImmutableMap.of("name", "bamboo-agent-sidekick", "mountPath", WORK_DIR, "readOnly", false))
                 .addAll(commonVolumeMounts());
@@ -492,10 +488,7 @@ public class PodCreator {
                 ImmutableMap.of("name", "logspool", "mountPath", LOG_SPOOL_DIR, "readOnly", false));
     }
 
-    private static Object createMainContainerEnvs(
-            GlobalConfiguration globalConfiguration,
-            DarkFeatureManager darkFeatureManager,
-            IsolatedDockerAgentRequest r) {
+    private Object createMainContainerEnvs(IsolatedDockerAgentRequest r) {
         List<Map<String, Object>> envs = new ArrayList<>();
         Optional<Configuration.ExtraContainer> optDind = r.getConfiguration().getExtraContainers().stream()
                 .filter((Configuration.ExtraContainer t) -> isDockerInDockerImage(t.getImage()))
@@ -508,7 +501,7 @@ public class PodCreator {
                 "name", ENV_VAR_IMAGE, "value", r.getConfiguration().getDockerImage()));
         envs.add(ImmutableMap.of("name", ENV_VAR_RESULT_ID, "value", r.getResultKey()));
         envs.add(ImmutableMap.of("name", ENV_VAR_SERVER, "value", globalConfiguration.getBambooBaseUrl()));
-        envs.add(ImmutableMap.of("name", "EPHEMERAL", "value", isBuildEphemeral(darkFeatureManager)));
+        envs.add(ImmutableMap.of("name", "EPHEMERAL", "value", isBuildEphemeral()));
         envs.add(ImmutableMap.of("name", ARG_SECURITY_TOKEN, "value", r.getSecurityToken()));
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
@@ -526,7 +519,7 @@ public class PodCreator {
         return envs;
     }
 
-    private static String isBuildEphemeral(DarkFeatureManager darkFeatureManager) {
+    private String isBuildEphemeral() {
         if (darkFeatureManager
                 .isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED)
                 .orElse(false)) {
@@ -550,9 +543,10 @@ public class PodCreator {
      */
     private static Map<String, Object> createContainerLifecycle(String containerName) {
         Map<String, Object> map = new HashMap<>();
-        StringBuilder cmd = new StringBuilder();
-        cmd.append("touch ").append(PBC_DIR + "/" + containerName);
-        map.put("exec", ImmutableMap.of("command", ImmutableList.of("/bin/sh", "-c", cmd.toString())));
+        map.put(
+                "exec",
+                ImmutableMap.of(
+                        "command", ImmutableList.of("/bin/sh", "-c", "touch " + PBC_DIR + "/" + containerName)));
         return Collections.singletonMap("postStart", map);
     }
 

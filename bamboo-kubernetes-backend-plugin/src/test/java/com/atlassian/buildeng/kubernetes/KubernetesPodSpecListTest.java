@@ -67,12 +67,15 @@ public class KubernetesPodSpecListTest {
     @Mock
     DarkFeatureManager darkFeatureManager;
 
+    @Mock
+    PodCreator podCreator;
+
     @InjectMocks
     KubernetesPodSpecList kubernetesPodSpecList;
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testContainersMergedByName() {
+    void testContainersMergedByName() {
         Yaml yaml = new Yaml(new SafeConstructor());
         String templateString = getPodTemplateAsString();
         String overridesString = "metadata:\n" + "    namespace: buildeng\n"
@@ -121,7 +124,7 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testPodSpecIsUnmodifiedIfArchitectureConfigIsEmpty() {
+    void testPodSpecIsUnmodifiedIfArchitectureConfigIsEmpty() {
         Configuration c = ConfigurationBuilder.create("docker-image").build();
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
                 c, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
@@ -134,14 +137,14 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testArchitectureOverrideIsFetchedCorrectly() throws IOException {
+    void testArchitectureOverrideIsFetchedCorrectly() throws IOException {
         Map<String, Object> config =
                 kubernetesPodSpecList.getSpecificArchConfig(getArchitecturePodOverridesAsYaml(), "arm64");
         assertEquals(Collections.singletonMap("foo", "bar"), config);
     }
 
     @Test
-    public void testPodSpecHasOverrideIfArchitectureOmittedButServerHasDefaultDefined() throws IOException {
+    void testPodSpecHasOverrideIfArchitectureOmittedButServerHasDefaultDefined() throws IOException {
         Configuration c = ConfigurationBuilder.create("docker-image").build();
         IsolatedDockerAgentRequest request = new IsolatedDockerAgentRequest(
                 c, "TEST-PLAN-JOB1", UUID.fromString("379ad7b0-b4f5-4fae-914b-070e9442c0a9"), 0, "bk", 0, true);
@@ -154,7 +157,7 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndExists() throws IOException {
+    void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndExists() throws IOException {
         Configuration c = ConfigurationBuilder.create("docker-image")
                 .withArchitecture("arm64")
                 .build();
@@ -169,7 +172,7 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndDoesNotExist() throws IOException {
+    void testPodSpecHasOverrideAddedIfArchitectureIsManuallySpecifiedAndDoesNotExist() throws IOException {
         Configuration c = ConfigurationBuilder.create("docker-image")
                 .withArchitecture("fakeArch")
                 .build();
@@ -190,32 +193,28 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testGenerate() throws IOException {
+    void testGenerate() throws IOException {
         // given
         final IsolatedDockerAgentRequest request = mockCallsFromCreate();
         final String stringId = "abc123";
         final File file = mock(File.class);
         when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("");
+        when(podCreator.create(request)).thenReturn(Collections.emptyMap());
 
         try (MockedStatic<File> mockFile = mockStatic(File.class)) {
-            try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
-                try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
-                    mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
-                    mockPodCreator
-                            .when(() -> PodCreator.create(request, darkFeatureManager, globalConfiguration))
-                            .thenReturn(Collections.emptyMap());
-                    // when
-                    kubernetesPodSpecList.generate(request, stringId);
-                    // then pod spec list generated and sent to file
-                    assertPodSpecFileCreated(mockFile, mockFileUtils, file);
-                    verify(globalConfiguration, never()).getArtifactoryCachePodSpecAsString();
-                }
+            try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
+                mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
+                // when
+                kubernetesPodSpecList.generate(request, stringId);
+                // then pod spec list generated and sent to file
+                assertPodSpecFileCreated(mockFile, mockFileUtils, file);
+                verify(globalConfiguration, never()).getArtifactoryCachePodSpecAsString();
             }
         }
     }
 
     @Test
-    public void testCleanUp() {
+    void testCleanUp() {
         // given
         final File file = mock(File.class);
         when(file.delete()).thenReturn(true);
@@ -232,7 +231,7 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testCleanUpException() {
+    void testCleanUpException() {
         // delete exceptions are caught and squashed
         // given
         final File file = mock(File.class);
@@ -244,7 +243,7 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testCleanUpFail() {
+    void testCleanUpFail() {
         // delete fail result is caught and squashed
         // given
         final File file = mock(File.class);
@@ -256,58 +255,50 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testArtifactoryCacheSpecAddedWhenPlanInAllowList() throws IOException {
+    void testArtifactoryCacheSpecAddedWhenPlanInAllowList() throws IOException {
         // given
         final IsolatedDockerAgentRequest request = mockCallsFromCreate(false);
         final String stringId = "abc123";
         final File file = mock(File.class);
         when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("- PLAN-KEY");
+        when(podCreator.create(request)).thenReturn(Collections.emptyMap());
 
         mockArtifactoryCache(globalConfiguration);
         try (MockedStatic<File> mockFile = mockStatic(File.class)) {
-            try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
-                try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
-                    mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
-                    mockPodCreator
-                            .when(() -> PodCreator.create(request, darkFeatureManager, globalConfiguration))
-                            .thenReturn(Collections.emptyMap());
-                    // when
-                    kubernetesPodSpecList.generate(request, stringId);
-                    // then pod spec list generated and sent to file
-                    assertPodSpecFileCreated(mockFile, mockFileUtils, file);
-                    verify(globalConfiguration).getArtifactoryCachePodSpecAsString();
-                }
+            try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
+                mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
+                // when
+                kubernetesPodSpecList.generate(request, stringId);
+                // then pod spec list generated and sent to file
+                assertPodSpecFileCreated(mockFile, mockFileUtils, file);
+                verify(globalConfiguration).getArtifactoryCachePodSpecAsString();
             }
         }
     }
 
     @Test
-    public void testArtifactoryCacheWhenConfiguredLocally() throws IOException {
+    void testArtifactoryCacheWhenConfiguredLocally() throws IOException {
         // given
         final IsolatedDockerAgentRequest request = mockCallsFromCreate(true);
         final String stringId = "abc123";
         final File file = mock(File.class);
+        when(podCreator.create(request)).thenReturn(Collections.emptyMap());
 
         mockArtifactoryCache(globalConfiguration);
         try (MockedStatic<File> mockFile = mockStatic(File.class)) {
-            try (MockedStatic<PodCreator> mockPodCreator = mockStatic(PodCreator.class)) {
-                try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
-                    mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
-                    mockPodCreator
-                            .when(() -> PodCreator.create(request, darkFeatureManager, globalConfiguration))
-                            .thenReturn(Collections.emptyMap());
-                    // when
-                    kubernetesPodSpecList.generate(request, stringId);
-                    // then pod spec list generated and sent to file
-                    assertPodSpecFileCreated(mockFile, mockFileUtils, file);
-                    verify(globalConfiguration).getArtifactoryCachePodSpecAsString();
-                }
+            try (MockedStatic<FileUtils> mockFileUtils = mockStatic(FileUtils.class)) {
+                mockFile.when(() -> File.createTempFile("pod", "yaml")).thenReturn(file);
+                // when
+                kubernetesPodSpecList.generate(request, stringId);
+                // then pod spec list generated and sent to file
+                assertPodSpecFileCreated(mockFile, mockFileUtils, file);
+                verify(globalConfiguration).getArtifactoryCachePodSpecAsString();
             }
         }
     }
 
     @Test
-    public void testAddCachePodSpec() {
+    void testAddCachePodSpec() {
         Yaml yaml = new Yaml(new SafeConstructor());
 
         String ogSpec = "apiVersion: v1\n" + "kind: Pod\n"
@@ -355,7 +346,7 @@ public class KubernetesPodSpecListTest {
     }
 
     @Test
-    public void testLoadAllowList() {
+    void testLoadAllowList() {
         when(globalConfiguration.getArtifactoryCacheAllowListAsString()).thenReturn("- test123\n" + "- test456");
 
         HashSet<String> allowList = new HashSet<>();
