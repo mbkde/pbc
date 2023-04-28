@@ -101,7 +101,7 @@ public class PostJobActionImpl implements PostJobAction {
                                 @Override
                                 public void run() {
                                     try {
-                                        TimeUnit.SECONDS.sleep(Constants.AGENT_CLEANUP_DELAY);
+                                        TimeUnit.SECONDS.sleep(Constants.AGENT_REMOVE_DELAY);
                                     } catch (InterruptedException e) {
                                         LOG.error("Error while waiting for build to complete", e);
                                     }
