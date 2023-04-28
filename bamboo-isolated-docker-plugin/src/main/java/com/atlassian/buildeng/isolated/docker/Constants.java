@@ -56,5 +56,4 @@ public interface Constants {
      * Time to wait before removing an agent from the list
      */
     int AGENT_REMOVE_DELAY = 120;
-
 }
