@@ -36,8 +36,12 @@ import com.opensymphony.xwork2.TextProvider;
 import java.util.Map;
 import javax.inject.Inject;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DockerHandlerProviderImpl implements DockerHandlerProvider {
+
+    private final Logger logger = LoggerFactory.getLogger(DockerHandlerProviderImpl.class);
 
     static final String ISOLATION_TYPE = "PBC";
 
@@ -151,13 +155,29 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     }
 
     @Override
-    public boolean isCustomDedicatedAgentExpected(@NotNull BuildDefinition buildDefinition) {
-        return isEphemeral();
+    /*
+     * buildDefinition is used for builds
+     */
+    public boolean isCustomDedicatedAgentExpected(BuildDefinition buildDefinition) {
+        boolean result = isEphemeral() && isPbcBuild(buildDefinition);
+        logger.info("Agent is showing {} for result of isCustomDedicatedAgentExpected", result);
+        return result;
     }
 
     @Override
+    /*
+     * environmentCustomConfig is used for deployments
+     */
     public boolean isCustomDedicatedAgentExpected(@NotNull Map<String, String> environmentCustomConfig) {
         return isEphemeral();
+    }
+
+    private boolean isPbcBuild(BuildDefinition buildDefinition) {
+        final String PBC_KEY = "custom.isolated.docker.enabled";
+        if (buildDefinition == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(buildDefinition.getCustomConfiguration().get(PBC_KEY));
     }
 
     private boolean isEphemeral() {

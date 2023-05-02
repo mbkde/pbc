@@ -23,6 +23,6 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     // this needs to be run first
     PbcSetupTest.class,
-    SimplePbcBuildTest.class
+    SimplePbcBuildTest.class,
 })
 public class PbcIntegrationTestKubernetes {}

@@ -16,4 +16,4 @@ pipelines:
         artifacts:
           - "**/surefire-reports/**"
         script:
-          - mvn -s settings.xml -Pintegration-tests-ui -Dxvfb.enable=false -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" clean install
+          - mvn -B -s settings.xml -Pintegration-tests-ui -Dxvfb.enable=false -Dwebdriver.browser="chrome:url=http://127.0.0.1:4444" clean install
