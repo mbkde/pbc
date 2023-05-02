@@ -60,7 +60,7 @@ class DockerHandlerProviderImplTest {
                 .thenReturn(Optional.of(true));
         BuildDefinition mockBuildDef = mock(BuildDefinition.class);
         Map<String, String> customConfig = new HashMap<>();
-        customConfig.put("custom.isolated.docker.enabled", "true");
+        customConfig.put(DockerHandlerProviderImpl.PBC_KEY, "true");
         when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
         assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
     }
@@ -81,7 +81,7 @@ class DockerHandlerProviderImplTest {
                 .thenReturn(Optional.of(true));
         BuildDefinition mockBuildDef = mock(BuildDefinition.class);
         Map<String, String> customConfig = new HashMap<>();
-        customConfig.put("custom.isolated.docker.enabled", "false");
+        customConfig.put(DockerHandlerProviderImpl.PBC_KEY, "false");
         when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
         assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
     }
@@ -92,7 +92,7 @@ class DockerHandlerProviderImplTest {
                 .thenReturn(Optional.of(true));
         BuildDefinition mockBuildDef = mock(BuildDefinition.class);
         Map<String, String> customConfig = new HashMap<>();
-        customConfig.put("custom.isolated.docker.enabled", null);
+        customConfig.put(DockerHandlerProviderImpl.PBC_KEY, null);
         when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
         assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
     }
@@ -119,10 +119,44 @@ class DockerHandlerProviderImplTest {
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigAndDarkFeatureTrue() {
+    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigEmptyAndDarkFeatureTrue() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.of(true));
-        assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(new HashMap<>()));
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(new HashMap<>()));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigTrueAndDarkFeatureTrue() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, "true");
+        assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigFalseAndDarkFeatureTrue() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, "false");
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigValueNullAndDarkFeatureTrue() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, null);
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigNullAndDarkFeatureTrue() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected((Map<String, String>) null));
     }
 
     @Test

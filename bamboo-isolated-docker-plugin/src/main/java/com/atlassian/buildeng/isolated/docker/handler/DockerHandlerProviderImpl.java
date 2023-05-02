@@ -44,6 +44,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     private final Logger logger = LoggerFactory.getLogger(DockerHandlerProviderImpl.class);
 
     static final String ISOLATION_TYPE = "PBC";
+    public static final String PBC_KEY = "custom.isolated.docker.enabled";
 
     private DockerHandlerModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
@@ -160,7 +161,10 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
      */
     public boolean isCustomDedicatedAgentExpected(BuildDefinition buildDefinition) {
         boolean result = isEphemeral() && isPbcBuild(buildDefinition);
-        logger.info("Agent is showing {} for result of isCustomDedicatedAgentExpected", result);
+        logger.info("Agent is showing {} for result of isCustomDedicatedAgentExpected build", result);
+        if (buildDefinition != null) {
+            logger.info("{}", buildDefinition.getCustomConfiguration());
+        }
         return result;
     }
 
@@ -168,16 +172,27 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     /*
      * environmentCustomConfig is used for deployments
      */
-    public boolean isCustomDedicatedAgentExpected(@NotNull Map<String, String> environmentCustomConfig) {
-        return isEphemeral();
+    public boolean isCustomDedicatedAgentExpected(Map<String, String> environmentCustomConfig) {
+        boolean result = isEphemeral() && isPbcDeployment(environmentCustomConfig);
+        logger.info("Agent is showing {} for result of isCustomDedicatedAgentExpected deployment", result);
+        if (environmentCustomConfig != null) {
+            logger.info("{}", environmentCustomConfig);
+        }
+        return result;
     }
 
     private boolean isPbcBuild(BuildDefinition buildDefinition) {
-        final String PBC_KEY = "custom.isolated.docker.enabled";
         if (buildDefinition == null) {
             return false;
         }
         return Boolean.parseBoolean(buildDefinition.getCustomConfiguration().get(PBC_KEY));
+    }
+
+    private boolean isPbcDeployment(Map<String, String> environmentCustomConfig) {
+        if (environmentCustomConfig == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(environmentCustomConfig.get(PBC_KEY));
     }
 
     private boolean isEphemeral() {
