@@ -1,4 +1,7 @@
 #!/bin/bash -l
+# Note: This isn't the real run-agent that we use for Atlassian's infrastructure
+#
+# That can be found at https://stash.atlassian.com/projects/BUILDENG/repos/sidekick/browse/files/run-agent.sh
 set -x
 
 if [ -f '/var/run/secrets/kubernetes.io/serviceaccount/namespace' ]; then

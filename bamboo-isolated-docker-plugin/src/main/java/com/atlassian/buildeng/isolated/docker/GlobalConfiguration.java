@@ -235,7 +235,7 @@ public class GlobalConfiguration implements LifecycleAware {
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE,
                     maxAgentCreationPerMinute);
         }
-        if (!enabled.equals(getEnabledProperty())) {
+        if (enabled != null && !enabled.equals(getEnabledProperty())) {
             auditLogEntry("PBC Global Enable Flag", Boolean.toString(getEnabledProperty()), Boolean.toString(enabled));
             setEnabledProperty(enabled);
         }

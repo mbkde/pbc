@@ -59,6 +59,8 @@ import org.slf4j.LoggerFactory;
 
 public class DockerHandlerImpl implements DockerHandler {
 
+    public static final String DOCKER_HANDLER_PLUGIN_KEY =
+            "com.atlassian.buildeng.bamboo-isolated-docker-plugin:dockerHandler";
     private static final Logger log = LoggerFactory.getLogger(DockerHandlerImpl.class);
     private final DockerHandlerModuleDescriptor moduleDescriptor;
     private final TemplateRenderer templateRenderer;
@@ -171,6 +173,8 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_AWS_ROLE, config.getAwsRole());
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, (String)
                 webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
+
+        all.put(DOCKER_HANDLER_PLUGIN_KEY, cc);
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
         removeEnvironmentRequirements(environment, environmentRequirementService);
         addEnvironementRequirement(environment, environmentRequirementService);
