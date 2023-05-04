@@ -163,7 +163,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
         boolean result = isEphemeral() && isPbcBuild(buildDefinition);
         logger.info("Agent is showing {} for result of isCustomDedicatedAgentExpected build", result);
         if (buildDefinition != null) {
-            logger.info("{}", buildDefinition.getCustomConfiguration());
+            logger.info("isCustomDedicatedAgentExpected buildDefinition: {}", buildDefinition.getCustomConfiguration());
         }
         return result;
     }
@@ -176,7 +176,7 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
         boolean result = isEphemeral() && isPbcDeployment(environmentCustomConfig);
         logger.info("Agent is showing {} for result of isCustomDedicatedAgentExpected deployment", result);
         if (environmentCustomConfig != null) {
-            logger.info("{}", environmentCustomConfig);
+            logger.info("isCustomDedicatedAgentExpected environmentCustomConfig: {}", environmentCustomConfig);
         }
         return result;
     }
