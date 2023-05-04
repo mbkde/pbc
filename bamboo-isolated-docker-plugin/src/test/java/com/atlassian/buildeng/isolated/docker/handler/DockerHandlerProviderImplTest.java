@@ -31,6 +31,7 @@ import com.atlassian.buildeng.isolated.docker.Validator;
 import com.atlassian.plugin.webresource.WebResourceManager;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,44 +55,125 @@ class DockerHandlerProviderImplTest {
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithBuildDefinitionAndDarkFeatureTrue() {
+    void testIsCustomDedicatedAgentExpectedForPbcBuildWithFeatureEnabled() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.of(true));
-        assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mock(BuildDefinition.class)));
+        BuildDefinition mockBuildDef = mock(BuildDefinition.class);
+        Map<String, String> customConfig = new HashMap<>();
+        customConfig.put(DockerHandlerProviderImpl.PBC_KEY, "true");
+        when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
+        assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithBuildDefinitionAndDarkFeatureFalse() {
+    void testIsCustomDedicatedAgentExpectedForNotPbcBuildWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        BuildDefinition mockBuildDef = mock(BuildDefinition.class);
+        Map<String, String> customConfig = new HashMap<>();
+        when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForPbcDisabledBuildWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        BuildDefinition mockBuildDef = mock(BuildDefinition.class);
+        Map<String, String> customConfig = new HashMap<>();
+        customConfig.put(DockerHandlerProviderImpl.PBC_KEY, "false");
+        when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForEmptyBuildWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        BuildDefinition mockBuildDef = mock(BuildDefinition.class);
+        Map<String, String> customConfig = new HashMap<>();
+        customConfig.put(DockerHandlerProviderImpl.PBC_KEY, null);
+        when(mockBuildDef.getCustomConfiguration()).thenReturn(customConfig);
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mockBuildDef));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForNullBuildWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected((BuildDefinition) null));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForBuildWithFeatureDisabled() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.of(false));
         assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mock(BuildDefinition.class)));
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithBuildDefinitionAndDarkFeatureUndefined() {
+    void testIsCustomDedicatedAgentExpectedForBuildWithFeatureUndefined() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.empty());
         assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(mock(BuildDefinition.class)));
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigAndDarkFeatureTrue() {
+    void testIsCustomDedicatedAgentExpectedForEmptyDeploymentWithFeatureEnabled() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.of(true));
-        assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(new HashMap<>()));
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(new HashMap<>()));
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigAndDarkFeatureFalse() {
+    void testIsCustomDedicatedAgentExpectedForPbcDeploymentWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, "true");
+        assertTrue(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForDisabledPbcDeploymentWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, "false");
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForNullPbcDeploymentWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, null);
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForNullDeploymentWithFeatureEnabled() {
+        when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
+                .thenReturn(Optional.of(true));
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected((Map<String, String>) null));
+    }
+
+    @Test
+    void testIsCustomDedicatedAgentExpectedForFeatureDisabled() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.of(false));
-        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(new HashMap<>()));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, "true");
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
     }
 
     @Test
-    void testIsCustomDedicatedAgentExpectedWithEnvironmentCustomConfigAndDarkFeatureUndefined() {
+    void testIsCustomDedicatedAgentExpectedForFeatureUndefined() {
         when(darkFeatureManager.isEnabledForAllUsers(Constants.PBC_EPHEMERAL_ENABLED))
                 .thenReturn(Optional.empty());
-        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(new HashMap<>()));
+        HashMap<String, String> environmentCustomConfig = new HashMap<>();
+        environmentCustomConfig.put(DockerHandlerProviderImpl.PBC_KEY, "true");
+        assertFalse(dockerHandlerProviderImpl.isCustomDedicatedAgentExpected(environmentCustomConfig));
     }
 }
