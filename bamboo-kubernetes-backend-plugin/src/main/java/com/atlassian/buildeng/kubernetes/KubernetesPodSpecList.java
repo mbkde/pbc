@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tuckey.web.filters.urlrewrite.utils.StringUtils;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -102,7 +103,7 @@ public class KubernetesPodSpecList {
     }
 
     private Map<String, Object> loadTemplatePod() {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         return yaml.load(globalConfiguration.getPodTemplateAsString());
     }
 
@@ -112,7 +113,7 @@ public class KubernetesPodSpecList {
         if (podSpec.isEmpty()) {
             return finalPod;
         }
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> cachePodSpec = yaml.load(podSpec);
         return mergeMap(finalPod, cachePodSpec);
     }
@@ -123,7 +124,7 @@ public class KubernetesPodSpecList {
         if (allowList.isEmpty()) {
             return new HashSet<>();
         }
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         return new HashSet<>(yaml.load(allowList));
     }
 
@@ -186,13 +187,13 @@ public class KubernetesPodSpecList {
         if (StringUtils.isBlank(archConfig)) {
             return Collections.emptyMap();
         } else {
-            Yaml yaml = new Yaml(new SafeConstructor());
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             return yaml.load(archConfig);
         }
     }
 
     private Map<String, Object> loadTemplateIamRequest() {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         return yaml.load(globalConfiguration.getBandanaIamRequestTemplateAsString());
     }
 

@@ -51,6 +51,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -76,7 +77,7 @@ public class KubernetesPodSpecListTest {
     @Test
     @SuppressWarnings("unchecked")
     void testContainersMergedByName() {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         String templateString = getPodTemplateAsString();
         String overridesString = "metadata:\n" + "    namespace: buildeng\n"
                 + "    annotations:\n"
@@ -299,7 +300,7 @@ public class KubernetesPodSpecListTest {
 
     @Test
     void testAddCachePodSpec() {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
 
         String ogSpec = "apiVersion: v1\n" + "kind: Pod\n"
                 + "spec:\n"
@@ -392,7 +393,7 @@ public class KubernetesPodSpecListTest {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> convertStringSpecToYaml(String spec) {
-        Yaml yamlReader = new Yaml(new SafeConstructor());
+        Yaml yamlReader = new Yaml(new SafeConstructor(new LoaderOptions()));
         return (Map<String, Object>) yamlReader.load(spec);
     }
 

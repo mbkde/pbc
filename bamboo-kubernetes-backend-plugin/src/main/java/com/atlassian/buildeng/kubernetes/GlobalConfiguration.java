@@ -54,6 +54,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -290,7 +291,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
 
     private void validateArchitectureConfig(String architectureConfig) throws IllegalArgumentException {
         if (StringUtils.isNotBlank(architectureConfig)) {
-            Yaml rawYaml = new Yaml(new SafeConstructor());
+            Yaml rawYaml = new Yaml(new SafeConstructor(new LoaderOptions()));
 
             Map<String, Object> yaml;
             try {
@@ -372,7 +373,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
 
     private void validateArtifactoryCachePodSpec(String artifactoryCacheSpec) throws IllegalArgumentException {
         if (StringUtils.isNotBlank(artifactoryCacheSpec)) {
-            Yaml rawYaml = new Yaml(new SafeConstructor());
+            Yaml rawYaml = new Yaml(new SafeConstructor(new LoaderOptions()));
 
             Map<String, Object> yaml;
             try {
