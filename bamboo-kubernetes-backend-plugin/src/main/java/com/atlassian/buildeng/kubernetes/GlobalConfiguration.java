@@ -172,12 +172,12 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         }
         if (!StringUtils.equals(iamRequestTemplate, getBandanaIamRequestTemplateAsString())) {
             auditLogEntry(
-                    "PBC Kuberenetes IAM Request Template", getBandanaIamRequestTemplateAsString(), iamRequestTemplate);
+                    "PBC Kubernetes IAM Request Template", getBandanaIamRequestTemplateAsString(), iamRequestTemplate);
             bandanaManager.setValue(
                     PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE, iamRequestTemplate);
         }
         if (!StringUtils.equals(iamSubjectIdPrefix, getIamSubjectIdPrefix())) {
-            auditLogEntry("PBC Kuberenetes IAM Subject ID Prefix", getIamSubjectIdPrefix(), iamSubjectIdPrefix);
+            auditLogEntry("PBC Kubernetes IAM Subject ID Prefix", getIamSubjectIdPrefix(), iamSubjectIdPrefix);
             bandanaManager.setValue(
                     PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX, iamSubjectIdPrefix);
         }
@@ -537,7 +537,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
      * There is a REST endpoint to specifically update current context as this needs to be done automatically across
      * multiple Bamboo servers.
      *
-     * @param currentContext non null value of the new context, empty/blank value means reset
+     * @param currentContext non-null value of the new context, empty/blank value means reset
      *                       to whatever is the default context
      */
     public void persistCurrentContext(String currentContext) {
