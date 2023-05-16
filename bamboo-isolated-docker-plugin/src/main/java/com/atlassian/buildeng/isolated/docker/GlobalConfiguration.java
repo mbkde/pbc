@@ -41,6 +41,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -257,7 +258,7 @@ public class GlobalConfiguration implements LifecycleAware {
 
             LinkedHashMap<String, String> yaml = null;
             if (isNotBlank(archRawString)) {
-                Yaml yamlParser = new Yaml(new SafeConstructor());
+                Yaml yamlParser = new Yaml(new SafeConstructor(new LoaderOptions()));
                 try {
                     // Will be loaded as a LinkedHashMap, and we want to keep that to preserver ordering (i.e. default
                     // on top)
