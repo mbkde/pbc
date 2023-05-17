@@ -59,6 +59,9 @@ public class GlobalConfiguration implements LifecycleAware {
     static final String BANDANA_DEFAULT_IMAGE = "com.atlassian.buildeng.pbc.default.image";
     static final String BANDANA_MAX_AGENT_CREATION_PER_MINUTE =
             "com.atlassian.buildeng.pbc.default.max.agent.creation.rate";
+    static final String BANDANA_AGENT_CLEANUP_TIME = "com.atlassian.buildeng.pbc.agent.cleanup.time";
+    static final String BANDANA_AGENT_REMOVAL_TIME = "com.atlassian.buildeng.pbc.agent.removal_time";
+
     // See class Javadoc about why these are stored separately
     static final String BANDANA_ARCHITECTURE_CONFIG_RAW = "com.atlassian.buildeng.pbc.architecture.config.raw";
     static final String BANDANA_ARCHITECTURE_CONFIG_PARSED = "com.atlassian.buildeng.pbc.architecture.config.parsed";
@@ -114,9 +117,30 @@ public class GlobalConfiguration implements LifecycleAware {
      */
     @Nullable
     private Integer getMaxAgentCreationPerMinuteRaw() {
-        Integer maxAgents = (Integer)
+        return (Integer)
                 bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_MAX_AGENT_CREATION_PER_MINUTE);
-        return maxAgents;
+    }
+
+    @NotNull
+    public Integer getAgentCleanupTime() {
+        Integer cleanupTimeRaw = getAgentCleanupTimeRaw();
+        return cleanupTimeRaw != null ? cleanupTimeRaw : 30;
+    }
+
+    @Nullable
+    private Integer getAgentCleanupTimeRaw() {
+        return (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AGENT_CLEANUP_TIME);
+    }
+
+    @NotNull
+    public Integer getAgentRemovalTime() {
+        Integer removalTimeRaw = getAgentRemovalTimeRaw();
+        return removalTimeRaw != null ? removalTimeRaw : 120;
+    }
+
+    @Nullable
+    private Integer getAgentRemovalTimeRaw() {
+        return (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AGENT_REMOVAL_TIME);
     }
 
     @NotNull
@@ -216,6 +240,8 @@ public class GlobalConfiguration implements LifecycleAware {
         final String archRawString = config.getArchitectureConfig();
         final boolean awsVendor = config.isAwsVendor();
         final Boolean enabled = config.isEnabled();
+        final Integer agentCleanupTime = config.getAgentCleanupTime();
+        final Integer agentRemovalTime = config.getAgentRemovalTime();
 
         logger.info("Applying new PBC config: " + config);
 
@@ -235,6 +261,22 @@ public class GlobalConfiguration implements LifecycleAware {
                     PlanAwareBandanaContext.GLOBAL_CONTEXT,
                     BANDANA_MAX_AGENT_CREATION_PER_MINUTE,
                     maxAgentCreationPerMinute);
+        }
+        if (!Objects.equals(agentCleanupTime, getAgentCleanupTime())) {
+            auditLogEntry(
+                    "PBC agent cleanup time",
+                    Integer.toString(getAgentCleanupTime()),
+                    Integer.toString(agentCleanupTime));
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AGENT_CLEANUP_TIME, agentCleanupTime);
+        }
+        if (!Objects.equals(agentRemovalTime, getAgentRemovalTime())) {
+            auditLogEntry(
+                    "PBC agent removal time",
+                    Integer.toString(getAgentRemovalTime()),
+                    Integer.toString(agentRemovalTime));
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AGENT_REMOVAL_TIME, agentRemovalTime);
         }
         if (enabled != null && !enabled.equals(getEnabledProperty())) {
             auditLogEntry("PBC Global Enable Flag", Boolean.toString(getEnabledProperty()), Boolean.toString(enabled));
