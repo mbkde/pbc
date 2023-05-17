@@ -178,6 +178,11 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
         return result;
     }
 
+    @Override
+    public String getEnvironmentConfigurationKey() {
+        return CustomEnvironmentConfigExporterImpl.ENV_CONFIG_MODULE_KEY;
+    }
+
     private boolean isPbcBuild(BuildDefinition buildDefinition) {
         if (buildDefinition == null) {
             return false;

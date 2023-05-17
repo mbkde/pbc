@@ -172,8 +172,6 @@ public class DockerHandlerImpl implements DockerHandler {
         cc.put(Configuration.DOCKER_EXTRA_CONTAINERS, (String)
                 webFragmentsContextMap.getOrDefault(Configuration.DOCKER_EXTRA_CONTAINERS, "[]"));
 
-        all.put(moduleDescriptor.getCompleteKey(), cc);
-        log.info("Saving PBC environment configuration as: {}", all);
         environmentCustomConfigService.saveEnvironmentPluginConfig(all, environment.getId());
         removeEnvironmentRequirements(environment, environmentRequirementService);
         addEnvironementRequirement(environment, environmentRequirementService);
