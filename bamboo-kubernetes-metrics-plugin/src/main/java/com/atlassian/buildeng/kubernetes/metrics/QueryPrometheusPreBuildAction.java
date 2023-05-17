@@ -35,6 +35,8 @@ import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
     private BuildContext buildContext;
@@ -43,6 +45,7 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
 
     private static final String KUBE_POD_NAME = System.getenv("KUBE_POD_NAME");
     private static final String STEP_PERIOD = "1000s";
+    private static final Logger logger = LoggerFactory.getLogger(QueryPrometheusPreBuildAction.class);
 
     @Inject
     public QueryPrometheusPreBuildAction(BuildLoggerManager buildLoggerManager) {
@@ -74,7 +77,7 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
                 return buildContext;
             }
 
-            buildLogger.addBuildLogEntry("Name of pod:" + KUBE_POD_NAME);
+            buildLogger.addBuildLogEntry("Name of pod: " + KUBE_POD_NAME);
             loadImageDetails(prometheusUrl, "kube_pod_container_info{pod=\"" + KUBE_POD_NAME + "\"}", buildLogger);
             loadHost(prometheusUrl, "kube_pod_info{pod=\"" + KUBE_POD_NAME + "\"}", buildLogger, buildContext);
         }
@@ -91,18 +94,30 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             JSONObject jsonResponse = loadJson(prometheusUrl, query);
             JSONArray result = jsonResponse.getJSONObject("data").getJSONArray("result");
             if (result.length() == 0) {
-                buildLogger.addBuildLogEntry("No metrics found for pod."
-                        + " This can occur when the build time is too short for metrics to appear in Prometheus.");
+                buildLogger.addBuildLogEntry(
+                        "Unable to load image details, as no metrics were found for this pod."
+                                + " This can occur when the build time is too short for metrics to appear in Prometheus or there was a delay in processing them.");
                 return;
             }
             Set<String> processed = new HashSet<>();
             for (int i = 0; i < result.length(); i++) {
                 JSONObject metric = result.getJSONObject(i).getJSONObject("metric");
                 String container = metric.getString("container");
-                String imageid = metric.getString("image_id");
-                if (StringUtils.isNotBlank(imageid)) {
-                    if (processed.add(query)) {
-                        buildLogger.addBuildLogEntry(String.format("Container '%s' used image %s", container, imageid));
+                String image = metric.getString("image");
+                String imageId = metric.optString("image_id");
+
+                if (processed.add(container)) {
+                    if (StringUtils.isNotBlank(imageId)) {
+                        buildLogger.addBuildLogEntry(
+                                String.format("Container '%s' used image '%s'", container, imageId));
+                    } else {
+                        buildLogger.addBuildLogEntry(
+                                String.format("Container '%s' used image '%s'. SHA not available.", container, image));
+                        logger.warn(
+                                "image_id for container {} in pod {} was blank. Logging Prometheus JSON: "
+                                        + jsonResponse,
+                                container,
+                                KUBE_POD_NAME);
                     }
                 }
             }
@@ -118,8 +133,9 @@ public class QueryPrometheusPreBuildAction implements CustomPreBuildAction {
             JSONObject jsonResponse = loadJson(prometheusUrl, query);
             JSONArray result = jsonResponse.getJSONObject("data").getJSONArray("result");
             if (result.length() == 0) {
-                buildLogger.addBuildLogEntry("No metrics found for pod."
-                        + " This can occur when the build time is too short for metrics to appear in Prometheus.");
+                buildLogger.addBuildLogEntry(
+                        "Unable to load Kube node details, as no metrics were found for this pod."
+                                + " This can occur when the build time is too short for metrics to appear in Prometheus or there was a delay in processing them.");
                 return;
             }
             JSONObject metric = result.getJSONObject(0).getJSONObject("metric");
