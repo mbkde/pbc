@@ -52,6 +52,8 @@ public class CustomEnvironmentConfigExporterImpl implements CustomEnvironmentCon
     private final Validator validator;
 
     // these things can never ever change value, because they end up as part of export
+    // note: this should have been dockerHandlerImpl instead of pbcEnvironment as that's what atlassian-plugins
+    // `getCompleteKey` returns, but we are stuck with this now
     static final String ENV_CONFIG_MODULE_KEY = "com.atlassian.buildeng.bamboo-isolated-docker-plugin:pbcEnvironment";
 
     public CustomEnvironmentConfigExporterImpl(Validator validator) {

@@ -33,7 +33,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
-        <bamboo.version>9.3.0-m226</bamboo.version>
+        <bamboo.version>9.3.0-m238</bamboo.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <amps.version>8.8.0</amps.version>
         <snakeyaml.version>2.0</snakeyaml.version>
