@@ -172,9 +172,6 @@ public class DockerHandlerProviderImpl implements DockerHandlerProvider {
     public boolean isCustomDedicatedAgentExpected(Map<String, String> environmentCustomConfig) {
         boolean result = isEphemeral() && isPbcDeployment(environmentCustomConfig);
         logger.debug("Agent is showing {} for result of isCustomDedicatedAgentExpected deployment", result);
-        if (environmentCustomConfig != null) {
-            logger.info("isCustomDedicatedAgentExpected environmentCustomConfig: {}", environmentCustomConfig);
-        }
         return result;
     }
 
