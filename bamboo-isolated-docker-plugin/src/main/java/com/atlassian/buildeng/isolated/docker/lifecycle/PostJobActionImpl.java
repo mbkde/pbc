@@ -142,10 +142,16 @@ public class PostJobActionImpl implements PostJobAction {
                         agentId,
                         job.getPlanKey());
                 return null;
+            } else if (AgentQueries.isEphemeralAgent(test)) {
+                LOG.debug(
+                        "Agent {} for job {} is an ephemeral agent, so not running post job cleanup",
+                        agentId,
+                        job.getPlanKey());
+                return null;
             } else if (!AgentQueries.isDockerAgent(test)) {
                 // could it be an elastic/remote agent that was running the job while the plan was changed?
                 LOG.error(
-                        "Agent {} for job {} referenced from buildResultSummary wa not PBC agent",
+                        "Agent {} for job {} referenced from buildResultSummary was not PBC agent",
                         agentId,
                         job.getPlanKey());
                 return null;

@@ -46,6 +46,10 @@ public class AgentQueries {
         return isDockerAgent(agent);
     }
 
+    public static boolean isEphemeralAgent(BuildAgent agent) {
+        return getDockerEphemeralAgent(agent) != null;
+    }
+
     public static String getDockerResultCapability(BuildAgent agent) {
         if (agent == null) {
             return null;
@@ -74,6 +78,29 @@ public class AgentQueries {
             @Override
             // Don't count ephemeral agents as "docker agents" for the purposes of ReaperJob queries
             public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
+        });
+        return ref.get();
+    }
+
+    public static String getDockerEphemeralAgent(BuildAgent agent) {
+        if (agent == null) {
+            return null;
+        }
+        AtomicReference<String> ref = new AtomicReference<>();
+        agent.getDefinition().accept(new PipelineDefinitionVisitor() {
+            @Override
+            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {}
+
+            @Override
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
+
+            @Override
+            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {}
+
+            @Override
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {
+                ref.set("ephemeral");
+            }
         });
         return ref.get();
     }
