@@ -24,7 +24,8 @@ import com.atlassian.bamboo.buildqueue.PipelineDefinitionVisitor;
 import com.atlassian.bamboo.buildqueue.RemoteAgentDefinition;
 import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.Capability;
-import com.atlassian.bamboo.v2.build.agent.capability.CapabilitySet;
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
@@ -64,15 +65,8 @@ public class AgentQueries {
 
             @Override
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
-                if (pipelineDefinition.getCapabilitySet() != null) {
-                    CapabilitySet capabilitySet = pipelineDefinition.getCapabilitySet();
-                    if (capabilitySet != null) {
-                        Capability cap = capabilitySet.getCapability(Constants.CAPABILITY_RESULT);
-                        if (cap != null) {
-                            ref.set(cap.getValue());
-                        }
-                    }
-                }
+                getCapabilityValue(pipelineDefinition, Constants.CAPABILITY_RESULT)
+                        .ifPresent(ref::set);
             }
 
             @Override
@@ -95,14 +89,22 @@ public class AgentQueries {
             public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
 
             @Override
-            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {}
+            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
+                // So called ephemeral agents in PBC are still considered "Remote agents" in Bamboo.
+                getCapabilityValue(pipelineDefinition, Constants.EPHEMERAL_CAPABILITY_RESULT)
+                        .ifPresent(ref::set);
+            }
 
             @Override
-            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {
-                // Can we check that this is a PBC ephemeral agent?
-                ref.set("ephemeral");
-            }
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
         });
         return ref.get();
+    }
+
+    @VisibleForTesting
+    public static Optional<String> getCapabilityValue(RemoteAgentDefinition pipelineDefinition, String capabilityKey) {
+        return Optional.ofNullable(pipelineDefinition.getCapabilitySet())
+                .map(set -> set.getCapability(capabilityKey))
+                .map(Capability::getValue);
     }
 }

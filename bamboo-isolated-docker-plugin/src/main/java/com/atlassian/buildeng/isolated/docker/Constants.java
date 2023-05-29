@@ -28,6 +28,7 @@ public interface Constants {
     String RESULT_AGENT_KILLED_ITSELF = "custom.isolated.docker.stopped";
 
     String CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.for";
+    String EPHEMERAL_CAPABILITY_RESULT = Capability.SYSTEM_PREFIX + ".isolated.docker.ephemeral";
     /**
      * prefix for custom data passed from the api implementation.
      * Everything starting with this can end up in the UI.
