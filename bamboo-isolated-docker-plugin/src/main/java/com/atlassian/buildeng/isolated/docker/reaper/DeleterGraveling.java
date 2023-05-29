@@ -64,8 +64,10 @@ public class DeleterGraveling implements BuildAgentVisitor {
             }
 
             @Override
-            // ReaperJob does not remove Ephemeral agents, they stop automatically on their own
-            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
+            // ReaperJob does not stop Ephemeral agents, but we still need to remove them
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {
+                agentRemovals.removeAgent(buildAgent);
+            }
         });
     }
 }
