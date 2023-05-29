@@ -99,6 +99,7 @@ public class AgentQueries {
 
             @Override
             public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {
+                // Can we check that this is a PBC ephemeral agent?
                 ref.set("ephemeral");
             }
         });
