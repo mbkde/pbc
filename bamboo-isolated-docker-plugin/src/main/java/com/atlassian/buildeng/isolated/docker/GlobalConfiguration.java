@@ -124,7 +124,7 @@ public class GlobalConfiguration implements LifecycleAware {
     @NotNull
     public Integer getAgentCleanupTime() {
         Integer cleanupTimeRaw = getAgentCleanupTimeRaw();
-        return cleanupTimeRaw != null ? cleanupTimeRaw : 30;
+        return cleanupTimeRaw != null ? cleanupTimeRaw : Constants.DEFAULT_AGENT_CLEANUP_DELAY;
     }
 
     @Nullable
@@ -135,7 +135,7 @@ public class GlobalConfiguration implements LifecycleAware {
     @NotNull
     public Integer getAgentRemovalTime() {
         Integer removalTimeRaw = getAgentRemovalTimeRaw();
-        return removalTimeRaw != null ? removalTimeRaw : 120;
+        return removalTimeRaw != null ? removalTimeRaw : Constants.DEFAULT_AGENT_REMOVE_DELAY;
     }
 
     @Nullable
