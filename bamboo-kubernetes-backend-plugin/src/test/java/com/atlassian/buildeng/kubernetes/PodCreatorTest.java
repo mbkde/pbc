@@ -64,6 +64,7 @@ class PodCreatorTest {
     private static final String EXPECTED_ANNOTATION_RESULTID =
             "shardspipeline-servicedeskembeddablesservicedeskembeddab...Z";
     private static final String IMAGE_NAME = "testImage";
+    private static final int HEARTBEAT_TIME_SHORT = 10;
 
     public PodCreatorTest() {}
 
@@ -208,13 +209,13 @@ class PodCreatorTest {
     }
 
     @Test
-    void testAgentHeartbeatTimeLong() {
-        testHeartbeat(60);
+    void testAgentHeartbeatTimeDefault() {
+        testHeartbeat(Constants.DEFAULT_HEARTBEAT_TIME);
     }
 
     @Test
     void testAgentHeartbeatTimeShort() {
-        testHeartbeat(10);
+        testHeartbeat(HEARTBEAT_TIME_SHORT);
     }
 
     @Test

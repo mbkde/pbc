@@ -592,7 +592,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     @NotNull
     public Integer getAgentHeartbeatTime() {
         Integer heartbeatTimeRaw = getAgentHeartbeatTimeRaw();
-        return heartbeatTimeRaw != null ? heartbeatTimeRaw : 60;
+        return heartbeatTimeRaw != null ? heartbeatTimeRaw : Constants.DEFAULT_HEARTBEAT_TIME;
     }
 
     @Nullable
