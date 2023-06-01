@@ -25,7 +25,6 @@ import com.atlassian.bamboo.persister.AuditLogService;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.buildeng.isolated.docker.rest.Config;
-import com.atlassian.plugin.spring.scanner.annotation.component.BambooComponent;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.sal.api.lifecycle.LifecycleAware;
 import java.util.Collections;
@@ -41,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -52,7 +52,7 @@ import org.yaml.snakeyaml.error.YAMLException;
  * used each time a plugin is reloaded. If you store a custom class in Bandana, you will get a ClassCastException when
  * attempting to cast it back to the intended class. Stick to Java built-ins.
  */
-@BambooComponent
+@Component
 @ExportAsService
 public class GlobalConfiguration implements LifecycleAware {
     static final String BANDANA_ENABLED_PROPERTY = "com.atlassian.buildeng.pbc.enabled";
