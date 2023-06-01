@@ -86,7 +86,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
                             } catch (InterruptedException e) {
                                 logger.error("Error while waiting for build to complete", e);
                             }
-                            buildAgent.stopNicely();
+                            buildAgent.stopNicely(0);
                         }
                     })
                     .start();
