@@ -23,7 +23,6 @@ import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.agent.ExecutableBuildAgent;
 import com.atlassian.bamboo.v2.build.agent.capability.AgentContext;
 import com.atlassian.buildeng.isolated.docker.Constants;
-import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import java.util.concurrent.TimeUnit;
@@ -41,15 +40,12 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
 
     private final AgentContext agentContext;
     private final BuildLoggerManager buildLoggerManager;
-    private final GlobalConfiguration globalConfiguration;
     private BuildContext buildContext;
 
     @Inject
-    private StopDockerAgentBuildProcessor(
-            AgentContext agentContext, BuildLoggerManager buildLoggerManager, GlobalConfiguration globalConfiguration) {
+    private StopDockerAgentBuildProcessor(AgentContext agentContext, BuildLoggerManager buildLoggerManager) {
         this.agentContext = agentContext;
         this.buildLoggerManager = buildLoggerManager;
-        this.globalConfiguration = globalConfiguration;
     }
 
     @Override
@@ -82,7 +78,7 @@ public class StopDockerAgentBuildProcessor implements CustomBuildProcessor {
                         @Override
                         public void run() {
                             try {
-                                TimeUnit.SECONDS.sleep(globalConfiguration.getAgentCleanupTime());
+                                TimeUnit.SECONDS.sleep(Constants.AGENT_CLEANUP_DELAY);
                             } catch (InterruptedException e) {
                                 logger.error("Error while waiting for build to complete", e);
                             }
