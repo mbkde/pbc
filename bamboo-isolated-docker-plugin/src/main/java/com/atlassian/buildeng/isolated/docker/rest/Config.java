@@ -26,8 +26,6 @@ public class Config {
     public Boolean enabled;
     public String defaultImage;
     public Integer maxAgentCreationPerMinute;
-    public Integer agentCleanupTime;
-    public Integer agentRemovalTime;
     public String architectureConfig;
     public boolean awsVendor;
 
@@ -55,22 +53,6 @@ public class Config {
 
     public void setMaxAgentCreationPerMinute(Integer maxAgentCreationPerMinute) {
         this.maxAgentCreationPerMinute = maxAgentCreationPerMinute;
-    }
-
-    public Integer getAgentCleanupTime() {
-        return agentCleanupTime;
-    }
-
-    public void setAgentCleanupTime(Integer agentCleanupTime) {
-        this.agentCleanupTime = agentCleanupTime;
-    }
-
-    public Integer getAgentRemovalTime() {
-        return agentRemovalTime;
-    }
-
-    public void setAgentRemovalTime(Integer agentRemovalTime) {
-        this.agentRemovalTime = agentRemovalTime;
     }
 
     public String getArchitectureConfig() {

@@ -64,7 +64,6 @@ class PodCreatorTest {
     private static final String EXPECTED_ANNOTATION_RESULTID =
             "shardspipeline-servicedeskembeddablesservicedeskembeddab...Z";
     private static final String IMAGE_NAME = "testImage";
-    private static final int HEARTBEAT_TIME_SHORT = 10;
 
     public PodCreatorTest() {}
 
@@ -209,16 +208,6 @@ class PodCreatorTest {
     }
 
     @Test
-    void testAgentHeartbeatTimeDefault() {
-        testHeartbeat(Constants.DEFAULT_HEARTBEAT_TIME);
-    }
-
-    @Test
-    void testAgentHeartbeatTimeShort() {
-        testHeartbeat(HEARTBEAT_TIME_SHORT);
-    }
-
-    @Test
     void testIAMRequest() throws IOException {
         Configuration config = ConfigurationBuilder.create(IMAGE_NAME)
                 .withAwsRole("arn:aws:iam::123456789012:role/testrole")
@@ -254,34 +243,11 @@ class PodCreatorTest {
         assertEphemeral(expected, spec);
     }
 
-    private void testHeartbeat(Integer agentHeartbeatTime) {
-        mockGlobalConfiguration(agentHeartbeatTime);
-        mockDarkFeatureManager(Optional.of(true));
-        Configuration config = ConfigurationBuilder.create(IMAGE_NAME)
-                .withImageSize(Configuration.ContainerSize.REGULAR)
-                .build();
-
-        IsolatedDockerAgentRequest request =
-                new IsolatedDockerAgentRequest(config, resultKey, requestUuid, 0, "bk", 0, true, "someRandomToken");
-
-        Map<String, Object> podRequest = podCreator.create(request);
-        assertRootKeys(podRequest);
-        assertMetadata((Map<String, Object>) podRequest.get("metadata"), false);
-        Map<String, Object> spec = (Map<String, Object>) podRequest.get("spec");
-        assertSpec(spec);
-        assertAgentHeartbeatTime(Integer.toString(agentHeartbeatTime), spec);
-    }
-
-    private void mockGlobalConfiguration(Integer agentHeartbeatTime) {
+    private void mockGlobalConfiguration() {
         when(globalConfiguration.getBambooBaseUrl()).thenReturn(BAMBOO_BASE_URL);
         when(globalConfiguration.getBambooBaseUrlAskKubeLabel()).thenReturn(BAMBOO_BASE_URL);
         when(globalConfiguration.getSizeDescriptor()).thenReturn(new DefaultContainerSizeDescriptor());
         when(globalConfiguration.getCurrentSidekick()).thenReturn(SIDEKICK_IMAGE);
-        when(globalConfiguration.getAgentHeartbeatTime()).thenReturn(agentHeartbeatTime);
-    }
-
-    private void mockGlobalConfiguration() {
-        mockGlobalConfiguration(60);
     }
 
     private void mockDarkFeatureManager(Optional<Boolean> ephemeral) {
@@ -378,14 +344,6 @@ class PodCreatorTest {
         Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
         assertTrue(envVariables.containsKey("EPHEMERAL"));
         assertEquals(expectedEphemeral, envVariables.get("EPHEMERAL"));
-    }
-
-    private void assertAgentHeartbeatTime(String expectedHeartbeatTime, Map<String, Object> spec) {
-        Map<String, Object> mainContainer = getMainContainer(spec);
-
-        Map<String, String> envVariables = getEnvVariablesFromContainer(mainContainer);
-        assertTrue(envVariables.containsKey("HEARTBEAT"));
-        assertEquals(expectedHeartbeatTime, envVariables.get("HEARTBEAT"));
     }
 
     private Map<String, Object> getMainContainer(Map<String, Object> spec) {

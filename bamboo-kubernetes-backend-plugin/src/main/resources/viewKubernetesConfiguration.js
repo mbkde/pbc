@@ -51,7 +51,6 @@ define('feature/kubernetes-backend-plugin/config', [
         $('#setRemoteConfig_podLogsUrl').val(response.podLogsUrl);
         $("#setRemoteConfig_artifactoryCacheAllowList").val(response.artifactoryCacheAllowList);
         $("#setRemoteConfig_artifactoryCachePodSpec").val(response.artifactoryCachePodSpec);
-        $("#setRemoteConfig_agentHeartbeatTime").val(response.agentHeartbeatTime);
         updateClusterRegistry(response);
         updateAWSSpecificFields(response);
         $('#setRemoteConfig_save').removeAttr('disabled');
@@ -110,7 +109,6 @@ define('feature/kubernetes-backend-plugin/config', [
             config.clusterRegistryPrimarySelector = $('#setRemoteConfig_clusterRegistryPrimarySelector').val().trim();
             config.artifactoryCacheAllowList = AJS.$("#setRemoteConfig_artifactoryCacheAllowList").val().trim();
             config.artifactoryCachePodSpec = AJS.$("#setRemoteConfig_artifactoryCachePodSpec").val().trim();
-            config.agentHeartbeatTime = AJS.$("#setRemoteConfig_agentHeartbeatTime").val().trim();
 
 
             updateStatus('Saving...');

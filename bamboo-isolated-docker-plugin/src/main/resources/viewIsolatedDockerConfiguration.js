@@ -44,8 +44,6 @@ define('feature/isolate-docker-plugin/config', [
         $('#setRemoteConfig_maxAgentCreationPerMinute').val(response.maxAgentCreationPerMinute);
         $('#setRemoteConfig_architectureConfig').val(response.architectureConfig);
         $('#setRemoteConfig_awsVendor').prop('checked', response.awsVendor);
-        $('#setRemoteConfig_agentCleanupTime').val(response.agentCleanupTime);
-        $('#setRemoteConfig_agentRemovalTime').val(response.agentRemovalTime);
     }
 
     function processResource(callback, relativeEndpoint) {
@@ -77,8 +75,6 @@ define('feature/isolate-docker-plugin/config', [
             config.maxAgentCreationPerMinute = $('#setRemoteConfig_maxAgentCreationPerMinute').val().trim();
             config.architectureConfig = $('#setRemoteConfig_architectureConfig').val().trim();
             config.awsVendor = $('#setRemoteConfig_awsVendor').is(':checked');
-            config.agentCleanupTime = $('#setRemoteConfig_agentCleanupTime').val().trim();
-            config.agentRemovalTime = $('#setRemoteConfig_agentRemovalTime').val().trim();
 
             updateStatus('Saving...');
 
