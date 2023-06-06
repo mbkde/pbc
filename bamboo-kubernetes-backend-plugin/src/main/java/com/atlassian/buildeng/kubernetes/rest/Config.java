@@ -32,6 +32,8 @@ public class Config {
     public String artifactoryCacheAllowList;
     public String artifactoryCachePodSpec;
 
+    public Integer agentHeartbeatTime;
+
     public boolean showAwsSpecificFields;
 
     public Config() {}
@@ -50,7 +52,8 @@ public class Config {
             String clusterRegistryPrimarySelector,
             boolean showAwsSpecificFields,
             String artifactoryCacheAllowList,
-            String artifactoryCachePodSpec) {
+            String artifactoryCachePodSpec,
+            Integer agentHeartbeatTime) {
         this.sidekickImage = sidekickImage;
         this.currentContext = currentContext;
         this.podTemplate = podTemplate;
@@ -65,6 +68,7 @@ public class Config {
         this.showAwsSpecificFields = showAwsSpecificFields;
         this.artifactoryCacheAllowList = artifactoryCacheAllowList;
         this.artifactoryCachePodSpec = artifactoryCachePodSpec;
+        this.agentHeartbeatTime = agentHeartbeatTime;
     }
 
     public String getSidekickImage() {
@@ -177,5 +181,13 @@ public class Config {
 
     public void setShowAwsSpecificFields(boolean showAwsSpecificFields) {
         this.showAwsSpecificFields = showAwsSpecificFields;
+    }
+
+    public Integer getAgentHeartbeatTime() {
+        return agentHeartbeatTime;
+    }
+
+    public void setAgentHeartbeatTime(Integer agentHeartbeatTime) {
+        this.agentHeartbeatTime = agentHeartbeatTime;
     }
 }
