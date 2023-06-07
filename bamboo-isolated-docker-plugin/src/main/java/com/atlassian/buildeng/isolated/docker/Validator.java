@@ -55,7 +55,9 @@ public class Validator {
                 errorCollection.addError(
                         task ? Configuration.TASK_DOCKER_AWS_ROLE : Configuration.DOCKER_AWS_ROLE,
                         "AWS IAM Role cannot contain whitespace.");
-            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9+=,.@_\\-]+")
+                // Matches the path range (\u002F)|(\u002F[\u0021-\u007E]+\u002F) as described here
+                // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+            } else if (!Pattern.compile("arn:aws:iam::[0-9]+:role/[a-zA-Z0-9+=,.@_\\-]+(/[!-~]+|/)*")
                     .matcher(role)
                     .matches()) {
                 errorCollection.addError(
