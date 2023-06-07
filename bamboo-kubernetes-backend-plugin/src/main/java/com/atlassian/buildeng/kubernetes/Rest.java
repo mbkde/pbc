@@ -87,7 +87,6 @@ public class Rest {
         c.setArtifactoryCachePodSpec(configuration.getArtifactoryCachePodSpecAsString());
         c.setShowAwsSpecificFields(com.atlassian.buildeng.isolated.docker.GlobalConfiguration.VENDOR_AWS.equals(
                 com.atlassian.buildeng.isolated.docker.GlobalConfiguration.getVendorWithBandana(bandanaManager)));
-        c.setAgentHeartbeatTime(configuration.getAgentHeartbeatTime());
         return Response.ok(c).build();
     }
 

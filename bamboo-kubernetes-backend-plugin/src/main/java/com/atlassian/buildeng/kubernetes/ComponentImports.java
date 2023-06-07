@@ -27,7 +27,6 @@ import com.atlassian.bamboo.security.BambooPermissionManager;
 import com.atlassian.bamboo.user.BambooAuthenticationContext;
 import com.atlassian.bandana.BandanaManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.BambooImport;
-import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.features.DarkFeatureManager;
 import org.quartz.Scheduler;
 
@@ -35,7 +34,7 @@ public class ComponentImports {
     @BambooImport
     public Scheduler scheduler;
 
-    @ComponentImport
+    @BambooImport
     public BandanaManager bandanaManager;
 
     @BambooImport
