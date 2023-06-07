@@ -62,4 +62,9 @@ public interface Constants {
     String KUBECTL_DELETE_TIMEOUT = System.getProperty(KUBECTL_DELETE_TIMEOUT_PROPERTY, "2m");
 
     String PBC_EPHEMERAL_ENABLED = com.atlassian.buildeng.isolated.docker.Constants.PBC_EPHEMERAL_ENABLED;
+
+    /*
+     * The maximum time gap for communication between the agent and the server
+     */
+    int DEFAULT_HEARTBEAT_TIME = 60;
 }

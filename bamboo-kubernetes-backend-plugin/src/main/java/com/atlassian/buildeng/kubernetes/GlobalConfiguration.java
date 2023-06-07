@@ -52,6 +52,8 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -80,6 +82,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
     static String BANDANA_ARTIFACTORY_CACHE_ALLOWLIST =
             "com.atlassian.buildeng.pbc.kubernetes.artifactoryCacheAllowList";
     static String BANDANA_ARTIFACTORY_CACHE_PODSPEC = "com.atlassian.buildeng.pbc.kubernetes.artifactoryCachePodSpec";
+    static String BANDANA_AGENT_HEARTBEAT_TIME = "com.atlassian.buildeng.pbc.kubernetes.agent.heartbeat.time";
     private final BandanaManager bandanaManager;
     private final AdministrationConfigurationAccessor admConfAccessor;
     private final AuditLogService auditLogService;
@@ -140,6 +143,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
         final String primarySelector = config.getClusterRegistryPrimarySelector();
         final String artifactoryCacheAllowList = config.getArtifactoryCacheAllowList();
         final String artifactoryCachePodSpec = config.getArtifactoryCachePodSpec();
+        final Integer agentHeartbeatTime = config.getAgentHeartbeatTime();
 
         Preconditions.checkArgument(StringUtils.isNotBlank(sidekick), "Sidekick image is mandatory");
         Preconditions.checkArgument(StringUtils.isNotBlank(podTemplate), "Pod template is mandatory");
@@ -256,6 +260,14 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
                         BANDANA_ARTIFACTORY_CACHE_PODSPEC,
                         artifactoryCachePodSpec);
             }
+        }
+        if (!Objects.equals(agentHeartbeatTime, getAgentHeartbeatTime())) {
+            auditLogEntry(
+                    "PBC Kubernetes agent heartbeat time",
+                    Integer.toString(getAgentHeartbeatTime()),
+                    Integer.toString(agentHeartbeatTime));
+            bandanaManager.setValue(
+                    PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AGENT_HEARTBEAT_TIME, agentHeartbeatTime);
         }
         if (currentContext != null) {
             persistCurrentContext(currentContext);
@@ -444,6 +456,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
      *
      * @return IAM k8s request template string
      */
+    @NotNull
     public String getBandanaIamRequestTemplateAsString() {
         String template = getBandanaIamRequestTemplateRaw();
         if (template == null) {
@@ -457,6 +470,7 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
      *
      * @return String of prefix
      */
+    @NotNull
     public String getIamSubjectIdPrefix() {
         String iamSubjectId = getIamSubjectIdPrefixRaw();
         // (String) null = "null", which causes the displayed value to show null{subjectId}
@@ -570,10 +584,20 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
      *
      * @return the raw IAM request template from Bandana, which may be null
      */
+    @Nullable
     private String getBandanaIamRequestTemplateRaw() {
-        String template =
-                (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE);
-        return template;
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_REQUEST_TEMPLATE);
+    }
+
+    @NotNull
+    public Integer getAgentHeartbeatTime() {
+        Integer heartbeatTimeRaw = getAgentHeartbeatTimeRaw();
+        return heartbeatTimeRaw != null ? heartbeatTimeRaw : Constants.DEFAULT_HEARTBEAT_TIME;
+    }
+
+    @Nullable
+    private Integer getAgentHeartbeatTimeRaw() {
+        return (Integer) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_AGENT_HEARTBEAT_TIME);
     }
 
     /**
@@ -582,10 +606,9 @@ public class GlobalConfiguration implements ContainerSizeDescriptor, LifecycleAw
      *
      * @return the raw IAM subject ID prefix from Bandana, which may be null
      */
+    @Nullable
     private String getIamSubjectIdPrefixRaw() {
-        String iamSubjectId =
-                (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX);
-        return iamSubjectId;
+        return (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, BANDANA_IAM_SUBJECT_ID_PREFIX);
     }
 
     private void processEntry(JsonElement t, String prefix) {

@@ -502,6 +502,8 @@ public class PodCreator {
         envs.add(ImmutableMap.of("name", ENV_VAR_RESULT_ID, "value", r.getResultKey()));
         envs.add(ImmutableMap.of("name", ENV_VAR_SERVER, "value", globalConfiguration.getBambooBaseUrl()));
         envs.add(ImmutableMap.of("name", "EPHEMERAL", "value", isBuildEphemeral()));
+        envs.add(ImmutableMap.of(
+                "name", "HEARTBEAT", "value", Integer.toString(globalConfiguration.getAgentHeartbeatTime())));
         envs.add(ImmutableMap.of("name", ARG_SECURITY_TOKEN, "value", r.getSecurityToken()));
         envs.add(ImmutableMap.of("name", "QUEUE_TIMESTAMP", "value", "" + r.getQueueTimestamp()));
         envs.add(ImmutableMap.of("name", "SUBMIT_TIMESTAMP", "value", "" + System.currentTimeMillis()));
