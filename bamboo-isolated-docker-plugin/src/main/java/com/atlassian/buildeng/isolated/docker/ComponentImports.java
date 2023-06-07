@@ -75,8 +75,7 @@ public class ComponentImports {
     @BambooImport
     public AuditLogService auditLogService;
 
-    // Available on agent but we don't need it
-    @BambooImport
+    @ComponentImport
     public BandanaManager bandanaManager;
 
     @BambooImport

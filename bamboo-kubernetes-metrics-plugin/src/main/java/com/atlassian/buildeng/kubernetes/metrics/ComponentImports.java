@@ -35,7 +35,7 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.web.WebInterfaceManager;
 
 public class ComponentImports {
-    @BambooImport
+    @ComponentImport
     public BandanaManager bandanaManager;
 
     @BambooImport
