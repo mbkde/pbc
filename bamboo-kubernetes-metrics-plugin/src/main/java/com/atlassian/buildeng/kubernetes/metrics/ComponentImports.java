@@ -38,13 +38,13 @@ public class ComponentImports {
     @ComponentImport
     public BandanaManager bandanaManager;
 
-    @BambooImport
+    @ComponentImport
     public AuditLogService auditLogService;
 
     @BambooImport
     public AdministrationConfigurationAccessor administrationConfigurationAccessor;
 
-    @BambooImport
+    @ComponentImport
     public BambooAuthenticationContext authenticationContext;
 
     @ComponentImport

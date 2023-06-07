@@ -72,13 +72,13 @@ public class ComponentImports {
     @BambooImport
     public DarkFeatureManager darkFeatureManager;
 
-    @BambooImport
+    @ComponentImport
     public AuditLogService auditLogService;
 
     @ComponentImport
     public BandanaManager bandanaManager;
 
-    @BambooImport
+    @ComponentImport
     public BambooAuthenticationContext authenticationContext;
 
     @BambooImport
