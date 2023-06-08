@@ -35,16 +35,16 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.web.WebInterfaceManager;
 
 public class ComponentImports {
-    @ComponentImport
+    @BambooImport
     public BandanaManager bandanaManager;
 
-    @ComponentImport
+    @BambooImport
     public AuditLogService auditLogService;
 
     @BambooImport
     public AdministrationConfigurationAccessor administrationConfigurationAccessor;
 
-    @ComponentImport
+    @BambooImport
     public BambooAuthenticationContext authenticationContext;
 
     @ComponentImport
