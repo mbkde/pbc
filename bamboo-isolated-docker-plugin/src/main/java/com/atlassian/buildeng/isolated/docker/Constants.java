@@ -49,12 +49,12 @@ public interface Constants {
     String PBC_EPHEMERAL_ENABLED = "pbc.ephemeral.enabled";
 
     /*
-     * Default time (if unconfigured) before asking an agent to stopNicely
+     * Time to wait before asking an agent to stopNicely
      */
-    int DEFAULT_AGENT_CLEANUP_DELAY = 30;
+    int AGENT_CLEANUP_DELAY = 30;
 
     /*
-     * Default time (if configured) before removing an agent from the list
+     * Time to wait before removing an agent from the list
      */
-    int DEFAULT_AGENT_REMOVE_DELAY = 120;
+    int AGENT_REMOVE_DELAY = 120;
 }
