@@ -31,13 +31,15 @@ import javax.annotation.Nonnull;
 
 public class AgentQueries {
 
-    public static boolean isDockerAgentForResult(BuildAgent t, @Nonnull ResultKey key) {
-        String cap = getDockerResultCapability(t);
-        return cap != null && key.getKey().equals(cap);
+    public static boolean isDockerAgentForResult(BuildAgent agent, @Nonnull ResultKey key) {
+        String cap = getDockerResultCapability(agent);
+        String ephemeralKey = getResultKeyForEphemeralAgent(agent);
+        return cap != null && key.getKey().equals(cap)
+                || ephemeralKey != null && key.getKey().equals(ephemeralKey);
     }
 
     public static boolean isDockerAgent(BuildAgent agent) {
-        return getDockerResultCapability(agent) != null;
+        return getDockerResultCapability(agent) != null || getDockerEphemeralAgent(agent) != null;
     }
 
     public static boolean isEnabledDockerAgent(BuildAgent agent) {
@@ -47,11 +49,7 @@ public class AgentQueries {
         return isDockerAgent(agent);
     }
 
-    public static boolean isEphemeralAgent(BuildAgent agent) {
-        return getDockerEphemeralAgent(agent) != null;
-    }
-
-    public static String getDockerResultCapability(BuildAgent agent) {
+    private static String getDockerResultCapability(BuildAgent agent) {
         if (agent == null) {
             return null;
         }
@@ -76,7 +74,7 @@ public class AgentQueries {
         return ref.get();
     }
 
-    public static String getDockerEphemeralAgent(BuildAgent agent) {
+    private static String getDockerEphemeralAgent(BuildAgent agent) {
         if (agent == null) {
             return null;
         }
@@ -92,6 +90,33 @@ public class AgentQueries {
             public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
                 // So called ephemeral agents in PBC are still considered "Remote agents" in Bamboo.
                 getCapabilityValue(pipelineDefinition, Constants.EPHEMERAL_CAPABILITY_RESULT)
+                        .ifPresent(ref::set);
+            }
+
+            @Override
+            public void visitEphemeral(EphemeralAgentDefinition pipelineDefinition) {}
+        });
+        return ref.get();
+    }
+
+    private static String getResultKeyForEphemeralAgent(BuildAgent agent) {
+        if (agent == null) {
+            return null;
+        }
+        AtomicReference<String> ref = new AtomicReference<>();
+        agent.getDefinition().accept(new PipelineDefinitionVisitor() {
+
+            @Override
+            public void visitElastic(ElasticAgentDefinition pipelineDefinition) {}
+
+            @Override
+            public void visitLocal(LocalAgentDefinition pipelineDefinition) {}
+
+            @Override
+            public void visitRemote(RemoteAgentDefinition pipelineDefinition) {
+                // So called ephemeral agents in PBC are still considered "Remote agents" in Bamboo.
+                Optional.ofNullable(pipelineDefinition.getEphemeralAgentDedication())
+                        .map(ResultKey::getKey)
                         .ifPresent(ref::set);
             }
 

@@ -109,7 +109,12 @@ public class PostJobActionImpl implements PostJobAction {
                                 }
                             })
                             .start();
+                } else {
+                    LOG.info(
+                            "Agent was properly stopped by PBC StopDockerAgentBuildProcessor but was not found by findAgent");
                 }
+            } else {
+                LOG.info("Not removing agent as it was not properly stopped");
             }
         }
     }
@@ -142,7 +147,7 @@ public class PostJobActionImpl implements PostJobAction {
                         agentId,
                         job.getPlanKey());
                 return null;
-            } else if (!AgentQueries.isDockerAgent(test) && !AgentQueries.isEphemeralAgent(test)) {
+            } else if (!AgentQueries.isDockerAgent(test)) {
                 // could it be an elastic/remote agent that was running the job while the plan was changed?
                 LOG.error(
                         "Agent {} for job {} referenced from buildResultSummary was not PBC agent",

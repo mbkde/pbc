@@ -81,13 +81,13 @@ public class ReaperJob implements Job {
 
     // return true if the given agent should be killed, false otherwise
     private boolean agentShouldBeKilled(BuildAgent agent) {
-        return !agent.isEnabled() && (AgentQueries.isDockerAgent(agent) || AgentQueries.isEphemeralAgent(agent));
+        return !agent.isEnabled() && (AgentQueries.isDockerAgent(agent));
     }
 
     // return true if the given agent should be disabled, false otherwise
     private boolean agentShouldBeDisabled(BuildAgent agent) {
         // Only care about agents which are remote, idle and 'old' or offline
-        if (agent.isEnabled() && (AgentQueries.isDockerAgent(agent) || AgentQueries.isEphemeralAgent(agent))) {
+        if (agent.isEnabled() && (AgentQueries.isDockerAgent(agent))) {
             PipelineDefinition definition = agent.getDefinition();
             Date creationTime = definition.getCreationDate();
             long currentTime = System.currentTimeMillis();
