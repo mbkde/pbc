@@ -68,6 +68,12 @@ public class ReaperJob implements Job {
                         .withOfflineIncluded()
                         .withDisabledIncluded());
 
+        RequirementSetImpl ephemeralReqs = new RequirementSetImpl();
+        ephemeralReqs.addRequirement(new RequirementImpl(Constants.EPHEMERAL_CAPABILITY_RESULT, true, ".*"));
+        agents.addAll(executableAgentsHelper.getExecutableAgents(ExecutorQuery.newQueryWithoutAssignments(ephemeralReqs)
+                .withOfflineIncluded()
+                .withDisabledIncluded()));
+
         for (BuildAgent agent : agents) {
             if (agentShouldBeKilled(agent)) {
                 // we want to kill disabled docker agents
