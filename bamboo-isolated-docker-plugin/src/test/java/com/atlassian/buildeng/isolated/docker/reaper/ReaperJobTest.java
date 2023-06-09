@@ -88,7 +88,9 @@ public class ReaperJobTest {
         BuildAgent agent = mockDockerAgent(minutesAgo(0));
         when(agent.isEnabled()).thenReturn(false);
         ArrayList<BuildAgent> agents = new ArrayList<>(Collections.singletonList(agent));
-        when(executableAgentsHelper.getExecutableAgents(any())).thenReturn(agents);
+        when(executableAgentsHelper.getExecutableAgents(any()))
+                .thenReturn(agents)
+                .thenReturn(Collections.emptyList());
 
         reaperJob.execute(context);
 
@@ -101,7 +103,9 @@ public class ReaperJobTest {
         BuildAgent agent = mockElasticAgent(minutesAgo(100));
         when(agent.isEnabled()).thenReturn(false);
         ArrayList<BuildAgent> agents = new ArrayList<>(Collections.singletonList(agent));
-        when(executableAgentsHelper.getExecutableAgents(any())).thenReturn(agents);
+        when(executableAgentsHelper.getExecutableAgents(any()))
+                .thenReturn(agents)
+                .thenReturn(Collections.emptyList());
 
         reaperJob.execute(context);
 
@@ -115,7 +119,9 @@ public class ReaperJobTest {
         when(agent.isEnabled()).thenReturn(true);
         when(agent.isActive()).thenReturn(true);
         ArrayList<BuildAgent> agents = new ArrayList<>(Collections.singletonList(agent));
-        when(executableAgentsHelper.getExecutableAgents(any())).thenReturn(agents);
+        when(executableAgentsHelper.getExecutableAgents(any()))
+                .thenReturn(agents)
+                .thenReturn(Collections.emptyList());
 
         reaperJob.execute(context);
 
@@ -129,7 +135,9 @@ public class ReaperJobTest {
         when(agent.isEnabled()).thenReturn(true);
         when(agent.isActive()).thenReturn(true);
         ArrayList<BuildAgent> agents = new ArrayList<>(Collections.singletonList(agent));
-        when(executableAgentsHelper.getExecutableAgents(any())).thenReturn(agents);
+        when(executableAgentsHelper.getExecutableAgents(any()))
+                .thenReturn(agents)
+                .thenReturn(Collections.emptyList());
 
         reaperJob.execute(context);
 
@@ -143,7 +151,9 @@ public class ReaperJobTest {
         when(agent.isEnabled()).thenReturn(true);
         when(agent.isActive()).thenReturn(true);
         ArrayList<BuildAgent> agents = new ArrayList<>(Collections.singletonList(agent));
-        when(executableAgentsHelper.getExecutableAgents(any())).thenReturn(agents);
+        when(executableAgentsHelper.getExecutableAgents(any()))
+                .thenReturn(agents)
+                .thenReturn(Collections.emptyList());
 
         reaperJob.execute(context);
 
