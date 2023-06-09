@@ -70,6 +70,7 @@ arm64:
         [/#if]
         [@s.textarea labelKey='kubernetes.backend.config.form.containerSizes' name='containerSizes' rows='20' cssClass='long-field' /]
         [@s.textfield labelKey='kubernetes.backend.config.form.podLogsUrl' name='podLogsUrl' cssClass='long-field' /]
+        [@s.textfield labelKey='kubernetes.backend.config.form.agentHeartbeatTime' name='agentHeartbeatTime' /]
     [/@ui.bambooSection]
     <fieldset>
         <div id="errorMessage" style="white-space: pre-line">

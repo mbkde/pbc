@@ -46,6 +46,8 @@ public class SettingsRest {
         Config c = new Config();
         c.setEnabled(configuration.getEnabledProperty());
         c.setDefaultImage(configuration.getDefaultImage());
+        c.setAgentCleanupTime(configuration.getAgentCleanupTime());
+        c.setAgentRemovalTime(configuration.getAgentRemovalTime());
         c.setMaxAgentCreationPerMinute(configuration.getMaxAgentCreationPerMinute());
         c.setArchitectureConfig(configuration.getArchitectureConfigAsString());
         c.setAwsVendor(GlobalConfiguration.VENDOR_AWS.equals(configuration.getVendor()));

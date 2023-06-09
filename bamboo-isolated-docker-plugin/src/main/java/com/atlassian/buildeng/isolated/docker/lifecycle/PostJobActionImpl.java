@@ -29,6 +29,7 @@ import com.atlassian.bamboo.v2.build.agent.BuildAgent;
 import com.atlassian.buildeng.isolated.docker.AgentQueries;
 import com.atlassian.buildeng.isolated.docker.AgentRemovals;
 import com.atlassian.buildeng.isolated.docker.Constants;
+import com.atlassian.buildeng.isolated.docker.GlobalConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.AccessConfiguration;
 import com.atlassian.buildeng.spi.isolated.docker.Configuration;
 import com.atlassian.buildeng.spi.isolated.docker.IsolatedAgentService;
@@ -49,12 +50,18 @@ public class PostJobActionImpl implements PostJobAction {
     private final AgentRemovals agentRemovals;
     private final AgentManager agentManager;
     private final IsolatedAgentService isoService;
+    private final GlobalConfiguration globalConfiguration;
 
     @Inject
-    private PostJobActionImpl(AgentRemovals agentRemovals, AgentManager agentManager, IsolatedAgentService isoService) {
+    private PostJobActionImpl(
+            AgentRemovals agentRemovals,
+            AgentManager agentManager,
+            IsolatedAgentService isoService,
+            GlobalConfiguration globalConfiguration) {
         this.agentRemovals = agentRemovals;
         this.agentManager = agentManager;
         this.isoService = isoService;
+        this.globalConfiguration = globalConfiguration;
     }
 
     @Override
@@ -101,7 +108,7 @@ public class PostJobActionImpl implements PostJobAction {
                                 @Override
                                 public void run() {
                                     try {
-                                        TimeUnit.SECONDS.sleep(Constants.AGENT_REMOVE_DELAY);
+                                        TimeUnit.SECONDS.sleep(globalConfiguration.getAgentRemovalTime());
                                     } catch (InterruptedException e) {
                                         LOG.error("Error while waiting for build to complete", e);
                                     }
