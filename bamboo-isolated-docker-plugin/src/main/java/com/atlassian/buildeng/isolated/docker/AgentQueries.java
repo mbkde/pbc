@@ -34,8 +34,8 @@ public class AgentQueries {
     public static boolean isDockerAgentForResult(BuildAgent agent, @Nonnull ResultKey key) {
         String cap = getDockerResultCapability(agent);
         String ephemeralKey = getResultKeyForEphemeralAgent(agent);
-        return cap != null && key.getKey().equals(cap)
-                || ephemeralKey != null && key.getKey().equals(ephemeralKey);
+        return (cap != null && key.getKey().equals(cap))
+                || (ephemeralKey != null && key.getKey().equals(ephemeralKey));
     }
 
     public static boolean isDockerAgent(BuildAgent agent) {
